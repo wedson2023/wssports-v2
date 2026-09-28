@@ -1,50 +1,144 @@
-# [PROJECT_NAME] Constitution
-<!-- Example: Spec Constitution, TaskFlow Constitution, etc. -->
+<!--
+Sync Impact Report
+- Version change: 1.3.0 → 1.4.0 (MINOR: nova regra de ausência de testes automatizados)
+- Princípios modificados: nenhum (I a V mantidos sem alteração)
+- Princípios adicionados: nenhum
+- Seções alteradas:
+  - Fluxo de Desenvolvimento: o projeto não terá testes automatizados no backend nem no
+    frontend; specs, planos e tarefas não geram testes e a validação é manual
+- Seções adicionadas: nenhuma
+- Seções removidas: nenhuma
+- TODOs pendentes: nenhum
+-->
+
+# WSSports Constitution
 
 ## Core Principles
 
-### [PRINCIPLE_1_NAME]
-<!-- Example: I. Library-First -->
-[PRINCIPLE_1_DESCRIPTION]
-<!-- Example: Every feature starts as a standalone library; Libraries must be self-contained, independently testable, documented; Clear purpose required - no organizational-only libraries -->
+### I. Nomenclatura em snake_case
 
-### [PRINCIPLE_2_NAME]
-<!-- Example: II. CLI Interface -->
-[PRINCIPLE_2_DESCRIPTION]
-<!-- Example: Every library exposes functionality via CLI; Text in/out protocol: stdin/args → stdout, errors → stderr; Support JSON + human-readable formats -->
+- Variáveis, funções, métodos, propriedades, chaves de arrays/objetos, parâmetros e nomes
+  usados nas instruções (specs, planos, tarefas) DEVEM usar `snake_case`. `camelCase` é
+  proibido nesses casos, tanto no PHP quanto no JavaScript/React.
+- **Exceção — métodos do framework**: métodos sobrescritos ou exigidos pelo Laravel mantêm o
+  nome original do framework (ex.: `casts`, `rules`, `messages`, `authorize`,
+  `prepareForValidation`, `toArray`, `definition`, `viewAny`, `view`, `create`, `update`,
+  `delete`, `before`, `up`, `down`). Todos os demais métodos DEVEM usar `snake_case`.
+- Nomes de classes PHP e de componentes React continuam em `PascalCase`, pois são o nome do
+  tipo/componente e definem o nome da pasta do componente (ver Princípio III).
+- Toda nomenclatura de banco de dados (migrations, tabelas, colunas, índices, chaves
+  estrangeiras, seeders e factories que as referenciem) DEVE ser escrita em **português**
+  (ex.: tabela `apostas`, já created_at, updated_at, deleted_at são em inglês).
+- Nomes de pastas DEVEM ser escritos em **inglês** e `snake_case` (ex.: `components`,
+  `services`, `pages`, `user_roles`).
+- **Exceção — pastas PSR-4**: pastas dentro de `app/` que correspondem a namespaces PSR-4
+  (ex.: `app/Enums`, `app/Policies`, `app/Http/Requests`, `app/Http/Resources`) usam
+  `PascalCase`, igual a `app/Http` e `app/Models`. As demais pastas continuam em inglês e
+  `snake_case`.
 
-### [PRINCIPLE_3_NAME]
-<!-- Example: III. Test-First (NON-NEGOTIABLE) -->
-[PRINCIPLE_3_DESCRIPTION]
-<!-- Example: TDD mandatory: Tests written → User approved → Tests fail → Then implement; Red-Green-Refactor cycle strictly enforced -->
+**Rationale**: um único padrão de nomes elimina a ambiguidade entre backend e frontend; o
+banco em português reflete o domínio do negócio, e as pastas em inglês seguem a convenção do
+ecossistema Laravel/React. As exceções existem porque o autoload PSR-4 liga a pasta ao
+namespace e o Laravel só reconhece métodos de framework pelo nome original; renomeá-los
+quebraria o funcionamento.
 
-### [PRINCIPLE_4_NAME]
-<!-- Example: IV. Integration Testing -->
-[PRINCIPLE_4_DESCRIPTION]
-<!-- Example: Focus areas requiring integration tests: New library contract tests, Contract changes, Inter-service communication, Shared schemas -->
+### II. Idioma por Contexto
 
-### [PRINCIPLE_5_NAME]
-<!-- Example: V. Observability, VI. Versioning & Breaking Changes, VII. Simplicity -->
-[PRINCIPLE_5_DESCRIPTION]
-<!-- Example: Text I/O ensures debuggability; Structured logging required; Or: MAJOR.MINOR.BUILD format; Or: Start simple, YAGNI principles -->
+- **Backend (PHP/Laravel)**: specs, planos, tarefas e demais instruções DEVEM ser escritos em
+  **português**. Comentários no código DEVEM estar em **português**.
+- **Frontend (React/JavaScript)**: specs, planos, tarefas e demais instruções DEVEM ser
+  escritos em **inglês**. Comentários no código DEVEM estar em **português**.
+- Artefatos que abrangem backend e frontend DEVEM separar as partes por contexto, aplicando o
+  idioma correspondente a cada uma.
 
-## [SECTION_2_NAME]
-<!-- Example: Additional Constraints, Security Requirements, Performance Standards, etc. -->
+**Rationale**: define de forma verificável o idioma de cada artefato e mantém os comentários
+de código em um único idioma para toda a equipe.
 
-[SECTION_2_CONTENT]
-<!-- Example: Technology stack requirements, compliance standards, deployment policies, etc. -->
+### III. Estrutura de Componentes React
 
-## [SECTION_3_NAME]
-<!-- Example: Development Workflow, Review Process, Quality Gates, etc. -->
+- Cada componente React DEVE ter sua própria pasta, nomeada exatamente com o nome do
+  componente (ex.: `components/user_roles/`).
+- A pasta do componente DEVE conter os arquivos:
+  - `index.jsx`: lógica e marcação do componente;
+  - `styles.jsx`: estilos do componente.
+- Não é permitido declarar um componente em arquivo solto fora dessa estrutura.
 
-[SECTION_3_CONTENT]
-<!-- Example: Code review requirements, testing gates, deployment approval process, etc. -->
+**Rationale**: uma estrutura previsível facilita localizar, revisar e reutilizar componentes,
+mantendo estilos isolados junto ao componente que os utiliza.
+
+### IV. Escopo Estrito de Edição (INEGOCIÁVEL)
+
+- Uma alteração DEVE se limitar exatamente ao trecho de código solicitado. É proibido
+  refatorar, reformatar, renomear ou "melhorar" código fora do escopo pedido.
+- Se for necessário alterar outro trecho para a tarefa funcionar, isso DEVE ser comunicado
+  antes, informando o arquivo, o trecho e o motivo, e a alteração só pode ser feita após a
+  confirmação.
+
+**Rationale**: alterações fora do escopo geram regressões inesperadas e diffs difíceis de
+revisar; a confirmação prévia mantém o controle do código com o responsável pelo projeto.
+
+### V. Revisão de Legibilidade Pós-Implementação
+
+- Ao concluir a implementação de uma tarefa, TODO o código alterado nela DEVE ser analisado em
+  conjunto (não apenas trecho a trecho), buscando oportunidades de refatoração que melhorem a
+  legibilidade.
+- A análise DEVE verificar, no mínimo: nomes claros e aderentes ao Princípio I, duplicação de
+  código, funções/métodos longos ou com múltiplas responsabilidades, condicionais aninhadas
+  que possam ser simplificadas e comentários desatualizados ou desnecessários.
+- As refatorações DEVEM preservar o comportamento existente e ficar restritas ao código
+  alterado na tarefa. Melhorias identificadas em código fora desse escopo DEVEM seguir o
+  Princípio IV (comunicar antes e aguardar confirmação).
+- A tarefa só é considerada concluída após essa revisão; se nenhuma refatoração for
+  necessária, isso DEVE ser informado explicitamente.
+
+**Rationale**: revisar o conjunto das alterações ao final revela problemas de legibilidade que
+não aparecem durante a implementação incremental, mantendo o código fácil de ler e manter sem
+violar o escopo estrito de edição.
+
+## Stack e Restrições Técnicas
+
+- Backend: PHP ^8.2 com Laravel ^12.
+- Frontend: React/JavaScript com build via Vite; componentes em arquivos `.jsx`.
+- Novas dependências ou mudanças de stack DEVEM ser justificadas no plano da feature
+  (`/speckit-plan`) antes de serem adotadas, respeitando o Princípio IV.
+- Timestamps e soft delete: toda tabela criada DEVE conter as colunas `created_at`,
+  `updated_at` e `deleted_at` (na migration, `$table->timestamps()` e
+  `$table->softDeletes()`), e o model correspondente DEVE usar a trait `SoftDeletes`.
+  Exclusões de registros DEVEM ser lógicas (soft delete); exclusão física só é permitida se
+  justificada no plano da feature.
+
+**Rationale**: timestamps padronizados garantem rastreabilidade de quando cada registro foi
+criado e alterado, e o soft delete preserva o histórico e permite recuperar dados excluídos,
+essencial em um sistema de apostas.
+
+## Fluxo de Desenvolvimento
+
+- Toda spec, plano e lista de tarefas DEVE passar pelo Constitution Check, verificando os
+  Princípios I a V antes da implementação.
+- Tarefas geradas DEVEM declarar explicitamente os arquivos que serão alterados, para que o
+  escopo de edição (Princípio IV) seja verificável.
+- Antes de concluir cada tarefa, DEVE ser executada a revisão de legibilidade do código
+  alterado (Princípio V).
+- Na revisão de código, qualquer diff fora do escopo solicitado e não previamente comunicado
+  DEVE ser rejeitado.
+- Sem testes automatizados: o projeto NÃO terá testes automatizados, nem no backend
+  (PHP/Laravel) nem no frontend (React/JavaScript). Specs, planos e listas de tarefas NÃO DEVEM
+  prever arquivos, tarefas ou dependências de teste, e nenhum teste DEVE ser criado na
+  implementação. A validação das features é manual, seguindo os cenários de aceite da spec e o
+  `quickstart.md`. Os arquivos de exemplo já existentes em `tests/` não são alterados
+  (Princípio IV).
 
 ## Governance
-<!-- Example: Constitution supersedes all other practices; Amendments require documentation, approval, migration plan -->
 
-[GOVERNANCE_RULES]
-<!-- Example: All PRs/reviews must verify compliance; Complexity must be justified; Use [GUIDANCE_FILE] for runtime development guidance -->
+- Esta constituição prevalece sobre qualquer outra prática ou convenção do projeto. Em caso de
+  conflito, a constituição vence.
+- Emendas DEVEM ser feitas via `/speckit-constitution`, com o motivo registrado no Sync Impact
+  Report e aprovação do responsável pelo projeto.
+- Versionamento semântico:
+  - MAJOR: remoção ou redefinição incompatível de princípios ou regras de governança;
+  - MINOR: novo princípio/seção ou ampliação relevante de orientação;
+  - PATCH: esclarecimentos, redação e correções sem mudança de significado.
+- A conformidade DEVE ser verificada em todo plano (Constitution Check), em toda lista de
+  tarefas e em toda revisão de código.
 
-**Version**: [CONSTITUTION_VERSION] | **Ratified**: [RATIFICATION_DATE] | **Last Amended**: [LAST_AMENDED_DATE]
-<!-- Example: Version: 2.1.1 | Ratified: 2025-06-13 | Last Amended: 2025-07-16 -->
+**Version**: 1.4.0 | **Ratified**: 2026-09-25 | **Last Amended**: 2026-09-28
