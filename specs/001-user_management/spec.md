@@ -16,6 +16,10 @@
 - Usuários desativados ou excluídos não podem acessar o sistema.
 - Autenticação/login fica fora do escopo desta spec."
 
+> **Nota**: o último item do pedido original foi substituído. Prevalece que esta spec usa o
+> pacote JWT para autenticação e que as rotas de gestão de usuários são autenticadas (ver
+> Clarifications e FR-027 a FR-033).
+
 ## Clarifications
 
 ### Session 2026-09-28
@@ -282,8 +286,8 @@ exclusão passa a ser recusada para ele; devolver a permissão e conferir que vo
 - **FR-019**: A exclusão DEVE ser sempre lógica (preenchendo `deleted_at`) e DEVE ser aplicada
   ao usuário e a toda a sua sub-hierarquia, preservando os registros.
 - **FR-020**: O sistema DEVE disponibilizar uma verificação única de "usuário pode acessar o
-  sistema", que retorna negativo para usuários inativos ou excluídos, para uso pela futura
-  autenticação.
+  sistema", que retorna negativo para usuários inativos ou excluídos, utilizada pela
+  autenticação (FR-028, FR-031) e pelas rotas de gestão (FR-021).
 - **FR-021**: Usuários inativos ou excluídos NÃO DEVEM conseguir executar nenhuma operação de
   gestão de usuários.
 - **FR-022**: Nenhum usuário DEVE poder consultar, editar, desativar ou excluir o próprio

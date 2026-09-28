@@ -52,7 +52,7 @@ responsável ([research.md](research.md) R-03).
 | `usuarios.listar` | `GET /usuarios` | ✓ | ✓ | ✓ | — |
 | `usuarios.consultar` | `GET /usuarios/{id}` | ✓ | ✓ | ✓ | — |
 | `usuarios.cadastrar` | `POST /usuarios` | ✓ | ✓ | ✓ | — |
-| `usuarios.editar` | `PUT/PATCH /usuarios/{id}` | ✓ | ✓ | ✓ | — |
+| `usuarios.editar` | Campos de dados no `PUT/PATCH /usuarios/{id}` | ✓ | ✓ | ✓ | — |
 | `usuarios.alterar_situacao` | `ativo` no `update` | ✓ | ✓ | ✓ | — |
 | `usuarios.excluir` | `DELETE /usuarios/{id}` | ✓ | ✓ | ✓ | — |
 | `usuarios.gerenciar_permissoes` | rotas `/usuarios/{id}/permissoes` | ✓ | ✓ | ✓ | — |
@@ -86,7 +86,7 @@ mínimo 6; `telefone` opcional até 20; `endereco` opcional até 255; `usuarios_
 recusados. O papel `funcao` é atribuído ao novo usuário na mesma transação.
 
 **Edição**: `nome`, `telefone`, `endereco` opcionais; `password` opcional (mínimo 6; ausente
-mantém); `ativo` opcional (exige `usuarios.alterar_situacao`; dispara cascata); `usuarios_id`
+mantém); `ativo` opcional (exige só `usuarios.alterar_situacao`, independente de `usuarios.editar`; dispara cascata); demais campos exigem `usuarios.editar`; `usuarios_id`
 opcional (superior válido, R-12); `funcao` e `login` recusados.
 
 **Listagem**: `funcao`, `ativo`, `busca` (até 255), `por_pagina` (1 a 100, padrão 15).

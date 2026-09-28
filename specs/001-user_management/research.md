@@ -30,9 +30,8 @@ alternativas avaliadas.
   não recebem timestamps.
 - **Motivo**: exceção pedida pelo responsável, para manter o mesmo padrão do seu outro sistema.
   Além disso, o spatie não reconhece soft delete (um papel "excluído" continuaria valendo).
-- **Constituição**: exceção ao Princípio I (banco em português) e à regra de timestamps/soft
-  delete, registrada no Complexity Tracking do plano; recomenda-se formalizá-la na constituição
-  via `/speckit-constitution`.
+- **Constituição**: coberto pela exceção de tabelas de pacotes de terceiros do Princípio I
+  (constituição v1.6.0).
 - **Alternativas**: renomear tabelas e chaves para português via `config/permission.php`
   (versão anterior deste plano) — descartada pelo responsável.
 
@@ -80,7 +79,9 @@ alternativas avaliadas.
      (`App\Http\Middleware\GarantirAcesso`), que devolve `403` se o usuário não `pode_acessar()`
      (FR-021).
   2. Permissão de cada ação pelo middleware `permission:` do spatie, declarado no controller
-     (`HasMiddleware`) por método; `alterar_situacao` é checada no `update` quando `ativo` vem na
+     (`HasMiddleware`) por método, exceto o `update`, que checa por campo: `usuarios.editar` para
+     campos de dados e `usuarios.alterar_situacao` para `ativo`, de forma independente (decisão
+     U1 do responsável); `alterar_situacao` é checada no `update` quando `ativo` vem na
      requisição.
   3. Sub-hierarquia (FR-004, FR-022, FR-035) no controller: se o alvo não está em
      `ids_sub_hierarquia()` de quem solicita, `abort(404, 'Usuário não encontrado.')`.

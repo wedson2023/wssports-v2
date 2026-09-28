@@ -1,12 +1,12 @@
 <!--
 Sync Impact Report
-- Version change: 1.5.0 → 1.6.0 (MINOR: exceção para tabelas de pacotes de terceiros)
+- Version change: 1.6.0 → 1.7.0 (MINOR: exceção de métodos ampliada para pacotes de terceiros)
 - Princípios modificados:
-  - I. Nomenclatura em snake_case (título mantido): tabelas criadas por pacotes de terceiros
-    (ex.: spatie/laravel-permission) mantêm os nomes padrão em inglês e dispensam `deleted_at`
+  - I. Nomenclatura em snake_case (título mantido): a exceção "métodos do framework" passa a
+    "métodos do framework e de pacotes", cobrindo métodos exigidos por pacotes de terceiros
+    (ex.: `getJWTIdentifier`/`getJWTCustomClaims` do jwt-auth)
 - Princípios adicionados: nenhum
-- Seções alteradas:
-  - Stack e Restrições Técnicas: regra de timestamps/soft delete passa a citar a exceção
+- Seções alteradas: nenhuma
 - Seções adicionadas: nenhuma
 - Seções removidas: nenhuma
 - TODOs pendentes: nenhum
@@ -21,10 +21,12 @@ Sync Impact Report
 - Variáveis, funções, métodos, propriedades, chaves de arrays/objetos, parâmetros e nomes
   usados nas instruções (specs, planos, tarefas) DEVEM usar `snake_case`. `camelCase` é
   proibido nesses casos, tanto no PHP quanto no JavaScript/React.
-- **Exceção — métodos do framework**: métodos sobrescritos ou exigidos pelo Laravel mantêm o
-  nome original do framework (ex.: `casts`, `rules`, `messages`, `authorize`,
-  `prepareForValidation`, `toArray`, `definition`, `viewAny`, `view`, `create`, `update`,
-  `delete`, `before`, `up`, `down`). Todos os demais métodos DEVEM usar `snake_case`.
+- **Exceção — métodos do framework e de pacotes**: métodos sobrescritos ou exigidos pelo
+  framework (Laravel) ou por pacotes de terceiros mantêm o nome original (ex.: `casts`,
+  `rules`, `messages`, `authorize`, `prepareForValidation`, `toArray`, `definition`,
+  `viewAny`, `view`, `create`, `update`, `delete`, `before`, `up`, `down`, e
+  `getJWTIdentifier`/`getJWTCustomClaims` do `jwt-auth`). Todos os demais métodos DEVEM usar
+  `snake_case`.
 - Nomes de classes PHP e de componentes React continuam em `PascalCase`, pois são o nome do
   tipo/componente e definem o nome da pasta do componente (ver Princípio III).
 - Toda nomenclatura de banco de dados (migrations, tabelas, colunas, índices, chaves
@@ -45,7 +47,7 @@ Sync Impact Report
 **Rationale**: um único padrão de nomes elimina a ambiguidade entre backend e frontend; o
 banco em português reflete o domínio do negócio, e as pastas em inglês seguem a convenção do
 ecossistema Laravel/React. As exceções existem porque o autoload PSR-4 liga a pasta ao
-namespace e o Laravel só reconhece métodos de framework pelo nome original; renomeá-los
+namespace e o Laravel e os pacotes só reconhecem seus métodos pelo nome original; renomeá-los
 quebraria o funcionamento. Tabelas de pacotes seguem o padrão do pacote para manter
 compatibilidade com a sua documentação e com outros sistemas que usam o mesmo pacote.
 
@@ -153,4 +155,4 @@ de memória previsíveis mesmo com grandes volumes de dados.
 - A conformidade DEVE ser verificada em todo plano (Constitution Check), em toda lista de
   tarefas e em toda revisão de código.
 
-**Version**: 1.6.0 | **Ratified**: 2026-09-25 | **Last Amended**: 2026-09-28
+**Version**: 1.7.0 | **Ratified**: 2026-09-25 | **Last Amended**: 2026-09-28

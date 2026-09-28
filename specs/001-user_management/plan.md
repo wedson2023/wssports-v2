@@ -47,19 +47,19 @@ mensagens em português; cascatas atômicas
 | Princípio / Regra | Verificação | Status |
 |---|---|---|
 | I. `snake_case` | Métodos, variáveis, parâmetros, chaves e nomes de permissões em `snake_case` (`pode_acessar()`, `usuarios.alterar_situacao`, `por_pagina`); métodos exigidos pelo framework/pacotes (`getJWTIdentifier`, `middleware`, `rules`...) mantêm o nome (exceção do Princípio I) | ✅ Pass |
-| I. Banco em português | `usuarios` em português; tabelas do spatie com os nomes padrão em inglês (`roles`, `permissions`, `model_has_roles`, `model_has_permissions`, `role_has_permissions`) por exceção pedida pelo responsável | ⚠️ Exceção justificada |
+| I. Banco em português | `usuarios` em português; tabelas do spatie com os nomes padrão em inglês (`roles`, `permissions`, `model_has_roles`, `model_has_permissions`, `role_has_permissions`) coberto pela exceção de tabelas de pacotes da constituição v1.6.0 | ✅ Pass |
 | I. Pastas | Novas pastas PSR-4 em `PascalCase` (`app/Enums`, `app/Http/Middleware`, `app/Http/Requests`, `app/Http/Resources`) — exceção do Princípio I | ✅ Pass |
 | II. Idioma | Artefatos e comentários do backend em português | ✅ Pass |
 | III. Componentes React | Sem frontend | ➖ N/A |
 | IV. Escopo estrito | Arquivos existentes listados abaixo; alteração autorizada pelo responsável em 2026-09-28 | ✅ Pass (confirmado) |
 | V. Legibilidade | Revisão ao final de cada tarefa | ✅ Pass |
-| Timestamps e soft delete | `usuarios` com `timestamps()` + `softDeletes()`; tabelas do spatie sem `deleted_at` e pivôs sem timestamps | ⚠️ Exceção justificada |
+| Timestamps e soft delete | `usuarios` com `timestamps()` + `softDeletes()`; tabelas do spatie sem `deleted_at` e pivôs sem timestamps, cobertos pela exceção da constituição v1.6.0 | ✅ Pass |
 | Paginação ≤ 100 | `por_pagina` 1–100, padrão 15 | ✅ Pass |
 | Sem testes | Nenhum arquivo/tarefa/dependência de teste | ✅ Pass |
 | Novas dependências | JWT (R-01) e spatie (R-02) justificadas | ✅ Pass |
 
-**Resultado do gate**: aprovado, com duas exceções justificadas (Complexity Tracking) e aceitas
-pelo responsável.
+**Resultado do gate**: aprovado. As regras sobre as tabelas do spatie estão cobertas pelas
+exceções da constituição (v1.6.0 e v1.7.0).
 
 **Confirmações do responsável (2026-09-28)**:
 
@@ -158,7 +158,6 @@ pelo spatie) e sem arquivos em `tests/`.
 
 ## Complexity Tracking
 
-| Violation | Why Needed | Simpler Alternative Rejected Because |
-|-----------|------------|-------------------------------------|
-| Tabelas e colunas do spatie com os nomes padrão em inglês (Princípio I pede banco em português) | Exceção pedida pelo responsável, para manter o mesmo padrão do seu outro sistema | Renomear via `config/permission.php` foi descartado pelo responsável |
-| Tabelas do spatie sem `deleted_at` e pivôs sem timestamps (constituição exige `created_at`, `updated_at`, `deleted_at` em toda tabela) | O spatie não reconhece soft delete: um papel ou vínculo "excluído" continuaria concedendo permissões | Adicionar soft delete exigiria reescrever as consultas do pacote; papéis e permissões são fixos (seeder) e não são excluídos pelo sistema |
+Nenhuma violação da constituição a justificar: as tabelas do spatie (nomes em inglês e
+sem `deleted_at`) e os métodos exigidos pelos pacotes estão cobertos pelas exceções do Princípio I
+(constituição v1.6.0 e v1.7.0).

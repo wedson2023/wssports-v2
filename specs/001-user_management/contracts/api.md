@@ -69,7 +69,7 @@ Route::middleware(['auth:api', 'garantir_acesso'])->group(function () {
 | `GET /api/usuarios` | `usuarios.listar` | `200` paginado (`data`, `links`, `meta`), sub-hierarquia sem excluídos | `422` filtros inválidos / `por_pagina` > 100 |
 | `POST /api/usuarios` | `usuarios.cadastrar` | `201` com `usuario` (vinculado a quem solicita, ativo, papel = `funcao`) | `422` (login duplicado, `funcao` ≠ nível abaixo, senha < 6, `usuarios_id`/`ativo` enviados) |
 | `GET /api/usuarios/{usuario}` | `usuarios.consultar` | `200` com `usuario` | `404` |
-| `PUT/PATCH /api/usuarios/{usuario}` | `usuarios.editar` (+ `usuarios.alterar_situacao` se `ativo` vier) | `200` com `usuario`; `ativo` aplica cascata | `404`; `422` (`funcao`/`login` enviados, superior inválido) |
+| `PUT/PATCH /api/usuarios/{usuario}` | Por campo: `usuarios.editar` se vier `nome`, `password`, `telefone`, `endereco` ou `usuarios_id`; `usuarios.alterar_situacao` se vier `ativo` (independentes; se vierem os dois tipos, exige as duas) | `200` com `usuario`; `ativo` aplica cascata | `404`; `422` (`funcao`/`login` enviados, superior inválido) |
 | `DELETE /api/usuarios/{usuario}` | `usuarios.excluir` | `204`, soft delete em cascata | `404` |
 
 Parâmetros de `GET /api/usuarios`: `funcao` (`Supervisor`/`Gerente`/`Vendedor`), `ativo`
