@@ -1,11 +1,11 @@
 <!--
 Sync Impact Report
-- Version change: 1.3.0 → 1.4.0 (MINOR: nova regra de ausência de testes automatizados)
+- Version change: 1.4.0 → 1.5.0 (MINOR: nova regra obrigatória de paginação nas listagens)
 - Princípios modificados: nenhum (I a V mantidos sem alteração)
 - Princípios adicionados: nenhum
 - Seções alteradas:
-  - Fluxo de Desenvolvimento: o projeto não terá testes automatizados no backend nem no
-    frontend; specs, planos e tarefas não geram testes e a validação é manual
+  - Stack e Restrições Técnicas: toda listagem DEVE ser paginada, com no máximo 100 registros
+    por página
 - Seções adicionadas: nenhuma
 - Seções removidas: nenhuma
 - TODOs pendentes: nenhum
@@ -106,10 +106,15 @@ violar o escopo estrito de edição.
   `$table->softDeletes()`), e o model correspondente DEVE usar a trait `SoftDeletes`.
   Exclusões de registros DEVEM ser lógicas (soft delete); exclusão física só é permitida se
   justificada no plano da feature.
+- Paginação: toda listagem (backend e frontend) DEVE ser paginada e NÃO DEVE retornar mais de
+  **100 registros por página**. Pedidos de tamanho de página acima de 100 NÃO DEVEM ser
+  atendidos acima desse limite. O tamanho padrão de cada listagem é definido na spec ou no plano
+  da feature, respeitando esse máximo.
 
 **Rationale**: timestamps padronizados garantem rastreabilidade de quando cada registro foi
 criado e alterado, e o soft delete preserva o histórico e permite recuperar dados excluídos,
-essencial em um sistema de apostas.
+essencial em um sistema de apostas. A paginação limitada mantém o tempo de resposta e o consumo
+de memória previsíveis mesmo com grandes volumes de dados.
 
 ## Fluxo de Desenvolvimento
 
@@ -141,4 +146,4 @@ essencial em um sistema de apostas.
 - A conformidade DEVE ser verificada em todo plano (Constitution Check), em toda lista de
   tarefas e em toda revisão de código.
 
-**Version**: 1.4.0 | **Ratified**: 2026-09-25 | **Last Amended**: 2026-09-28
+**Version**: 1.5.0 | **Ratified**: 2026-09-25 | **Last Amended**: 2026-09-28
