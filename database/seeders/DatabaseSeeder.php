@@ -15,11 +15,17 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // Usuarios::factory(10)->create();
+        $this->call(PapeisPermissoesSeeder::class);
 
-        Usuarios::factory()->create([
-            'nome' => 'Test User',
-            'email' => 'test@example.com',
+        // hierarquia de exemplo: Admin raiz > Supervisor > Gerente > 2 Vendedores
+        $admin = Usuarios::factory()->admin_raiz()->create([
+            'nome' => 'Administrador',
+            'login' => 'admin',
         ]);
+
+        $supervisor = Usuarios::factory()->subordinado_de($admin)->create();
+        $gerente = Usuarios::factory()->subordinado_de($supervisor)->create();
+
+        Usuarios::factory()->count(2)->subordinado_de($gerente)->create();
     }
 }

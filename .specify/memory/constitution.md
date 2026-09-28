@@ -1,12 +1,11 @@
 <!--
 Sync Impact Report
-- Version change: 1.6.0 → 1.7.0 (MINOR: exceção de métodos ampliada para pacotes de terceiros)
-- Princípios modificados:
-  - I. Nomenclatura em snake_case (título mantido): a exceção "métodos do framework" passa a
-    "métodos do framework e de pacotes", cobrindo métodos exigidos por pacotes de terceiros
-    (ex.: `getJWTIdentifier`/`getJWTCustomClaims` do jwt-auth)
+- Version change: 1.7.0 → 1.8.0 (MINOR: nova regra de coleção do Postman sempre atualizada)
+- Princípios modificados: nenhum (I a V mantidos sem alteração)
 - Princípios adicionados: nenhum
-- Seções alteradas: nenhuma
+- Seções alteradas:
+  - Fluxo de Desenvolvimento: toda criação ou alteração de rota da API DEVE regenerar a coleção
+    do Postman em `docs/postman/`, substituindo o arquivo existente
 - Seções adicionadas: nenhuma
 - Seções removidas: nenhuma
 - TODOs pendentes: nenhum
@@ -141,6 +140,12 @@ de memória previsíveis mesmo com grandes volumes de dados.
   implementação. A validação das features é manual, seguindo os cenários de aceite da spec e o
   `quickstart.md`. Os arquivos de exemplo já existentes em `tests/` não são alterados
   (Princípio IV).
+- Coleção do Postman: sempre que uma rota da API for criada, alterada ou removida, a coleção
+  `docs/postman/wssports_api.postman_collection.json` DEVE ser regenerada na mesma tarefa,
+  **substituindo** o arquivo existente (sem criar cópias ou versões paralelas). A coleção DEVE
+  conter todas as rotas atuais da API e manter as variáveis `base_url` e `token` (o token é
+  preenchido automaticamente pelas rotas de login e renovação). Toda lista de tarefas que crie ou
+  altere rotas DEVE incluir uma tarefa explícita para essa atualização.
 
 ## Governance
 
@@ -155,4 +160,4 @@ de memória previsíveis mesmo com grandes volumes de dados.
 - A conformidade DEVE ser verificada em todo plano (Constitution Check), em toda lista de
   tarefas e em toda revisão de código.
 
-**Version**: 1.7.0 | **Ratified**: 2026-09-25 | **Last Amended**: 2026-09-28
+**Version**: 1.8.0 | **Ratified**: 2026-09-25 | **Last Amended**: 2026-09-28
