@@ -39,6 +39,13 @@
 - Q: Um gestor pode dar a um subordinado uma permissão que ele mesmo não tem? → A: Não; só
   pode dar permissões que ele mesmo tem (efetivas), e pode tirar qualquer permissão do
   subordinado.
+- Q: Como o sistema tira de um usuário uma permissão que ele recebeu por padrão? → A: Como
+  no outro sistema do responsável: as permissões ficam diretamente no usuário (copiadas do
+  padrão da função no cadastro) e tirar é apagar o vínculo usuário–permissão; o papel serve
+  apenas para identificar a função e não concede permissões.
+- Q: As tabelas do `spatie/laravel-permission` seguem a regra de nomes em português? → A: Não;
+  por exceção pedida pelo responsável, mantêm os nomes padrão do pacote em inglês (`roles`,
+  `permissions`, `model_has_roles`, `model_has_permissions`, `role_has_permissions`).
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -186,13 +193,13 @@ somem da listagem, mas continuam registrados.
 
 ---
 
-### User Story 6 - Ajustar permissões específicas de um subordinado (Priority: P3)
+### User Story 6 - Ajustar permissões de um subordinado (Priority: P3)
 
 Um usuário de gestão consulta as permissões de um subordinado e pode dar ou tirar permissões
-específicas dele, além das que ele já recebe pelo papel.
+dele, a partir das que ele recebeu por padrão no cadastro.
 
 **Why this priority**: permite ajustes finos (por exemplo, impedir um Gerente de excluir
-usuários), mas o sistema funciona com as permissões padrão de cada papel.
+usuários), mas o sistema funciona com as permissões padrão de cada função.
 
 **Independent Test**: tirar de um Gerente a permissão de excluir usuários e conferir que a
 exclusão passa a ser recusada para ele; devolver a permissão e conferir que volta a funcionar.
@@ -200,8 +207,8 @@ exclusão passa a ser recusada para ele; devolver a permissão e conferir que vo
 **Acceptance Scenarios**:
 
 1. **Given** um Supervisor e um Gerente da sua equipe, **When** o Supervisor consulta as
-   permissões do Gerente, **Then** vê as permissões do papel e as específicas, separadamente.
-2. **Given** um Gerente com a permissão de excluir usuários pelo papel, **When** o Supervisor
+   permissões do Gerente, **Then** vê a lista de permissões que o Gerente tem.
+2. **Given** um Gerente com a permissão de excluir usuários, **When** o Supervisor
    retira essa permissão dele, **Then** o Gerente passa a ter a exclusão recusada por falta de
    permissão.
 3. **Given** um usuário fora da equipe de quem solicita, **When** alguém tenta alterar as
@@ -313,20 +320,22 @@ exclusão passa a ser recusada para ele; devolver a permissão e conferir que vo
   Gerente e Vendedores) para validação manual.
 - **FR-034**: O controle de permissões DEVE usar o pacote `spatie/laravel-permission` (papéis e
   permissões), e NÃO as Policies padrão do Laravel. As quatro funções (Admin, Supervisor,
-  Gerente e Vendedor) DEVEM existir como papéis do pacote, cada usuário DEVE ter exatamente um
-  papel, e as ações de gestão de usuários
-  (listar, consultar, cadastrar, editar, desativar/reativar e excluir) DEVEM ser permissões
-  atribuídas a esses papéis. O seeder DEVE criar os papéis e as permissões.
+  Gerente e Vendedor) DEVEM existir como papéis do pacote e cada usuário DEVE ter exatamente um
+  papel, que identifica a sua função e NÃO concede permissões. As ações de gestão de usuários
+  (listar, consultar, cadastrar, editar, desativar/reativar, excluir e gerenciar permissões)
+  DEVEM ser permissões atribuídas diretamente a cada usuário. O seeder DEVE criar os papéis e as
+  permissões.
 - **FR-035**: A regra de que cada usuário só gerencia a própria sub-hierarquia (FR-004, FR-022)
   continua valendo além das permissões: ter a permissão de uma ação não dá acesso a usuários
   fora da equipe de quem solicita.
-- **FR-036**: As permissões efetivas de um usuário DEVEM ser as do seu papel mais as
-  específicas dadas a ele, menos as específicas retiradas dele.
+- **FR-036**: As permissões de um usuário DEVEM ser exatamente as atribuídas diretamente a ele.
+  No cadastro, o novo usuário DEVE receber as permissões padrão da sua função que o cadastrante
+  também possui (o que garante FR-038 já no cadastro).
 - **FR-037**: O sistema DEVE permitir que um gestor consulte as permissões de um usuário da sua
-  sub-hierarquia (do papel e específicas, separadamente) e dê ou tire permissões específicas
-  dele. A operação segue as mesmas regras de sub-hierarquia (FR-004, FR-022).
+  sub-hierarquia e dê ou tire permissões dele; tirar uma permissão DEVE apenas remover o vínculo
+  entre o usuário e a permissão. A operação segue as mesmas regras de sub-hierarquia (FR-004, FR-022).
 - **FR-038**: Um gestor SÓ DEVE poder dar a um subordinado permissões que ele mesmo tem
-  (efetivas, conforme FR-036); ele PODE tirar qualquer permissão do subordinado.
+  (conforme FR-036); ele PODE tirar qualquer permissão do subordinado.
 
 ### Key Entities
 
@@ -363,9 +372,11 @@ exclusão passa a ser recusada para ele; devolver a permissão e conferir que vo
 - A estrutura atual de usuários do projeto (baseada em e-mail) será substituída por esta, pois
   os usuários são identificados por login.
 - Não há restauração de usuários excluídos nesta spec.
-- O Vendedor não recebe permissões de gestão de usuários pelo papel, pois não possui
-  subordinados. A distribuição exata das permissões entre os papéis será detalhada no plano,
-  seguindo as regras de cadastro e gestão desta spec.
+- Permissões padrão por função (confirmadas pelo responsável): Admin, Supervisor e Gerente
+  recebem todas as permissões de gestão de usuários; o Vendedor não recebe nenhuma, pois não
+  possui subordinados.
+- Alterar a lista padrão de uma função depois não muda as permissões de quem já foi
+  cadastrado; vale apenas para novos cadastros.
 - Papéis e a lista de permissões existentes são criados pelo seeder; criar papéis ou
   permissões novas pelo sistema está fora do escopo.
 - As regras de cascata, hierarquia estrita, cadastro somente do nível imediatamente abaixo e

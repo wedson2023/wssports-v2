@@ -1,11 +1,12 @@
 <!--
 Sync Impact Report
-- Version change: 1.4.0 → 1.5.0 (MINOR: nova regra obrigatória de paginação nas listagens)
-- Princípios modificados: nenhum (I a V mantidos sem alteração)
+- Version change: 1.5.0 → 1.6.0 (MINOR: exceção para tabelas de pacotes de terceiros)
+- Princípios modificados:
+  - I. Nomenclatura em snake_case (título mantido): tabelas criadas por pacotes de terceiros
+    (ex.: spatie/laravel-permission) mantêm os nomes padrão em inglês e dispensam `deleted_at`
 - Princípios adicionados: nenhum
 - Seções alteradas:
-  - Stack e Restrições Técnicas: toda listagem DEVE ser paginada, com no máximo 100 registros
-    por página
+  - Stack e Restrições Técnicas: regra de timestamps/soft delete passa a citar a exceção
 - Seções adicionadas: nenhuma
 - Seções removidas: nenhuma
 - TODOs pendentes: nenhum
@@ -29,6 +30,11 @@ Sync Impact Report
 - Toda nomenclatura de banco de dados (migrations, tabelas, colunas, índices, chaves
   estrangeiras, seeders e factories que as referenciem) DEVE ser escrita em **português**
   (ex.: tabela `apostas`, já created_at, updated_at, deleted_at são em inglês).
+- **Exceção — tabelas de pacotes de terceiros**: tabelas criadas pela migration de um pacote de
+  terceiros (ex.: `spatie/laravel-permission` — `roles`, `permissions`, `model_has_roles`,
+  `model_has_permissions`, `role_has_permissions`) mantêm os nomes padrão do pacote em inglês
+  (tabelas e colunas) e NÃO precisam ter `deleted_at`. Tabelas criadas pelo próprio projeto
+  continuam em português, com `created_at`, `updated_at` e `deleted_at`.
 - Nomes de pastas DEVEM ser escritos em **inglês** e `snake_case` (ex.: `components`,
   `services`, `pages`, `user_roles`).
 - **Exceção — pastas PSR-4**: pastas dentro de `app/` que correspondem a namespaces PSR-4
@@ -40,7 +46,8 @@ Sync Impact Report
 banco em português reflete o domínio do negócio, e as pastas em inglês seguem a convenção do
 ecossistema Laravel/React. As exceções existem porque o autoload PSR-4 liga a pasta ao
 namespace e o Laravel só reconhece métodos de framework pelo nome original; renomeá-los
-quebraria o funcionamento.
+quebraria o funcionamento. Tabelas de pacotes seguem o padrão do pacote para manter
+compatibilidade com a sua documentação e com outros sistemas que usam o mesmo pacote.
 
 ### II. Idioma por Contexto
 
@@ -101,7 +108,7 @@ violar o escopo estrito de edição.
 - Frontend: React/JavaScript com build via Vite; componentes em arquivos `.jsx`.
 - Novas dependências ou mudanças de stack DEVEM ser justificadas no plano da feature
   (`/speckit-plan`) antes de serem adotadas, respeitando o Princípio IV.
-- Timestamps e soft delete: toda tabela criada DEVE conter as colunas `created_at`,
+- Timestamps e soft delete: toda tabela criada pelo projeto DEVE conter as colunas `created_at`,
   `updated_at` e `deleted_at` (na migration, `$table->timestamps()` e
   `$table->softDeletes()`), e o model correspondente DEVE usar a trait `SoftDeletes`.
   Exclusões de registros DEVEM ser lógicas (soft delete); exclusão física só é permitida se
@@ -146,4 +153,4 @@ de memória previsíveis mesmo com grandes volumes de dados.
 - A conformidade DEVE ser verificada em todo plano (Constitution Check), em toda lista de
   tarefas e em toda revisão de código.
 
-**Version**: 1.5.0 | **Ratified**: 2026-09-25 | **Last Amended**: 2026-09-28
+**Version**: 1.6.0 | **Ratified**: 2026-09-25 | **Last Amended**: 2026-09-28
