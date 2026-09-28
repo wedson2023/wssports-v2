@@ -29,6 +29,16 @@
   na hora.
 - Q: O sistema deve limitar tentativas de login erradas? → A: Sim; após 5 tentativas erradas
   em 1 minuto (mesmo login + mesmo IP), novas tentativas são recusadas por 1 minuto.
+- Q: Como será feito o controle de permissões? → A: Com o pacote `spatie/laravel-permission`
+  (papéis e permissões), e não com as Policies padrão do Laravel.
+- Q: A função do usuário fica só como papel do spatie ou também numa coluna `funcao`? → A: Só
+  como papel do spatie; não existe coluna `funcao`, e cada usuário tem um único papel.
+- Q: As permissões de cada papel serão fixas ou alteráveis pelo sistema? → A: Além das
+  permissões do papel (criadas pelo seeder), o gestor pode dar ou tirar permissões específicas
+  de um subordinado.
+- Q: Um gestor pode dar a um subordinado uma permissão que ele mesmo não tem? → A: Não; só
+  pode dar permissões que ele mesmo tem (efetivas), e pode tirar qualquer permissão do
+  subordinado.
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -176,6 +186,32 @@ somem da listagem, mas continuam registrados.
 
 ---
 
+### User Story 6 - Ajustar permissões específicas de um subordinado (Priority: P3)
+
+Um usuário de gestão consulta as permissões de um subordinado e pode dar ou tirar permissões
+específicas dele, além das que ele já recebe pelo papel.
+
+**Why this priority**: permite ajustes finos (por exemplo, impedir um Gerente de excluir
+usuários), mas o sistema funciona com as permissões padrão de cada papel.
+
+**Independent Test**: tirar de um Gerente a permissão de excluir usuários e conferir que a
+exclusão passa a ser recusada para ele; devolver a permissão e conferir que volta a funcionar.
+
+**Acceptance Scenarios**:
+
+1. **Given** um Supervisor e um Gerente da sua equipe, **When** o Supervisor consulta as
+   permissões do Gerente, **Then** vê as permissões do papel e as específicas, separadamente.
+2. **Given** um Gerente com a permissão de excluir usuários pelo papel, **When** o Supervisor
+   retira essa permissão dele, **Then** o Gerente passa a ter a exclusão recusada por falta de
+   permissão.
+3. **Given** um usuário fora da equipe de quem solicita, **When** alguém tenta alterar as
+   permissões dele, **Then** a operação é recusada com "não encontrado".
+4. **Given** um Gerente sem a permissão de excluir usuários, **When** ele tenta dar essa
+   permissão a um Vendedor seu, **Then** a operação é recusada, pois ele só pode dar permissões
+   que ele mesmo tem.
+
+---
+
 ### Edge Cases
 
 - O Admin raiz não está abaixo de ninguém; portanto não pode ser consultado, editado,
@@ -213,7 +249,9 @@ somem da listagem, mas continuam registrados.
 **Dados do usuário**
 
 - **FR-007**: Cada usuário DEVE possuir: nome, função, login, senha, telefone, endereço,
-  indicação de ativo, superior e as datas `created_at`, `updated_at` e `deleted_at`.
+  indicação de ativo, superior e as datas `created_at`, `updated_at` e `deleted_at`. A função
+  é o papel (role) do `spatie/laravel-permission` atribuído ao usuário; NÃO existe coluna
+  `funcao` na tabela de usuários.
 - **FR-008**: Nome, função, login e senha DEVEM ser obrigatórios; telefone e endereço DEVEM
   ser opcionais.
 - **FR-009**: O login DEVE ser único entre todos os usuários, incluindo os excluídos, sem
@@ -273,14 +311,31 @@ somem da listagem, mas continuam registrados.
   soft delete), conforme a constituição.
 - **FR-026**: O seeder DEVE criar o Admin raiz e uma hierarquia de exemplo (Supervisor,
   Gerente e Vendedores) para validação manual.
+- **FR-034**: O controle de permissões DEVE usar o pacote `spatie/laravel-permission` (papéis e
+  permissões), e NÃO as Policies padrão do Laravel. As quatro funções (Admin, Supervisor,
+  Gerente e Vendedor) DEVEM existir como papéis do pacote, cada usuário DEVE ter exatamente um
+  papel, e as ações de gestão de usuários
+  (listar, consultar, cadastrar, editar, desativar/reativar e excluir) DEVEM ser permissões
+  atribuídas a esses papéis. O seeder DEVE criar os papéis e as permissões.
+- **FR-035**: A regra de que cada usuário só gerencia a própria sub-hierarquia (FR-004, FR-022)
+  continua valendo além das permissões: ter a permissão de uma ação não dá acesso a usuários
+  fora da equipe de quem solicita.
+- **FR-036**: As permissões efetivas de um usuário DEVEM ser as do seu papel mais as
+  específicas dadas a ele, menos as específicas retiradas dele.
+- **FR-037**: O sistema DEVE permitir que um gestor consulte as permissões de um usuário da sua
+  sub-hierarquia (do papel e específicas, separadamente) e dê ou tire permissões específicas
+  dele. A operação segue as mesmas regras de sub-hierarquia (FR-004, FR-022).
+- **FR-038**: Um gestor SÓ DEVE poder dar a um subordinado permissões que ele mesmo tem
+  (efetivas, conforme FR-036); ele PODE tirar qualquer permissão do subordinado.
 
 ### Key Entities
 
 - **Usuário**: pessoa que opera o sistema de apostas. Atributos: nome, função, login, senha,
   telefone, endereço, ativo, `created_at`, `updated_at` e `deleted_at`. Cada usuário pertence a
   um superior (exceto o Admin raiz) e pode ter vários subordinados.
-- **Função**: nível hierárquico do usuário (Admin, Supervisor, Gerente ou Vendedor). Define o
-  que o usuário pode cadastrar e qual função o seu superior deve ter.
+- **Função**: nível hierárquico do usuário (Admin, Supervisor, Gerente ou Vendedor),
+  representado como papel (role) do `spatie/laravel-permission`, um por usuário. Define o que o
+  usuário pode cadastrar, quais permissões ele tem e qual função o seu superior deve ter.
 - **Hierarquia**: árvore formada pelos vínculos usuário → superior, com o Admin raiz no topo. A
   sub-hierarquia de um usuário é o conjunto de todos os usuários abaixo dele, em qualquer nível.
 
@@ -308,6 +363,11 @@ somem da listagem, mas continuam registrados.
 - A estrutura atual de usuários do projeto (baseada em e-mail) será substituída por esta, pois
   os usuários são identificados por login.
 - Não há restauração de usuários excluídos nesta spec.
+- O Vendedor não recebe permissões de gestão de usuários pelo papel, pois não possui
+  subordinados. A distribuição exata das permissões entre os papéis será detalhada no plano,
+  seguindo as regras de cadastro e gestão desta spec.
+- Papéis e a lista de permissões existentes são criados pelo seeder; criar papéis ou
+  permissões novas pelo sistema está fora do escopo.
 - As regras de cascata, hierarquia estrita, cadastro somente do nível imediatamente abaixo e
   bloqueio do próprio registro seguem as decisões tomadas pelo responsável na versão anterior
   desta spec.
