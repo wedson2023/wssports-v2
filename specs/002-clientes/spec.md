@@ -93,6 +93,12 @@ de afiliados, depósito via PIX/gateway e saque, bônus, rollover, cashback e ca
   máximo de depósito, valor máximo de conversão do bônus, odd mínima de aposta simples e odd
   mínima de aposta múltipla. Também entra um mecanismo para estornar (rollback) a promoção de
   todos os clientes que a receberam.
+- Q: Onde ficam as permissões de clientes e quem as recebe por padrão? → A: No mesmo lugar e
+  padrão das permissões de usuários (`Funcao`), com Admin e Supervisor recebendo todas e o Gerente
+  as que pode usar (constituição v1.14.0, Princípio VI).
+- Q: Como ficam as URLs? → A: Caminhos de rota e prefixos em kebab-case (ex.:
+  `/area-cliente/meus-dados`); parâmetros de query string e chaves JSON continuam em snake_case
+  (ex.: `?por_pagina=20`) (constituição v1.16.0).
 - Q: As regras de uso das promoções e dos saques são aplicadas nesta spec? → A: Não. Esta spec
   cria a estrutura, o cadastro e a validação dessas regras e o estorno de promoções; a aplicação
   do rollover, da conversão do bônus, dos limites de depósito e dos limites de saque fica para as
@@ -876,9 +882,10 @@ transações de estorno.
   gestão de clientes e a área do cliente vão usar.
 - "Movimentação de apostas" na gestão de clientes depende da spec de apostas e será acrescentada
   por ela.
-- Permissões padrão por função: o Admin recebe todas as permissões de clientes e de promoções;
-  Supervisor, Gerente e Vendedor não recebem nenhuma por padrão e podem recebê-las pela gestão de
-  permissões da spec 001, dentro das restrições por função de FR-055 e FR-081.
+- Permissões padrão por função, no mesmo padrão das permissões de usuários (`Funcao`): Admin e
+  Supervisor recebem as 10 permissões de clientes e de promoções; Gerente recebe as 6 que pode usar
+  (todas, exceto excluir, restaurar, configurações padrão e estorno); Vendedor não recebe nenhuma.
+  Ajustes individuais continuam pela gestão de permissões da spec 001.
 - Os valores de enum seguem a constituição v1.13.0: gravados em português, com a primeira letra
   maiúscula e acentos (ex.: `'Não informado'`, `'Ajuste manual'`, `'Primeiro depósito'`,
   `'Transferência bancária'`).

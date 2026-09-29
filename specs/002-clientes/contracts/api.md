@@ -2,25 +2,28 @@
 
 **Feature**: `002-clientes` | **Data**: 2026-09-29 | **Plano**: [../plan.md](../plan.md)
 
-Rotas novas em `routes/api.php` (prefixo `/api`). As rotas da spec 001 não mudam.
+Rotas novas em `routes/api.php` (prefixo `/api`). Caminhos de rota e prefixos em kebab-case
+(constituição v1.16.0); parâmetros de query string e chaves JSON em snake_case. As rotas da spec 001
+não mudam.
 
 ```php
 // área do cliente (guard clientes)
-Route::prefix('area_cliente')->group(function () {
-    Route::post('cadastro', [AreaClienteCadastroController::class, 'store'])->middleware('throttle:5,1');
+Route::prefix('area-cliente')->group(function () {
+    // limite de 5 cadastros por minuto por IP aplicado no StoreClientesRequest
+    Route::post('cadastro', [AreaClienteCadastroController::class, 'store']);
     Route::post('auth/login', [AreaClienteAutenticacaoController::class, 'login']);
-    Route::post('auth/recuperar_senha', [AreaClienteRecuperacaoSenhaController::class, 'solicitar']);
-    Route::post('auth/redefinir_senha', [AreaClienteRecuperacaoSenhaController::class, 'redefinir']);
+    Route::post('auth/recuperar-senha', [AreaClienteRecuperacaoSenhaController::class, 'solicitar']);
+    Route::post('auth/redefinir-senha', [AreaClienteRecuperacaoSenhaController::class, 'redefinir']);
 
     Route::middleware(['auth:clientes', GarantirAcessoCliente::class])->group(function () {
         Route::post('auth/refresh', [AreaClienteAutenticacaoController::class, 'refresh']);
         Route::post('auth/logout', [AreaClienteAutenticacaoController::class, 'logout']);
-        Route::get('meus_dados', [AreaClienteMeusDadosController::class, 'show']);
-        Route::patch('meus_dados', [AreaClienteMeusDadosController::class, 'update']);
-        Route::put('meus_dados/senha', [AreaClienteMeusDadosController::class, 'alterar_senha']);
-        Route::get('meus_dados/extrato', [AreaClienteMeusDadosController::class, 'extrato']);
-        Route::apiResource('meios_pagamento', AreaClienteMeiosPagamentoController::class)
-            ->parameters(['meios_pagamento' => 'meio_pagamento']);
+        Route::get('meus-dados', [AreaClienteMeusDadosController::class, 'show']);
+        Route::patch('meus-dados', [AreaClienteMeusDadosController::class, 'update']);
+        Route::put('meus-dados/senha', [AreaClienteMeusDadosController::class, 'alterar_senha']);
+        Route::get('meus-dados/extrato', [AreaClienteMeusDadosController::class, 'extrato']);
+        Route::apiResource('meios-pagamento', AreaClienteMeiosPagamentoController::class)
+            ->parameters(['meios-pagamento' => 'meio_pagamento']);
     });
 });
 
@@ -37,15 +40,15 @@ Route::middleware(['auth:api', 'garantir_acesso'])->group(function () {
     Route::get('clientes/{cliente}/configuracoes', [ClientesConfiguracoesController::class, 'show']);
     Route::put('clientes/{cliente}/configuracoes', [ClientesConfiguracoesController::class, 'update']);
 
-    Route::apiResource('clientes.meios_pagamento', ClientesMeiosPagamentoController::class)
-        ->except('show')->parameters(['meios_pagamento' => 'meio_pagamento'])->scoped();
+    Route::apiResource('clientes.meios-pagamento', ClientesMeiosPagamentoController::class)
+        ->except('show')->parameters(['meios-pagamento' => 'meio_pagamento']);  // pertença ao cliente checada no controller
 
-    Route::get('clientes_configuracoes_padrao', [ClientesConfiguracoesPadraoController::class, 'show']);
-    Route::put('clientes_configuracoes_padrao', [ClientesConfiguracoesPadraoController::class, 'update']);
+    Route::get('clientes-configuracoes-padrao', [ClientesConfiguracoesPadraoController::class, 'show']);
+    Route::put('clientes-configuracoes-padrao', [ClientesConfiguracoesPadraoController::class, 'update']);
 
-    Route::post('clientes_promocoes/{promocao}/estornar', [ClientesPromocoesController::class, 'estornar']);
-    Route::apiResource('clientes_promocoes', ClientesPromocoesController::class)
-        ->parameters(['clientes_promocoes' => 'promocao']);
+    Route::post('clientes-promocoes/{promocao}/estornar', [ClientesPromocoesController::class, 'estornar']);
+    Route::apiResource('clientes-promocoes', ClientesPromocoesController::class)
+        ->parameters(['clientes-promocoes' => 'promocao']);
 });
 ```
 
@@ -101,21 +104,21 @@ dígitos), `"email": "m***@mail.com"`. Na listagem de excluídos aparece `delete
 
 | Rota | Corpo / parâmetros | Sucesso | Erros |
 |---|---|---|---|
-| `POST /api/area_cliente/cadastro` | `nome`, `ddi?` (padrão 55), `telefone`, `email?`, `password`, `password_confirmation`, `cpf?`, `data_nascimento`, `genero`, `codigo_afiliado?`, `aceita_promocao?` (padrão `true`) | `201 {"cliente", "token", "tipo": "bearer", "expira_em"}` | `429` (mais de 5 por minuto do mesmo IP); `422` (duplicidade, CPF/e-mail inválido, menor de 18, senha fraca ou confirmação diferente) |
-| `POST /api/area_cliente/auth/login` | `ddi?`, `telefone`, `password` | `200 {"token", "tipo": "bearer", "expira_em": 3600}` | `401 "Telefone ou senha inválidos."` (inclui excluído); `403` inativo; `422`; `429` |
-| `POST /api/area_cliente/auth/refresh` | — | `200` com novo token | `401`; `403` |
-| `POST /api/area_cliente/auth/logout` | — | `204` | `401` |
-| `POST /api/area_cliente/auth/recuperar_senha` | `ddi?`, `telefone` | `200 {"message": "Se o telefone estiver cadastrado, enviaremos um código."}` (sempre igual) | `422`; `429` (menos de 1 min) |
-| `POST /api/area_cliente/auth/redefinir_senha` | `ddi?`, `telefone`, `codigo`, `password`, `password_confirmation` | `204` (tokens anteriores deixam de valer) | `422 "Código inválido ou expirado."`; `422` senha fraca |
-| `GET /api/area_cliente/meus_dados` | — | `200` `cliente` | `401`; `403` |
-| `PATCH /api/area_cliente/meus_dados` | `nome?`, `genero?`, `email?`, `aceita_promocao?` | `200` `cliente` | `422` (inclui enviar `ddi`, `telefone`, `cpf` ou `data_nascimento`) |
-| `PUT /api/area_cliente/meus_dados/senha` | `senha_atual`, `password`, `password_confirmation` | `204` (todos os tokens, inclusive o atual, deixam de valer) | `422 "A senha atual está incorreta."` |
-| `GET /api/area_cliente/meus_dados/extrato` | `data_inicial?`, `data_final?` (Y-m-d), `carteira?`, `por_pagina?` | `200` paginado de `transacao` (sem `autor`) | `422` |
-| `GET /api/area_cliente/meios_pagamento` | — | `200` lista de `meio_pagamento` (sem máscara) | `401` |
-| `POST /api/area_cliente/meios_pagamento` | campos de `meio_pagamento` conforme `tipo` | `201` | `422` (tipo de chave × chave, duplicidade) |
-| `GET /api/area_cliente/meios_pagamento/{meio_pagamento}` | — | `200` | `404` (inclui de outro cliente) |
-| `PUT/PATCH /api/area_cliente/meios_pagamento/{meio_pagamento}` | campos; `principal: true` marca como principal | `200` | `404`; `422` |
-| `DELETE /api/area_cliente/meios_pagamento/{meio_pagamento}` | — | `204` (se era o principal, o mais antigo restante vira principal) | `404` |
+| `POST /api/area-cliente/cadastro` | `nome`, `ddi?` (padrão 55), `telefone`, `email?`, `password`, `password_confirmation`, `cpf?`, `data_nascimento`, `genero`, `codigo_afiliado?`, `aceita_promocao?` (padrão `true`) | `201 {"cliente", "token", "tipo": "bearer", "expira_em"}` | `429` (mais de 5 por minuto do mesmo IP); `422` (duplicidade, CPF/e-mail inválido, menor de 18, senha fraca ou confirmação diferente) |
+| `POST /api/area-cliente/auth/login` | `ddi?`, `telefone`, `password` | `200 {"token", "tipo": "bearer", "expira_em": 3600}` | `401 "Telefone ou senha inválidos."` (inclui excluído); `403` inativo; `422`; `429` |
+| `POST /api/area-cliente/auth/refresh` | — | `200` com novo token | `401`; `403` |
+| `POST /api/area-cliente/auth/logout` | — | `204` | `401` |
+| `POST /api/area-cliente/auth/recuperar-senha` | `ddi?`, `telefone` | `200 {"message": "Se o telefone estiver cadastrado, enviaremos um código."}` (sempre igual) | `422`; `429` (menos de 1 min) |
+| `POST /api/area-cliente/auth/redefinir-senha` | `ddi?`, `telefone`, `codigo`, `password`, `password_confirmation` | `204` (tokens anteriores deixam de valer) | `422 "Código inválido ou expirado."`; `422` senha fraca |
+| `GET /api/area-cliente/meus-dados` | — | `200` `cliente` | `401`; `403` |
+| `PATCH /api/area-cliente/meus-dados` | `nome?`, `genero?`, `email?`, `aceita_promocao?` | `200` `cliente` | `422` (inclui enviar `ddi`, `telefone`, `cpf` ou `data_nascimento`) |
+| `PUT /api/area-cliente/meus-dados/senha` | `senha_atual`, `password`, `password_confirmation` | `204` (todos os tokens, inclusive o atual, deixam de valer) | `422 "A senha atual está incorreta."` |
+| `GET /api/area-cliente/meus-dados/extrato` | `data_inicial?`, `data_final?` (Y-m-d), `carteira?`, `por_pagina?` | `200` paginado de `transacao` (sem `autor`) | `422` |
+| `GET /api/area-cliente/meios-pagamento` | — | `200` lista de `meio_pagamento` (sem máscara) | `401` |
+| `POST /api/area-cliente/meios-pagamento` | campos de `meio_pagamento` conforme `tipo` | `201` | `422` (tipo de chave × chave, duplicidade) |
+| `GET /api/area-cliente/meios-pagamento/{meio_pagamento}` | — | `200` | `404` (inclui de outro cliente) |
+| `PUT/PATCH /api/area-cliente/meios-pagamento/{meio_pagamento}` | campos; `principal: true` marca como principal | `200` | `404`; `422` |
+| `DELETE /api/area-cliente/meios-pagamento/{meio_pagamento}` | — | `204` (se era o principal, o mais antigo restante vira principal) | `404` |
 
 ## Objeto `meio_pagamento`
 
@@ -173,12 +176,12 @@ campos `pix_*` nulos. No painel, sem `clientes.ver_dados_completos`, `pix_chave`
 | `POST /api/clientes/{cliente}/transacoes` | `clientes.movimentar_saldo` | `carteira`, `tipo`, `valor` (> 0, 2 casas), `observacao` | `201` (origem `"Ajuste manual"`) | `404`; `422 "Saldo insuficiente."`; `422` |
 | `GET /api/clientes/{cliente}/configuracoes` | `clientes.listar` | — | `200` `configuracoes` | `404` |
 | `PUT /api/clientes/{cliente}/configuracoes` | `clientes.editar_configuracoes` | todos os campos de `configuracoes` | `200` | `404`; `422` |
-| `GET /api/clientes/{cliente}/meios_pagamento` | `clientes.listar` | — | `200` lista (mascarada sem `ver_dados_completos`) | `404` |
-| `POST /api/clientes/{cliente}/meios_pagamento` | `clientes.editar` | campos de `meio_pagamento` | `201` | `404`; `422` |
-| `PUT/PATCH /api/clientes/{cliente}/meios_pagamento/{meio_pagamento}` | `clientes.editar` | campos; `principal?` | `200` | `404`; `422` |
-| `DELETE /api/clientes/{cliente}/meios_pagamento/{meio_pagamento}` | `clientes.editar` | — | `204` | `404` |
-| `GET /api/clientes_configuracoes_padrao` | `clientes.editar_configuracoes_padrao` (Admin/Supervisor) | — | `200` | `403` |
-| `PUT /api/clientes_configuracoes_padrao` | `clientes.editar_configuracoes_padrao` (Admin/Supervisor) | todos os campos | `200` | `403`; `422` |
+| `GET /api/clientes/{cliente}/meios-pagamento` | `clientes.listar` | — | `200` lista (mascarada sem `ver_dados_completos`) | `404` |
+| `POST /api/clientes/{cliente}/meios-pagamento` | `clientes.editar` | campos de `meio_pagamento` | `201` | `404`; `422` |
+| `PUT/PATCH /api/clientes/{cliente}/meios-pagamento/{meio_pagamento}` | `clientes.editar` | campos; `principal?` | `200` | `404`; `422` |
+| `DELETE /api/clientes/{cliente}/meios-pagamento/{meio_pagamento}` | `clientes.editar` | — | `204` | `404` |
+| `GET /api/clientes-configuracoes-padrao` | `clientes.editar_configuracoes_padrao` (Admin/Supervisor) | — | `200` | `403` |
+| `PUT /api/clientes-configuracoes-padrao` | `clientes.editar_configuracoes_padrao` (Admin/Supervisor) | todos os campos | `200` | `403`; `422` |
 
 ```json
 {
@@ -207,12 +210,12 @@ campos `pix_*` nulos. No painel, sem `clientes.ver_dados_completos`, `pix_chave`
 
 | Rota | Permissão | Corpo / parâmetros | Sucesso | Erros |
 |---|---|---|---|---|
-| `GET /api/clientes_promocoes` | `clientes_promocoes.gerenciar` | `ativa?`, `modalidade?`, `categoria?`, `por_pagina?` | `200` paginado | `403` |
-| `GET /api/clientes_promocoes/{promocao}` | `clientes_promocoes.gerenciar` | — | `200` | `404` |
-| `POST /api/clientes_promocoes` | `clientes_promocoes.gerenciar` | `nome`, `descricao?`, `modalidade`, `categoria`, `tipo_ganho`, `valor`, `rollover`, `valor_minimo_aposta`, `valor_maximo_aposta`, `valor_maximo_deposito?`, `valor_maximo_conversao`, `odd_minima_aposta_simples`, `odd_minima_aposta_multipla`, `data_inicio`, `data_fim?`, `ativa?` | `201` | `422` (sobreposição: "Já existe uma promoção ativa desta categoria e modalidade no período."; Percentual fora de depósito; rollover < 1 em primeiro depósito; regras incoerentes) |
-| `PUT/PATCH /api/clientes_promocoes/{promocao}` | `clientes_promocoes.gerenciar` | mesmos campos | `200` | `404`; `422` (inclui "Promoção já aplicada: valor, tipo de ganho, categoria e modalidade não podem mudar." e "Promoção estornada não pode ser alterada.") |
-| `DELETE /api/clientes_promocoes/{promocao}` | `clientes_promocoes.gerenciar` | — | `204` | `404` |
-| `POST /api/clientes_promocoes/{promocao}/estornar` | `clientes_promocoes.estornar` (Admin/Supervisor) | `motivo` (obrigatório, até 255) | `202` com a promoção (`estorno.situacao = "Em andamento"`) | `403`; `404`; `422 "Esta promoção já foi estornada."` |
+| `GET /api/clientes-promocoes` | `clientes_promocoes.gerenciar` | `ativa?`, `modalidade?`, `categoria?`, `por_pagina?` | `200` paginado | `403` |
+| `GET /api/clientes-promocoes/{promocao}` | `clientes_promocoes.gerenciar` | — | `200` | `404` |
+| `POST /api/clientes-promocoes` | `clientes_promocoes.gerenciar` | `nome`, `descricao?`, `modalidade`, `categoria`, `tipo_ganho`, `valor`, `rollover`, `valor_minimo_aposta`, `valor_maximo_aposta`, `valor_maximo_deposito?`, `valor_maximo_conversao`, `odd_minima_aposta_simples`, `odd_minima_aposta_multipla`, `data_inicio`, `data_fim?`, `ativa?` | `201` | `422` (sobreposição: "Já existe uma promoção ativa desta categoria e modalidade no período."; Percentual fora de depósito; rollover < 1 em primeiro depósito; regras incoerentes) |
+| `PUT/PATCH /api/clientes-promocoes/{promocao}` | `clientes_promocoes.gerenciar` | mesmos campos | `200` | `404`; `422` (inclui "Promoção já aplicada: valor, tipo de ganho, categoria e modalidade não podem mudar." e "Promoção estornada não pode ser alterada.") |
+| `DELETE /api/clientes-promocoes/{promocao}` | `clientes_promocoes.gerenciar` | — | `204` | `404` |
+| `POST /api/clientes-promocoes/{promocao}/estornar` | `clientes_promocoes.estornar` (Admin/Supervisor) | `motivo` (obrigatório, até 255) | `202` com a promoção (`estorno.situacao = "Em andamento"`) | `403`; `404`; `422 "Esta promoção já foi estornada."` |
 
 ```json
 {

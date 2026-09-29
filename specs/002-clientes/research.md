@@ -30,8 +30,10 @@ foram resolvidas nas sessões de Clarifications da [spec](spec.md).
 
 ## R-03. Permissões de clientes e restrição por função
 
-- **Decisão**: as 10 permissões (guard `api`, formato `<recurso>.<acao>`, constituição v1.11.0)
-  ficam no enum `App\Enums\PermissaoCliente`, que informa as funções que podem usar cada uma:
+- **Decisão (revisada em 2026-09-29, Princípio VI)**: as 10 permissões (guard `api`, formato
+  `<recurso>.<acao>`) ficam no enum `App\Enums\Funcao`, no mesmo padrão das permissões de
+  usuários: constante `PERMISSOES_CLIENTES` (e `PERMISSOES_CLIENTES_RESTRITAS`), com
+  `permissoes_padrao()` e `pode_usar()` definindo o que cada função recebe e pode usar:
   - Admin, Supervisor e Gerente: `clientes.listar`, `clientes.ver_dados_completos`,
     `clientes.editar`, `clientes.editar_configuracoes`, `clientes.movimentar_saldo`,
     `clientes_promocoes.gerenciar`;
@@ -39,10 +41,16 @@ foram resolvidas nas sessões de Clarifications da [spec](spec.md).
     `clientes.editar_configuracoes_padrao`, `clientes_promocoes.estornar`;
   - Vendedor: nenhuma.
 
-  Os controllers do painel checam as duas coisas numa única verificação (trait
-  `GarantirPermissaoCliente`): permissão direta **e** função permitida (FR-055, FR-081).
-- **Distribuição padrão**: o `ClientesSeeder` cria as permissões e as dá aos usuários com papel
-  Admin. Não altera o `PermissoesUsuariosController` nem o enum `Funcao` da spec 001.
+  Os controllers do painel checam as duas coisas numa única verificação
+  (`Funcao::usuario_pode()`, usado pelo trait `GarantirPermissaoCliente`): permissão direta **e**
+  função permitida (FR-055, FR-081).
+- **Distribuição padrão**: `Funcao::permissoes_padrao()` inclui as permissões de clientes — Admin e
+  Supervisor recebem as 10, Gerente as 6 não restritas, Vendedor nenhuma. Usuários novos recebem
+  no cadastro (fluxo da spec 001, sem mudar o `UsuariosController`); o `PapeisPermissoesSeeder`
+  cria as permissões e o `ClientesSeeder` distribui aos usuários já existentes.
+- **Histórico**: a primeira versão usava um enum separado (`PermissaoCliente`) só com o Admin
+  recebendo as permissões, para não alterar o `Funcao.php`. Foi substituída por decisão do
+  responsável, para seguir um único padrão entre recursos.
 
 ## R-04. Saldos em centavos inteiros e bloqueio de linha
 
@@ -178,7 +186,7 @@ foram resolvidas nas sessões de Clarifications da [spec](spec.md).
 
 ## R-17. Estorno de promoção em segundo plano
 
-- **Decisão**: `POST /api/clientes_promocoes/{promocao}/estornar` valida (não estornada, sem
+- **Decisão**: `POST /api/clientes-promocoes/{promocao}/estornar` valida (não estornada, sem
   estorno em andamento), grava na promoção `ativa = false`, `estorno_situacao = 'Em andamento'`,
   motivo, autor, início e o total de clientes a processar, e despacha o job
   `App\Jobs\EstornarPromocao` na fila `database` (já configurada: `QUEUE_CONNECTION=database` e

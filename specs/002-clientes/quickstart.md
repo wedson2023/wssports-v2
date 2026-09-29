@@ -30,11 +30,11 @@ intactas.
 ## 2. Conferir as rotas
 
 ```bash
-php artisan route:list --path=api/area_cliente
+php artisan route:list --path=api/area-cliente
 php artisan route:list --path=api/clientes
 ```
 
-**Esperado**: 15 rotas em `area_cliente` e 23 em `clientes`/`clientes_*` (sem `store` em
+**Esperado**: 15 rotas em `area-cliente` e 23 em `clientes`/`clientes_*` (sem `store` em
 `clientes`).
 
 ## 3. Roteiro
@@ -46,7 +46,7 @@ permissão, dê ou tire permissões pelas rotas da spec 001.
 
 | # | Ação | Esperado | Ref. |
 |---|---|---|---|
-| 1 | `POST /api/area_cliente/cadastro` com dados válidos, sem CPF e sem e-mail, sem promoção ativa | `201` com token; 3 saldos `"0.00"`; configurações iguais ao padrão; log "WhatsApp" de boas-vindas | US1-1, US1-5 |
+| 1 | `POST /api/area-cliente/cadastro` com dados válidos, sem CPF e sem e-mail, sem promoção ativa | `201` com token; 3 saldos `"0.00"`; configurações iguais ao padrão; log "WhatsApp" de boas-vindas | US1-1, US1-5 |
 | 2 | Cadastro com telefone repetido (com máscara `(11) 98888-7777`); com CPF repetido; com e-mail repetido em maiúsculas | `422` de duplicidade em cada caso | US1-3, US1-4, Edge |
 | 3 | Dois cadastros sem CPF e sem e-mail | ambos `201` (vazios não conflitam) | Edge |
 | 4 | CPF inválido; e-mail inválido; nascido há 17 anos; senha `abcdefgh`; confirmação diferente | `422` com a mensagem de cada caso | US1-6 a US1-8 |
@@ -54,7 +54,7 @@ permissão, dê ou tire permissões pelas rotas da spec 001.
 | 6 | Criar promoção `"Primeiro cadastro"`, `"Esportes"`, `"Fixo"`, `20.00` e cadastrar um cliente | `saldo_promocao_esportes = "20.00"` e transação `"Promoção"` com `referencia_id` | US1-2, FR-075 |
 | 7 | Cadastrar com `aceita_promocao: false` | saldos promocionais `"0.00"`, sem transação; `aceita_promocao` `false` nas configurações | US1-12 |
 | 8 | Login certo; senha errada; 6 erradas em 1 min | `200`; `401` genérico; `429` | US2-1, US2-2, US2-7 |
-| 9 | `token_cliente` em `GET /api/usuarios`; `token_admin` em `GET /api/area_cliente/meus_dados` | `401` nos dois | US2-4 |
+| 9 | `token_cliente` em `GET /api/usuarios`; `token_admin` em `GET /api/area-cliente/meus-dados` | `401` nos dois | US2-4 |
 | 10 | `refresh` e `logout`; reutilizar o token após o logout | novo token; `204`; `401` | US2-5, US2-6 |
 
 ### Recuperação de senha
@@ -85,7 +85,7 @@ permissão, dê ou tire permissões pelas rotas da spec 001.
 | 22 | `PATCH` na transferência com `principal: true` | ela vira principal e o Pix deixa de ser | US9-5 |
 | 23 | Outro cliente tenta `GET` o meio do primeiro | `404` | US9-6 |
 | 24 | Excluir o principal | o mais antigo restante vira principal | Edge |
-| 25 | Gerente sem `clientes.ver_dados_completos` em `GET /api/clientes/{id}/meios_pagamento` | chave e conta mascaradas | US9-7 |
+| 25 | Gerente sem `clientes.ver_dados_completos` em `GET /api/clientes/{id}/meios-pagamento` | chave e conta mascaradas | US9-7 |
 
 ### Saldos pelo painel
 
@@ -127,7 +127,7 @@ permissão, dê ou tire permissões pelas rotas da spec 001.
 | 44 | Promoção `"Primeiro depósito"` + `"Esportes"` no mesmo período | `201` | US8-3 |
 | 45 | `"Primeiro cadastro"` com `"Percentual"`; `"Primeiro depósito"` com `rollover: 0`; `"Percentual"` sem `valor_maximo_deposito`; `valor_minimo_aposta` > máximo | `422` em cada caso | US8-4, FR-065 a FR-067 |
 | 46 | Editar o `valor` de uma promoção já aplicada; editar o `nome` | `422`; `200` | FR-073 |
-| 47 | Com a promoção do passo 6 aplicada a 3 clientes (um deles com `saldo_promocao_esportes` reduzido a `5.00` por débito manual e outro com `0.00`, e um com `50.00` no `saldo` real), `POST /api/clientes_promocoes/{id}/estornar` com motivo | `202`; ao fim do job: saldos promocionais em `0.00`; transações `"Estorno"` de `20.00` e `5.00`; nenhuma para o de saldo `0.00`; `saldo` real intacto; promoção inativa com `estorno.situacao = "Concluído"` e contadores corretos | US10-1 a US10-4, FR-079 |
+| 47 | Com a promoção do passo 6 aplicada a 3 clientes (um deles com `saldo_promocao_esportes` reduzido a `5.00` por débito manual e outro com `0.00`, e um com `50.00` no `saldo` real), `POST /api/clientes-promocoes/{id}/estornar` com motivo | `202`; ao fim do job: saldos promocionais em `0.00`; transações `"Estorno"` de `20.00` e `5.00`; nenhuma para o de saldo `0.00`; `saldo` real intacto; promoção inativa com `estorno.situacao = "Concluído"` e contadores corretos | US10-1 a US10-4, FR-079 |
 | 48 | Estornar de novo; Gerente com `clientes_promocoes.estornar` tenta estornar outra | `422`; `403` | US10-5, US10-6 |
 | 49 | Parar o `queue:work` durante um estorno grande e religar | o estorno termina sem nenhum cliente com dois `"Estorno"` da mesma promoção | FR-080 |
 | 50 | Editar ou reativar a promoção estornada | `422` | FR-068 |

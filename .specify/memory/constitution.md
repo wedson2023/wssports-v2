@@ -1,16 +1,13 @@
 <!--
 Sync Impact Report
-- Version change: 1.12.0 → 1.13.0 (MINOR: exceção para siglas/termos consagrados e padrão de
-  enums)
+- Version change: 1.15.0 → 1.16.0 (MINOR: redefine o alcance da exceção de kebab-case)
 - Princípios modificados:
-  - I. Nomenclatura em snake_case: siglas e termos consagrados na programação (ex.: `ddi`,
-    `email`) podem ser usados em nomes; casos de enum PHP em `PascalCase` com acentos
-    (`Promoção`); valores de enum no banco com primeira letra maiúscula e acentos (`'Promoção'`,
-    `'Primeiro depósito'`)
-- Impacto: a spec 002-clientes (ainda não implementada) precisa trocar `codigo_pais` por `ddi` e
-  os valores de enum em minúsculas (`ajuste_manual`, `primeiro_cadastro`...) pelo novo padrão
+  - I. Nomenclatura em snake_case: a exceção "nomes em URLs" passa a valer só para caminhos de
+    rota e prefixos; parâmetros de query string voltam a usar `snake_case`
 - Princípios adicionados: nenhum
 - Seções alteradas: nenhuma
+- Impacto: código e artefatos das specs 001 e 002 precisam voltar os parâmetros de query string
+  para `snake_case` (`por_pagina`, `data_inicial`, `ordenar_por`...), mantendo os caminhos com hífen
 - Seções adicionadas: nenhuma
 - Seções removidas: nenhuma
 - TODOs pendentes: nenhum
@@ -62,6 +59,11 @@ Sync Impact Report
   `recurso` é o nome da tabela principal a que a ação se refere e `acao` é um verbo ou expressão
   em `snake_case` (ex.: `usuarios.listar`, `clientes.excluir`, `clientes.movimentar_saldo`,
   `clientes_promocoes.gerenciar`).
+- **Exceção — caminhos de rota (kebab-case)**: os segmentos de rota e os prefixos de grupo DEVEM
+  usar hífen no lugar de underline (ex.: `/area-cliente/meus-dados`, `/clientes-promocoes`).
+  Parâmetros de query string continuam em `snake_case` (ex.: `?por_pagina=20&data_inicial=2026-09-01`),
+  assim como chaves de JSON (corpo e resposta), nomes de parâmetros de rota no código (ex.:
+  `{meio_pagamento}`), variáveis e colunas.
 - Nomes de pastas DEVEM ser escritos em **inglês** e `snake_case` (ex.: `components`,
   `services`, `pages`, `user_roles`).
 - **Exceção — pastas PSR-4**: pastas dentro de `app/` que correspondem a namespaces PSR-4
@@ -129,6 +131,20 @@ revisar; a confirmação prévia mantém o controle do código com o responsáve
 não aparecem durante a implementação incremental, mantendo o código fácil de ler e manter sem
 violar o escopo estrito de edição.
 
+### VI. Consistência de Padrões entre Recursos
+
+- Todo recurso novo (ex.: `clientes`) DEVE seguir a mesma estrutura já usada pelos recursos
+  existentes (ex.: `usuarios`): onde ficam as permissões e seus padrões por função, enums,
+  seeders, requests, resources, controllers e rotas.
+- Quando a implementação exigir um padrão diferente do existente, ou quando uma restrição (como
+  o Princípio IV) impedir seguir o padrão, a decisão NÃO PODE ser tomada sozinha: DEVE ser
+  apresentada ao responsável, com as opções e o impacto de cada uma, antes de entrar na spec, no
+  plano ou no código.
+
+**Rationale**: dois padrões para a mesma coisa tornam o código imprevisível e difícil de manter;
+decidir um desvio sem consultar o responsável tira dele o controle sobre a arquitetura do
+projeto.
+
 ## Stack e Restrições Técnicas
 
 - Backend: PHP ^8.2 com Laravel ^12.
@@ -157,7 +173,7 @@ de memória previsíveis mesmo com grandes volumes de dados.
 ## Fluxo de Desenvolvimento
 
 - Toda spec, plano e lista de tarefas DEVE passar pelo Constitution Check, verificando os
-  Princípios I a V antes da implementação.
+  Princípios I a VI antes da implementação.
 - Tarefas geradas DEVEM declarar explicitamente os arquivos que serão alterados, para que o
   escopo de edição (Princípio IV) seja verificável.
 - Antes de concluir cada tarefa, DEVE ser executada a revisão de legibilidade do código
@@ -170,6 +186,13 @@ de memória previsíveis mesmo com grandes volumes de dados.
   implementação. A validação das features é manual, seguindo os cenários de aceite da spec e o
   `quickstart.md`. Os arquivos de exemplo já existentes em `tests/` não são alterados
   (Princípio IV).
+- Alterações manuais em código já implementado: quando o responsável pedir uma alteração direta em
+  código de uma feature (fora dos comandos `/speckit-*`), a mesma entrega DEVE atualizar todos os
+  artefatos afetados para manter o sistema e a documentação coerentes: `spec.md` (requisitos,
+  cenários e Clarifications com a decisão), `plan.md`, `research.md`, `data-model.md`,
+  `contracts/`, `quickstart.md`, `tasks.md` (descrição das tarefas e nota da revisão), além de
+  seeders, migrations, rotas e a coleção do Postman quando envolvidos. Nenhum artefato pode ficar
+  descrevendo um comportamento diferente do código.
 - Coleção do Postman: sempre que uma rota da API for criada, alterada ou removida, a coleção
   `docs/postman/wssports_api.postman_collection.json` DEVE ser regenerada na mesma tarefa,
   **substituindo** o arquivo existente (sem criar cópias ou versões paralelas). A coleção DEVE
@@ -190,4 +213,4 @@ de memória previsíveis mesmo com grandes volumes de dados.
 - A conformidade DEVE ser verificada em todo plano (Constitution Check), em toda lista de
   tarefas e em toda revisão de código.
 
-**Version**: 1.13.0 | **Ratified**: 2026-09-25 | **Last Amended**: 2026-09-29
+**Version**: 1.16.0 | **Ratified**: 2026-09-25 | **Last Amended**: 2026-09-29

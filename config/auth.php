@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\Clientes;
 use App\Models\Usuarios;
 
 return [
@@ -48,6 +49,12 @@ return [
             'driver' => 'jwt',
             'provider' => 'users',
         ],
+
+        // autenticação dos clientes (apostadores) por token JWT, separada da do painel
+        'clientes' => [
+            'driver' => 'jwt',
+            'provider' => 'clientes',
+        ],
     ],
 
     /*
@@ -71,6 +78,12 @@ return [
         'users' => [
             'driver' => 'eloquent',
             'model' => env('AUTH_MODEL', Usuarios::class),
+        ],
+
+        // clientes (apostadores) da área externa do site
+        'clientes' => [
+            'driver' => 'eloquent',
+            'model' => Clientes::class,
         ],
 
         // 'users' => [

@@ -61,6 +61,8 @@ painel), 1 job
 | III. Componentes React | Sem frontend | ➖ N/A |
 | IV. Escopo estrito | Arquivos existentes alterados listados abaixo — mesma lista já autorizada em 2026-09-29 | ✅ Pass (confirmado) |
 | V. Legibilidade | Revisão ao final de cada tarefa | ✅ Pass |
+| VI. Consistência entre recursos (v1.14.0) | Permissões de clientes no enum `Funcao`, no mesmo padrão das de usuários (R-03) | ✅ Pass |
+| I. Caminhos de rota em kebab-case (v1.16.0) | `/area-cliente/meus-dados`, `/clientes-promocoes`; query string (`?por_pagina=`) e chaves JSON em snake_case | ✅ Pass |
 | Timestamps e soft delete | As 7 tabelas com `timestamps()` + `softDeletes()` e models com `SoftDeletes` | ✅ Pass |
 | Colunas sem FK (v1.10.0) | `codigo_afiliado`, `referencia_id`, `esportes_permitidos` sem FK, registradas nas premissas da spec (R-08) | ✅ Pass |
 | Paginação ≤ 100 | `por_pagina` 1–100, padrão 20 | ✅ Pass |
@@ -74,17 +76,21 @@ painel), 1 job
 
 - Alteração dos arquivos existentes listados abaixo: autorizada.
 - Nomes das permissões: padrão `<recurso>.<acao>`, igual à spec 001.
+- Permissões de clientes no `Funcao.php` e caminhos de rota em kebab-case: autorizado
+  (2026-09-29). Parâmetros de query string continuam em snake_case, sem mudança na spec 001.
 
 ### Arquivos existentes que serão alterados (Princípio IV)
 
 | Arquivo | Alteração | Motivo |
 |---|---|---|
 | `config/auth.php` | Acrescentar o guard `clientes` (driver `jwt`) e o provider `clientes` (model `Clientes`); guard `api` e provider `users` intactos | R-01, FR-014 |
-| `routes/api.php` | Acrescentar os grupos `area_cliente` e de gestão de clientes; rotas da spec 001 intactas | contrato |
+| `routes/api.php` | Acrescentar os grupos `area-cliente` e de gestão de clientes; rotas da spec 001 intactas | contrato |
 | `database/seeders/DatabaseSeeder.php` | Acrescentar `$this->call(ClientesSeeder::class)` ao final | FR-050, FR-062 |
 | `docs/postman/wssports_api.postman_collection.json` | Regenerado com as rotas novas e a variável `token_cliente` | Constituição |
+| `app/Enums/Funcao.php` | `PERMISSOES_CLIENTES`, `PERMISSOES_CLIENTES_RESTRITAS`, `permissoes_padrao()` com as de clientes, `pode_usar()` e `usuario_pode()` | R-03, Princípio VI |
+| `database/seeders/PapeisPermissoesSeeder.php` | Cria também as permissões de clientes | R-03 |
 
-Nenhum outro arquivo existente muda (`Funcao`, `Usuarios`, `GarantirAcesso`,
+Nenhum outro arquivo existente muda (`Usuarios`, `GarantirAcesso`,
 `PermissoesUsuariosController`, `bootstrap/app.php`, `config/queue.php` e migrations da spec 001
 ficam intactos).
 
@@ -125,7 +131,6 @@ app/
 │   ├── Genero.php                                    # NOVO
 │   ├── ModalidadePromocao.php                        # NOVO (+ carteira())
 │   ├── OrigemTransacao.php                           # NOVO
-│   ├── PermissaoCliente.php                          # NOVO: 10 permissões + funções permitidas
 │   ├── SituacaoEstorno.php                           # NOVO
 │   ├── TipoChavePix.php                              # NOVO
 │   ├── TipoConta.php                                 # NOVO

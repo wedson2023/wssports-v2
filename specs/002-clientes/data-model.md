@@ -197,22 +197,23 @@ Nomes das classes sem acento; casos em `PascalCase` com acento (R-05).
 | `TipoMeioPagamento` | Pix, TransferênciaBancária |
 | `TipoChavePix` | Cpf, Cnpj, Email, Telefone, ChaveAleatória |
 | `TipoConta` | Corrente, Poupança |
-| `PermissaoCliente` | as 10 permissões (+ `funcoes_permitidas()`, `permitida_para()`) |
 
 ## Permissões (guard `api`)
 
+Definidas em `App\Enums\Funcao` (`PERMISSOES_CLIENTES`), no mesmo padrão das de usuários.
+
 | Permissão | Funções que podem usar | Padrão |
 |---|---|---|
-| `clientes.listar` | Admin, Supervisor, Gerente | Admin |
-| `clientes.ver_dados_completos` | Admin, Supervisor, Gerente | Admin |
-| `clientes.editar` | Admin, Supervisor, Gerente | Admin |
-| `clientes.editar_configuracoes` | Admin, Supervisor, Gerente | Admin |
-| `clientes.movimentar_saldo` | Admin, Supervisor, Gerente | Admin |
-| `clientes_promocoes.gerenciar` | Admin, Supervisor, Gerente | Admin |
-| `clientes.excluir` | Admin, Supervisor | Admin |
-| `clientes.restaurar` | Admin, Supervisor | Admin |
-| `clientes.editar_configuracoes_padrao` | Admin, Supervisor | Admin |
-| `clientes_promocoes.estornar` | Admin, Supervisor | Admin |
+| `clientes.listar` | Admin, Supervisor, Gerente | Admin, Supervisor, Gerente |
+| `clientes.ver_dados_completos` | Admin, Supervisor, Gerente | Admin, Supervisor, Gerente |
+| `clientes.editar` | Admin, Supervisor, Gerente | Admin, Supervisor, Gerente |
+| `clientes.editar_configuracoes` | Admin, Supervisor, Gerente | Admin, Supervisor, Gerente |
+| `clientes.movimentar_saldo` | Admin, Supervisor, Gerente | Admin, Supervisor, Gerente |
+| `clientes_promocoes.gerenciar` | Admin, Supervisor, Gerente | Admin, Supervisor, Gerente |
+| `clientes.excluir` | Admin, Supervisor | Admin, Supervisor |
+| `clientes.restaurar` | Admin, Supervisor | Admin, Supervisor |
+| `clientes.editar_configuracoes_padrao` | Admin, Supervisor | Admin, Supervisor |
+| `clientes_promocoes.estornar` | Admin, Supervisor | Admin, Supervisor |
 
 ## Estados
 
