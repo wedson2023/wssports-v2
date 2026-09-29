@@ -14,11 +14,16 @@ return new class extends Migration
         Schema::create('usuarios', function (Blueprint $table) {
             $table->id();
             $table->string('nome');
-            $table->string('email')->unique();
-            $table->timestamp('email_verified_at')->nullable();
+            $table->string('login')->unique();
             $table->string('password');
+            $table->string('telefone', 20)->nullable();
+            $table->string('endereco')->nullable();
+            $table->boolean('ativo')->default(true);
+            // superior na hierarquia; sem cascata no banco, pois a exclusão é sempre lógica
+            $table->foreignId('usuarios_id')->nullable()->constrained('usuarios');
             $table->rememberToken();
             $table->timestamps();
+            $table->softDeletes();
         });
 
         Schema::create('password_reset_tokens', function (Blueprint $table) {

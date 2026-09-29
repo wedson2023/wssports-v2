@@ -1,0 +1,311 @@
+{
+  "info": {
+    "name": "WSSports API",
+    "description": "Rotas da API do WSSports (autenticação JWT, gestão de usuários e permissões).\n\nVariáveis da coleção:\n- base_url: endereço da API (ex.: http://127.0.0.1:8000/api)\n- token: preenchido automaticamente pelas requisições de login e refresh\n- usuario_id: id do usuário usado nas rotas com {usuario}\n- permissao: nome da permissão usada nas rotas de permissões\n\nFluxo: execute 'Login' primeiro; as demais rotas usam o token salvo.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      { "key": "token", "value": "{{token}}", "type": "string" }
+    ]
+  },
+  "variable": [
+    { "key": "base_url", "value": "http://127.0.0.1:8000/api", "type": "string" },
+    { "key": "token", "value": "", "type": "string" },
+    { "key": "usuario_id", "value": "4", "type": "string" },
+    { "key": "permissao", "value": "usuarios.excluir", "type": "string" }
+  ],
+  "item": [
+    {
+      "name": "Autenticação",
+      "item": [
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// salva o token retornado para as demais requisições",
+                  "if (pm.response.code === 200) {",
+                  "    pm.collectionVariables.set('token', pm.response.json().token);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"login\": \"admin\",\n    \"password\": \"password\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/login",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "login"]
+            },
+            "description": "Autentica por login e senha. 200 com token; 401 login/senha inválidos; 403 usuário inativo; 422 campos ausentes; 429 após 5 tentativas erradas em 1 minuto."
+          }
+        },
+        {
+          "name": "Renovar token (refresh)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// o token antigo é invalidado; guarda o novo",
+                  "if (pm.response.code === 200) {",
+                  "    pm.collectionVariables.set('token', pm.response.json().token);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/auth/refresh",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "refresh"]
+            },
+            "description": "Gera um novo token de 60 minutos e invalida o atual."
+          }
+        },
+        {
+          "name": "Logout",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// o token foi invalidado no servidor",
+                  "if (pm.response.code === 204) {",
+                  "    pm.collectionVariables.set('token', '');",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/auth/logout",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "logout"]
+            },
+            "description": "Invalida o token atual imediatamente (204)."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Usuários",
+      "item": [
+        {
+          "name": "Listar usuários",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/usuarios?por_pagina=15&page=1",
+              "host": ["{{base_url}}"],
+              "path": ["usuarios"],
+              "query": [
+                { "key": "funcao", "value": "Vendedor", "description": "Supervisor, Gerente ou Vendedor", "disabled": true },
+                { "key": "ativo", "value": "1", "description": "1 = ativos, 0 = inativos", "disabled": true },
+                { "key": "busca", "value": "", "description": "Busca parcial em nome ou login", "disabled": true },
+                { "key": "por_pagina", "value": "15", "description": "1 a 100 (padrão 15)" },
+                { "key": "page", "value": "1" }
+              ]
+            },
+            "description": "Lista a sub-hierarquia de quem está autenticado. Permissão: usuarios.listar."
+          }
+        },
+        {
+          "name": "Cadastrar usuário",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"nome\": \"Novo Supervisor\",\n    \"funcao\": \"Supervisor\",\n    \"login\": \"novo.supervisor\",\n    \"password\": \"segredo1\",\n    \"telefone\": \"(69) 99999-0000\",\n    \"endereco\": \"Rua B, 20\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/usuarios",
+              "host": ["{{base_url}}"],
+              "path": ["usuarios"]
+            },
+            "description": "Cadastra a função imediatamente abaixo da de quem está autenticado (Admin → Supervisor, Supervisor → Gerente, Gerente → Vendedor). Permissão: usuarios.cadastrar."
+          }
+        },
+        {
+          "name": "Consultar usuário",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/usuarios/{{usuario_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["usuarios", "{{usuario_id}}"]
+            },
+            "description": "Consulta um usuário da sub-hierarquia (404 fora dela). Permissão: usuarios.consultar."
+          }
+        },
+        {
+          "name": "Editar usuário",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"nome\": \"Nome Atualizado\",\n    \"telefone\": \"(69) 98888-1111\",\n    \"endereco\": \"Rua C, 30\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/usuarios/{{usuario_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["usuarios", "{{usuario_id}}"]
+            },
+            "description": "Edita dados cadastrais (nome, password, telefone, endereco, usuarios_id). Permissão: usuarios.editar. Função e login não podem ser alterados."
+          }
+        },
+        {
+          "name": "Desativar usuário (cascata)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"ativo\": false\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/usuarios/{{usuario_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["usuarios", "{{usuario_id}}"]
+            },
+            "description": "Desativa o usuário e toda a sua sub-hierarquia. Permissão: usuarios.alterar_situacao (independente de usuarios.editar)."
+          }
+        },
+        {
+          "name": "Reativar usuário (cascata)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"ativo\": true\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/usuarios/{{usuario_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["usuarios", "{{usuario_id}}"]
+            },
+            "description": "Reativa o usuário e toda a sua sub-hierarquia. Permissão: usuarios.alterar_situacao."
+          }
+        },
+        {
+          "name": "Excluir usuário (cascata)",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/usuarios/{{usuario_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["usuarios", "{{usuario_id}}"]
+            },
+            "description": "Exclusão lógica (soft delete) do usuário e de toda a sua sub-hierarquia (204). Permissão: usuarios.excluir."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Permissões do usuário",
+      "item": [
+        {
+          "name": "Listar permissões do usuário",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/usuarios/{{usuario_id}}/permissoes",
+              "host": ["{{base_url}}"],
+              "path": ["usuarios", "{{usuario_id}}", "permissoes"]
+            },
+            "description": "Lista as permissões diretas do subordinado. Permissão: usuarios.gerenciar_permissoes."
+          }
+        },
+        {
+          "name": "Dar permissão",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"permissao\": \"{{permissao}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/usuarios/{{usuario_id}}/permissoes",
+              "host": ["{{base_url}}"],
+              "path": ["usuarios", "{{usuario_id}}", "permissoes"]
+            },
+            "description": "Dá uma permissão ao subordinado. Só é possível conceder permissões que quem está autenticado possui (403 caso contrário)."
+          }
+        },
+        {
+          "name": "Tirar permissão",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/usuarios/{{usuario_id}}/permissoes/{{permissao}}",
+              "host": ["{{base_url}}"],
+              "path": ["usuarios", "{{usuario_id}}", "permissoes", "{{permissao}}"]
+            },
+            "description": "Remove o vínculo entre o subordinado e a permissão (422 se ele não a possui)."
+          }
+        }
+      ]
+    }
+  ]
+}

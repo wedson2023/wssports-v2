@@ -1,11 +1,11 @@
 <!--
 Sync Impact Report
-- Version change: 1.3.0 → 1.4.0 (MINOR: nova regra de ausência de testes automatizados)
+- Version change: 1.7.0 → 1.8.0 (MINOR: nova regra de coleção do Postman sempre atualizada)
 - Princípios modificados: nenhum (I a V mantidos sem alteração)
 - Princípios adicionados: nenhum
 - Seções alteradas:
-  - Fluxo de Desenvolvimento: o projeto não terá testes automatizados no backend nem no
-    frontend; specs, planos e tarefas não geram testes e a validação é manual
+  - Fluxo de Desenvolvimento: toda criação ou alteração de rota da API DEVE regenerar a coleção
+    do Postman em `docs/postman/`, substituindo o arquivo existente
 - Seções adicionadas: nenhuma
 - Seções removidas: nenhuma
 - TODOs pendentes: nenhum
@@ -20,15 +20,22 @@ Sync Impact Report
 - Variáveis, funções, métodos, propriedades, chaves de arrays/objetos, parâmetros e nomes
   usados nas instruções (specs, planos, tarefas) DEVEM usar `snake_case`. `camelCase` é
   proibido nesses casos, tanto no PHP quanto no JavaScript/React.
-- **Exceção — métodos do framework**: métodos sobrescritos ou exigidos pelo Laravel mantêm o
-  nome original do framework (ex.: `casts`, `rules`, `messages`, `authorize`,
-  `prepareForValidation`, `toArray`, `definition`, `viewAny`, `view`, `create`, `update`,
-  `delete`, `before`, `up`, `down`). Todos os demais métodos DEVEM usar `snake_case`.
+- **Exceção — métodos do framework e de pacotes**: métodos sobrescritos ou exigidos pelo
+  framework (Laravel) ou por pacotes de terceiros mantêm o nome original (ex.: `casts`,
+  `rules`, `messages`, `authorize`, `prepareForValidation`, `toArray`, `definition`,
+  `viewAny`, `view`, `create`, `update`, `delete`, `before`, `up`, `down`, e
+  `getJWTIdentifier`/`getJWTCustomClaims` do `jwt-auth`). Todos os demais métodos DEVEM usar
+  `snake_case`.
 - Nomes de classes PHP e de componentes React continuam em `PascalCase`, pois são o nome do
   tipo/componente e definem o nome da pasta do componente (ver Princípio III).
 - Toda nomenclatura de banco de dados (migrations, tabelas, colunas, índices, chaves
   estrangeiras, seeders e factories que as referenciem) DEVE ser escrita em **português**
   (ex.: tabela `apostas`, já created_at, updated_at, deleted_at são em inglês).
+- **Exceção — tabelas de pacotes de terceiros**: tabelas criadas pela migration de um pacote de
+  terceiros (ex.: `spatie/laravel-permission` — `roles`, `permissions`, `model_has_roles`,
+  `model_has_permissions`, `role_has_permissions`) mantêm os nomes padrão do pacote em inglês
+  (tabelas e colunas) e NÃO precisam ter `deleted_at`. Tabelas criadas pelo próprio projeto
+  continuam em português, com `created_at`, `updated_at` e `deleted_at`.
 - Nomes de pastas DEVEM ser escritos em **inglês** e `snake_case` (ex.: `components`,
   `services`, `pages`, `user_roles`).
 - **Exceção — pastas PSR-4**: pastas dentro de `app/` que correspondem a namespaces PSR-4
@@ -39,8 +46,9 @@ Sync Impact Report
 **Rationale**: um único padrão de nomes elimina a ambiguidade entre backend e frontend; o
 banco em português reflete o domínio do negócio, e as pastas em inglês seguem a convenção do
 ecossistema Laravel/React. As exceções existem porque o autoload PSR-4 liga a pasta ao
-namespace e o Laravel só reconhece métodos de framework pelo nome original; renomeá-los
-quebraria o funcionamento.
+namespace e o Laravel e os pacotes só reconhecem seus métodos pelo nome original; renomeá-los
+quebraria o funcionamento. Tabelas de pacotes seguem o padrão do pacote para manter
+compatibilidade com a sua documentação e com outros sistemas que usam o mesmo pacote.
 
 ### II. Idioma por Contexto
 
@@ -101,15 +109,20 @@ violar o escopo estrito de edição.
 - Frontend: React/JavaScript com build via Vite; componentes em arquivos `.jsx`.
 - Novas dependências ou mudanças de stack DEVEM ser justificadas no plano da feature
   (`/speckit-plan`) antes de serem adotadas, respeitando o Princípio IV.
-- Timestamps e soft delete: toda tabela criada DEVE conter as colunas `created_at`,
+- Timestamps e soft delete: toda tabela criada pelo projeto DEVE conter as colunas `created_at`,
   `updated_at` e `deleted_at` (na migration, `$table->timestamps()` e
   `$table->softDeletes()`), e o model correspondente DEVE usar a trait `SoftDeletes`.
   Exclusões de registros DEVEM ser lógicas (soft delete); exclusão física só é permitida se
   justificada no plano da feature.
+- Paginação: toda listagem (backend e frontend) DEVE ser paginada e NÃO DEVE retornar mais de
+  **100 registros por página**. Pedidos de tamanho de página acima de 100 NÃO DEVEM ser
+  atendidos acima desse limite. O tamanho padrão de cada listagem é definido na spec ou no plano
+  da feature, respeitando esse máximo.
 
 **Rationale**: timestamps padronizados garantem rastreabilidade de quando cada registro foi
 criado e alterado, e o soft delete preserva o histórico e permite recuperar dados excluídos,
-essencial em um sistema de apostas.
+essencial em um sistema de apostas. A paginação limitada mantém o tempo de resposta e o consumo
+de memória previsíveis mesmo com grandes volumes de dados.
 
 ## Fluxo de Desenvolvimento
 
@@ -127,6 +140,12 @@ essencial em um sistema de apostas.
   implementação. A validação das features é manual, seguindo os cenários de aceite da spec e o
   `quickstart.md`. Os arquivos de exemplo já existentes em `tests/` não são alterados
   (Princípio IV).
+- Coleção do Postman: sempre que uma rota da API for criada, alterada ou removida, a coleção
+  `docs/postman/wssports_api.postman_collection.json` DEVE ser regenerada na mesma tarefa,
+  **substituindo** o arquivo existente (sem criar cópias ou versões paralelas). A coleção DEVE
+  conter todas as rotas atuais da API e manter as variáveis `base_url` e `token` (o token é
+  preenchido automaticamente pelas rotas de login e renovação). Toda lista de tarefas que crie ou
+  altere rotas DEVE incluir uma tarefa explícita para essa atualização.
 
 ## Governance
 
@@ -141,4 +160,4 @@ essencial em um sistema de apostas.
 - A conformidade DEVE ser verificada em todo plano (Constitution Check), em toda lista de
   tarefas e em toda revisão de código.
 
-**Version**: 1.4.0 | **Ratified**: 2026-09-25 | **Last Amended**: 2026-09-28
+**Version**: 1.8.0 | **Ratified**: 2026-09-25 | **Last Amended**: 2026-09-28
