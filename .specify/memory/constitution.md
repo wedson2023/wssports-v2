@@ -1,11 +1,13 @@
 <!--
 Sync Impact Report
-- Version change: 1.7.0 → 1.8.0 (MINOR: nova regra de coleção do Postman sempre atualizada)
-- Princípios modificados: nenhum (I a V mantidos sem alteração)
+- Version change: 1.15.0 → 1.16.0 (MINOR: redefine o alcance da exceção de kebab-case)
+- Princípios modificados:
+  - I. Nomenclatura em snake_case: a exceção "nomes em URLs" passa a valer só para caminhos de
+    rota e prefixos; parâmetros de query string voltam a usar `snake_case`
 - Princípios adicionados: nenhum
-- Seções alteradas:
-  - Fluxo de Desenvolvimento: toda criação ou alteração de rota da API DEVE regenerar a coleção
-    do Postman em `docs/postman/`, substituindo o arquivo existente
+- Seções alteradas: nenhuma
+- Impacto: código e artefatos das specs 001 e 002 precisam voltar os parâmetros de query string
+  para `snake_case` (`por_pagina`, `data_inicial`, `ordenar_por`...), mantendo os caminhos com hífen
 - Seções adicionadas: nenhuma
 - Seções removidas: nenhuma
 - TODOs pendentes: nenhum
@@ -36,6 +38,32 @@ Sync Impact Report
   `model_has_permissions`, `role_has_permissions`) mantêm os nomes padrão do pacote em inglês
   (tabelas e colunas) e NÃO precisam ter `deleted_at`. Tabelas criadas pelo próprio projeto
   continuam em português, com `created_at`, `updated_at` e `deleted_at`.
+- **Exceção — colunas exigidas pela autenticação do framework**: as colunas `password` e
+  `remember_token` mantêm o nome em inglês nas tabelas de quem se autentica (ex.: `usuarios`,
+  `clientes`), pois o guard do Laravel e o `jwt-auth` dependem desses nomes. As demais colunas
+  dessas tabelas continuam em português.
+- **Exceção — siglas e termos consagrados**: siglas e termos em inglês de uso consagrado na
+  programação PODEM ser usados como estão em nomes de colunas, variáveis, chaves e campos (ex.:
+  `ddi`, `email`, `url`, `ip`, `token`, `pix`), no lugar de uma tradução ou nome longo em
+  português (ex.: `ddi` e não `codigo_pais`). Continuam em `snake_case` e minúsculas.
+- **Enums (casos e valores)**: os casos de enum PHP DEVEM ser escritos em `PascalCase` em
+  português, com acentos quando a palavra tiver (ex.: `Promoção`, `Estorno`, `Apostas`,
+  `PrimeiroDepósito`). Os valores gravados no banco para esses enums (colunas `varchar` ou `enum`)
+  DEVEM ser em português, com a primeira letra maiúscula, acentos e espaços normais (ex.:
+  `'Promoção'`, `'Estorno'`, `'Apostas'`, `'Primeiro depósito'`). Nomes de permissões e papéis do
+  spatie seguem as regras próprias deste princípio, e não esta.
+- **Prefixo de tabelas relacionadas**: tabelas ligadas a uma tabela principal DEVEM usar o nome
+  dela como prefixo, seguido do complemento (ex.: `clientes` → `clientes_transacoes`,
+  `clientes_configuracoes`), para ficarem listadas juntas no banco.
+- **Nomes de permissões**: toda permissão DEVE seguir o padrão `<recurso>.<acao>`, em que
+  `recurso` é o nome da tabela principal a que a ação se refere e `acao` é um verbo ou expressão
+  em `snake_case` (ex.: `usuarios.listar`, `clientes.excluir`, `clientes.movimentar_saldo`,
+  `clientes_promocoes.gerenciar`).
+- **Exceção — caminhos de rota (kebab-case)**: os segmentos de rota e os prefixos de grupo DEVEM
+  usar hífen no lugar de underline (ex.: `/area-cliente/meus-dados`, `/clientes-promocoes`).
+  Parâmetros de query string continuam em `snake_case` (ex.: `?por_pagina=20&data_inicial=2026-09-01`),
+  assim como chaves de JSON (corpo e resposta), nomes de parâmetros de rota no código (ex.:
+  `{meio_pagamento}`), variáveis e colunas.
 - Nomes de pastas DEVEM ser escritos em **inglês** e `snake_case` (ex.: `components`,
   `services`, `pages`, `user_roles`).
 - **Exceção — pastas PSR-4**: pastas dentro de `app/` que correspondem a namespaces PSR-4
@@ -103,6 +131,20 @@ revisar; a confirmação prévia mantém o controle do código com o responsáve
 não aparecem durante a implementação incremental, mantendo o código fácil de ler e manter sem
 violar o escopo estrito de edição.
 
+### VI. Consistência de Padrões entre Recursos
+
+- Todo recurso novo (ex.: `clientes`) DEVE seguir a mesma estrutura já usada pelos recursos
+  existentes (ex.: `usuarios`): onde ficam as permissões e seus padrões por função, enums,
+  seeders, requests, resources, controllers e rotas.
+- Quando a implementação exigir um padrão diferente do existente, ou quando uma restrição (como
+  o Princípio IV) impedir seguir o padrão, a decisão NÃO PODE ser tomada sozinha: DEVE ser
+  apresentada ao responsável, com as opções e o impacto de cada uma, antes de entrar na spec, no
+  plano ou no código.
+
+**Rationale**: dois padrões para a mesma coisa tornam o código imprevisível e difícil de manter;
+decidir um desvio sem consultar o responsável tira dele o controle sobre a arquitetura do
+projeto.
+
 ## Stack e Restrições Técnicas
 
 - Backend: PHP ^8.2 com Laravel ^12.
@@ -114,6 +156,10 @@ violar o escopo estrito de edição.
   `$table->softDeletes()`), e o model correspondente DEVE usar a trait `SoftDeletes`.
   Exclusões de registros DEVEM ser lógicas (soft delete); exclusão física só é permitida se
   justificada no plano da feature.
+- Referências a tabelas ainda inexistentes: colunas que dependem de uma tabela ainda não criada
+  DEVEM ser criadas sem chave estrangeira (como `varchar` ou como id solto) e DEVEM ser ajustadas
+  (tipo e chave estrangeira) na spec que criar a tabela de destino. A spec que cria essas colunas
+  DEVE registrá-las nas suas premissas, para que a spec futura saiba o que ajustar.
 - Paginação: toda listagem (backend e frontend) DEVE ser paginada e NÃO DEVE retornar mais de
   **100 registros por página**. Pedidos de tamanho de página acima de 100 NÃO DEVEM ser
   atendidos acima desse limite. O tamanho padrão de cada listagem é definido na spec ou no plano
@@ -127,7 +173,7 @@ de memória previsíveis mesmo com grandes volumes de dados.
 ## Fluxo de Desenvolvimento
 
 - Toda spec, plano e lista de tarefas DEVE passar pelo Constitution Check, verificando os
-  Princípios I a V antes da implementação.
+  Princípios I a VI antes da implementação.
 - Tarefas geradas DEVEM declarar explicitamente os arquivos que serão alterados, para que o
   escopo de edição (Princípio IV) seja verificável.
 - Antes de concluir cada tarefa, DEVE ser executada a revisão de legibilidade do código
@@ -140,6 +186,13 @@ de memória previsíveis mesmo com grandes volumes de dados.
   implementação. A validação das features é manual, seguindo os cenários de aceite da spec e o
   `quickstart.md`. Os arquivos de exemplo já existentes em `tests/` não são alterados
   (Princípio IV).
+- Alterações manuais em código já implementado: quando o responsável pedir uma alteração direta em
+  código de uma feature (fora dos comandos `/speckit-*`), a mesma entrega DEVE atualizar todos os
+  artefatos afetados para manter o sistema e a documentação coerentes: `spec.md` (requisitos,
+  cenários e Clarifications com a decisão), `plan.md`, `research.md`, `data-model.md`,
+  `contracts/`, `quickstart.md`, `tasks.md` (descrição das tarefas e nota da revisão), além de
+  seeders, migrations, rotas e a coleção do Postman quando envolvidos. Nenhum artefato pode ficar
+  descrevendo um comportamento diferente do código.
 - Coleção do Postman: sempre que uma rota da API for criada, alterada ou removida, a coleção
   `docs/postman/wssports_api.postman_collection.json` DEVE ser regenerada na mesma tarefa,
   **substituindo** o arquivo existente (sem criar cópias ou versões paralelas). A coleção DEVE
@@ -160,4 +213,4 @@ de memória previsíveis mesmo com grandes volumes de dados.
 - A conformidade DEVE ser verificada em todo plano (Constitution Check), em toda lista de
   tarefas e em toda revisão de código.
 
-**Version**: 1.8.0 | **Ratified**: 2026-09-25 | **Last Amended**: 2026-09-28
+**Version**: 1.16.0 | **Ratified**: 2026-09-25 | **Last Amended**: 2026-09-29

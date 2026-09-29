@@ -1,311 +1,1749 @@
 {
-  "info": {
-    "name": "WSSports API",
-    "description": "Rotas da API do WSSports (autenticação JWT, gestão de usuários e permissões).\n\nVariáveis da coleção:\n- base_url: endereço da API (ex.: http://127.0.0.1:8000/api)\n- token: preenchido automaticamente pelas requisições de login e refresh\n- usuario_id: id do usuário usado nas rotas com {usuario}\n- permissao: nome da permissão usada nas rotas de permissões\n\nFluxo: execute 'Login' primeiro; as demais rotas usam o token salvo.",
-    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
-  },
-  "auth": {
-    "type": "bearer",
-    "bearer": [
-      { "key": "token", "value": "{{token}}", "type": "string" }
+    "info": {
+        "name": "WSSports API",
+        "description": "Rotas da API do WSSports (autenticação JWT, gestão de usuários e permissões, área do cliente e gestão de clientes).\n\nVariáveis da coleção:\n- base_url: endereço da API (ex.: http://127.0.0.1:8000/api)\n- token: token do painel, preenchido pelo login e refresh do painel\n- token_cliente: token do cliente, preenchido pelo cadastro, login e refresh da área do cliente\n- usuario_id / permissao: usados nas rotas de usuários e permissões\n- cliente_id / meio_pagamento_id / promocao_id: usados nas rotas de clientes\n\nFluxo: execute 'Login' (painel) e 'Login do cliente'; as demais rotas usam os tokens salvos.",
+        "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+    },
+    "auth": {
+        "type": "bearer",
+        "bearer": [
+            {
+                "key": "token",
+                "value": "{{token}}",
+                "type": "string"
+            }
+        ]
+    },
+    "variable": [
+        {
+            "key": "base_url",
+            "value": "http://127.0.0.1:8000/api",
+            "type": "string"
+        },
+        {
+            "key": "token",
+            "value": "",
+            "type": "string"
+        },
+        {
+            "key": "usuario_id",
+            "value": "4",
+            "type": "string"
+        },
+        {
+            "key": "permissao",
+            "value": "usuarios.excluir",
+            "type": "string"
+        },
+        {
+            "key": "token_cliente",
+            "value": "",
+            "type": "string"
+        },
+        {
+            "key": "cliente_id",
+            "value": "1",
+            "type": "string"
+        },
+        {
+            "key": "meio_pagamento_id",
+            "value": "1",
+            "type": "string"
+        },
+        {
+            "key": "promocao_id",
+            "value": "1",
+            "type": "string"
+        }
+    ],
+    "item": [
+        {
+            "name": "Autenticação",
+            "item": [
+                {
+                    "name": "Login",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "// salva o token retornado para as demais requisições",
+                                    "if (pm.response.code === 200) {",
+                                    "    pm.collectionVariables.set('token', pm.response.json().token);",
+                                    "}"
+                                ]
+                            }
+                        }
+                    ],
+                    "request": {
+                        "auth": {
+                            "type": "noauth"
+                        },
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"login\": \"admin\",\n    \"password\": \"password\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/auth/login",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "auth",
+                                "login"
+                            ]
+                        },
+                        "description": "Autentica por login e senha. 200 com token; 401 login/senha inválidos; 403 usuário inativo; 422 campos ausentes; 429 após 5 tentativas erradas em 1 minuto."
+                    }
+                },
+                {
+                    "name": "Renovar token (refresh)",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "// o token antigo é invalidado; guarda o novo",
+                                    "if (pm.response.code === 200) {",
+                                    "    pm.collectionVariables.set('token', pm.response.json().token);",
+                                    "}"
+                                ]
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/auth/refresh",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "auth",
+                                "refresh"
+                            ]
+                        },
+                        "description": "Gera um novo token de 60 minutos e invalida o atual."
+                    }
+                },
+                {
+                    "name": "Logout",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "// o token foi invalidado no servidor",
+                                    "if (pm.response.code === 204) {",
+                                    "    pm.collectionVariables.set('token', '');",
+                                    "}"
+                                ]
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/auth/logout",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "auth",
+                                "logout"
+                            ]
+                        },
+                        "description": "Invalida o token atual imediatamente (204)."
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Usuários",
+            "item": [
+                {
+                    "name": "Listar usuários",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/usuarios?por_pagina=15&page=1",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "usuarios"
+                            ],
+                            "query": [
+                                {
+                                    "key": "funcao",
+                                    "value": "Vendedor",
+                                    "description": "Supervisor, Gerente ou Vendedor",
+                                    "disabled": true
+                                },
+                                {
+                                    "key": "ativo",
+                                    "value": "1",
+                                    "description": "1 = ativos, 0 = inativos",
+                                    "disabled": true
+                                },
+                                {
+                                    "key": "busca",
+                                    "value": "",
+                                    "description": "Busca parcial em nome ou login",
+                                    "disabled": true
+                                },
+                                {
+                                    "key": "por_pagina",
+                                    "value": "15",
+                                    "description": "1 a 100 (padrão 15)"
+                                },
+                                {
+                                    "key": "page",
+                                    "value": "1"
+                                }
+                            ]
+                        },
+                        "description": "Lista a sub-hierarquia de quem está autenticado. Permissão: usuarios.listar."
+                    }
+                },
+                {
+                    "name": "Cadastrar usuário",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"nome\": \"Novo Supervisor\",\n    \"funcao\": \"Supervisor\",\n    \"login\": \"novo.supervisor\",\n    \"password\": \"segredo1\",\n    \"telefone\": \"(69) 99999-0000\",\n    \"endereco\": \"Rua B, 20\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/usuarios",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "usuarios"
+                            ]
+                        },
+                        "description": "Cadastra a função imediatamente abaixo da de quem está autenticado (Admin → Supervisor, Supervisor → Gerente, Gerente → Vendedor). Permissão: usuarios.cadastrar."
+                    }
+                },
+                {
+                    "name": "Consultar usuário",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/usuarios/{{usuario_id}}",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "usuarios",
+                                "{{usuario_id}}"
+                            ]
+                        },
+                        "description": "Consulta um usuário da sub-hierarquia (404 fora dela). Permissão: usuarios.consultar."
+                    }
+                },
+                {
+                    "name": "Editar usuário",
+                    "request": {
+                        "method": "PATCH",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"nome\": \"Nome Atualizado\",\n    \"telefone\": \"(69) 98888-1111\",\n    \"endereco\": \"Rua C, 30\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/usuarios/{{usuario_id}}",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "usuarios",
+                                "{{usuario_id}}"
+                            ]
+                        },
+                        "description": "Edita dados cadastrais (nome, password, telefone, endereco, usuarios_id). Permissão: usuarios.editar. Função e login não podem ser alterados."
+                    }
+                },
+                {
+                    "name": "Desativar usuário (cascata)",
+                    "request": {
+                        "method": "PATCH",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"ativo\": false\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/usuarios/{{usuario_id}}",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "usuarios",
+                                "{{usuario_id}}"
+                            ]
+                        },
+                        "description": "Desativa o usuário e toda a sua sub-hierarquia. Permissão: usuarios.alterar_situacao (independente de usuarios.editar)."
+                    }
+                },
+                {
+                    "name": "Reativar usuário (cascata)",
+                    "request": {
+                        "method": "PATCH",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"ativo\": true\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/usuarios/{{usuario_id}}",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "usuarios",
+                                "{{usuario_id}}"
+                            ]
+                        },
+                        "description": "Reativa o usuário e toda a sua sub-hierarquia. Permissão: usuarios.alterar_situacao."
+                    }
+                },
+                {
+                    "name": "Excluir usuário (cascata)",
+                    "request": {
+                        "method": "DELETE",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/usuarios/{{usuario_id}}",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "usuarios",
+                                "{{usuario_id}}"
+                            ]
+                        },
+                        "description": "Exclusão lógica (soft delete) do usuário e de toda a sua sub-hierarquia (204). Permissão: usuarios.excluir."
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Permissões do usuário",
+            "item": [
+                {
+                    "name": "Listar permissões do usuário",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/usuarios/{{usuario_id}}/permissoes",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "usuarios",
+                                "{{usuario_id}}",
+                                "permissoes"
+                            ]
+                        },
+                        "description": "Lista as permissões diretas do subordinado. Permissão: usuarios.gerenciar_permissoes."
+                    }
+                },
+                {
+                    "name": "Dar permissão",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"permissao\": \"{{permissao}}\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/usuarios/{{usuario_id}}/permissoes",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "usuarios",
+                                "{{usuario_id}}",
+                                "permissoes"
+                            ]
+                        },
+                        "description": "Dá uma permissão ao subordinado. Só é possível conceder permissões que quem está autenticado possui (403 caso contrário)."
+                    }
+                },
+                {
+                    "name": "Tirar permissão",
+                    "request": {
+                        "method": "DELETE",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/usuarios/{{usuario_id}}/permissoes/{{permissao}}",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "usuarios",
+                                "{{usuario_id}}",
+                                "permissoes",
+                                "{{permissao}}"
+                            ]
+                        },
+                        "description": "Remove o vínculo entre o subordinado e a permissão (422 se ele não a possui)."
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Área do cliente",
+            "description": "Rotas do cliente (apostador), com o token do guard clientes ({{token_cliente}}).",
+            "auth": {
+                "type": "bearer",
+                "bearer": [
+                    {
+                        "key": "token",
+                        "value": "{{token_cliente}}",
+                        "type": "string"
+                    }
+                ]
+            },
+            "item": [
+                {
+                    "name": "Cadastro do cliente",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/area-cliente/cadastro",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "area-cliente",
+                                "cadastro"
+                            ]
+                        },
+                        "description": "Cadastro público. 201 com cliente e token; 422 validação/duplicidade; 429 mais de 5 por minuto do mesmo IP.",
+                        "auth": {
+                            "type": "noauth"
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"nome\": \"Maria Souza\",\n    \"ddi\": \"55\",\n    \"telefone\": \"(11) 98888-7777\",\n    \"email\": \"maria@mail.com\",\n    \"password\": \"senha1234\",\n    \"password_confirmation\": \"senha1234\",\n    \"cpf\": \"529.982.247-25\",\n    \"data_nascimento\": \"1990-05-10\",\n    \"genero\": \"Feminino\",\n    \"codigo_afiliado\": null,\n    \"aceita_promocao\": true\n}"
+                        }
+                    },
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "// salva o token do cliente para as demais requisições da área do cliente",
+                                    "if (pm.response.code === 200 || pm.response.code === 201) {",
+                                    "    pm.collectionVariables.set('token_cliente', pm.response.json().token);",
+                                    "}"
+                                ]
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "Login do cliente",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/area-cliente/auth/login",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "area-cliente",
+                                "auth",
+                                "login"
+                            ]
+                        },
+                        "description": "200 com token; 401 telefone ou senha inválidos (inclui excluído); 403 inativo; 429 após 5 tentativas erradas em 1 minuto.",
+                        "auth": {
+                            "type": "noauth"
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"ddi\": \"55\",\n    \"telefone\": \"11988887777\",\n    \"password\": \"senha1234\"\n}"
+                        }
+                    },
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "// salva o token do cliente para as demais requisições da área do cliente",
+                                    "if (pm.response.code === 200 || pm.response.code === 201) {",
+                                    "    pm.collectionVariables.set('token_cliente', pm.response.json().token);",
+                                    "}"
+                                ]
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "Recuperar senha",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/area-cliente/auth/recuperar-senha",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "area-cliente",
+                                "auth",
+                                "recuperar-senha"
+                            ]
+                        },
+                        "description": "Resposta sempre igual; o código vai para o log até existir a spec de WhatsApp. 429 se pedir de novo em menos de 1 minuto.",
+                        "auth": {
+                            "type": "noauth"
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"ddi\": \"55\",\n    \"telefone\": \"11988887777\"\n}"
+                        }
+                    }
+                },
+                {
+                    "name": "Redefinir senha",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/area-cliente/auth/redefinir-senha",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "area-cliente",
+                                "auth",
+                                "redefinir-senha"
+                            ]
+                        },
+                        "description": "204 senha trocada (tokens anteriores deixam de valer); 422 código inválido ou expirado.",
+                        "auth": {
+                            "type": "noauth"
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"ddi\": \"55\",\n    \"telefone\": \"11988887777\",\n    \"codigo\": \"123456\",\n    \"password\": \"nova1234\",\n    \"password_confirmation\": \"nova1234\"\n}"
+                        }
+                    }
+                },
+                {
+                    "name": "Refresh do cliente",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/area-cliente/auth/refresh",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "area-cliente",
+                                "auth",
+                                "refresh"
+                            ]
+                        },
+                        "description": "Novo token do cliente; o atual é invalidado."
+                    },
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "// salva o token do cliente para as demais requisições da área do cliente",
+                                    "if (pm.response.code === 200 || pm.response.code === 201) {",
+                                    "    pm.collectionVariables.set('token_cliente', pm.response.json().token);",
+                                    "}"
+                                ]
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "Logout do cliente",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/area-cliente/auth/logout",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "area-cliente",
+                                "auth",
+                                "logout"
+                            ]
+                        },
+                        "description": "204; o token deixa de ser aceito."
+                    }
+                },
+                {
+                    "name": "Meus dados",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/area-cliente/meus-dados",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "area-cliente",
+                                "meus-dados"
+                            ]
+                        },
+                        "description": "Dados, três saldos e aceita_promocao."
+                    }
+                },
+                {
+                    "name": "Alterar meus dados",
+                    "request": {
+                        "method": "PATCH",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/area-cliente/meus-dados",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "area-cliente",
+                                "meus-dados"
+                            ]
+                        },
+                        "description": "Só nome, gênero, e-mail e aceita_promocao; DDI, telefone, CPF e data de nascimento são recusados.",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"nome\": \"Maria S. Souza\",\n    \"genero\": \"Feminino\",\n    \"email\": \"maria.souza@mail.com\",\n    \"aceita_promocao\": false\n}"
+                        }
+                    }
+                },
+                {
+                    "name": "Trocar senha",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/area-cliente/meus-dados/senha",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "area-cliente",
+                                "meus-dados",
+                                "senha"
+                            ]
+                        },
+                        "description": "204; todos os tokens, inclusive o atual, deixam de valer.",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"senha_atual\": \"senha1234\",\n    \"password\": \"nova1234\",\n    \"password_confirmation\": \"nova1234\"\n}"
+                        }
+                    }
+                },
+                {
+                    "name": "Extrato",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/area-cliente/meus-dados/extrato?data_inicial=2026-09-01&data_final=2026-09-30&por_pagina=20",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "area-cliente",
+                                "meus-dados",
+                                "extrato"
+                            ],
+                            "query": [
+                                {
+                                    "key": "data_inicial",
+                                    "value": "2026-09-01"
+                                },
+                                {
+                                    "key": "data_final",
+                                    "value": "2026-09-30"
+                                },
+                                {
+                                    "key": "por_pagina",
+                                    "value": "20"
+                                }
+                            ]
+                        },
+                        "description": "Paginado, da mais recente para a mais antiga; filtro opcional carteira."
+                    }
+                },
+                {
+                    "name": "Listar meios de pagamento",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/area-cliente/meios-pagamento",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "area-cliente",
+                                "meios-pagamento"
+                            ]
+                        },
+                        "description": "Meios do cliente logado, com o principal primeiro."
+                    }
+                },
+                {
+                    "name": "Cadastrar meio de pagamento",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/area-cliente/meios-pagamento",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "area-cliente",
+                                "meios-pagamento"
+                            ]
+                        },
+                        "description": "Pix ou Transferência bancária; o primeiro vira principal.",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"tipo\": \"Pix\",\n    \"pix_nome_titular\": \"Maria Souza\",\n    \"pix_tipo_chave\": \"E-mail\",\n    \"pix_chave\": \"maria@mail.com\"\n}"
+                        }
+                    }
+                },
+                {
+                    "name": "Consultar meio de pagamento",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/area-cliente/meios-pagamento/{{meio_pagamento_id}}",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "area-cliente",
+                                "meios-pagamento",
+                                "{{meio_pagamento_id}}"
+                            ]
+                        },
+                        "description": "404 se for de outro cliente."
+                    }
+                },
+                {
+                    "name": "Alterar meio de pagamento",
+                    "request": {
+                        "method": "PATCH",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/area-cliente/meios-pagamento/{{meio_pagamento_id}}",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "area-cliente",
+                                "meios-pagamento",
+                                "{{meio_pagamento_id}}"
+                            ]
+                        },
+                        "description": "principal: true marca como principal.",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"principal\": true\n}"
+                        }
+                    }
+                },
+                {
+                    "name": "Excluir meio de pagamento",
+                    "request": {
+                        "method": "DELETE",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/area-cliente/meios-pagamento/{{meio_pagamento_id}}",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "area-cliente",
+                                "meios-pagamento",
+                                "{{meio_pagamento_id}}"
+                            ]
+                        },
+                        "description": "204; se era o principal, o mais antigo vira principal."
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Clientes (painel)",
+            "description": "Gestão de clientes e promoções pelo painel, com o token dos usuários ({{token}}).",
+            "item": [
+                {
+                    "name": "Listar clientes",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/clientes?busca=&ativo=1&ordenar_por=nome&direcao=asc&por_pagina=20",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "clientes"
+                            ],
+                            "query": [
+                                {
+                                    "key": "busca",
+                                    "value": ""
+                                },
+                                {
+                                    "key": "ativo",
+                                    "value": "1"
+                                },
+                                {
+                                    "key": "ordenar_por",
+                                    "value": "nome"
+                                },
+                                {
+                                    "key": "direcao",
+                                    "value": "asc"
+                                },
+                                {
+                                    "key": "por_pagina",
+                                    "value": "20"
+                                }
+                            ]
+                        },
+                        "description": "clientes.listar. Filtros: busca, ativo, ddi, codigo_afiliado, cadastro_de, cadastro_ate, idade_minima, idade_maxima, genero, saldo_minimo, saldo_maximo, com_saldo_promocional, saque_bloqueado, com_cpf, com_email."
+                    }
+                },
+                {
+                    "name": "Consultar cliente",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/clientes/{{cliente_id}}",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "clientes",
+                                "{{cliente_id}}"
+                            ]
+                        },
+                        "description": "clientes.listar. CPF, telefone e e-mail mascarados sem clientes.ver_dados_completos."
+                    }
+                },
+                {
+                    "name": "Alterar cliente",
+                    "request": {
+                        "method": "PATCH",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/clientes/{{cliente_id}}",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "clientes",
+                                "{{cliente_id}}"
+                            ]
+                        },
+                        "description": "clientes.editar. Saldos não são aceitos.",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"nome\": \"Maria Souza\",\n    \"email\": \"maria@mail.com\"\n}"
+                        }
+                    }
+                },
+                {
+                    "name": "Alterar situação do cliente",
+                    "request": {
+                        "method": "PATCH",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/clientes/{{cliente_id}}/situacao",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "clientes",
+                                "{{cliente_id}}",
+                                "situacao"
+                            ]
+                        },
+                        "description": "clientes.editar. Desativar derruba os tokens do cliente.",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"ativo\": false\n}"
+                        }
+                    }
+                },
+                {
+                    "name": "Excluir cliente",
+                    "request": {
+                        "method": "DELETE",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/clientes/{{cliente_id}}",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "clientes",
+                                "{{cliente_id}}"
+                            ]
+                        },
+                        "description": "clientes.excluir (Admin/Supervisor). Sufixo _deleted_<timestamp> em telefone, CPF e e-mail."
+                    }
+                },
+                {
+                    "name": "Listar clientes excluídos",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/clientes/excluidos?busca=",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "clientes",
+                                "excluidos"
+                            ],
+                            "query": [
+                                {
+                                    "key": "busca",
+                                    "value": ""
+                                }
+                            ]
+                        },
+                        "description": "clientes.restaurar (Admin/Supervisor)."
+                    }
+                },
+                {
+                    "name": "Restaurar cliente",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/clientes/{{cliente_id}}/restaurar",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "clientes",
+                                "{{cliente_id}}",
+                                "restaurar"
+                            ]
+                        },
+                        "description": "clientes.restaurar. Se algum dado único estiver em uso, envie ddi, telefone, cpf ou email novos.",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{}"
+                        }
+                    }
+                },
+                {
+                    "name": "Extrato do cliente",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/clientes/{{cliente_id}}/transacoes?por_pagina=20",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "clientes",
+                                "{{cliente_id}}",
+                                "transacoes"
+                            ],
+                            "query": [
+                                {
+                                    "key": "por_pagina",
+                                    "value": "20"
+                                }
+                            ]
+                        },
+                        "description": "clientes.listar. Com o autor de cada movimentação."
+                    }
+                },
+                {
+                    "name": "Movimentar saldo",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/clientes/{{cliente_id}}/transacoes",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "clientes",
+                                "{{cliente_id}}",
+                                "transacoes"
+                            ]
+                        },
+                        "description": "clientes.movimentar_saldo. Carteiras: Saldo, Promoção esportes, Promoção cassino. 422 Saldo insuficiente.",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"carteira\": \"Saldo\",\n    \"tipo\": \"Crédito\",\n    \"valor\": \"100.00\",\n    \"observacao\": \"Ajuste de atendimento\"\n}"
+                        }
+                    }
+                },
+                {
+                    "name": "Configurações do cliente",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/clientes/{{cliente_id}}/configuracoes",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "clientes",
+                                "{{cliente_id}}",
+                                "configuracoes"
+                            ]
+                        },
+                        "description": "clientes.listar."
+                    }
+                },
+                {
+                    "name": "Alterar configurações do cliente",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/clientes/{{cliente_id}}/configuracoes",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "clientes",
+                                "{{cliente_id}}",
+                                "configuracoes"
+                            ]
+                        },
+                        "description": "clientes.editar_configuracoes (Admin, Supervisor ou Gerente).",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"realizar_aposta\": true,\n    \"apostar_ao_vivo\": true,\n    \"apostar_outros_esportes\": true,\n    \"cancelar_aposta\": false,\n    \"aceita_promocao\": true,\n    \"bloquear_saque\": false,\n    \"quantidade_minima_opcoes\": 1,\n    \"quantidade_maxima_opcoes\": 20,\n    \"valor_minimo_aposta\": \"2.00\",\n    \"valor_maximo_aposta\": \"1000.00\",\n    \"premio_maximo\": \"50000.00\",\n    \"valor_maximo_diario\": \"5000.00\",\n    \"valor_maximo_saque_diario\": \"5000.00\",\n    \"quantidade_maxima_saques_diaria\": 5,\n    \"odd_minima\": \"1.90\",\n    \"odd_maxima\": \"30.00\",\n    \"esportes_permitidos\": [\n        \"FUTEBOL\",\n        \"HOQUEI NO GELO\",\n        \"BAISEBOL\"\n    ]\n}"
+                        }
+                    }
+                },
+                {
+                    "name": "Meios de pagamento do cliente",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/clientes/{{cliente_id}}/meios-pagamento",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "clientes",
+                                "{{cliente_id}}",
+                                "meios-pagamento"
+                            ]
+                        },
+                        "description": "clientes.listar. Mascarados sem clientes.ver_dados_completos."
+                    }
+                },
+                {
+                    "name": "Cadastrar meio de pagamento do cliente",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/clientes/{{cliente_id}}/meios-pagamento",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "clientes",
+                                "{{cliente_id}}",
+                                "meios-pagamento"
+                            ]
+                        },
+                        "description": "clientes.editar.",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"tipo\": \"Transferência bancária\",\n    \"banco_codigo\": \"001\",\n    \"banco_nome\": \"Banco do Brasil\",\n    \"agencia\": \"1234\",\n    \"conta\": \"56789\",\n    \"conta_digito\": \"0\",\n    \"conta_tipo\": \"Corrente\",\n    \"titular_nome\": \"Maria Souza\",\n    \"titular_documento\": \"52998224725\"\n}"
+                        }
+                    }
+                },
+                {
+                    "name": "Alterar meio de pagamento do cliente",
+                    "request": {
+                        "method": "PATCH",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/clientes/{{cliente_id}}/meios-pagamento/{{meio_pagamento_id}}",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "clientes",
+                                "{{cliente_id}}",
+                                "meios-pagamento",
+                                "{{meio_pagamento_id}}"
+                            ]
+                        },
+                        "description": "clientes.editar.",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"principal\": true\n}"
+                        }
+                    }
+                },
+                {
+                    "name": "Excluir meio de pagamento do cliente",
+                    "request": {
+                        "method": "DELETE",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/clientes/{{cliente_id}}/meios-pagamento/{{meio_pagamento_id}}",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "clientes",
+                                "{{cliente_id}}",
+                                "meios-pagamento",
+                                "{{meio_pagamento_id}}"
+                            ]
+                        },
+                        "description": "clientes.editar."
+                    }
+                },
+                {
+                    "name": "Configurações padrão",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/clientes-configuracoes-padrao",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "clientes-configuracoes-padrao"
+                            ]
+                        },
+                        "description": "clientes.editar_configuracoes_padrao (Admin/Supervisor)."
+                    }
+                },
+                {
+                    "name": "Alterar configurações padrão",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/clientes-configuracoes-padrao",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "clientes-configuracoes-padrao"
+                            ]
+                        },
+                        "description": "clientes.editar_configuracoes_padrao. Vale só para novos cadastros.",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"realizar_aposta\": true,\n    \"apostar_ao_vivo\": true,\n    \"apostar_outros_esportes\": true,\n    \"cancelar_aposta\": false,\n    \"aceita_promocao\": true,\n    \"bloquear_saque\": false,\n    \"quantidade_minima_opcoes\": 1,\n    \"quantidade_maxima_opcoes\": 20,\n    \"valor_minimo_aposta\": \"2.00\",\n    \"valor_maximo_aposta\": \"1000.00\",\n    \"premio_maximo\": \"50000.00\",\n    \"valor_maximo_diario\": \"5000.00\",\n    \"valor_maximo_saque_diario\": \"5000.00\",\n    \"quantidade_maxima_saques_diaria\": 5,\n    \"odd_minima\": \"1.90\",\n    \"odd_maxima\": \"30.00\",\n    \"esportes_permitidos\": [\n        \"FUTEBOL\",\n        \"HOQUEI NO GELO\",\n        \"BAISEBOL\"\n    ]\n}"
+                        }
+                    }
+                },
+                {
+                    "name": "Listar promoções",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/clientes-promocoes?por_pagina=20",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "clientes-promocoes"
+                            ],
+                            "query": [
+                                {
+                                    "key": "por_pagina",
+                                    "value": "20"
+                                }
+                            ]
+                        },
+                        "description": "clientes_promocoes.gerenciar. Filtros: ativa, modalidade, categoria."
+                    }
+                },
+                {
+                    "name": "Consultar promoção",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/clientes-promocoes/{{promocao_id}}",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "clientes-promocoes",
+                                "{{promocao_id}}"
+                            ]
+                        },
+                        "description": "clientes_promocoes.gerenciar."
+                    }
+                },
+                {
+                    "name": "Cadastrar promoção",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/clientes-promocoes",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "clientes-promocoes"
+                            ]
+                        },
+                        "description": "clientes_promocoes.gerenciar. Mesma categoria e modalidade não podem ter períodos sobrepostos.",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"nome\": \"Bônus de boas-vindas\",\n    \"descricao\": \"R$ 20 para apostar em esportes\",\n    \"modalidade\": \"Esportes\",\n    \"categoria\": \"Primeiro cadastro\",\n    \"tipo_ganho\": \"Fixo\",\n    \"valor\": \"20.00\",\n    \"rollover\": 5,\n    \"valor_minimo_aposta\": \"2.00\",\n    \"valor_maximo_aposta\": \"100.00\",\n    \"valor_maximo_deposito\": null,\n    \"valor_maximo_conversao\": \"200.00\",\n    \"odd_minima_aposta_simples\": \"1.50\",\n    \"odd_minima_aposta_multipla\": \"1.30\",\n    \"data_inicio\": \"2026-10-01 00:00:00\",\n    \"data_fim\": null,\n    \"ativa\": true\n}"
+                        }
+                    }
+                },
+                {
+                    "name": "Alterar promoção",
+                    "request": {
+                        "method": "PATCH",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/clientes-promocoes/{{promocao_id}}",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "clientes-promocoes",
+                                "{{promocao_id}}"
+                            ]
+                        },
+                        "description": "clientes_promocoes.gerenciar. Promoção aplicada não muda valor, tipo de ganho, categoria e modalidade.",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"nome\": \"Bônus de boas-vindas 2\"\n}"
+                        }
+                    }
+                },
+                {
+                    "name": "Excluir promoção",
+                    "request": {
+                        "method": "DELETE",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/clientes-promocoes/{{promocao_id}}",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "clientes-promocoes",
+                                "{{promocao_id}}"
+                            ]
+                        },
+                        "description": "clientes_promocoes.gerenciar."
+                    }
+                },
+                {
+                    "name": "Estornar promoção",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/clientes-promocoes/{{promocao_id}}/estornar",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "clientes-promocoes",
+                                "{{promocao_id}}",
+                                "estornar"
+                            ]
+                        },
+                        "description": "clientes_promocoes.estornar (Admin/Supervisor). 202; processado em segundo plano (php artisan queue:work).",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"motivo\": \"Promoção criada por engano\"\n}"
+                        }
+                    }
+                }
+            ]
+        }
     ]
-  },
-  "variable": [
-    { "key": "base_url", "value": "http://127.0.0.1:8000/api", "type": "string" },
-    { "key": "token", "value": "", "type": "string" },
-    { "key": "usuario_id", "value": "4", "type": "string" },
-    { "key": "permissao", "value": "usuarios.excluir", "type": "string" }
-  ],
-  "item": [
-    {
-      "name": "Autenticação",
-      "item": [
-        {
-          "name": "Login",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "// salva o token retornado para as demais requisições",
-                  "if (pm.response.code === 200) {",
-                  "    pm.collectionVariables.set('token', pm.response.json().token);",
-                  "}"
-                ]
-              }
-            }
-          ],
-          "request": {
-            "auth": { "type": "noauth" },
-            "method": "POST",
-            "header": [
-              { "key": "Accept", "value": "application/json" },
-              { "key": "Content-Type", "value": "application/json" }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n    \"login\": \"admin\",\n    \"password\": \"password\"\n}"
-            },
-            "url": {
-              "raw": "{{base_url}}/auth/login",
-              "host": ["{{base_url}}"],
-              "path": ["auth", "login"]
-            },
-            "description": "Autentica por login e senha. 200 com token; 401 login/senha inválidos; 403 usuário inativo; 422 campos ausentes; 429 após 5 tentativas erradas em 1 minuto."
-          }
-        },
-        {
-          "name": "Renovar token (refresh)",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "// o token antigo é invalidado; guarda o novo",
-                  "if (pm.response.code === 200) {",
-                  "    pm.collectionVariables.set('token', pm.response.json().token);",
-                  "}"
-                ]
-              }
-            }
-          ],
-          "request": {
-            "method": "POST",
-            "header": [
-              { "key": "Accept", "value": "application/json" }
-            ],
-            "url": {
-              "raw": "{{base_url}}/auth/refresh",
-              "host": ["{{base_url}}"],
-              "path": ["auth", "refresh"]
-            },
-            "description": "Gera um novo token de 60 minutos e invalida o atual."
-          }
-        },
-        {
-          "name": "Logout",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "// o token foi invalidado no servidor",
-                  "if (pm.response.code === 204) {",
-                  "    pm.collectionVariables.set('token', '');",
-                  "}"
-                ]
-              }
-            }
-          ],
-          "request": {
-            "method": "POST",
-            "header": [
-              { "key": "Accept", "value": "application/json" }
-            ],
-            "url": {
-              "raw": "{{base_url}}/auth/logout",
-              "host": ["{{base_url}}"],
-              "path": ["auth", "logout"]
-            },
-            "description": "Invalida o token atual imediatamente (204)."
-          }
-        }
-      ]
-    },
-    {
-      "name": "Usuários",
-      "item": [
-        {
-          "name": "Listar usuários",
-          "request": {
-            "method": "GET",
-            "header": [
-              { "key": "Accept", "value": "application/json" }
-            ],
-            "url": {
-              "raw": "{{base_url}}/usuarios?por_pagina=15&page=1",
-              "host": ["{{base_url}}"],
-              "path": ["usuarios"],
-              "query": [
-                { "key": "funcao", "value": "Vendedor", "description": "Supervisor, Gerente ou Vendedor", "disabled": true },
-                { "key": "ativo", "value": "1", "description": "1 = ativos, 0 = inativos", "disabled": true },
-                { "key": "busca", "value": "", "description": "Busca parcial em nome ou login", "disabled": true },
-                { "key": "por_pagina", "value": "15", "description": "1 a 100 (padrão 15)" },
-                { "key": "page", "value": "1" }
-              ]
-            },
-            "description": "Lista a sub-hierarquia de quem está autenticado. Permissão: usuarios.listar."
-          }
-        },
-        {
-          "name": "Cadastrar usuário",
-          "request": {
-            "method": "POST",
-            "header": [
-              { "key": "Accept", "value": "application/json" },
-              { "key": "Content-Type", "value": "application/json" }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n    \"nome\": \"Novo Supervisor\",\n    \"funcao\": \"Supervisor\",\n    \"login\": \"novo.supervisor\",\n    \"password\": \"segredo1\",\n    \"telefone\": \"(69) 99999-0000\",\n    \"endereco\": \"Rua B, 20\"\n}"
-            },
-            "url": {
-              "raw": "{{base_url}}/usuarios",
-              "host": ["{{base_url}}"],
-              "path": ["usuarios"]
-            },
-            "description": "Cadastra a função imediatamente abaixo da de quem está autenticado (Admin → Supervisor, Supervisor → Gerente, Gerente → Vendedor). Permissão: usuarios.cadastrar."
-          }
-        },
-        {
-          "name": "Consultar usuário",
-          "request": {
-            "method": "GET",
-            "header": [
-              { "key": "Accept", "value": "application/json" }
-            ],
-            "url": {
-              "raw": "{{base_url}}/usuarios/{{usuario_id}}",
-              "host": ["{{base_url}}"],
-              "path": ["usuarios", "{{usuario_id}}"]
-            },
-            "description": "Consulta um usuário da sub-hierarquia (404 fora dela). Permissão: usuarios.consultar."
-          }
-        },
-        {
-          "name": "Editar usuário",
-          "request": {
-            "method": "PATCH",
-            "header": [
-              { "key": "Accept", "value": "application/json" },
-              { "key": "Content-Type", "value": "application/json" }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n    \"nome\": \"Nome Atualizado\",\n    \"telefone\": \"(69) 98888-1111\",\n    \"endereco\": \"Rua C, 30\"\n}"
-            },
-            "url": {
-              "raw": "{{base_url}}/usuarios/{{usuario_id}}",
-              "host": ["{{base_url}}"],
-              "path": ["usuarios", "{{usuario_id}}"]
-            },
-            "description": "Edita dados cadastrais (nome, password, telefone, endereco, usuarios_id). Permissão: usuarios.editar. Função e login não podem ser alterados."
-          }
-        },
-        {
-          "name": "Desativar usuário (cascata)",
-          "request": {
-            "method": "PATCH",
-            "header": [
-              { "key": "Accept", "value": "application/json" },
-              { "key": "Content-Type", "value": "application/json" }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n    \"ativo\": false\n}"
-            },
-            "url": {
-              "raw": "{{base_url}}/usuarios/{{usuario_id}}",
-              "host": ["{{base_url}}"],
-              "path": ["usuarios", "{{usuario_id}}"]
-            },
-            "description": "Desativa o usuário e toda a sua sub-hierarquia. Permissão: usuarios.alterar_situacao (independente de usuarios.editar)."
-          }
-        },
-        {
-          "name": "Reativar usuário (cascata)",
-          "request": {
-            "method": "PATCH",
-            "header": [
-              { "key": "Accept", "value": "application/json" },
-              { "key": "Content-Type", "value": "application/json" }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n    \"ativo\": true\n}"
-            },
-            "url": {
-              "raw": "{{base_url}}/usuarios/{{usuario_id}}",
-              "host": ["{{base_url}}"],
-              "path": ["usuarios", "{{usuario_id}}"]
-            },
-            "description": "Reativa o usuário e toda a sua sub-hierarquia. Permissão: usuarios.alterar_situacao."
-          }
-        },
-        {
-          "name": "Excluir usuário (cascata)",
-          "request": {
-            "method": "DELETE",
-            "header": [
-              { "key": "Accept", "value": "application/json" }
-            ],
-            "url": {
-              "raw": "{{base_url}}/usuarios/{{usuario_id}}",
-              "host": ["{{base_url}}"],
-              "path": ["usuarios", "{{usuario_id}}"]
-            },
-            "description": "Exclusão lógica (soft delete) do usuário e de toda a sua sub-hierarquia (204). Permissão: usuarios.excluir."
-          }
-        }
-      ]
-    },
-    {
-      "name": "Permissões do usuário",
-      "item": [
-        {
-          "name": "Listar permissões do usuário",
-          "request": {
-            "method": "GET",
-            "header": [
-              { "key": "Accept", "value": "application/json" }
-            ],
-            "url": {
-              "raw": "{{base_url}}/usuarios/{{usuario_id}}/permissoes",
-              "host": ["{{base_url}}"],
-              "path": ["usuarios", "{{usuario_id}}", "permissoes"]
-            },
-            "description": "Lista as permissões diretas do subordinado. Permissão: usuarios.gerenciar_permissoes."
-          }
-        },
-        {
-          "name": "Dar permissão",
-          "request": {
-            "method": "POST",
-            "header": [
-              { "key": "Accept", "value": "application/json" },
-              { "key": "Content-Type", "value": "application/json" }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n    \"permissao\": \"{{permissao}}\"\n}"
-            },
-            "url": {
-              "raw": "{{base_url}}/usuarios/{{usuario_id}}/permissoes",
-              "host": ["{{base_url}}"],
-              "path": ["usuarios", "{{usuario_id}}", "permissoes"]
-            },
-            "description": "Dá uma permissão ao subordinado. Só é possível conceder permissões que quem está autenticado possui (403 caso contrário)."
-          }
-        },
-        {
-          "name": "Tirar permissão",
-          "request": {
-            "method": "DELETE",
-            "header": [
-              { "key": "Accept", "value": "application/json" }
-            ],
-            "url": {
-              "raw": "{{base_url}}/usuarios/{{usuario_id}}/permissoes/{{permissao}}",
-              "host": ["{{base_url}}"],
-              "path": ["usuarios", "{{usuario_id}}", "permissoes", "{{permissao}}"]
-            },
-            "description": "Remove o vínculo entre o subordinado e a permissão (422 se ele não a possui)."
-          }
-        }
-      ]
-    }
-  ]
 }
