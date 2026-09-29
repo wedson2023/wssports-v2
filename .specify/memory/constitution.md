@@ -1,12 +1,12 @@
 <!--
 Sync Impact Report
-- Version change: 1.9.0 → 1.10.0 (MINOR: nova regra para colunas que referenciam tabelas ainda
-  inexistentes)
-- Princípios modificados: nenhum (I a V mantidos sem alteração)
+- Version change: 1.11.0 → 1.12.0 (MINOR: nova exceção para colunas exigidas pela autenticação)
+- Princípios modificados:
+  - I. Nomenclatura em snake_case: `password` e `remember_token` mantêm o nome em inglês nas
+    tabelas de quem se autentica (guard do Laravel e `jwt-auth`); regulariza `usuarios` (spec 001)
+    e `clientes` (spec 002)
 - Princípios adicionados: nenhum
-- Seções alteradas:
-  - Stack e Restrições Técnicas: colunas que dependem de tabela ainda não criada DEVEM ser criadas
-    sem chave estrangeira (varchar ou id solto) e ajustadas na spec que criar a tabela de destino
+- Seções alteradas: nenhuma
 - Seções adicionadas: nenhuma
 - Seções removidas: nenhuma
 - TODOs pendentes: nenhum
@@ -37,9 +37,17 @@ Sync Impact Report
   `model_has_permissions`, `role_has_permissions`) mantêm os nomes padrão do pacote em inglês
   (tabelas e colunas) e NÃO precisam ter `deleted_at`. Tabelas criadas pelo próprio projeto
   continuam em português, com `created_at`, `updated_at` e `deleted_at`.
+- **Exceção — colunas exigidas pela autenticação do framework**: as colunas `password` e
+  `remember_token` mantêm o nome em inglês nas tabelas de quem se autentica (ex.: `usuarios`,
+  `clientes`), pois o guard do Laravel e o `jwt-auth` dependem desses nomes. As demais colunas
+  dessas tabelas continuam em português.
 - **Prefixo de tabelas relacionadas**: tabelas ligadas a uma tabela principal DEVEM usar o nome
   dela como prefixo, seguido do complemento (ex.: `clientes` → `clientes_transacoes`,
   `clientes_configuracoes`), para ficarem listadas juntas no banco.
+- **Nomes de permissões**: toda permissão DEVE seguir o padrão `<recurso>.<acao>`, em que
+  `recurso` é o nome da tabela principal a que a ação se refere e `acao` é um verbo ou expressão
+  em `snake_case` (ex.: `usuarios.listar`, `clientes.excluir`, `clientes.movimentar_saldo`,
+  `clientes_promocoes.gerenciar`).
 - Nomes de pastas DEVEM ser escritos em **inglês** e `snake_case` (ex.: `components`,
   `services`, `pages`, `user_roles`).
 - **Exceção — pastas PSR-4**: pastas dentro de `app/` que correspondem a namespaces PSR-4
@@ -168,4 +176,4 @@ de memória previsíveis mesmo com grandes volumes de dados.
 - A conformidade DEVE ser verificada em todo plano (Constitution Check), em toda lista de
   tarefas e em toda revisão de código.
 
-**Version**: 1.10.0 | **Ratified**: 2026-09-25 | **Last Amended**: 2026-09-29
+**Version**: 1.12.0 | **Ratified**: 2026-09-25 | **Last Amended**: 2026-09-29

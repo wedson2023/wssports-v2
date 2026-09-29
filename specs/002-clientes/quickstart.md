@@ -42,13 +42,13 @@ Para os testes de permissão, dê ou tire permissões pelas rotas da spec 001.
 
 | # | Ação | Esperado | Ref. |
 |---|---|---|---|
-| 1 | `POST /api/area_cliente/cadastro` com dados válidos, sem promoção ativa | `201`; cliente ativo, 3 saldos `0.00`; travas iguais ao padrão; linha no log "WhatsApp" de boas-vindas | US1-1, FR-011, FR-013 |
+| 1 | `POST /api/area_cliente/cadastro` com dados válidos, sem promoção ativa | `201`; cliente ativo, 3 saldos `0.00`; configurações iguais ao padrão; linha no log "WhatsApp" de boas-vindas | US1-1, FR-011, FR-013 |
 | 2 | Repetir o cadastro com o mesmo telefone (com máscara `(11) 98888-7777`) | `422` telefone já cadastrado | US1-3, Edge |
 | 3 | Cadastro com CPF repetido; CPF inválido; nascido há 17 anos; senha `abcdefgh`; confirmação diferente | `422` com a mensagem de cada caso | US1-4 a US1-7 |
 | 4 | Cadastro sem `codigo_pais` | cliente com `codigo_pais = "55"` | US1-8 |
-| 5 | Criar promoção de cadastro de `20.00` em esportes (`POST /api/clientes_promocoes`, `token_admin`) e cadastrar um cliente | `saldo_promocao_esportes = "20.00"` e transação de origem `promocao` com `referencia_id` da promoção | US1-2, US8, FR-064 |
+| 5 | Criar promoção de primeiro cadastro de `20.00` em esportes (`POST /api/clientes_promocoes`, `token_admin`) e cadastrar um cliente | `saldo_promocao_esportes = "20.00"` e transação de origem `promocao` com `referencia_id` da promoção | US1-2, US8, FR-064 |
 | 6 | Cadastrar outro cliente com `aceita_promocao: false` | saldos promocionais `0.00`, sem transação | US1-11 |
-| 7 | Criar segunda promoção de cadastro em esportes com período sobreposto | `422` sobreposição | US8-2 |
+| 7 | Criar segunda promoção de primeiro cadastro em esportes com período sobreposto | `422` sobreposição | US8-2 |
 | 8 | `POST /api/area_cliente/auth/login` com telefone e senha certos | `200` com token | US2-1 |
 | 9 | Senha errada; 6 tentativas erradas em 1 min | `401` genérico; depois `429` com o tempo de espera | US2-2, US2-7 |
 | 10 | Usar `token_cliente` em `GET /api/usuarios` e `token_admin` em `GET /api/area_cliente/meus_dados` | `401` nos dois | US2-4, SC-004 |
@@ -65,19 +65,21 @@ Para os testes de permissão, dê ou tire permissões pelas rotas da spec 001.
 | 21 | `PUT /api/clientes/{id}/configuracoes` mudando `valor_maximo_aposta`; depois mínimo > máximo | `200`; depois `422` | US6-1, US6-2 |
 | 22 | Alterar `clientes_configuracoes_padrao` e cadastrar um cliente | o novo cliente recebe o padrão novo; os antigos não mudam | FR-043 |
 | 23 | `GET /api/clientes?busca=...` por nome, por parte do telefone e por CPF; filtros `ativo`, `genero`, faixa de saldo, `com_saldo_promocional`, ordenação por `saldo desc` | resultados corretos, paginados (padrão 20) | US7-1, FR-052 |
-| 24 | Gerente com `ver_clientes` e sem `ver_dados_completos_clientes`: listar e buscar por parte do CPF e pelo CPF completo | CPF/telefone mascarados; parte do CPF não encontra; CPF completo encontra | US7-2, FR-052a |
-| 25 | `PATCH /api/clientes/{id}/situacao` `ativo: false`; cliente tenta usar o token e entrar | `403` com o token; login `403`; reativar volta a funcionar | US7-3, US2-8 |
-| 26 | Gerente com `excluir_clientes` tenta `DELETE /api/clientes/{id}` | `403` | US7-7, FR-049 |
-| 27 | Admin exclui o cliente | `204`; some da listagem; no banco `telefone`/`cpf` com `_deleted_<timestamp>`; saldos e transações preservados | US7-4, FR-055 |
+| 24 | Gerente com `clientes.listar` e sem `clientes.ver_dados_completos`: listar e buscar por parte do CPF e pelo CPF completo | CPF/telefone mascarados; parte do CPF não encontra; CPF completo encontra | US7-2, FR-052a |
+| 25 | `PATCH /api/clientes/{id}/situacao` `ativo: false`; cliente tenta usar o token e entrar | `403` com o token; login `403`; ao reativar, o login volta a funcionar (o token antigo continua recusado) | US7-3, US2-8 |
+| 26 | Gerente com `clientes.excluir` tenta `DELETE /api/clientes/{id}` | `403` | US7-7, FR-049 |
+| 27 | Admin exclui o cliente | `204`; some da listagem; no banco `telefone`/`cpf` com `_deleted_<timestamp>`; saldos e transações preservados; o token que o cliente tinha passa a `401` e o login com o telefone antigo dá `401` genérico | US7-4, FR-055 |
 | 28 | Cadastrar novo cliente com o mesmo telefone e CPF do excluído | `201` (dados liberados) | Edge |
 | 29 | `POST /api/clientes/{id}/restaurar` sem dados novos | `422` indicando `telefone` e `cpf` em conflito | US7-6 |
-| 30 | Restaurar informando `telefone` e `cpf` novos e livres | `200`; cliente volta com os dados novos; a promoção de cadastro não é reaplicada | US7-6, FR-065 |
+| 30 | Restaurar informando `telefone` e `cpf` novos e livres | `200`; cliente volta com os dados novos; a promoção de primeiro cadastro não é reaplicada | US7-6, FR-065 |
 | 31 | Excluir e restaurar um cliente sem conflito | volta com telefone/CPF originais | US7-5 |
 | 32 | `POST /api/area_cliente/auth/recuperar_senha` com telefone cadastrado e com não cadastrado | mesma resposta `200`; código de 6 dígitos só no log do primeiro | US3-1, US3-2 |
 | 33 | Pedir de novo em menos de 1 min | `429` | US3-6 |
 | 34 | `redefinir_senha` com código errado 5 vezes; depois com o código certo | `422`; o código foi invalidado, pedir outro | US3-5 |
 | 35 | Novo pedido; `redefinir_senha` com o código do log e nova senha | `204`; tokens antigos `401`; login só com a nova senha; reusar o código → `422` | US3-3, US3-4 |
 | 36 | Vendedor (qualquer permissão) em `GET /api/clientes` | `403` | FR-049 |
+| 37 | Criar promoção de `primeiro_deposito` em esportes com o mesmo período da de `primeiro_cadastro` | `201` (categorias diferentes podem se sobrepor) | US8-3, FR-063 |
+| 38 | Carga: no `php artisan tinker`, `Clientes::factory()->count(100000)->create()` e 10.000 transações para um cliente via `SaldoClientes`; medir `GET /api/clientes?busca=...` e o extrato desse cliente | resposta em menos de 2 s | SC-009 |
 
 ## 4. Coleção do Postman
 

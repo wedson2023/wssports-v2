@@ -49,8 +49,9 @@ Todas as rotas `{cliente}` usam `->missing(fn () => abort(404, 'Cliente não enc
 - JSON (`Accept: application/json`); rotas protegidas exigem `Authorization: Bearer <token>`.
 - `401 {"message": "Não autenticado."}`: sem token, token inválido, expirado, invalidado, emitido
   para o outro guard (cliente ↔ painel) ou anterior a `tokens_validos_desde`.
-- `403 {"message": "Cliente sem permissão de acesso."}`: cliente inativo ou excluído (área do
-  cliente).
+- `403 {"message": "Cliente sem permissão de acesso."}`: cliente **inativo** (área do cliente).
+  Cliente **excluído** recebe `401`: o guard não encontra registros com soft delete, e no login o
+  telefone já tem o sufixo de exclusão (cai no `401` genérico).
 - `403 {"message": "Você não tem permissão para esta ação."}`: usuário do painel sem a permissão
   ou com função não permitida para ela.
 - `404 {"message": "Cliente não encontrado."}`: inexistente ou excluído (exceto em `restaurar`).
@@ -83,7 +84,7 @@ Todas as rotas `{cliente}` usam `->missing(fn () => abort(404, 'Cliente não enc
 }
 ```
 
-No painel, sem `ver_dados_completos_clientes`: `"cpf": "***.456.789-**"` e
+No painel, sem `clientes.ver_dados_completos`: `"cpf": "***.456.789-**"` e
 `"telefone": "(11) *****-7777"` (código 55: DDD e 4 últimos dígitos; demais países: só os 4
 últimos dígitos, ex.: `"******4567"`). Na listagem de excluídos aparece também
 `deleted_at`, e `telefone`/`cpf` vêm sem o sufixo.
@@ -93,7 +94,7 @@ No painel, sem `ver_dados_completos_clientes`: `"cpf": "***.456.789-**"` e
 | Rota | Corpo / parâmetros | Sucesso | Erros |
 |---|---|---|---|
 | `POST /api/area_cliente/cadastro` | `nome`, `codigo_pais?` (padrão 55), `telefone`, `password`, `password_confirmation`, `cpf`, `data_nascimento`, `genero`, `codigo_afiliado?`, `aceita_promocao?` (padrão `true`) | `201` com `cliente` e `token` | `422` (duplicidade, CPF inválido, menor de 18, senha fraca ou confirmação diferente) |
-| `POST /api/area_cliente/auth/login` | `codigo_pais?`, `telefone`, `password` | `200 {"token", "tipo": "bearer", "expira_em": 3600}` | `401 "Telefone ou senha inválidos."`; `403` inativo/excluído; `422`; `429` |
+| `POST /api/area_cliente/auth/login` | `codigo_pais?`, `telefone`, `password` | `200 {"token", "tipo": "bearer", "expira_em": 3600}` | `401 "Telefone ou senha inválidos."`; `403` inativo (excluído cai no `401` genérico); `422`; `429` |
 | `POST /api/area_cliente/auth/refresh` | — | `200` com novo token | `401`; `403` |
 | `POST /api/area_cliente/auth/logout` | — | `204` | `401` |
 | `POST /api/area_cliente/auth/recuperar_senha` | `codigo_pais?`, `telefone` | `200 {"message": "Se o telefone estiver cadastrado, enviaremos um código."}` (sempre igual) | `422`; `429` (menos de 1 min desde o último pedido) |
@@ -128,29 +129,29 @@ Ordem: da mais recente para a mais antiga.
 
 | Rota | Permissão | Corpo / parâmetros | Sucesso | Erros |
 |---|---|---|---|---|
-| `GET /api/clientes` | `ver_clientes` | `busca?` (nome, telefone ou CPF), `ativo?`, `codigo_pais?`, `codigo_afiliado?`, `cadastro_de?`, `cadastro_ate?`, `idade_minima?`, `idade_maxima?`, `genero?`, `saldo_minimo?`, `saldo_maximo?`, `com_saldo_promocional?`, `ordenar_por?` (`nome`, `created_at`, `saldo`), `direcao?` (`asc`, `desc`), `por_pagina?` | `200` paginado de `cliente` | `422` |
-| `GET /api/clientes/{cliente}` | `ver_clientes` | — | `200` `cliente` | `404` |
-| `PUT/PATCH /api/clientes/{cliente}` | `editar_clientes` | `nome?`, `codigo_pais?`, `telefone?`, `cpf?`, `data_nascimento?`, `genero?`, `codigo_afiliado?`, `aceita_promocao?`, `password?` + `password_confirmation` | `200` `cliente` | `404`; `422` (duplicidade; saldos não são aceitos) |
-| `PATCH /api/clientes/{cliente}/situacao` | `editar_clientes` | `ativo` (boolean) | `200` `cliente` | `404`; `422` |
-| `DELETE /api/clientes/{cliente}` | `excluir_clientes` (Admin/Supervisor) | — | `204` (sufixo em telefone/CPF) | `403`; `404` |
-| `GET /api/clientes/excluidos` | `restaurar_clientes` (Admin/Supervisor) | mesmos filtros da listagem | `200` paginado | `403` |
-| `POST /api/clientes/{cliente}/restaurar` | `restaurar_clientes` (Admin/Supervisor) | `codigo_pais?`, `telefone?`, `cpf?` (só para resolver conflito) | `200` `cliente` | `403`; `404`; `422 "Cliente não está excluído."`; `422` com `errors.telefone` e/ou `errors.cpf` = "Já está em uso por outro cliente; informe um novo valor." |
+| `GET /api/clientes` | `clientes.listar` | `busca?` (nome, telefone ou CPF), `ativo?`, `codigo_pais?`, `codigo_afiliado?`, `cadastro_de?`, `cadastro_ate?`, `idade_minima?`, `idade_maxima?`, `genero?`, `saldo_minimo?`, `saldo_maximo?`, `com_saldo_promocional?`, `ordenar_por?` (`nome`, `created_at`, `saldo`), `direcao?` (`asc`, `desc`), `por_pagina?` | `200` paginado de `cliente` | `422` |
+| `GET /api/clientes/{cliente}` | `clientes.listar` | — | `200` `cliente` | `404` |
+| `PUT/PATCH /api/clientes/{cliente}` | `clientes.editar` | `nome?`, `codigo_pais?`, `telefone?`, `cpf?`, `data_nascimento?`, `genero?`, `codigo_afiliado?`, `aceita_promocao?`, `password?` + `password_confirmation` | `200` `cliente` | `404`; `422` (duplicidade; saldos não são aceitos) |
+| `PATCH /api/clientes/{cliente}/situacao` | `clientes.editar` | `ativo` (boolean) | `200` `cliente` | `404`; `422` |
+| `DELETE /api/clientes/{cliente}` | `clientes.excluir` (Admin/Supervisor) | — | `204` (sufixo em telefone/CPF) | `403`; `404` |
+| `GET /api/clientes/excluidos` | `clientes.restaurar` (Admin/Supervisor) | mesmos filtros da listagem | `200` paginado | `403` |
+| `POST /api/clientes/{cliente}/restaurar` | `clientes.restaurar` (Admin/Supervisor) | `codigo_pais?`, `telefone?`, `cpf?` (só para resolver conflito) | `200` `cliente` | `403`; `404`; `422 "Cliente não está excluído."`; `422` com `errors.telefone` e/ou `errors.cpf` = "Já está em uso por outro cliente; informe um novo valor." |
 
 ## Saldos (painel)
 
 | Rota | Permissão | Corpo / parâmetros | Sucesso | Erros |
 |---|---|---|---|---|
-| `GET /api/clientes/{cliente}/transacoes` | `ver_clientes` | `data_inicial?`, `data_final?`, `carteira?`, `por_pagina?` | `200` paginado de `transacao` | `404`; `422` |
-| `POST /api/clientes/{cliente}/transacoes` | `movimentar_saldo_clientes` | `carteira`, `tipo` (`credito`/`debito`), `valor` (> 0, 2 casas), `observacao` (obrigatória) | `201` `transacao` (origem `ajuste_manual`, autor = usuário logado) | `404`; `422 "Saldo insuficiente."`; `422` |
+| `GET /api/clientes/{cliente}/transacoes` | `clientes.listar` | `data_inicial?`, `data_final?`, `carteira?`, `por_pagina?` | `200` paginado de `transacao` | `404`; `422` |
+| `POST /api/clientes/{cliente}/transacoes` | `clientes.movimentar_saldo` | `carteira`, `tipo` (`credito`/`debito`), `valor` (> 0, 2 casas), `observacao` (obrigatória) | `201` `transacao` (origem `ajuste_manual`, autor = usuário logado) | `404`; `422 "Saldo insuficiente."`; `422` |
 
-## Travas (painel)
+## Configurações (painel)
 
 | Rota | Permissão | Corpo | Sucesso | Erros |
 |---|---|---|---|---|
-| `GET /api/clientes/{cliente}/configuracoes` | `ver_clientes` | — | `200` `configuracoes` | `404` |
-| `PUT /api/clientes/{cliente}/configuracoes` | `editar_travas_clientes` | todos os campos de `configuracoes` | `200` `configuracoes` | `404`; `422` (mínimo > máximo etc.) |
-| `GET /api/clientes_configuracoes_padrao` | `editar_configuracoes_padrao_clientes` (Admin/Supervisor) | — | `200` `configuracoes` | `403` |
-| `PUT /api/clientes_configuracoes_padrao` | `editar_configuracoes_padrao_clientes` (Admin/Supervisor) | todos os campos | `200` `configuracoes` | `403`; `422` |
+| `GET /api/clientes/{cliente}/configuracoes` | `clientes.listar` | — | `200` `configuracoes` | `404` |
+| `PUT /api/clientes/{cliente}/configuracoes` | `clientes.editar_configuracoes` | todos os campos de `configuracoes` | `200` `configuracoes` | `404`; `422` (mínimo > máximo etc.) |
+| `GET /api/clientes_configuracoes_padrao` | `clientes.editar_configuracoes_padrao` (Admin/Supervisor) | — | `200` `configuracoes` | `403` |
+| `PUT /api/clientes_configuracoes_padrao` | `clientes.editar_configuracoes_padrao` (Admin/Supervisor) | todos os campos | `200` `configuracoes` | `403`; `422` |
 
 ```json
 {
@@ -171,17 +172,17 @@ Ordem: da mais recente para a mais antiga.
 }
 ```
 
-Não existe rota da área do cliente para alterar travas (FR-045).
+Não existe rota da área do cliente para alterar configurações (FR-045).
 
 ## Promoções (painel)
 
 | Rota | Permissão | Corpo / parâmetros | Sucesso | Erros |
 |---|---|---|---|---|
-| `GET /api/clientes_promocoes` | `gerenciar_promocoes` | `ativa?`, `modalidade?`, `gatilho?`, `por_pagina?` | `200` paginado | `403` |
-| `GET /api/clientes_promocoes/{promocao}` | `gerenciar_promocoes` | — | `200` | `404 "Promoção não encontrada."` |
-| `POST /api/clientes_promocoes` | `gerenciar_promocoes` | `nome`, `descricao?`, `modalidade`, `gatilho`, `valor`, `data_inicio`, `data_fim?`, `ativa?` | `201` | `422` (inclui sobreposição: "Já existe uma promoção de cadastro vigente para esta modalidade no período.") |
-| `PUT/PATCH /api/clientes_promocoes/{promocao}` | `gerenciar_promocoes` | mesmos campos (ativar/desativar pelo `ativa`) | `200` | `404`; `422` |
-| `DELETE /api/clientes_promocoes/{promocao}` | `gerenciar_promocoes` | — | `204` (soft delete) | `404` |
+| `GET /api/clientes_promocoes` | `clientes_promocoes.gerenciar` | `ativa?`, `modalidade?`, `categoria?`, `por_pagina?` | `200` paginado | `403` |
+| `GET /api/clientes_promocoes/{promocao}` | `clientes_promocoes.gerenciar` | — | `200` | `404 "Promoção não encontrada."` |
+| `POST /api/clientes_promocoes` | `clientes_promocoes.gerenciar` | `nome`, `descricao?`, `modalidade`, `categoria`, `valor`, `data_inicio`, `data_fim?`, `ativa?` | `201` | `422` (inclui sobreposição: "Já existe uma promoção ativa desta categoria e modalidade no período.") |
+| `PUT/PATCH /api/clientes_promocoes/{promocao}` | `clientes_promocoes.gerenciar` | mesmos campos (ativar/desativar pelo `ativa`) | `200` | `404`; `422` |
+| `DELETE /api/clientes_promocoes/{promocao}` | `clientes_promocoes.gerenciar` | — | `204` (soft delete) | `404` |
 
 ```json
 {
@@ -189,7 +190,7 @@ Não existe rota da área do cliente para alterar travas (FR-045).
   "nome": "Bônus de boas-vindas",
   "descricao": "R$ 20 para apostar em esportes",
   "modalidade": "esportes",
-  "gatilho": "cadastro",
+  "categoria": "primeiro_cadastro",
   "valor": "20.00",
   "data_inicio": "2026-10-01T00:00:00.000000Z",
   "data_fim": null,

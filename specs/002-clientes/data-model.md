@@ -49,7 +49,7 @@ Todas as tabelas são novas, com `created_at`, `updated_at` e `deleted_at` (cons
 
 **Índices**: (`clientes_id`, `created_at`) para o extrato; (`clientes_id`, `carteira`).
 
-## Tabela `clientes_configuracoes` (travas do cliente)
+## Tabela `clientes_configuracoes` (configurações do cliente)
 
 | Coluna | Tipo | Regras |
 |---|---|---|
@@ -96,7 +96,7 @@ As validações de coerência são as mesmas de `clientes_configuracoes` (FR-044
 | nome | varchar(150) | obrigatório |
 | descricao | text null | |
 | modalidade | varchar(20) | enum `ModalidadePromocao`: `esportes`, `cassino` |
-| gatilho | varchar(30) | enum `GatilhoPromocao`: `cadastro` |
+| categoria | varchar(30) | enum `CategoriaPromocao`: `primeiro_cadastro`, `primeiro_deposito`, `qualquer_deposito`, `indicacao` |
 | valor | decimal(15,2) | > 0 |
 | data_inicio | datetime | obrigatório |
 | data_fim | datetime null | ≥ `data_inicio`; `null` = sem fim |
@@ -104,8 +104,8 @@ As validações de coerência são as mesmas de `clientes_configuracoes` (FR-044
 | created_at / updated_at / deleted_at | timestamp | |
 
 **Vigente** = `ativa`, não excluída e `data_inicio ≤ agora ≤ data_fim` (ou `data_fim` nula).
-**Sobreposição proibida**: duas promoções ativas de `cadastro` da mesma modalidade com períodos
-que se cruzam (R-15).
+**Sobreposição proibida**: duas promoções ativas da mesma categoria e mesma modalidade com
+períodos que se cruzam; categorias diferentes podem se sobrepor (R-15).
 
 ## Tabela `clientes_codigos_recuperacao`
 
@@ -138,22 +138,22 @@ que se cruzam (R-15).
 | `TipoTransacao` | credito, debito |
 | `OrigemTransacao` | ajuste_manual, promocao, aposta, premio, estorno |
 | `ModalidadePromocao` | esportes, cassino (método `carteira()` → `Carteira`) |
-| `GatilhoPromocao` | cadastro |
+| `CategoriaPromocao` | primeiro_cadastro, primeiro_deposito, qualquer_deposito, indicacao |
 | `PermissaoCliente` | as 9 permissões; método `funcoes_permitidas()` (R-03) |
 
 ## Permissões (guard `api`)
 
 | Permissão | Funções que podem usar | Padrão |
 |---|---|---|
-| `ver_clientes` | Admin, Supervisor, Gerente | Admin |
-| `ver_dados_completos_clientes` | Admin, Supervisor, Gerente | Admin |
-| `editar_clientes` | Admin, Supervisor, Gerente | Admin |
-| `editar_travas_clientes` | Admin, Supervisor, Gerente | Admin |
-| `movimentar_saldo_clientes` | Admin, Supervisor, Gerente | Admin |
-| `gerenciar_promocoes` | Admin, Supervisor, Gerente | Admin |
-| `excluir_clientes` | Admin, Supervisor | Admin |
-| `restaurar_clientes` | Admin, Supervisor | Admin |
-| `editar_configuracoes_padrao_clientes` | Admin, Supervisor | Admin |
+| `clientes.listar` | Admin, Supervisor, Gerente | Admin |
+| `clientes.ver_dados_completos` | Admin, Supervisor, Gerente | Admin |
+| `clientes.editar` | Admin, Supervisor, Gerente | Admin |
+| `clientes.editar_configuracoes` | Admin, Supervisor, Gerente | Admin |
+| `clientes.movimentar_saldo` | Admin, Supervisor, Gerente | Admin |
+| `clientes_promocoes.gerenciar` | Admin, Supervisor, Gerente | Admin |
+| `clientes.excluir` | Admin, Supervisor | Admin |
+| `clientes.restaurar` | Admin, Supervisor | Admin |
+| `clientes.editar_configuracoes_padrao` | Admin, Supervisor | Admin |
 
 ## Estados do cliente
 
@@ -166,5 +166,5 @@ cadastro ──► ativo ◄──► inativo
 ```
 
 - Inativo ou excluído: `pode_acessar()` falso; login, renovação, recuperação e rotas da área do
-  cliente recusadas.
+  cliente recusadas — inativo com `403`, excluído com `401` (o guard não encontra o registro).
 - Desativar, excluir, trocar senha ou recuperar senha: `tokens_validos_desde = agora`.

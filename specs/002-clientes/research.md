@@ -21,8 +21,9 @@ foram resolvidas no `/speckit-clarify` (seção Clarifications da [spec](spec.md
 ## R-02. Bloqueio de clientes inativos, excluídos e tokens anteriores à troca de senha
 
 - **Decisão**: novo middleware `App\Http\Middleware\GarantirAcessoCliente` nas rotas autenticadas
-  da área do cliente. Ele recusa com 403 quando `Clientes::pode_acessar()` é falso (inativo ou
-  excluído) e com 401 quando o `iat` do token é anterior a `clientes.tokens_validos_desde`. A
+  da área do cliente. Ele recusa com 403 quando `Clientes::pode_acessar()` é falso (na prática,
+  cliente inativo: o excluído nem chega ao middleware, pois o guard não encontra registros com soft
+  delete e responde 401) e com 401 quando o `iat` do token é anterior a `clientes.tokens_validos_desde`. A
   coluna `tokens_validos_desde` é preenchida na recuperação de senha (FR-025), na troca de senha
   e na desativação ou exclusão pelo painel.
 - **Motivo**: o JWT não guarda estado; a blacklist só invalida o token usado na requisição. Com
@@ -30,31 +31,35 @@ foram resolvidas no `/speckit-clarify` (seção Clarifications da [spec](spec.md
   FR-017, FR-054).
 - **Alternativas**: reaproveitar o `GarantirAcesso` da spec 001 (não conhece a data de corte do
   token); guardar cada token emitido numa tabela (estado desnecessário).
+- **Limitação aceita**: o `iat` tem precisão de segundos; um token emitido no mesmo segundo da
+  data de corte continua válido. Com `refresh_iat = false` (config atual), o token renovado mantém
+  o `iat` original, então a renovação não burla a data de corte.
 
 ## R-03. Permissões de clientes no spatie e restrição por função
 
 - **Decisão**: as 9 permissões da spec entram no guard `api` com os nomes definidos nela
-  (`ver_clientes`, `ver_dados_completos_clientes`, `editar_clientes`, `excluir_clientes`,
-  `restaurar_clientes`, `editar_travas_clientes`, `movimentar_saldo_clientes`,
-  `editar_configuracoes_padrao_clientes`, `gerenciar_promocoes`). Elas ficam num novo enum
+  (`clientes.listar`, `clientes.ver_dados_completos`, `clientes.editar`, `clientes.excluir`,
+  `clientes.restaurar`, `clientes.editar_configuracoes`, `clientes.movimentar_saldo`,
+  `clientes.editar_configuracoes_padrao`, `clientes_promocoes.gerenciar`). Elas ficam num novo enum
   `App\Enums\PermissaoCliente`, que também informa quais funções podem usar cada uma:
-  - Admin, Supervisor e Gerente: `ver_clientes`, `ver_dados_completos_clientes`,
-    `editar_clientes`, `editar_travas_clientes`, `movimentar_saldo_clientes`,
-    `gerenciar_promocoes`;
-  - somente Admin e Supervisor: `excluir_clientes`, `restaurar_clientes`,
-    `editar_configuracoes_padrao_clientes`;
+  - Admin, Supervisor e Gerente: `clientes.listar`, `clientes.ver_dados_completos`,
+    `clientes.editar`, `clientes.editar_configuracoes`, `clientes.movimentar_saldo`,
+    `clientes_promocoes.gerenciar`;
+  - somente Admin e Supervisor: `clientes.excluir`, `clientes.restaurar`,
+    `clientes.editar_configuracoes_padrao`;
   - Vendedor: nenhuma.
 
   Os controllers do painel checam as duas coisas numa única verificação (trait
   `GarantirPermissaoCliente`): ter a permissão direta **e** ter uma função permitida. Assim, um
-  Gerente que receba `excluir_clientes` continua recusado (FR-049).
+  Gerente que receba `clientes.excluir` continua recusado (FR-049).
 - **Motivo**: segue o modelo da spec 001 (permissões diretas no usuário) sem alterar o
   `PermissoesUsuariosController` nem o enum `Funcao`.
 - **Distribuição padrão**: o novo `ClientesSeeder` cria as permissões e as dá ao(s) usuário(s) com
   papel Admin. Os demais recebem pela gestão de permissões da spec 001.
-- **Observação**: a spec 001 usa o formato `usuarios.listar`; aqui foram mantidos os nomes
-  escritos na spec 002. Se preferir o mesmo formato (`clientes.listar`...), ajustar spec e plano
-  antes do `/speckit-tasks`.
+- **Nomes**: por decisão do responsável (2026-09-29), todas as permissões seguem o padrão
+  `<recurso>.<acao>` da spec 001 (`usuarios.listar`). O recurso é o nome da tabela principal
+  (`clientes`, `clientes_promocoes`). `clientes.listar` cobre listar, consultar, ver extrato e ver
+  configurações, como a antiga `ver_clientes` da spec.
 
 ## R-04. Saldos em centavos inteiros e bloqueio de linha
 
@@ -75,13 +80,13 @@ foram resolvidas no `/speckit-clarify` (seção Clarifications da [spec](spec.md
   `saldo_promocao_cassino` — o valor é o nome da coluna em `clientes`), `TipoTransacao`
   (`credito`, `debito`), `OrigemTransacao` (`ajuste_manual`, `promocao`, `aposta`, `premio`,
   `estorno`), `Genero` (`masculino`, `feminino`, `outro`, `nao_informado`), `ModalidadePromocao`
-  (`esportes`, `cassino`) e `GatilhoPromocao` (`cadastro`). No banco ficam como `varchar`.
+  (`esportes`, `cassino`) e `CategoriaPromocao` (`primeiro_cadastro`, `primeiro_deposito`, `qualquer_deposito`, `indicacao`). No banco ficam como `varchar`.
 - **Motivo**: validação com `Rule::enum`, sem `ENUM` do MySQL (acrescentar valores depois não
   exige alterar a coluna — a spec de apostas vai usar `aposta` e `premio`).
 
 ## R-06. Campos Sim/Não como boolean
 
-- **Decisão**: travas e flags (`ativo`, `aceita_promocao`, `ativa`, permissões das travas) são
+- **Decisão**: configurações e flags (`ativo`, `aceita_promocao`, `ativa`, permissões das configurações) são
   `boolean`, e não `enum('Sim','Não')` como no sistema antigo.
 - **Motivo**: liberado pelo responsável na clarificação; mais simples de validar e consultar.
 
@@ -93,7 +98,8 @@ foram resolvidas no `/speckit-clarify` (seção Clarifications da [spec](spec.md
   `n_minimo_confrontos` → `quantidade_minima_opcoes`, `v_aposta_maxima` → `valor_maximo_aposta`).
   Chaves estrangeiras no formato `<tabela>_id` (`clientes_id`, `usuarios_id`), como na spec 001.
 - **Senha**: coluna `password`, como em `usuarios`, porque o guard e o `attempt()` do Laravel
-  esperam esse nome.
+  esperam esse nome. Coberta pela exceção de colunas exigidas pela autenticação do framework
+  (constituição v1.12.0).
 
 ## R-08. Colunas sem chave estrangeira (constituição v1.10.0)
 
@@ -129,7 +135,7 @@ foram resolvidas no `/speckit-clarify` (seção Clarifications da [spec](spec.md
 ## R-12. Mascaramento de CPF e telefone no painel
 
 - **Decisão**: `ClientesResource` mascara `cpf` (`***.456.789-**`) e `telefone` (só os 4 últimos
-  dígitos) quando o usuário do painel não tem `ver_dados_completos_clientes`. Sem essa permissão, a
+  dígitos) quando o usuário do painel não tem `clientes.ver_dados_completos`. Sem essa permissão, a
   busca por CPF e telefone passa a ser exata (`=`) em vez de por prefixo (`LIKE 'x%'`).
 - **Busca**: nome por `LIKE '%x%'`; telefone e CPF por prefixo (quem tem a permissão). Busca de
   excluídos considera o valor antes do sufixo (o prefixo continua batendo).
@@ -151,15 +157,20 @@ foram resolvidas no `/speckit-clarify` (seção Clarifications da [spec](spec.md
   `app/Listeners` são descobertos automaticamente pelo Laravel 12.
 - **Motivo**: a spec de WhatsApp só vai trocar o listener; o cadastro e a recuperação não mudam.
 
-## R-15. Cadastro atômico e promoção de cadastro
+## R-15. Cadastro atômico e promoção de primeiro cadastro
 
 - **Decisão**: o serviço `App\Services\CadastroClientes` cria, numa transação: o cliente, a cópia
-  das travas padrão em `clientes_configuracoes` e, se `aceita_promocao`, um crédito por promoção
+  das configurações padrão em `clientes_configuracoes` e, se `aceita_promocao`, um crédito por promoção
   de cadastro vigente (via `SaldoClientes`, origem `promocao`, `referencia_id` = id da promoção).
   O evento `ClienteCadastrado` sai depois do commit.
-- **Sobreposição de promoções (FR-063)**: ao salvar uma promoção ativa de gatilho `cadastro`, o
-  controller procura outra ativa, não excluída, da mesma modalidade, com período que se sobrepõe
-  (`inicio_a <= fim_b` e `inicio_b <= fim_a`, fim nulo = sem fim) e recusa com 422.
+- **Sobreposição de promoções (FR-063)**: ao salvar uma promoção ativa, o controller procura outra
+  ativa, não excluída, da **mesma categoria e mesma modalidade**, com período que se sobrepõe
+  (`inicio_a <= fim_b` e `inicio_b <= fim_a`, fim nulo = sem fim) e recusa com 422. Categorias
+  diferentes podem se sobrepor. A modalidade entra na regra para permitir, ao mesmo tempo, um
+  bônus de primeiro cadastro em esportes e outro em cassino.
+- **Categorias (antigo gatilho)**: `primeiro_cadastro` (aplicada nesta spec), `primeiro_deposito`,
+  `qualquer_deposito` e `indicacao` (cadastráveis agora, aplicadas pelas specs de depósito e de
+  afiliados).
 
 ## R-16. Paginação e ordenação
 

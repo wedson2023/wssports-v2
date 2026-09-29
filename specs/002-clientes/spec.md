@@ -10,7 +10,7 @@
 dos usuários do painel e sem vínculo com gerentes ou vendedores; vínculo opcional com afiliado
 por código de indicação. Tabela `clientes` (substitui a antiga `creditos`). Cadastro público,
 login com telefone e senha por JWT em guard próprio, saldo com transações de crédito e débito
-(saldo anterior e posterior), travas específicas de cada cliente criadas do zero, gestão de
+(saldo anterior e posterior), configurações específicas de cada cliente criadas do zero, gestão de
 clientes pelo painel com novas permissões do spatie. Fora do escopo: apostas/bilhetes, gestão
 de afiliados, depósito via PIX/gateway e saque, bônus, rollover, cashback e cassino."
 
@@ -32,7 +32,7 @@ de afiliados, depósito via PIX/gateway e saque, bônus, rollover, cashback e ca
   digitada duas vezes (cadastro, troca e recuperação).
 - Q: Haverá recuperação de senha? → A: Sim, área de "esqueci minha senha"; o cliente informa a
   nova senha duas vezes.
-- Q: Quem edita as travas e quem gere os clientes? → A: Admin, Supervisor ou Gerente com
+- Q: Quem edita as configurações e quem gere os clientes? → A: Admin, Supervisor ou Gerente com
   permissão, por uma área de gestão de clientes (saldo manual, excluir, editar, extrato e, no
   futuro, movimentação de apostas), tudo por permissão.
 - Q: O telefone tem código do país? → A: Sim, o cliente informa o código do país, com padrão 55
@@ -42,30 +42,39 @@ de afiliados, depósito via PIX/gateway e saque, bônus, rollover, cashback e ca
   separados: `saldo`, `saldo_promocao_esportes` e `saldo_promocao_cassino`.
 - Q: Os nomes de colunas e tipos precisam ser iguais aos do sistema antigo? → A: Não; podem ser
   melhorados (por exemplo, boolean no lugar de enum Sim/Não), a critério do plano.
-- Q: Haverá log de alteração de travas? → A: Não nesta spec; um sistema de logs geral será criado
+- Q: Haverá log de alteração de configurações? → A: Não nesta spec; um sistema de logs geral será criado
   futuramente.
 - Q: Nesta spec, o sistema já deve enviar as mensagens de WhatsApp de verdade ou só deixar o
   disparo preparado? → A: Só deixar preparado: esta spec dispara os eventos "conta criada" e
   "código de recuperação gerado"; uma spec própria de WhatsApp fará o envio. Até lá, a mensagem é
   apenas registrada no log da aplicação.
-- Q: Com quais valores de travas um cliente novo é criado, e onde esses valores padrão ficam
-  definidos? → A: Num registro único de travas padrão (`clientes_configuracoes_padrao`), criado
+- Q: Com quais valores de configurações um cliente novo é criado, e onde esses valores padrão ficam
+  definidos? → A: Num registro único de configurações padrão (`clientes_configuracoes_padrao`), criado
   pelo seeder com os valores da antiga `travas_gerentes` e editável pelo painel; cada cliente novo
-  recebe uma cópia. As travas do cliente ficam na tabela `clientes_configuracoes`, e toda tabela
+  recebe uma cópia. As configurações do cliente ficam na tabela `clientes_configuracoes`, e toda tabela
   ligada a uma tabela principal leva o nome dela como prefixo (ex.: `clientes_transacoes`,
   `clientes_promocoes`).
 - Q: Qual deve ser o tamanho mínimo da senha do cliente? → A: Mínimo de 8 caracteres, com pelo
   menos uma letra e um número.
 - Q: Na gestão de clientes, CPF e telefone aparecem completos ou mascarados? → A: Mascarados por
-  padrão; completos só para quem tem a permissão `ver_dados_completos_clientes` (Admin recebe por
+  padrão; completos só para quem tem a permissão `clientes.ver_dados_completos` (Admin recebe por
   padrão). A busca pelo valor exato funciona para todos.
-- Q: No cadastro, o cliente recebe a promoção de cadastro automaticamente ou só se aceitar? → A:
+- Q: No cadastro, o cliente recebe a promoção de primeiro cadastro automaticamente ou só se aceitar? → A:
   Só se aceitar: campo `aceita_promocao` no cadastro, marcado por padrão, que o cliente pode
   alterar depois em "meus dados".
+- Q: Qual o formato dos nomes das permissões? → A: `<recurso>.<acao>`, como na spec 001
+  (`usuarios.listar`): `clientes.listar`, `clientes.editar`, `clientes_promocoes.gerenciar` etc.
+- Q: As travas e as configurações são a mesma coisa? → A: Sim; usa-se a nomenclatura das tabelas
+  (`clientes_configuracoes`), inclusive na permissão `clientes.editar_configuracoes`.
+- Q: Quando promoções podem ter períodos sobrepostos? → A: Só quando são de categorias
+  diferentes (primeiro cadastro, primeiro depósito, qualquer depósito, indicação). Na mesma
+  categoria e modalidade não há sobreposição; a modalidade entra na regra para permitir bônus de
+  primeiro cadastro em esportes e em cassino ao mesmo tempo.
+- Q: O cadastro já devolve o token de acesso? → A: Sim, mantido.
 
 ## User Scenarios & Testing *(mandatory)*
 
-> Conforme a constituição (v1.8.0), o projeto não terá testes automatizados. Os cenários
+> Conforme a constituição, o projeto não terá testes automatizados. Os cenários
 > abaixo são critérios de aceite validados manualmente.
 
 ### User Story 1 - Cadastro público do cliente (Priority: P1)
@@ -73,22 +82,22 @@ de afiliados, depósito via PIX/gateway e saque, bônus, rollover, cashback e ca
 Um visitante da área externa do site cria a própria conta de cliente, sem passar pelo painel,
 informando nome, código do país (padrão 55), telefone, senha (duas vezes), CPF, data de
 nascimento, gênero e, opcionalmente, um código de indicação de afiliado. Ao concluir, a conta
-fica ativa, com os saldos zerados ou com o valor da promoção de cadastro vigente, com as travas
+fica ativa, com os saldos zerados ou com o valor da promoção de primeiro cadastro vigente, com as configurações
 padrão, e é disparada uma mensagem de WhatsApp de boas-vindas.
 
 **Why this priority**: sem clientes cadastrados não existe apostador; é a base de todas as
 outras stories.
 
 **Independent Test**: validar manualmente cadastrando um cliente pela rota pública e conferindo,
-pelo painel, que ele existe ativo, com saldos e travas corretos; repetir com uma promoção de
+pelo painel, que ele existe ativo, com saldos e configurações corretos; repetir com uma promoção de
 cadastro ativa e conferir o saldo promocional e a transação correspondente.
 
 **Acceptance Scenarios**:
 
-1. **Given** um visitante sem conta e nenhuma promoção de cadastro ativa, **When** ele envia
+1. **Given** um visitante sem conta e nenhuma promoção de primeiro cadastro ativa, **When** ele envia
    dados válidos e é maior de 18 anos, **Then** a conta é criada ativa, com os três saldos em
-   0,00 e travas padrão.
-2. **Given** uma promoção de cadastro ativa de R$ 20,00 na modalidade esportes, **When** um
+   0,00 e configurações padrão, e ele recebe um token de acesso.
+2. **Given** uma promoção de primeiro cadastro ativa de R$ 20,00 na modalidade esportes, **When** um
    cliente se cadastra, **Then** o `saldo_promocao_esportes` dele começa em 20,00, com uma
    transação de crédito de origem "promoção" que identifica a promoção.
 3. **Given** um código do país e telefone já usados por outro cliente ativo ou inativo, **When**
@@ -108,7 +117,7 @@ cadastro ativa e conferir o saldo promocional e a transação correspondente.
    é guardado como informado, sem validação.
 10. **Given** um cadastro concluído, **When** o disparo da mensagem de boas-vindas falha, **Then**
     a conta continua criada normalmente.
-11. **Given** uma promoção de cadastro vigente, **When** um cliente se cadastra desmarcando
+11. **Given** uma promoção de primeiro cadastro vigente, **When** um cliente se cadastra desmarcando
     `aceita_promocao`, **Then** a conta é criada com os saldos promocionais em 0,00 e sem
     transação de promoção.
 
@@ -234,8 +243,8 @@ filtrado por período e conferir os valores; trocar a senha e entrar com a nova.
 3. **Given** um cliente logado, **When** ele tenta alterar código do país, telefone, CPF ou data
    de nascimento, **Then** a alteração é recusada, pois esses dados só mudam pelo painel.
 4. **Given** um cliente logado, **When** ele troca a senha informando a senha atual correta e a
-   nova duas vezes, seguindo a regra de senha, **Then** a nova senha passa a valer; com a senha
-   atual errada, a troca é recusada.
+   nova duas vezes, seguindo a regra de senha, **Then** a nova senha passa a valer e o token
+   atual deixa de ser aceito; com a senha atual errada, a troca é recusada.
 5. **Given** um cliente com movimentações em vários dias, **When** ele consulta o extrato com
    data inicial e final, **Then** vê só as movimentações do período, da mais recente para a mais
    antiga, paginadas, cada uma com saldo afetado, tipo, origem, valor, saldo anterior, saldo
@@ -245,28 +254,28 @@ filtrado por período e conferir os valores; trocar a senha e entrar com a nova.
 
 ---
 
-### User Story 6 - Configurar travas do cliente pelo painel (Priority: P2)
+### User Story 6 - Configurar as configurações de aposta do cliente pelo painel (Priority: P2)
 
-Um Admin, Supervisor ou Gerente com permissão consulta e altera as travas de um cliente:
+Um Admin, Supervisor ou Gerente com permissão consulta e altera as configurações de um cliente:
 permissões de aposta, quantidade mínima e máxima de opções por aposta, valores mínimo e máximo
 por aposta, prêmio máximo, valor máximo apostado por dia, odd mínima e máxima e esportes
 permitidos.
 
-**Why this priority**: as travas controlam o risco da banca por apostador; a aplicação delas
+**Why this priority**: as configurações controlam o risco da banca por apostador; a aplicação delas
 será feita na spec de apostas, mas o cadastro precisa existir antes.
 
-**Independent Test**: alterar a aposta máxima de um cliente e conferir a nova trava na consulta;
+**Independent Test**: alterar a aposta máxima de um cliente e conferir a nova configuração na consulta;
 tentar a mesma alteração com um Vendedor e conferir a recusa.
 
 **Acceptance Scenarios**:
 
-1. **Given** um cliente com travas padrão, **When** um Gerente com permissão altera o valor
-   máximo por aposta, **Then** a nova trava é salva.
+1. **Given** um cliente com configurações padrão, **When** um Gerente com permissão altera o valor
+   máximo por aposta, **Then** a nova configuração é salva.
 2. **Given** uma alteração com mínimo maior que o máximo (opções, valor por aposta ou odd),
    **When** ela é enviada, **Then** é recusada como dado inválido.
-3. **Given** um cliente logado, **When** ele tenta alterar as próprias travas, **Then** não há
+3. **Given** um cliente logado, **When** ele tenta alterar as próprias configurações, **Then** não há
    rota para isso e a operação é recusada.
-4. **Given** um usuário do painel sem a permissão de editar travas (incluindo qualquer Vendedor),
+4. **Given** um usuário do painel sem a permissão de editar configurações (incluindo qualquer Vendedor),
    **When** ele tenta alterá-las, **Then** a operação é recusada por falta de permissão.
 
 ---
@@ -288,7 +297,7 @@ exclusão; restaurá-lo e conferir que voltam ao original.
 
 1. **Given** vários clientes, **When** um usuário com permissão busca por nome, telefone ou CPF e
    aplica filtros (FR-052), **Then** vê só os clientes correspondentes, paginados, sem senha.
-2. **Given** um Gerente com `ver_clientes` e sem `ver_dados_completos_clientes`, **When** ele
+2. **Given** um Gerente com `clientes.listar` e sem `clientes.ver_dados_completos`, **When** ele
    lista ou consulta clientes, **Then** vê CPF e telefone mascarados; buscando pelo CPF completo,
    encontra o cliente; buscando por parte do CPF, não encontra.
 3. **Given** um cliente ativo, **When** o usuário com permissão o desativa, **Then** o cliente
@@ -314,27 +323,34 @@ exclusão; restaurá-lo e conferir que voltam ao original.
 
 ### User Story 8 - Cadastrar promoções (Priority: P3)
 
-Um usuário do painel com permissão cadastra, edita, ativa, desativa e exclui promoções. Nesta
-spec, a promoção usada é a de cadastro: ao se cadastrar, o cliente recebe o valor da promoção de
-cadastro vigente no saldo promocional da modalidade correspondente (esportes ou cassino).
+Um usuário do painel com permissão cadastra, edita, ativa, desativa e exclui promoções, cada uma
+de uma categoria: primeiro cadastro, primeiro depósito, qualquer depósito ou indicação. Nesta
+spec, só a categoria "primeiro cadastro" é aplicada: ao se cadastrar, o cliente recebe o valor da
+promoção de primeiro cadastro vigente no saldo promocional da modalidade correspondente (esportes
+ou cassino). As demais categorias já podem ser cadastradas e serão aplicadas pelas specs de
+depósito e de afiliados.
 
 **Why this priority**: atrai novos apostadores, mas o cadastro funciona sem promoção (saldos
 zerados).
 
-**Independent Test**: cadastrar uma promoção de cadastro de R$ 20,00 para esportes, ativá-la,
+**Independent Test**: cadastrar uma promoção de primeiro cadastro de R$ 20,00 para esportes, ativá-la,
 cadastrar um cliente e conferir o saldo promocional; desativá-la e conferir que o próximo cliente
 nasce com saldos zerados.
 
 **Acceptance Scenarios**:
 
 1. **Given** um usuário com permissão, **When** ele cadastra uma promoção com nome, modalidade,
-   gatilho "cadastro", valor e período, **Then** a promoção é criada.
-2. **Given** uma promoção de cadastro ativa e dentro do período para esportes, **When** outra
-   promoção de cadastro para esportes com período sobreposto é ativada, **Then** a operação é
-   recusada, pois só pode haver uma promoção de cadastro vigente por modalidade.
-3. **Given** uma promoção fora do período ou inativa, **When** um cliente se cadastra, **Then**
+   categoria "primeiro cadastro", valor e período, **Then** a promoção é criada.
+2. **Given** uma promoção ativa de primeiro cadastro para esportes, **When** outra promoção ativa
+   de primeiro cadastro para esportes com período sobreposto é cadastrada ou ativada, **Then** a
+   operação é recusada, pois a mesma categoria não pode ter períodos sobrepostos na mesma
+   modalidade.
+3. **Given** uma promoção ativa de primeiro cadastro para esportes, **When** uma promoção ativa
+   de primeiro depósito para esportes é cadastrada com o mesmo período, **Then** ela é aceita,
+   pois as categorias são diferentes.
+4. **Given** uma promoção fora do período ou inativa, **When** um cliente se cadastra, **Then**
    ela não é aplicada.
-4. **Given** promoções de cadastro vigentes para esportes e para cassino, **When** um cliente se
+5. **Given** promoções de primeiro cadastro vigentes para esportes e para cassino, **When** um cliente se
    cadastra, **Then** ele recebe as duas, cada uma no seu saldo promocional, com uma transação
    para cada.
 
@@ -359,7 +375,7 @@ nasce com saldos zerados.
   genérica.
 - Uma transação registrada nunca é editada nem excluída; correções são feitas por uma nova
   transação (por exemplo, estorno).
-- A promoção de cadastro é aplicada uma única vez por cliente; restaurar um cliente excluído não
+- A promoção de primeiro cadastro é aplicada uma única vez por cliente; restaurar um cliente excluído não
   aplica a promoção de novo.
 
 ## Requirements *(mandatory)*
@@ -395,8 +411,9 @@ nasce com saldos zerados.
   recuperação; a confirmação diferente DEVE recusar a operação. A senha DEVE ser armazenada de
   forma irreversível e NUNCA DEVE ser retornada em consultas ou listagens.
 - **FR-011**: Todo novo cliente DEVE ser criado ativo, com os três saldos em 0,00, e em seguida
-  receber as promoções de cadastro vigentes (FR-064), e com um registro de travas preenchido com
-  os valores padrão (FR-042).
+  receber as promoções de primeiro cadastro vigentes (FR-064), e com um registro de configurações preenchido com
+  os valores padrão (FR-042). Após o cadastro, o sistema DEVE devolver um token de acesso do
+  cliente (60 minutos), como no login, para que ele já entre logado.
 - **FR-012**: Clientes NÃO DEVEM ter vínculo com usuários do painel (gerentes, vendedores ou
   outros).
 - **FR-013**: Após o cadastro, o sistema DEVE disparar o evento "conta criada", com os dados
@@ -449,7 +466,8 @@ nasce com saldos zerados.
   código do país,
   telefone, CPF e data de nascimento só DEVEM ser alterados pelo painel.
 - **FR-030**: O cliente autenticado DEVE poder trocar a senha informando a senha atual e a nova
-  duas vezes, seguindo FR-010.
+  duas vezes, seguindo FR-010. Após a troca, todos os tokens emitidos antes dela, inclusive o
+  atual, DEVEM deixar de ser aceitos, e o cliente precisa entrar de novo.
 - **FR-031**: O cliente autenticado DEVE poder consultar o próprio extrato, filtrando por data
   inicial e final e por saldo afetado, ordenado da transação mais recente para a mais antiga e
   paginado (padrão de 20 e máximo de 100 por página).
@@ -479,14 +497,14 @@ nasce com saldos zerados.
   novas transações.
 - **FR-040**: A operação de crédito e débito DEVE ser única e reutilizável por outras partes do
   sistema (como a futura spec de apostas), aplicando sempre FR-032 a FR-039.
-- **FR-041**: Usuários do painel com a permissão `movimentar_saldo_clientes` DEVEM poder lançar
+- **FR-041**: Usuários do painel com a permissão `clientes.movimentar_saldo` DEVEM poder lançar
   crédito ou débito manual (origem "ajuste manual") em qualquer um dos três saldos de um cliente,
   informando valor e motivo (obrigatório, gravado como observação).
 
-**Travas do cliente**
+**Configurações do cliente**
 
-- **FR-042**: Cada cliente DEVE ter exatamente um registro de travas (tabela
-  `clientes_configuracoes`), com:
+- **FR-042**: Cada cliente DEVE ter exatamente um registro de configurações de aposta (tabela
+  `clientes_configuracoes`; no sistema antigo, "travas"), com:
   - permissões (liberado/bloqueado): realizar aposta, apostar ao vivo, apostar em outros
     esportes, cancelar aposta;
   - quantidade mínima e máxima de opções (palpites) por aposta;
@@ -495,11 +513,11 @@ nasce com saldos zerados.
   - valor máximo apostado por dia;
   - odd mínima e odd máxima;
   - esportes permitidos (lista).
-- **FR-043**: O sistema DEVE ter um registro único de travas padrão (tabela
+- **FR-043**: O sistema DEVE ter um registro único de configurações padrão (tabela
   `clientes_configuracoes_padrao`), com os mesmos campos de FR-042. No cadastro, cada cliente novo
   DEVE receber uma cópia desses valores em `clientes_configuracoes`; alterar o padrão depois NÃO
-  DEVE mudar as travas de clientes já cadastrados.
-- **FR-043a**: O seeder DEVE criar o registro de travas padrão com os valores da antiga
+  DEVE mudar as configurações de clientes já cadastrados.
+- **FR-043a**: O seeder DEVE criar o registro de configurações padrão com os valores da antiga
   `travas_gerentes` (`database.sql`):
   - realizar aposta: liberado; apostar ao vivo: liberado; apostar em outros esportes: liberado;
     cancelar aposta: bloqueado;
@@ -510,34 +528,34 @@ nasce com saldos zerados.
     `travas_gerentes` não tem esse campo);
   - odd mínima 1,90 e odd máxima 30,00;
   - esportes permitidos: FUTEBOL, HOQUEI NO GELO e BAISEBOL (grafados como no sistema antigo).
-- **FR-043b**: Somente Admin e Supervisor com a permissão `editar_configuracoes_padrao_clientes`
-  DEVEM poder consultar e alterar as travas padrão, seguindo as regras de coerência de FR-044.
+- **FR-043b**: Somente Admin e Supervisor com a permissão `clientes.editar_configuracoes_padrao`
+  DEVEM poder consultar e alterar as configurações padrão, seguindo as regras de coerência de FR-044.
 - **FR-044**: Os limites DEVEM ser coerentes: quantidade mínima de opções ≥ 1 e ≤ quantidade
   máxima; valor mínimo por aposta > 0 e ≤ valor máximo; odd mínima ≥ 1,00 e ≤ odd máxima; prêmio
   máximo e valor máximo por dia > 0. Alterações incoerentes DEVEM ser recusadas.
-- **FR-045**: O cliente NÃO DEVE poder alterar as próprias travas.
-- **FR-046**: Usuários do painel com a permissão `ver_clientes` DEVEM poder consultar as travas de
-  um cliente, e somente Admin, Supervisor ou Gerente com a permissão `editar_travas_clientes` DEVEM
+- **FR-045**: O cliente NÃO DEVE poder alterar as próprias configurações.
+- **FR-046**: Usuários do painel com a permissão `clientes.listar` DEVEM poder consultar as configurações de
+  um cliente, e somente Admin, Supervisor ou Gerente com a permissão `clientes.editar_configuracoes` DEVEM
   poder alterá-las.
-- **FR-047**: Esta spec só armazena e gerencia as travas; a aplicação delas nas apostas NÃO faz
+- **FR-047**: Esta spec só armazena e gerencia as configurações; a aplicação delas nas apostas NÃO faz
   parte desta spec.
 
 **Gestão de clientes no painel**
 
 - **FR-048**: A gestão de clientes DEVE ser acessível somente a Admin, Supervisor e Gerente, com o
   token do painel e as permissões correspondentes:
-  - `ver_clientes`: listar, consultar, ver extrato e travas;
-  - `ver_dados_completos_clientes`: ver CPF e telefone completos (FR-052a);
-  - `editar_clientes`: editar, ativar e desativar;
-  - `editar_travas_clientes`: alterar travas;
-  - `movimentar_saldo_clientes`: crédito e débito manual;
-  - `excluir_clientes`: excluir (somente Admin e Supervisor);
-  - `restaurar_clientes`: listar excluídos e restaurar (somente Admin e Supervisor).
+  - `clientes.listar`: listar, consultar, ver extrato e configurações;
+  - `clientes.ver_dados_completos`: ver CPF e telefone completos (FR-052a);
+  - `clientes.editar`: editar, ativar e desativar;
+  - `clientes.editar_configuracoes`: alterar configurações;
+  - `clientes.movimentar_saldo`: crédito e débito manual;
+  - `clientes.excluir`: excluir (somente Admin e Supervisor);
+  - `clientes.restaurar`: listar excluídos e restaurar (somente Admin e Supervisor).
 - **FR-049**: Vendedores NÃO DEVEM ter acesso à gestão de clientes, e Gerentes NÃO DEVEM poder
   excluir nem restaurar clientes, mesmo que recebam a permissão.
 - **FR-050**: Os clientes não pertencem a nenhum usuário do painel; quem tem a permissão
   correspondente enxerga e gerencia todos os clientes (sem recorte por hierarquia).
-- **FR-051**: Usuários com `ver_clientes` DEVEM poder consultar o extrato de qualquer cliente, com
+- **FR-051**: Usuários com `clientes.listar` DEVEM poder consultar o extrato de qualquer cliente, com
   os mesmos filtros e paginação de FR-031.
 - **FR-052**: A listagem de clientes DEVE ser paginada (padrão de 20 e máximo de 100 por página),
   NÃO DEVE incluir clientes excluídos (salvo pelo filtro de FR-057) e DEVE oferecer:
@@ -547,7 +565,7 @@ nasce com saldos zerados.
     promocional (esportes ou cassino) maior que zero;
   - ordenação por nome, data de cadastro ou `saldo`, crescente ou decrescente.
 - **FR-052a**: Em todas as respostas da gestão de clientes (listagem, consulta, excluídos), CPF e
-  telefone DEVEM vir mascarados para quem não tem a permissão `ver_dados_completos_clientes`: CPF
+  telefone DEVEM vir mascarados para quem não tem a permissão `clientes.ver_dados_completos`: CPF
   no formato `***.456.789-**` e telefone com apenas os 4 últimos dígitos visíveis (ex.:
   `(11) *****-7777`). Sem essa permissão, a busca por CPF e por telefone DEVE aceitar somente o
   valor completo (busca exata), sem busca por parte do número.
@@ -566,12 +584,12 @@ nasce com saldos zerados.
   outro cliente não excluído; se estiver, a restauração DEVE ser recusada indicando os dados em
   conflito, e só DEVE ser concluída se forem informados novos valores válidos e livres para esses
   dados na própria restauração.
-- **FR-057**: Usuários com `restaurar_clientes` DEVEM poder listar os clientes excluídos, com a
+- **FR-057**: Usuários com `clientes.restaurar` DEVEM poder listar os clientes excluídos, com a
   mesma busca e paginação de FR-052 (a busca por telefone e CPF considera o valor original).
-- **FR-058**: As novas permissões (`ver_clientes`, `editar_clientes`, `excluir_clientes`,
-  `restaurar_clientes`, `editar_travas_clientes`, `movimentar_saldo_clientes`,
-  `editar_configuracoes_padrao_clientes`, `ver_dados_completos_clientes` e
-  `gerenciar_promocoes`) DEVEM ser criadas no `spatie/laravel-permission` pelo seeder e seguir as
+- **FR-058**: As novas permissões (`clientes.listar`, `clientes.editar`, `clientes.excluir`,
+  `clientes.restaurar`, `clientes.editar_configuracoes`, `clientes.movimentar_saldo`,
+  `clientes.editar_configuracoes_padrao`, `clientes.ver_dados_completos` e
+  `clientes_promocoes.gerenciar`) DEVEM ser criadas no `spatie/laravel-permission` pelo seeder e seguir as
   regras de atribuição da spec 001 (permissões diretas no usuário; um gestor só dá a subordinados
   permissões que ele mesmo tem), respeitando também as restrições por função de FR-048 e FR-049.
 - **FR-059**: Operações recusadas DEVEM retornar mensagens claras em português indicando o motivo
@@ -581,22 +599,27 @@ nasce com saldos zerados.
 **Promoções**
 
 - **FR-060**: O sistema DEVE ter um cadastro de promoções (tabela `clientes_promocoes`, substitui
-  a antiga de bônus), com: nome, descrição, modalidade (esportes ou cassino), gatilho (nesta spec, somente
-  "cadastro"), valor, data de início, data de fim (opcional), indicação de ativa e as datas
-  `created_at`, `updated_at` e `deleted_at`.
-- **FR-061**: Usuários do painel com a permissão `gerenciar_promocoes` DEVEM poder listar
+  a antiga de bônus), com: nome, descrição, modalidade (esportes ou cassino), categoria (primeiro
+  cadastro, primeiro depósito, qualquer depósito ou indicação), valor, data de início, data de fim
+  (opcional), indicação de ativa e as datas `created_at`, `updated_at` e `deleted_at`. Nesta spec
+  só a categoria "primeiro cadastro" é aplicada (FR-064); as demais são aplicadas pelas specs de
+  depósito e de afiliados.
+- **FR-061**: Usuários do painel com a permissão `clientes_promocoes.gerenciar` DEVEM poder listar
   (paginado), consultar, cadastrar, editar, ativar, desativar e excluir logicamente promoções.
 - **FR-062**: Uma promoção está vigente quando está ativa, não excluída e a data atual está entre
   a data de início e a data de fim (ou sem data de fim).
-- **FR-063**: Só DEVE existir no máximo uma promoção de cadastro vigente por modalidade; cadastrar,
-  editar ou ativar uma promoção que cause sobreposição DEVE ser recusado.
+- **FR-063**: Promoções ativas e não excluídas da **mesma categoria e mesma modalidade** NÃO
+  DEVEM ter períodos que se sobreponham (inclusive futuros; data de fim vazia = sem fim).
+  Promoções de categorias diferentes PODEM ter períodos sobrepostos. Cadastrar, editar ou ativar
+  uma promoção que cause sobreposição proibida DEVE ser recusado. Assim, há no máximo uma
+  promoção vigente por categoria e modalidade.
 - **FR-064**: No cadastro de um cliente com `aceita_promocao` marcado, para cada promoção de
-  cadastro vigente, o sistema DEVE
+  primeiro cadastro vigente, o sistema DEVE
   creditar o valor dela no saldo promocional da modalidade (esportes → `saldo_promocao_esportes`,
   cassino → `saldo_promocao_cassino`) por uma transação de origem "promoção" que referencia a
   promoção (FR-034).
-- **FR-065**: A promoção de cadastro DEVE ser aplicada uma única vez por cliente, somente no
-  momento do cadastro; marcar `aceita_promocao` depois NÃO DEVE aplicar a promoção de cadastro
+- **FR-065**: A promoção de primeiro cadastro DEVE ser aplicada uma única vez por cliente, somente no
+  momento do cadastro; marcar `aceita_promocao` depois NÃO DEVE aplicar a promoção de primeiro cadastro
   retroativamente, e desmarcar depois NÃO DEVE retirar saldo promocional já recebido.
 - **FR-066**: Regras de uso do saldo promocional (rollover, conversão em saldo real, expiração)
   NÃO fazem parte desta spec.
@@ -613,13 +636,14 @@ nasce com saldos zerados.
   cliente, saldo afetado, tipo (crédito/débito), origem, referência de origem (sem ligação
   obrigatória), valor, saldo anterior, saldo posterior, autor (sistema ou usuário do painel),
   observação e data. A sequência de transações de cada saldo explica o valor atual dele.
-- **Travas do cliente** (tabela `clientes_configuracoes`): configuração de limites e permissões de
-  aposta de um cliente (uma por cliente), criada no cadastro como cópia das travas padrão e
+- **Configurações do cliente** (tabela `clientes_configuracoes`): configuração de limites e permissões de
+  aposta de um cliente (uma por cliente), criada no cadastro como cópia das configurações padrão e
   alterada só pelo painel.
-- **Travas padrão** (tabela `clientes_configuracoes_padrao`): registro único com os valores que
+- **Configurações padrão** (tabela `clientes_configuracoes_padrao`): registro único com os valores que
   cada cliente novo recebe; criado pelo seeder e editável pelo painel.
 - **Promoção** (tabela `clientes_promocoes`): benefício concedido ao cliente em saldo promocional de uma
-  modalidade (esportes ou cassino) quando ocorre um gatilho (nesta spec, o cadastro).
+  modalidade (esportes ou cassino), classificado por categoria (primeiro cadastro, primeiro
+  depósito, qualquer depósito ou indicação); nesta spec só o primeiro cadastro é aplicado.
 - **Código de recuperação de senha** (tabela `clientes_codigos_recuperacao`): código temporário de 6 dígitos, de uso único, ligado a um
   cliente, com validade, contagem de tentativas e situação (válido, usado ou invalidado).
 
@@ -665,7 +689,7 @@ nasce com saldos zerados.
   contagem será aplicada pela spec de apostas.
 - A tabela antiga `creditos` não é migrada; os dados do sistema anterior não são importados nesta
   spec.
-- Logs de alteração (travas, cadastro e outros) ficam fora do escopo; um sistema de logs geral
+- Logs de alteração (configurações, cadastro e outros) ficam fora do escopo; um sistema de logs geral
   será criado em spec própria.
 - Depósito via PIX/gateway, saque, rollover, cashback, cassino, apostas/bilhetes e gestão de
   afiliados estão fora do escopo.
