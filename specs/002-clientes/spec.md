@@ -505,6 +505,8 @@ transações de estorno.
 
 - **FR-001**: O sistema DEVE permitir que um visitante se cadastre como cliente por uma rota
   pública, sem autenticação, separada do cadastro de usuários do painel.
+- **FR-001a**: O cadastro público DEVE aceitar no máximo 5 tentativas por minuto do mesmo IP;
+  acima disso, DEVE recusar informando o tempo de espera.
 - **FR-002**: Cada cliente DEVE possuir: nome, DDI, telefone, e-mail (opcional), senha, CPF
   (opcional), data de nascimento, gênero, código de afiliado (opcional), indicação de ativo,
   `saldo`, `saldo_promocao_esportes`, `saldo_promocao_cassino` e as datas `created_at`,
@@ -892,6 +894,9 @@ transações de estorno.
   transações, esportes permitidos) ficam sem chave estrangeira e serão ligadas em outras specs.
 - A lista de esportes permitidos é guardada como lista de nomes de esporte, pois ainda não existe
   cadastro de esportes no sistema.
+- Se um estorno for retomado depois de uma interrupção, um cliente que não tinha saldo
+  promocional na primeira passada é avaliado de novo; se nesse intervalo ele recebeu outro bônus da
+  mesma modalidade, esse saldo pode ser estornado. O risco é aceito, pois retomadas são raras.
 - O timestamp do sufixo de exclusão é o momento da exclusão em segundos (Unix).
 - Valores monetários são em reais (BRL) com 2 casas decimais.
 - O "valor máximo apostado por dia" e os limites de saque por dia consideram o dia do calendário no

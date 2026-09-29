@@ -7,7 +7,7 @@ Rotas novas em `routes/api.php` (prefixo `/api`). As rotas da spec 001 não muda
 ```php
 // área do cliente (guard clientes)
 Route::prefix('area_cliente')->group(function () {
-    Route::post('cadastro', [AreaClienteCadastroController::class, 'store']);
+    Route::post('cadastro', [AreaClienteCadastroController::class, 'store'])->middleware('throttle:5,1');
     Route::post('auth/login', [AreaClienteAutenticacaoController::class, 'login']);
     Route::post('auth/recuperar_senha', [AreaClienteRecuperacaoSenhaController::class, 'solicitar']);
     Route::post('auth/redefinir_senha', [AreaClienteRecuperacaoSenhaController::class, 'redefinir']);
@@ -101,7 +101,7 @@ dígitos), `"email": "m***@mail.com"`. Na listagem de excluídos aparece `delete
 
 | Rota | Corpo / parâmetros | Sucesso | Erros |
 |---|---|---|---|
-| `POST /api/area_cliente/cadastro` | `nome`, `ddi?` (padrão 55), `telefone`, `email?`, `password`, `password_confirmation`, `cpf?`, `data_nascimento`, `genero`, `codigo_afiliado?`, `aceita_promocao?` (padrão `true`) | `201 {"cliente", "token", "tipo": "bearer", "expira_em"}` | `422` (duplicidade, CPF/e-mail inválido, menor de 18, senha fraca ou confirmação diferente) |
+| `POST /api/area_cliente/cadastro` | `nome`, `ddi?` (padrão 55), `telefone`, `email?`, `password`, `password_confirmation`, `cpf?`, `data_nascimento`, `genero`, `codigo_afiliado?`, `aceita_promocao?` (padrão `true`) | `201 {"cliente", "token", "tipo": "bearer", "expira_em"}` | `429` (mais de 5 por minuto do mesmo IP); `422` (duplicidade, CPF/e-mail inválido, menor de 18, senha fraca ou confirmação diferente) |
 | `POST /api/area_cliente/auth/login` | `ddi?`, `telefone`, `password` | `200 {"token", "tipo": "bearer", "expira_em": 3600}` | `401 "Telefone ou senha inválidos."` (inclui excluído); `403` inativo; `422`; `429` |
 | `POST /api/area_cliente/auth/refresh` | — | `200` com novo token | `401`; `403` |
 | `POST /api/area_cliente/auth/logout` | — | `204` | `401` |

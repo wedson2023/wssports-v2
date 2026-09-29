@@ -183,13 +183,14 @@ foram resolvidas nas sessões de Clarifications da [spec](spec.md).
   motivo, autor, início e o total de clientes a processar, e despacha o job
   `App\Jobs\EstornarPromocao` na fila `database` (já configurada: `QUEUE_CONNECTION=database` e
   migration `jobs` existente). Responde `202`.
-- **Job**: percorre, em lotes de 500 (`chunkById`), os `clientes_id` distintos com transação de
+- **Job**: percorre, em lotes de 500 (`chunkById` pela coluna `clientes_id`), os `clientes_id` distintos com transação de
   origem `Promoção` e `referencia_id` da promoção (inclui clientes inativos e excluídos, via
   `withTrashed`). Para cada cliente, **pula** se já existir transação de origem `Estorno` com o
   mesmo `referencia_id` (idempotência, FR-080); senão calcula o total recebido da promoção e
   debita `min(total recebido, saldo promocional da modalidade)` via `SaldoClientes::debitar()`
-  (origem `Estorno`, observação = motivo), ou não faz nada se o saldo for 0,00. Atualiza os
-  contadores da promoção (`estorno_clientes_processados`, `estorno_valor_total`) a cada lote. No
+  (origem `Estorno`, observação = motivo), ou não faz nada se o saldo for 0,00. Recalcula os
+  contadores da promoção (`estorno_clientes_processados`, `estorno_valor_total`) a partir do banco
+  a cada lote, para que a retomada não conte em dobro. No
   fim grava `estorno_situacao = 'Concluído'` e `estorno_concluido_em`.
 - **Retomada**: se o worker cair, o job volta para a fila após o `retry_after` e recomeça; a
   checagem de idempotência impede estornar alguém duas vezes. `tries = 5`, `ShouldBeUnique` por

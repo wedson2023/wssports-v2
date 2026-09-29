@@ -50,7 +50,7 @@ permissão, dê ou tire permissões pelas rotas da spec 001.
 | 2 | Cadastro com telefone repetido (com máscara `(11) 98888-7777`); com CPF repetido; com e-mail repetido em maiúsculas | `422` de duplicidade em cada caso | US1-3, US1-4, Edge |
 | 3 | Dois cadastros sem CPF e sem e-mail | ambos `201` (vazios não conflitam) | Edge |
 | 4 | CPF inválido; e-mail inválido; nascido há 17 anos; senha `abcdefgh`; confirmação diferente | `422` com a mensagem de cada caso | US1-6 a US1-8 |
-| 5 | Cadastro sem `ddi` | `ddi = "55"` | US1-9 |
+| 5 | Cadastro sem `ddi`; depois 6 cadastros seguidos do mesmo IP em 1 minuto | `ddi = "55"`; o 6º recebe `429` | US1-9, FR-001a |
 | 6 | Criar promoção `"Primeiro cadastro"`, `"Esportes"`, `"Fixo"`, `20.00` e cadastrar um cliente | `saldo_promocao_esportes = "20.00"` e transação `"Promoção"` com `referencia_id` | US1-2, FR-075 |
 | 7 | Cadastrar com `aceita_promocao: false` | saldos promocionais `"0.00"`, sem transação; `aceita_promocao` `false` nas configurações | US1-12 |
 | 8 | Login certo; senha errada; 6 erradas em 1 min | `200`; `401` genérico; `429` | US2-1, US2-2, US2-7 |
