@@ -71,6 +71,8 @@ encontrado.". Total: **15 rotas** na área do cliente e **23** no painel.
 - `password` nunca aparece. Valores monetários vêm como texto com 2 casas (`"100.00"`). Valores de
   enum vêm em português com acentos (`"Promoção esportes"`, `"Ajuste manual"`).
 - Listagens: `por_pagina` de 1 a 100, padrão 20, formato de paginação do Laravel.
+- Filtros de query string enviados vazios (ex.: `?busca=&ativo=`) são ignorados, como se não
+  tivessem sido enviados; valores preenchidos e inválidos continuam retornando `422`.
 
 ## Objeto `cliente`
 

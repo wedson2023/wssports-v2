@@ -79,15 +79,17 @@ class ClientesPromocoesController extends Controller implements HasMiddleware
 
     public function index(Request $request): AnonymousResourceCollection
     {
+        // filtros enviados vazios chegam como null e são ignorados
         $filtros = $request->validate([
-            'ativa' => ['sometimes', 'boolean'],
-            'modalidade' => ['sometimes', Rule::enum(ModalidadePromocao::class)],
-            'categoria' => ['sometimes', Rule::enum(CategoriaPromocao::class)],
-            'por_pagina' => ['sometimes', 'integer', 'between:1,100'],
+            'ativa' => ['nullable', 'boolean'],
+            'modalidade' => ['nullable', Rule::enum(ModalidadePromocao::class)],
+            'categoria' => ['nullable', Rule::enum(CategoriaPromocao::class)],
+            'por_pagina' => ['nullable', 'integer', 'between:1,100'],
         ], [
             'ativa.boolean' => 'O filtro ativa deve ser verdadeiro ou falso.',
             'modalidade.enum' => 'A modalidade informada é inválida.',
             'categoria.enum' => 'A categoria informada é inválida.',
+            'por_pagina.integer' => 'O campo por página deve ser um número inteiro.',
             'por_pagina.between' => 'O campo por página deve estar entre 1 e 100.',
         ]);
 

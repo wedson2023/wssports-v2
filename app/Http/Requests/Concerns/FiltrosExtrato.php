@@ -16,11 +16,12 @@ trait FiltrosExtrato
      */
     protected function validar_filtros_extrato(Request $request): array
     {
+        // filtros enviados vazios chegam como null e são ignorados
         return $request->validate([
-            'data_inicial' => ['sometimes', 'date_format:Y-m-d'],
-            'data_final' => ['sometimes', 'date_format:Y-m-d', 'after_or_equal:data_inicial'],
-            'carteira' => ['sometimes', Rule::enum(Carteira::class)],
-            'por_pagina' => ['sometimes', 'integer', 'between:1,100'],
+            'data_inicial' => ['nullable', 'date_format:Y-m-d'],
+            'data_final' => ['nullable', 'date_format:Y-m-d', 'after_or_equal:data_inicial'],
+            'carteira' => ['nullable', Rule::enum(Carteira::class)],
+            'por_pagina' => ['nullable', 'integer', 'between:1,100'],
         ], [
             'data_inicial.date_format' => 'A data inicial deve estar no formato AAAA-MM-DD.',
             'data_final.date_format' => 'A data final deve estar no formato AAAA-MM-DD.',

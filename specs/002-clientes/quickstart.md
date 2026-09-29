@@ -109,7 +109,7 @@ permissão, dê ou tire permissões pelas rotas da spec 001.
 
 | # | Ação | Esperado | Ref. |
 |---|---|---|---|
-| 34 | `GET /api/clientes` buscando por nome, parte do telefone, CPF e e-mail; filtros `saque_bloqueado`, `com_cpf=false`, `com_email=true`, faixa de saldo; ordenação `saldo desc` | resultados corretos, paginados (padrão 20) | US7-1, FR-056 |
+| 34 | `GET /api/clientes` buscando por nome, parte do telefone, CPF e e-mail; filtros `saque_bloqueado`, `com_cpf=false`, `com_email=true`, faixa de saldo; ordenação `saldo desc`; depois com filtros vazios (`?busca=&ativo=`) | resultados corretos, paginados (padrão 20); filtros vazios são ignorados (`200`) | US7-1, FR-056 |
 | 35 | Gerente sem `clientes.ver_dados_completos` busca por parte do CPF e pelo CPF completo | dados mascarados; parte não encontra; completo encontra | US7-2, FR-057 |
 | 36 | Desativar; cliente usa o token e tenta entrar; reativar | `403` com o token; login `403`; ao reativar, login volta (token antigo segue recusado) | US7-3 |
 | 37 | Gerente com `clientes.excluir` tenta excluir | `403` | US7-7 |

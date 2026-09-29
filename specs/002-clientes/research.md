@@ -224,6 +224,9 @@ foram resolvidas nas sessões de Clarifications da [spec](spec.md).
 
 - **Decisão**: `por_pagina` de 1 a 100, padrão 20. Ordenação da listagem de clientes por
   `ordenar_por` (`nome`, `created_at`, `saldo`) e `direcao` (`asc`, `desc`).
+- **Filtros vazios**: as regras dos filtros usam `nullable` (e não `sometimes`), porque o Laravel
+  converte `?busca=` em `null`; assim, um filtro vazio é ignorado em vez de gerar `422`. Vale para a
+  listagem de clientes, a de excluídos, a de promoções e os extratos.
 
 ## R-20. Banco local e fila
 

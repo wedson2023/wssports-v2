@@ -364,6 +364,10 @@ Task: "Criar app/Http/Requests/ClientesPromocoesRequest.php"
 - Revisão pós-implementação (2026-09-29, constituição v1.14.0): permissões de clientes movidas para
   `Funcao` (Princípio VI) e caminhos de rota em kebab-case (constituição v1.16.0); parâmetros de
   query string continuam em snake_case, com autorização do responsável.
+- Correção pós-implementação (2026-09-29): filtros de query string enviados vazios (ex.: `?busca=`)
+  passaram a ser ignorados (`nullable` no lugar de `sometimes`) em `ClientesController`,
+  `ClientesPromocoesController` e `FiltrosExtrato`, com mensagens em português para todos os filtros
+  (research R-19).
 
 - [P] = arquivos diferentes, sem dependências pendentes
 - ⚠️ = arquivo existente com alteração já autorizada (Princípio IV)
