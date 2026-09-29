@@ -6,15 +6,16 @@
 
 ## Summary
 
-API dos clientes (apostadores), separados dos usuários do painel. Cadastro público, login por
-código do país + telefone e senha num guard JWT próprio (`clientes`), recuperação de senha por
-código (enviado por evento, registrado no log até existir a spec de WhatsApp), "meus dados" e
-extrato. Três saldos (`saldo`, `saldo_promocao_esportes`, `saldo_promocao_cassino`) movimentados
-só pelo serviço `SaldoClientes`, com bloqueio de linha e cálculo em centavos, gerando transações
-com saldo anterior e posterior. Configurações por cliente copiadas de um registro de configurações padrão,
-promoções de primeiro cadastro e gestão no painel com 9 permissões do spatie restritas por função,
-mascaramento de CPF/telefone e exclusão com sufixo `_deleted_<timestamp>` + restauração. Decisões
-em [research.md](research.md).
+API dos clientes (apostadores), separados dos usuários do painel. Cadastro público (e-mail e CPF
+opcionais), login por DDI + telefone e senha num guard JWT próprio (`clientes`), recuperação de
+senha por código (evento registrado no log até existir a spec de WhatsApp), "meus dados", extrato
+e meios de pagamento (Pix ou transferência bancária). Três saldos movimentados só pelo serviço
+`SaldoClientes` (bloqueio de linha e cálculo em centavos), com transações de saldo anterior e
+posterior. Configurações de aposta e saque por cliente, copiadas de um registro padrão. Promoções
+com categoria, tipo de ganho, rollover e regras de uso (cadastradas e validadas; só "Primeiro
+cadastro" é aplicada nesta spec) e estorno de promoção em segundo plano, por fila. Gestão no painel
+com 10 permissões do spatie restritas por função, mascaramento de dados pessoais e exclusão com
+sufixo `_deleted_<timestamp>` + restauração. Decisões em [research.md](research.md).
 
 ## Technical Context
 
@@ -24,24 +25,25 @@ em [research.md](research.md).
 `spatie/laravel-permission` (já instalados na spec 001). **Nenhuma dependência nova.**
 
 **Storage**: MySQL local `wssports` (compartilhado com o legado; só `migrate` e seeder novo,
-R-17); cache `database` para blacklist JWT e `RateLimiter`
+R-20); cache `database` para blacklist JWT e `RateLimiter`; fila `database` (já configurada) para
+o estorno de promoções
 
 **Testing**: nenhum teste automatizado (constituição); validação manual pelo
 [quickstart.md](quickstart.md)
 
-**Target Platform**: servidor web com PHP 8.2
+**Target Platform**: servidor web com PHP 8.2 + worker de fila (`php artisan queue:work`)
 
 **Project Type**: API web Laravel (frontend fora do escopo)
 
 **Performance Goals**: listagem/busca com até 100.000 clientes e extrato com até 10.000
-transações em < 2 s (SC-009) — índices em `nome`, `created_at`, (`codigo_pais`, `telefone`),
-`cpf` e (`clientes_id`, `created_at`)
+transações em < 2 s (SC-009); estorno de promoção de 10.000 clientes em < 10 min (SC-010)
 
 **Constraints**: paginação ≤ 100 (padrão 20); token de 60 min; 5 tentativas de login/min por
 telefone + IP; 1 pedido de recuperação/min por telefone; saldos nunca negativos; movimentações
-serializadas por cliente; mensagens em português
+serializadas por cliente; estorno idempotente; mensagens em português
 
-**Scale/Scope**: 6 tabelas, 7 enums, 9 permissões, 28 rotas (10 da área do cliente, 18 do painel)
+**Scale/Scope**: 7 tabelas, 12 enums, 10 permissões, 38 rotas (15 da área do cliente, 23 do
+painel), 1 job
 
 ## Constitution Check
 
@@ -49,28 +51,29 @@ serializadas por cliente; mensagens em português
 
 | Princípio / Regra | Verificação | Status |
 |---|---|---|
-| I. `snake_case` | Métodos, variáveis, parâmetros, chaves JSON, rotas e permissões em `snake_case` (`pode_acessar()`, `alterar_situacao`, `clientes.listar`, `/area_cliente/meus_dados`); métodos exigidos pelo framework/pacotes mantêm o nome (exceção) | ✅ Pass |
-| I. Banco em português | Tabelas e colunas em português (`clientes`, `saldo_promocao_esportes`, `data_nascimento`...); `password` coberta pela exceção de colunas de autenticação do framework (constituição v1.12.0, R-07) | ✅ Pass |
-| I. Prefixo de tabelas (v1.9.0) | `clientes_transacoes`, `clientes_configuracoes`, `clientes_configuracoes_padrao`, `clientes_promocoes`, `clientes_codigos_recuperacao` | ✅ Pass |
-| I. Pastas | Novas pastas PSR-4 em `PascalCase` (`app/Services`, `app/Events`, `app/Listeners`, `app/Rules`, `app/Exceptions`) — exceção do Princípio I | ✅ Pass |
+| I. `snake_case` | Métodos, variáveis, parâmetros, chaves JSON, rotas e colunas em `snake_case`; métodos exigidos pelo framework/pacotes mantêm o nome (exceção) | ✅ Pass |
+| I. Banco em português | Tabelas e colunas em português; `password` coberta pela exceção de autenticação (v1.12.0); `ddi` e `email` pela exceção de siglas consagradas (v1.13.0) | ✅ Pass |
+| I. Prefixo de tabelas (v1.9.0) | `clientes_transacoes`, `clientes_configuracoes`, `clientes_configuracoes_padrao`, `clientes_meios_pagamento`, `clientes_promocoes`, `clientes_codigos_recuperacao` | ✅ Pass |
+| I. Permissões `<recurso>.<acao>` (v1.11.0) | `clientes.listar`, `clientes.excluir`, `clientes_promocoes.estornar`... | ✅ Pass |
+| I. Enums (v1.13.0) | Casos em `PascalCase` com acento (`Promoção`, `NãoInformado`); valores gravados em português com inicial maiúscula e acentos (`'Ajuste manual'`, `'Primeiro depósito'`). Nomes de classe sem acento por causa do autoload (R-05) | ✅ Pass |
+| I. Pastas | Novas pastas PSR-4 em `PascalCase` (`app/Services`, `app/Events`, `app/Listeners`, `app/Jobs`, `app/Rules`, `app/Exceptions`) — exceção do Princípio I | ✅ Pass |
 | II. Idioma | Artefatos e comentários do backend em português | ✅ Pass |
 | III. Componentes React | Sem frontend | ➖ N/A |
-| IV. Escopo estrito | Arquivos existentes alterados listados abaixo; alteração autorizada pelo responsável em 2026-09-29 | ✅ Pass (confirmado) |
+| IV. Escopo estrito | Arquivos existentes alterados listados abaixo — mesma lista já autorizada em 2026-09-29 | ✅ Pass (confirmado) |
 | V. Legibilidade | Revisão ao final de cada tarefa | ✅ Pass |
-| Timestamps e soft delete | Todas as 6 tabelas com `timestamps()` + `softDeletes()` e models com `SoftDeletes` (incluindo transações, que nunca são excluídas) | ✅ Pass |
-| Colunas sem FK (v1.10.0) | `codigo_afiliado`, `referencia_id` e `esportes_permitidos` sem FK, registradas nas premissas da spec (R-08) | ✅ Pass |
+| Timestamps e soft delete | As 7 tabelas com `timestamps()` + `softDeletes()` e models com `SoftDeletes` | ✅ Pass |
+| Colunas sem FK (v1.10.0) | `codigo_afiliado`, `referencia_id`, `esportes_permitidos` sem FK, registradas nas premissas da spec (R-08) | ✅ Pass |
 | Paginação ≤ 100 | `por_pagina` 1–100, padrão 20 | ✅ Pass |
 | Sem testes | Nenhum arquivo/tarefa/dependência de teste | ✅ Pass |
-| Postman | Coleção regenerada na mesma entrega das rotas, com a nova variável `token_cliente` | ✅ Pass |
-| Novas dependências | Nenhuma | ✅ Pass |
+| Postman | Coleção regenerada na mesma entrega das rotas, com a variável `token_cliente` | ✅ Pass |
+| Novas dependências | Nenhuma (fila `database` e tabela `jobs` já existem) | ✅ Pass |
 
 **Resultado do gate**: aprovado.
 
 **Confirmações do responsável (2026-09-29)**:
 
 - Alteração dos arquivos existentes listados abaixo: autorizada.
-- Nomes das permissões: padrão `<recurso>.<acao>`, igual à spec 001 (`usuarios.listar`), por
-  exemplo `clientes.listar`, `clientes.excluir` e `clientes_promocoes.gerenciar`.
+- Nomes das permissões: padrão `<recurso>.<acao>`, igual à spec 001.
 
 ### Arquivos existentes que serão alterados (Princípio IV)
 
@@ -78,21 +81,22 @@ serializadas por cliente; mensagens em português
 |---|---|---|
 | `config/auth.php` | Acrescentar o guard `clientes` (driver `jwt`) e o provider `clientes` (model `Clientes`); guard `api` e provider `users` intactos | R-01, FR-014 |
 | `routes/api.php` | Acrescentar os grupos `area_cliente` e de gestão de clientes; rotas da spec 001 intactas | contrato |
-| `database/seeders/DatabaseSeeder.php` | Acrescentar `$this->call(ClientesSeeder::class)` ao final | FR-043a, FR-058 |
+| `database/seeders/DatabaseSeeder.php` | Acrescentar `$this->call(ClientesSeeder::class)` ao final | FR-050, FR-062 |
 | `docs/postman/wssports_api.postman_collection.json` | Regenerado com as rotas novas e a variável `token_cliente` | Constituição |
 
 Nenhum outro arquivo existente muda (`Funcao`, `Usuarios`, `GarantirAcesso`,
-`PermissoesUsuariosController`, `bootstrap/app.php` e migrations da spec 001 ficam intactos).
+`PermissoesUsuariosController`, `bootstrap/app.php`, `config/queue.php` e migrations da spec 001
+ficam intactos).
 
-**Impacto no banco local**: `php artisan migrate` (6 tabelas novas) e
+**Impacto no banco local**: `php artisan migrate` (7 tabelas novas) e
 `php artisan db:seed --class=ClientesSeeder`. Nada é apagado.
 
 ### Re-check pós-design (Phase 1)
 
 Após [data-model.md](data-model.md) e [contracts/api.md](contracts/api.md): nomes em português e
-`snake_case`, prefixo `clientes_` em todas as tabelas relacionadas, colunas sem FK documentadas,
-paginação ≤ 100, nenhuma tarefa de teste, nenhuma dependência nova. **Status: aprovado** (todas as
-confirmações recebidas).
+`snake_case`, prefixo `clientes_` em todas as tabelas relacionadas, siglas e enums conforme
+v1.13.0, colunas sem FK documentadas, paginação ≤ 100, nenhuma tarefa de teste, nenhuma
+dependência nova. **Status: aprovado.**
 
 ## Project Structure
 
@@ -108,7 +112,7 @@ specs/002-clientes/
 │   └── api.md           # Phase 1: contrato HTTP
 ├── checklists/
 │   └── requirements.md
-└── tasks.md             # Phase 2 (/speckit-tasks)
+└── tasks.md             # Phase 2 (/speckit-tasks) — precisa ser gerado de novo
 ```
 
 ### Source Code (repository root)
@@ -116,12 +120,17 @@ specs/002-clientes/
 ```text
 app/
 ├── Enums/
-│   ├── Carteira.php                                  # NOVO
+│   ├── Carteira.php                                  # NOVO (+ coluna())
+│   ├── CategoriaPromocao.php                         # NOVO (+ aceita_percentual())
 │   ├── Genero.php                                    # NOVO
-│   ├── CategoriaPromocao.php                           # NOVO
-│   ├── ModalidadePromocao.php                        # NOVO
+│   ├── ModalidadePromocao.php                        # NOVO (+ carteira())
 │   ├── OrigemTransacao.php                           # NOVO
-│   ├── PermissaoCliente.php                          # NOVO: 9 permissões + funções permitidas
+│   ├── PermissaoCliente.php                          # NOVO: 10 permissões + funções permitidas
+│   ├── SituacaoEstorno.php                           # NOVO
+│   ├── TipoChavePix.php                              # NOVO
+│   ├── TipoConta.php                                 # NOVO
+│   ├── TipoGanho.php                                 # NOVO
+│   ├── TipoMeioPagamento.php                         # NOVO
 │   └── TipoTransacao.php                             # NOVO
 ├── Events/
 │   ├── ClienteCadastrado.php                         # NOVO
@@ -131,24 +140,28 @@ app/
 ├── Http/
 │   ├── Controllers/
 │   │   ├── AreaClienteAutenticacaoController.php     # NOVO: login, refresh, logout
-│   │   ├── AreaClienteCadastroController.php         # NOVO: cadastro público
+│   │   ├── AreaClienteCadastroController.php         # NOVO
+│   │   ├── AreaClienteMeiosPagamentoController.php   # NOVO
 │   │   ├── AreaClienteMeusDadosController.php        # NOVO: dados, senha, extrato
-│   │   ├── AreaClienteRecuperacaoSenhaController.php # NOVO: solicitar e redefinir
+│   │   ├── AreaClienteRecuperacaoSenhaController.php # NOVO
 │   │   ├── ClientesController.php                    # NOVO: gestão, situação, exclusão, restauração
-│   │   ├── ClientesConfiguracoesController.php       # NOVO: configurações do cliente
-│   │   ├── ClientesConfiguracoesPadraoController.php # NOVO: configurações padrão
-│   │   ├── ClientesPromocoesController.php           # NOVO
-│   │   ├── ClientesTransacoesController.php          # NOVO: extrato e ajuste manual
+│   │   ├── ClientesConfiguracoesController.php       # NOVO
+│   │   ├── ClientesConfiguracoesPadraoController.php # NOVO
+│   │   ├── ClientesMeiosPagamentoController.php      # NOVO (painel)
+│   │   ├── ClientesPromocoesController.php           # NOVO: CRUD + estornar
+│   │   ├── ClientesTransacoesController.php          # NOVO
 │   │   └── Concerns/
-│   │       └── GarantirPermissaoCliente.php          # NOVO: permissão + função (R-03)
+│   │       └── GarantirPermissaoCliente.php          # NOVO (R-03)
 │   ├── Middleware/
 │   │   └── GarantirAcessoCliente.php                 # NOVO (R-02)
 │   ├── Requests/
 │   │   ├── AlterarSenhaClienteRequest.php            # NOVO
-│   │   ├── ClientesConfiguracoesRequest.php          # NOVO: configurações e configurações padrão
+│   │   ├── ClientesConfiguracoesRequest.php          # NOVO: configurações e padrão
+│   │   ├── ClientesMeiosPagamentoRequest.php         # NOVO: área do cliente e painel
 │   │   ├── ClientesPromocoesRequest.php              # NOVO
 │   │   ├── ClientesTransacoesRequest.php             # NOVO
-│   │   ├── LoginClienteRequest.php                   # NOVO: limite de tentativas
+│   │   ├── EstornarPromocaoRequest.php               # NOVO
+│   │   ├── LoginClienteRequest.php                   # NOVO
 │   │   ├── RecuperarSenhaClienteRequest.php          # NOVO
 │   │   ├── RedefinirSenhaClienteRequest.php          # NOVO
 │   │   ├── StoreClientesRequest.php                  # NOVO: cadastro público
@@ -156,25 +169,31 @@ app/
 │   │   └── UpdateMeusDadosRequest.php                # NOVO
 │   └── Resources/
 │       ├── ClientesConfiguracoesResource.php         # NOVO
+│       ├── ClientesMeiosPagamentoResource.php        # NOVO: mascaramento
 │       ├── ClientesPromocoesResource.php             # NOVO
 │       ├── ClientesResource.php                      # NOVO: mascaramento (R-12)
 │       └── ClientesTransacoesResource.php            # NOVO
+├── Jobs/
+│   └── EstornarPromocao.php                          # NOVO (R-17)
 ├── Listeners/
-│   └── RegistrarMensagemWhatsapp.php                 # NOVO: grava no log (R-14)
+│   └── RegistrarMensagemWhatsapp.php                 # NOVO (R-14)
 ├── Models/
 │   ├── Clientes.php                                  # NOVO: JWTSubject, pode_acessar()
 │   ├── ClientesCodigosRecuperacao.php                # NOVO
 │   ├── ClientesConfiguracoes.php                     # NOVO
 │   ├── ClientesConfiguracoesPadrao.php               # NOVO
+│   ├── ClientesMeiosPagamento.php                    # NOVO
 │   ├── ClientesPromocoes.php                         # NOVO
 │   └── ClientesTransacoes.php                        # NOVO
 ├── Rules/
+│   ├── CnpjValido.php                                # NOVO
 │   └── CpfValido.php                                 # NOVO
 └── Services/
-    ├── CadastroClientes.php                          # NOVO: cadastro atômico + promoção (R-15)
-    └── SaldoClientes.php                             # NOVO: creditar/debitar (R-04)
+    ├── CadastroClientes.php                          # NOVO (R-15)
+    ├── MeiosPagamentoClientes.php                    # NOVO: principal e unicidade (R-18)
+    └── SaldoClientes.php                             # NOVO (R-04)
 
-config/auth.php                                       # ALTERADO: guard e provider clientes
+config/auth.php                                       # ALTERADO
 
 database/
 ├── factories/
@@ -184,20 +203,22 @@ database/
 │   ├── 2026_09_29_000002_create_clientes_transacoes_table.php            # NOVO
 │   ├── 2026_09_29_000003_create_clientes_configuracoes_table.php         # NOVO
 │   ├── 2026_09_29_000004_create_clientes_configuracoes_padrao_table.php  # NOVO
-│   ├── 2026_09_29_000005_create_clientes_promocoes_table.php             # NOVO
-│   └── 2026_09_29_000006_create_clientes_codigos_recuperacao_table.php   # NOVO
+│   ├── 2026_09_29_000005_create_clientes_meios_pagamento_table.php       # NOVO
+│   ├── 2026_09_29_000006_create_clientes_promocoes_table.php             # NOVO
+│   └── 2026_09_29_000007_create_clientes_codigos_recuperacao_table.php   # NOVO
 └── seeders/
-    ├── ClientesSeeder.php                            # NOVO: permissões, configurações padrão, exemplos
-    └── DatabaseSeeder.php                            # ALTERADO: chama ClientesSeeder
+    ├── ClientesSeeder.php                            # NOVO
+    └── DatabaseSeeder.php                            # ALTERADO
 
 docs/postman/wssports_api.postman_collection.json     # ALTERADO (regenerado)
 
-routes/api.php                                        # ALTERADO: rotas novas
+routes/api.php                                        # ALTERADO
 ```
 
 **Structure Decision**: aplicação Laravel única, estrutura padrão, seguindo os padrões da spec 001
 (FormRequests com mensagens em português, Resources, controllers com `HasMiddleware`). Regras de
-negócio com transação ficam em `app/Services`. Sem Policies e sem arquivos em `tests/`.
+negócio com transação ficam em `app/Services`; o estorno em `app/Jobs`. Sem Policies e sem arquivos
+em `tests/`.
 
 ## Complexity Tracking
 

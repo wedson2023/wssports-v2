@@ -19,6 +19,8 @@ Route::prefix('area_cliente')->group(function () {
         Route::patch('meus_dados', [AreaClienteMeusDadosController::class, 'update']);
         Route::put('meus_dados/senha', [AreaClienteMeusDadosController::class, 'alterar_senha']);
         Route::get('meus_dados/extrato', [AreaClienteMeusDadosController::class, 'extrato']);
+        Route::apiResource('meios_pagamento', AreaClienteMeiosPagamentoController::class)
+            ->parameters(['meios_pagamento' => 'meio_pagamento']);
     });
 });
 
@@ -35,44 +37,50 @@ Route::middleware(['auth:api', 'garantir_acesso'])->group(function () {
     Route::get('clientes/{cliente}/configuracoes', [ClientesConfiguracoesController::class, 'show']);
     Route::put('clientes/{cliente}/configuracoes', [ClientesConfiguracoesController::class, 'update']);
 
+    Route::apiResource('clientes.meios_pagamento', ClientesMeiosPagamentoController::class)
+        ->except('show')->parameters(['meios_pagamento' => 'meio_pagamento'])->scoped();
+
     Route::get('clientes_configuracoes_padrao', [ClientesConfiguracoesPadraoController::class, 'show']);
     Route::put('clientes_configuracoes_padrao', [ClientesConfiguracoesPadraoController::class, 'update']);
 
-    Route::apiResource('clientes_promocoes', ClientesPromocoesController::class);
+    Route::post('clientes_promocoes/{promocao}/estornar', [ClientesPromocoesController::class, 'estornar']);
+    Route::apiResource('clientes_promocoes', ClientesPromocoesController::class)
+        ->parameters(['clientes_promocoes' => 'promocao']);
 });
 ```
 
-Todas as rotas `{cliente}` usam `->missing(fn () => abort(404, 'Cliente não encontrado.'))`.
+Rotas com `{cliente}` usam `->missing(fn () => abort(404, 'Cliente não encontrado.'))`; com
+`{promocao}`, "Promoção não encontrada."; com `{meio_pagamento}`, "Meio de pagamento não
+encontrado.". Total: **15 rotas** na área do cliente e **23** no painel.
 
 ## Regras gerais
 
 - JSON (`Accept: application/json`); rotas protegidas exigem `Authorization: Bearer <token>`.
 - `401 {"message": "Não autenticado."}`: sem token, token inválido, expirado, invalidado, emitido
-  para o outro guard (cliente ↔ painel) ou anterior a `tokens_validos_desde`.
+  para o outro guard (cliente ↔ painel), anterior a `tokens_validos_desde` ou de cliente excluído
+  (o guard não encontra registros com soft delete).
 - `403 {"message": "Cliente sem permissão de acesso."}`: cliente **inativo** (área do cliente).
-  Cliente **excluído** recebe `401`: o guard não encontra registros com soft delete, e no login o
-  telefone já tem o sufixo de exclusão (cai no `401` genérico).
 - `403 {"message": "Você não tem permissão para esta ação."}`: usuário do painel sem a permissão
   ou com função não permitida para ela.
-- `404 {"message": "Cliente não encontrado."}`: inexistente ou excluído (exceto em `restaurar`).
+- `404`: registro inexistente, excluído (exceto em `restaurar`) ou de outro cliente.
 - `422`: validação, em português (`{"message": "...", "errors": {...}}`).
 - `429 {"message": "Muitas tentativas. Tente novamente em N segundos."}`.
-- `password` nunca aparece nas respostas. Valores monetários vêm como texto com 2 casas
-  (`"100.00"`).
-- Listagens paginadas: `por_pagina` de 1 a 100, padrão 20; resposta no formato de paginação do
-  Laravel (`data`, `links`, `meta`).
+- `password` nunca aparece. Valores monetários vêm como texto com 2 casas (`"100.00"`). Valores de
+  enum vêm em português com acentos (`"Promoção esportes"`, `"Ajuste manual"`).
+- Listagens: `por_pagina` de 1 a 100, padrão 20, formato de paginação do Laravel.
 
-## Objeto `cliente` (área do cliente e painel)
+## Objeto `cliente`
 
 ```json
 {
   "id": 12,
   "nome": "Maria Souza",
-  "codigo_pais": "55",
+  "ddi": "55",
   "telefone": "11988887777",
+  "email": "maria@mail.com",
   "cpf": "12345678909",
   "data_nascimento": "1990-05-10",
-  "genero": "feminino",
+  "genero": "Feminino",
   "codigo_afiliado": "PARCEIRO10",
   "aceita_promocao": true,
   "ativo": true,
@@ -84,34 +92,60 @@ Todas as rotas `{cliente}` usam `->missing(fn () => abort(404, 'Cliente não enc
 }
 ```
 
-No painel, sem `clientes.ver_dados_completos`: `"cpf": "***.456.789-**"` e
-`"telefone": "(11) *****-7777"` (código 55: DDD e 4 últimos dígitos; demais países: só os 4
-últimos dígitos, ex.: `"******4567"`). Na listagem de excluídos aparece também
-`deleted_at`, e `telefone`/`cpf` vêm sem o sufixo.
+`aceita_promocao` vem de `clientes_configuracoes`. No painel, sem `clientes.ver_dados_completos`:
+`"cpf": "***.456.789-**"`, `"telefone": "(11) *****-7777"` (DDI 55; demais: só os 4 últimos
+dígitos), `"email": "m***@mail.com"`. Na listagem de excluídos aparece `deleted_at`, e os dados
+únicos vêm sem o sufixo.
 
 ## Área do cliente
 
 | Rota | Corpo / parâmetros | Sucesso | Erros |
 |---|---|---|---|
-| `POST /api/area_cliente/cadastro` | `nome`, `codigo_pais?` (padrão 55), `telefone`, `password`, `password_confirmation`, `cpf`, `data_nascimento`, `genero`, `codigo_afiliado?`, `aceita_promocao?` (padrão `true`) | `201` com `cliente` e `token` | `422` (duplicidade, CPF inválido, menor de 18, senha fraca ou confirmação diferente) |
-| `POST /api/area_cliente/auth/login` | `codigo_pais?`, `telefone`, `password` | `200 {"token", "tipo": "bearer", "expira_em": 3600}` | `401 "Telefone ou senha inválidos."`; `403` inativo (excluído cai no `401` genérico); `422`; `429` |
+| `POST /api/area_cliente/cadastro` | `nome`, `ddi?` (padrão 55), `telefone`, `email?`, `password`, `password_confirmation`, `cpf?`, `data_nascimento`, `genero`, `codigo_afiliado?`, `aceita_promocao?` (padrão `true`) | `201 {"cliente", "token", "tipo": "bearer", "expira_em"}` | `422` (duplicidade, CPF/e-mail inválido, menor de 18, senha fraca ou confirmação diferente) |
+| `POST /api/area_cliente/auth/login` | `ddi?`, `telefone`, `password` | `200 {"token", "tipo": "bearer", "expira_em": 3600}` | `401 "Telefone ou senha inválidos."` (inclui excluído); `403` inativo; `422`; `429` |
 | `POST /api/area_cliente/auth/refresh` | — | `200` com novo token | `401`; `403` |
 | `POST /api/area_cliente/auth/logout` | — | `204` | `401` |
-| `POST /api/area_cliente/auth/recuperar_senha` | `codigo_pais?`, `telefone` | `200 {"message": "Se o telefone estiver cadastrado, enviaremos um código."}` (sempre igual) | `422`; `429` (menos de 1 min desde o último pedido) |
-| `POST /api/area_cliente/auth/redefinir_senha` | `codigo_pais?`, `telefone`, `codigo`, `password`, `password_confirmation` | `204` (tokens anteriores deixam de valer) | `422 "Código inválido ou expirado."`; `422` senha fraca |
-| `GET /api/area_cliente/meus_dados` | — | `200` com `cliente` | `401`; `403` |
-| `PATCH /api/area_cliente/meus_dados` | `nome?`, `genero?`, `aceita_promocao?` | `200` com `cliente` | `422` (inclui tentar enviar `telefone`, `codigo_pais`, `cpf` ou `data_nascimento`) |
-| `PUT /api/area_cliente/meus_dados/senha` | `senha_atual`, `password`, `password_confirmation` | `204` (outros tokens deixam de valer; o cliente precisa entrar de novo) | `422 "A senha atual está incorreta."` |
-| `GET /api/area_cliente/meus_dados/extrato` | `data_inicial?`, `data_final?` (Y-m-d), `carteira?`, `por_pagina?` | `200` paginado de `transacao` | `422` (data inicial > final) |
+| `POST /api/area_cliente/auth/recuperar_senha` | `ddi?`, `telefone` | `200 {"message": "Se o telefone estiver cadastrado, enviaremos um código."}` (sempre igual) | `422`; `429` (menos de 1 min) |
+| `POST /api/area_cliente/auth/redefinir_senha` | `ddi?`, `telefone`, `codigo`, `password`, `password_confirmation` | `204` (tokens anteriores deixam de valer) | `422 "Código inválido ou expirado."`; `422` senha fraca |
+| `GET /api/area_cliente/meus_dados` | — | `200` `cliente` | `401`; `403` |
+| `PATCH /api/area_cliente/meus_dados` | `nome?`, `genero?`, `email?`, `aceita_promocao?` | `200` `cliente` | `422` (inclui enviar `ddi`, `telefone`, `cpf` ou `data_nascimento`) |
+| `PUT /api/area_cliente/meus_dados/senha` | `senha_atual`, `password`, `password_confirmation` | `204` (todos os tokens, inclusive o atual, deixam de valer) | `422 "A senha atual está incorreta."` |
+| `GET /api/area_cliente/meus_dados/extrato` | `data_inicial?`, `data_final?` (Y-m-d), `carteira?`, `por_pagina?` | `200` paginado de `transacao` (sem `autor`) | `422` |
+| `GET /api/area_cliente/meios_pagamento` | — | `200` lista de `meio_pagamento` (sem máscara) | `401` |
+| `POST /api/area_cliente/meios_pagamento` | campos de `meio_pagamento` conforme `tipo` | `201` | `422` (tipo de chave × chave, duplicidade) |
+| `GET /api/area_cliente/meios_pagamento/{meio_pagamento}` | — | `200` | `404` (inclui de outro cliente) |
+| `PUT/PATCH /api/area_cliente/meios_pagamento/{meio_pagamento}` | campos; `principal: true` marca como principal | `200` | `404`; `422` |
+| `DELETE /api/area_cliente/meios_pagamento/{meio_pagamento}` | — | `204` (se era o principal, o mais antigo restante vira principal) | `404` |
+
+## Objeto `meio_pagamento`
+
+```json
+{
+  "id": 3,
+  "tipo": "Pix",
+  "principal": true,
+  "pix_nome_titular": "Maria Souza",
+  "pix_tipo_chave": "E-mail",
+  "pix_chave": "maria@mail.com",
+  "banco_codigo": null, "banco_nome": null, "agencia": null, "conta": null,
+  "conta_digito": null, "conta_tipo": null, "titular_nome": null, "titular_documento": null,
+  "created_at": "2026-09-29T15:00:00.000000Z"
+}
+```
+
+Tipo `"Transferência bancária"`: `banco_codigo`, `banco_nome`, `agencia`, `conta`, `conta_digito`,
+`conta_tipo` (`"Corrente"`/`"Poupança"`), `titular_nome`, `titular_documento` obrigatórios e os
+campos `pix_*` nulos. No painel, sem `clientes.ver_dados_completos`, `pix_chave`, `conta` e
+`titular_documento` vêm com só os 4 últimos caracteres visíveis.
 
 ## Objeto `transacao`
 
 ```json
 {
   "id": 40,
-  "carteira": "saldo",
-  "tipo": "debito",
-  "origem": "ajuste_manual",
+  "carteira": "Saldo",
+  "tipo": "Débito",
+  "origem": "Ajuste manual",
   "referencia_id": null,
   "valor": "30.00",
   "saldo_anterior": "100.00",
@@ -122,36 +156,29 @@ No painel, sem `clientes.ver_dados_completos`: `"cpf": "***.456.789-**"` e
 }
 ```
 
-`autor` é `null` quando a operação foi do sistema. Na área do cliente, `autor` não é exibido.
-Ordem: da mais recente para a mais antiga.
+`autor` é `null` quando a operação foi do sistema e não aparece na área do cliente.
 
 ## Gestão de clientes (painel)
 
 | Rota | Permissão | Corpo / parâmetros | Sucesso | Erros |
 |---|---|---|---|---|
-| `GET /api/clientes` | `clientes.listar` | `busca?` (nome, telefone ou CPF), `ativo?`, `codigo_pais?`, `codigo_afiliado?`, `cadastro_de?`, `cadastro_ate?`, `idade_minima?`, `idade_maxima?`, `genero?`, `saldo_minimo?`, `saldo_maximo?`, `com_saldo_promocional?`, `ordenar_por?` (`nome`, `created_at`, `saldo`), `direcao?` (`asc`, `desc`), `por_pagina?` | `200` paginado de `cliente` | `422` |
-| `GET /api/clientes/{cliente}` | `clientes.listar` | — | `200` `cliente` | `404` |
-| `PUT/PATCH /api/clientes/{cliente}` | `clientes.editar` | `nome?`, `codigo_pais?`, `telefone?`, `cpf?`, `data_nascimento?`, `genero?`, `codigo_afiliado?`, `aceita_promocao?`, `password?` + `password_confirmation` | `200` `cliente` | `404`; `422` (duplicidade; saldos não são aceitos) |
-| `PATCH /api/clientes/{cliente}/situacao` | `clientes.editar` | `ativo` (boolean) | `200` `cliente` | `404`; `422` |
-| `DELETE /api/clientes/{cliente}` | `clientes.excluir` (Admin/Supervisor) | — | `204` (sufixo em telefone/CPF) | `403`; `404` |
-| `GET /api/clientes/excluidos` | `clientes.restaurar` (Admin/Supervisor) | mesmos filtros da listagem | `200` paginado | `403` |
-| `POST /api/clientes/{cliente}/restaurar` | `clientes.restaurar` (Admin/Supervisor) | `codigo_pais?`, `telefone?`, `cpf?` (só para resolver conflito) | `200` `cliente` | `403`; `404`; `422 "Cliente não está excluído."`; `422` com `errors.telefone` e/ou `errors.cpf` = "Já está em uso por outro cliente; informe um novo valor." |
-
-## Saldos (painel)
-
-| Rota | Permissão | Corpo / parâmetros | Sucesso | Erros |
-|---|---|---|---|---|
-| `GET /api/clientes/{cliente}/transacoes` | `clientes.listar` | `data_inicial?`, `data_final?`, `carteira?`, `por_pagina?` | `200` paginado de `transacao` | `404`; `422` |
-| `POST /api/clientes/{cliente}/transacoes` | `clientes.movimentar_saldo` | `carteira`, `tipo` (`credito`/`debito`), `valor` (> 0, 2 casas), `observacao` (obrigatória) | `201` `transacao` (origem `ajuste_manual`, autor = usuário logado) | `404`; `422 "Saldo insuficiente."`; `422` |
-
-## Configurações (painel)
-
-| Rota | Permissão | Corpo | Sucesso | Erros |
-|---|---|---|---|---|
+| `GET /api/clientes` | `clientes.listar` | `busca?` (nome, telefone, CPF ou e-mail), `ativo?`, `ddi?`, `codigo_afiliado?`, `cadastro_de?`, `cadastro_ate?`, `idade_minima?`, `idade_maxima?`, `genero?`, `saldo_minimo?`, `saldo_maximo?`, `com_saldo_promocional?`, `saque_bloqueado?`, `com_cpf?`, `com_email?`, `ordenar_por?` (`nome`, `created_at`, `saldo`), `direcao?`, `por_pagina?` | `200` paginado | `422` |
+| `GET /api/clientes/{cliente}` | `clientes.listar` | — | `200` | `404` |
+| `PUT/PATCH /api/clientes/{cliente}` | `clientes.editar` | `nome?`, `ddi?`, `telefone?`, `email?`, `cpf?`, `data_nascimento?`, `genero?`, `codigo_afiliado?`, `password?` + `password_confirmation` | `200` | `404`; `422` (duplicidade; saldos não aceitos) |
+| `PATCH /api/clientes/{cliente}/situacao` | `clientes.editar` | `ativo` | `200` | `404`; `422` |
+| `DELETE /api/clientes/{cliente}` | `clientes.excluir` (Admin/Supervisor) | — | `204` (sufixo em telefone/CPF/e-mail) | `403`; `404` |
+| `GET /api/clientes/excluidos` | `clientes.restaurar` (Admin/Supervisor) | mesmos filtros | `200` paginado | `403` |
+| `POST /api/clientes/{cliente}/restaurar` | `clientes.restaurar` (Admin/Supervisor) | `ddi?`, `telefone?`, `cpf?`, `email?` (só para resolver conflito) | `200` | `403`; `404`; `422 "Cliente não está excluído."`; `422` com `errors.<campo>` = "Já está em uso por outro cliente; informe um novo valor." |
+| `GET /api/clientes/{cliente}/transacoes` | `clientes.listar` | `data_inicial?`, `data_final?`, `carteira?`, `por_pagina?` | `200` paginado | `404`; `422` |
+| `POST /api/clientes/{cliente}/transacoes` | `clientes.movimentar_saldo` | `carteira`, `tipo`, `valor` (> 0, 2 casas), `observacao` | `201` (origem `"Ajuste manual"`) | `404`; `422 "Saldo insuficiente."`; `422` |
 | `GET /api/clientes/{cliente}/configuracoes` | `clientes.listar` | — | `200` `configuracoes` | `404` |
-| `PUT /api/clientes/{cliente}/configuracoes` | `clientes.editar_configuracoes` | todos os campos de `configuracoes` | `200` `configuracoes` | `404`; `422` (mínimo > máximo etc.) |
-| `GET /api/clientes_configuracoes_padrao` | `clientes.editar_configuracoes_padrao` (Admin/Supervisor) | — | `200` `configuracoes` | `403` |
-| `PUT /api/clientes_configuracoes_padrao` | `clientes.editar_configuracoes_padrao` (Admin/Supervisor) | todos os campos | `200` `configuracoes` | `403`; `422` |
+| `PUT /api/clientes/{cliente}/configuracoes` | `clientes.editar_configuracoes` | todos os campos de `configuracoes` | `200` | `404`; `422` |
+| `GET /api/clientes/{cliente}/meios_pagamento` | `clientes.listar` | — | `200` lista (mascarada sem `ver_dados_completos`) | `404` |
+| `POST /api/clientes/{cliente}/meios_pagamento` | `clientes.editar` | campos de `meio_pagamento` | `201` | `404`; `422` |
+| `PUT/PATCH /api/clientes/{cliente}/meios_pagamento/{meio_pagamento}` | `clientes.editar` | campos; `principal?` | `200` | `404`; `422` |
+| `DELETE /api/clientes/{cliente}/meios_pagamento/{meio_pagamento}` | `clientes.editar` | — | `204` | `404` |
+| `GET /api/clientes_configuracoes_padrao` | `clientes.editar_configuracoes_padrao` (Admin/Supervisor) | — | `200` | `403` |
+| `PUT /api/clientes_configuracoes_padrao` | `clientes.editar_configuracoes_padrao` (Admin/Supervisor) | todos os campos | `200` | `403`; `422` |
 
 ```json
 {
@@ -159,12 +186,16 @@ Ordem: da mais recente para a mais antiga.
   "apostar_ao_vivo": true,
   "apostar_outros_esportes": true,
   "cancelar_aposta": false,
+  "aceita_promocao": true,
+  "bloquear_saque": false,
   "quantidade_minima_opcoes": 1,
   "quantidade_maxima_opcoes": 20,
   "valor_minimo_aposta": "2.00",
   "valor_maximo_aposta": "1000.00",
   "premio_maximo": "50000.00",
   "valor_maximo_diario": "5000.00",
+  "valor_maximo_saque_diario": "5000.00",
+  "quantidade_maxima_saques_diaria": 5,
   "odd_minima": "1.90",
   "odd_maxima": "30.00",
   "esportes_permitidos": ["FUTEBOL", "HOQUEI NO GELO", "BAISEBOL"],
@@ -172,30 +203,42 @@ Ordem: da mais recente para a mais antiga.
 }
 ```
 
-Não existe rota da área do cliente para alterar configurações (FR-045).
-
 ## Promoções (painel)
 
 | Rota | Permissão | Corpo / parâmetros | Sucesso | Erros |
 |---|---|---|---|---|
 | `GET /api/clientes_promocoes` | `clientes_promocoes.gerenciar` | `ativa?`, `modalidade?`, `categoria?`, `por_pagina?` | `200` paginado | `403` |
-| `GET /api/clientes_promocoes/{promocao}` | `clientes_promocoes.gerenciar` | — | `200` | `404 "Promoção não encontrada."` |
-| `POST /api/clientes_promocoes` | `clientes_promocoes.gerenciar` | `nome`, `descricao?`, `modalidade`, `categoria`, `valor`, `data_inicio`, `data_fim?`, `ativa?` | `201` | `422` (inclui sobreposição: "Já existe uma promoção ativa desta categoria e modalidade no período.") |
-| `PUT/PATCH /api/clientes_promocoes/{promocao}` | `clientes_promocoes.gerenciar` | mesmos campos (ativar/desativar pelo `ativa`) | `200` | `404`; `422` |
-| `DELETE /api/clientes_promocoes/{promocao}` | `clientes_promocoes.gerenciar` | — | `204` (soft delete) | `404` |
+| `GET /api/clientes_promocoes/{promocao}` | `clientes_promocoes.gerenciar` | — | `200` | `404` |
+| `POST /api/clientes_promocoes` | `clientes_promocoes.gerenciar` | `nome`, `descricao?`, `modalidade`, `categoria`, `tipo_ganho`, `valor`, `rollover`, `valor_minimo_aposta`, `valor_maximo_aposta`, `valor_maximo_deposito?`, `valor_maximo_conversao`, `odd_minima_aposta_simples`, `odd_minima_aposta_multipla`, `data_inicio`, `data_fim?`, `ativa?` | `201` | `422` (sobreposição: "Já existe uma promoção ativa desta categoria e modalidade no período."; Percentual fora de depósito; rollover < 1 em primeiro depósito; regras incoerentes) |
+| `PUT/PATCH /api/clientes_promocoes/{promocao}` | `clientes_promocoes.gerenciar` | mesmos campos | `200` | `404`; `422` (inclui "Promoção já aplicada: valor, tipo de ganho, categoria e modalidade não podem mudar." e "Promoção estornada não pode ser alterada.") |
+| `DELETE /api/clientes_promocoes/{promocao}` | `clientes_promocoes.gerenciar` | — | `204` | `404` |
+| `POST /api/clientes_promocoes/{promocao}/estornar` | `clientes_promocoes.estornar` (Admin/Supervisor) | `motivo` (obrigatório, até 255) | `202` com a promoção (`estorno.situacao = "Em andamento"`) | `403`; `404`; `422 "Esta promoção já foi estornada."` |
 
 ```json
 {
   "id": 1,
   "nome": "Bônus de boas-vindas",
   "descricao": "R$ 20 para apostar em esportes",
-  "modalidade": "esportes",
-  "categoria": "primeiro_cadastro",
+  "modalidade": "Esportes",
+  "categoria": "Primeiro cadastro",
+  "tipo_ganho": "Fixo",
   "valor": "20.00",
+  "rollover": 5,
+  "valor_minimo_aposta": "2.00",
+  "valor_maximo_aposta": "100.00",
+  "valor_maximo_deposito": null,
+  "valor_maximo_conversao": "200.00",
+  "odd_minima_aposta_simples": "1.50",
+  "odd_minima_aposta_multipla": "1.30",
   "data_inicio": "2026-10-01T00:00:00.000000Z",
   "data_fim": null,
   "ativa": true,
   "vigente": true,
+  "aplicada": false,
+  "estorno": {
+    "situacao": null, "motivo": null, "autor": null, "iniciado_em": null, "concluido_em": null,
+    "total_clientes": 0, "clientes_processados": 0, "valor_total": "0.00"
+  },
   "created_at": "2026-09-29T15:00:00.000000Z",
   "updated_at": "2026-09-29T15:00:00.000000Z"
 }
@@ -204,7 +247,7 @@ Não existe rota da área do cliente para alterar configurações (FR-045).
 ## Uso interno (sem rota)
 
 - `SaldoClientes::creditar(Clientes $cliente, Carteira $carteira, string $valor, OrigemTransacao $origem, ?Usuarios $autor = null, ?int $referencia_id = null, ?string $observacao = null): ClientesTransacoes`
-- `SaldoClientes::debitar(...)`: mesma assinatura; lança `SaldoInsuficienteException` (convertida em
-  `422 "Saldo insuficiente."`).
-- Eventos `ClienteCadastrado(cliente)` e `CodigoRecuperacaoGerado(cliente, codigo)`: a futura spec
-  de WhatsApp troca o listener `RegistrarMensagemWhatsapp`.
+- `SaldoClientes::debitar(...)`: mesma assinatura; lança `SaldoInsuficienteException` (`422
+  "Saldo insuficiente."`).
+- Job `EstornarPromocao(promocao_id)`: processa o estorno em lotes (research.md R-17).
+- Eventos `ClienteCadastrado(cliente)` e `CodigoRecuperacaoGerado(cliente, codigo)`.

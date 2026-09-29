@@ -2,8 +2,9 @@
 
 **Feature**: `002-clientes` | **Data**: 2026-09-29 | **Plano**: [plan.md](plan.md)
 
-Todas as tabelas são novas, com `created_at`, `updated_at` e `deleted_at` (constituição) e prefixo
-`clientes_` nas tabelas ligadas a `clientes` (v1.9.0). Decisões em [research.md](research.md).
+Todas as tabelas são novas, com `created_at`, `updated_at` e `deleted_at` (constituição), prefixo
+`clientes_` nas tabelas ligadas a `clientes` (v1.9.0) e valores de enum em português com a
+primeira letra maiúscula e acentos (v1.13.0). Decisões em [research.md](research.md).
 
 ## Tabela `clientes`
 
@@ -11,45 +12,47 @@ Todas as tabelas são novas, com `created_at`, `updated_at` e `deleted_at` (cons
 |---|---|---|
 | id | bigint PK | |
 | nome | varchar(150) | obrigatório |
-| codigo_pais | varchar(3) | só dígitos, 1 a 3; padrão `55` |
-| telefone | varchar(40) | só dígitos; 10–11 se `codigo_pais = 55`, 4–14 nos demais; recebe o sufixo `_deleted_<timestamp>` na exclusão |
-| cpf | varchar(40) | só dígitos, 11, dígitos verificadores válidos; recebe o sufixo na exclusão |
-| password | varchar(255) | hash (`cast hashed`); nunca retornada |
+| ddi | varchar(3) | só dígitos, 1 a 3; padrão `55` |
+| telefone | varchar(40) | só dígitos; 10–11 se `ddi = 55`, 4–14 nos demais; recebe `_deleted_<timestamp>` na exclusão |
+| email | varchar(150) null | minúsculas, formato válido; recebe o sufixo na exclusão |
+| password | varchar(255) | hash; nunca retornada (exceção v1.12.0) |
+| cpf | varchar(40) null | só dígitos, 11, dígitos verificadores válidos; recebe o sufixo na exclusão |
 | data_nascimento | date | 18 anos ou mais na data do cadastro |
-| genero | varchar(20) | enum `Genero` |
+| genero | varchar(20) | `Genero`: `'Masculino'`, `'Feminino'`, `'Outro'`, `'Não informado'` |
 | codigo_afiliado | varchar(50) null | texto livre, sem FK (R-08) |
-| aceita_promocao | boolean | padrão `true` |
 | ativo | boolean | padrão `true` |
 | saldo | decimal(15,2) | padrão 0; ≥ 0 |
 | saldo_promocao_esportes | decimal(15,2) | padrão 0; ≥ 0 |
 | saldo_promocao_cassino | decimal(15,2) | padrão 0; ≥ 0 |
-| tokens_validos_desde | timestamp null | tokens emitidos antes desta data são recusados (R-02) |
+| tokens_validos_desde | timestamp null | tokens com `iat` anterior são recusados (R-02) |
 | created_at / updated_at / deleted_at | timestamp | |
 
-**Índices**: único (`codigo_pais`, `telefone`); único `cpf`; índice `nome`; índice `created_at`.
+**Índices**: único (`ddi`, `telefone`); único `cpf`; único `email` (vários `NULL` permitidos);
+índices em `nome` e `created_at`.
 
-**Saldos**: só mudam pelo serviço `SaldoClientes` (FR-033); nunca pela edição.
+**Saldos**: só mudam pelo serviço `SaldoClientes` (FR-041); nunca pela edição.
 
 ## Tabela `clientes_transacoes`
 
 | Coluna | Tipo | Regras |
 |---|---|---|
 | id | bigint PK | |
-| clientes_id | FK → `clientes.id` | obrigatório |
-| carteira | varchar(30) | enum `Carteira`: `saldo`, `saldo_promocao_esportes`, `saldo_promocao_cassino` |
-| tipo | varchar(10) | enum `TipoTransacao`: `credito`, `debito` |
-| origem | varchar(30) | enum `OrigemTransacao`: `ajuste_manual`, `promocao`, `aposta`, `premio`, `estorno` |
+| clientes_id | FK → `clientes.id` | |
+| carteira | varchar(30) | `Carteira`: `'Saldo'`, `'Promoção esportes'`, `'Promoção cassino'` |
+| tipo | varchar(10) | `TipoTransacao`: `'Crédito'`, `'Débito'` |
+| origem | varchar(30) | `OrigemTransacao`: `'Ajuste manual'`, `'Promoção'`, `'Aposta'`, `'Prêmio'`, `'Estorno'` |
 | referencia_id | unsigned bigint null | id do registro de origem, sem FK (R-08) |
-| valor | decimal(15,2) | > 0, até 2 casas |
-| saldo_anterior | decimal(15,2) | valor da carteira antes |
+| valor | decimal(15,2) | > 0 |
+| saldo_anterior | decimal(15,2) | |
 | saldo_posterior | decimal(15,2) | anterior ± valor; igual ao saldo da carteira logo após |
 | usuarios_id | FK → `usuarios.id` null | autor do painel; `null` = sistema |
-| observacao | varchar(255) null | obrigatória na origem `ajuste_manual` |
-| created_at / updated_at / deleted_at | timestamp | nunca editada nem excluída (FR-039) |
+| observacao | varchar(255) null | obrigatória em `'Ajuste manual'` e `'Estorno'` |
+| created_at / updated_at / deleted_at | timestamp | nunca editada nem excluída |
 
-**Índices**: (`clientes_id`, `created_at`) para o extrato; (`clientes_id`, `carteira`).
+**Índices**: (`clientes_id`, `created_at`); (`clientes_id`, `carteira`); (`origem`,
+`referencia_id`) para o estorno de promoção.
 
-## Tabela `clientes_configuracoes` (configurações do cliente)
+## Tabela `clientes_configuracoes`
 
 | Coluna | Tipo | Regras |
 |---|---|---|
@@ -59,34 +62,62 @@ Todas as tabelas são novas, com `created_at`, `updated_at` e `deleted_at` (cons
 | apostar_ao_vivo | boolean | |
 | apostar_outros_esportes | boolean | |
 | cancelar_aposta | boolean | |
+| aceita_promocao | boolean | único campo que o cliente também altera |
+| bloquear_saque | boolean | |
 | quantidade_minima_opcoes | unsigned smallint | ≥ 1 e ≤ máxima |
-| quantidade_maxima_opcoes | unsigned smallint | ≥ mínima |
+| quantidade_maxima_opcoes | unsigned smallint | |
 | valor_minimo_aposta | decimal(15,2) | > 0 e ≤ máximo |
-| valor_maximo_aposta | decimal(15,2) | ≥ mínimo |
+| valor_maximo_aposta | decimal(15,2) | |
 | premio_maximo | decimal(15,2) | > 0 |
-| valor_maximo_diario | decimal(15,2) | > 0 |
+| valor_maximo_diario | decimal(15,2) | > 0 (apostado por dia) |
+| valor_maximo_saque_diario | decimal(15,2) | > 0 |
+| quantidade_maxima_saques_diaria | unsigned smallint | ≥ 1 |
 | odd_minima | decimal(8,2) | ≥ 1,00 e ≤ máxima |
-| odd_maxima | decimal(8,2) | ≥ mínima |
-| esportes_permitidos | json | lista de nomes (texto), pelo menos 1; sem FK (R-08) |
+| odd_maxima | decimal(8,2) | |
+| esportes_permitidos | json | lista de nomes, pelo menos 1; sem FK (R-08) |
 | created_at / updated_at / deleted_at | timestamp | |
 
 ## Tabela `clientes_configuracoes_padrao` (registro único)
 
-Mesmas colunas de `clientes_configuracoes`, sem `clientes_id`. Sempre existe um único registro
-(id 1), criado pelo seeder com os valores da antiga `travas_gerentes`:
+Mesmas colunas de `clientes_configuracoes`, sem `clientes_id`. Valores do seeder:
 
 | Campo | Valor |
 |---|---|
 | realizar_aposta / apostar_ao_vivo / apostar_outros_esportes | `true` |
 | cancelar_aposta | `false` |
+| aceita_promocao / bloquear_saque | `true` / `false` |
 | quantidade_minima_opcoes / quantidade_maxima_opcoes | 1 / 20 |
 | valor_minimo_aposta / valor_maximo_aposta | 2.00 / 1000.00 |
 | premio_maximo | 50000.00 |
 | valor_maximo_diario | 5000.00 |
+| valor_maximo_saque_diario / quantidade_maxima_saques_diaria | 5000.00 / 5 |
 | odd_minima / odd_maxima | 1.90 / 30.00 |
 | esportes_permitidos | `["FUTEBOL", "HOQUEI NO GELO", "BAISEBOL"]` |
 
-As validações de coerência são as mesmas de `clientes_configuracoes` (FR-044).
+## Tabela `clientes_meios_pagamento`
+
+| Coluna | Tipo | Regras |
+|---|---|---|
+| id | bigint PK | |
+| clientes_id | FK → `clientes.id` | |
+| tipo | varchar(30) | `TipoMeioPagamento`: `'Pix'`, `'Transferência bancária'` |
+| principal | boolean | exatamente um `true` por cliente com meios |
+| pix_nome_titular | varchar(150) null | obrigatório se `Pix` |
+| pix_tipo_chave | varchar(20) null | `TipoChavePix`: `'CPF'`, `'CNPJ'`, `'E-mail'`, `'Telefone'`, `'Chave aleatória'`; obrigatório se `Pix` |
+| pix_chave | varchar(150) null | validada pelo tipo (R-11); obrigatória se `Pix` |
+| banco_codigo | varchar(3) null | 3 dígitos; obrigatório se transferência |
+| banco_nome | varchar(100) null | obrigatório se transferência |
+| agencia | varchar(10) null | só dígitos; obrigatória se transferência |
+| conta | varchar(20) null | só dígitos; obrigatória se transferência |
+| conta_digito | varchar(2) null | obrigatório se transferência |
+| conta_tipo | varchar(20) null | `TipoConta`: `'Corrente'`, `'Poupança'`; obrigatório se transferência |
+| titular_nome | varchar(150) null | obrigatório se transferência |
+| titular_documento | varchar(14) null | CPF ou CNPJ válido; obrigatório se transferência |
+| created_at / updated_at / deleted_at | timestamp | |
+
+**Unicidade (aplicação, entre não excluídos do mesmo cliente)**: `pix_chave` no Pix;
+(`banco_codigo`, `agencia`, `conta`, `conta_digito`) na transferência. **Índice**: (`clientes_id`,
+`principal`).
 
 ## Tabela `clientes_promocoes`
 
@@ -95,17 +126,36 @@ As validações de coerência são as mesmas de `clientes_configuracoes` (FR-044
 | id | bigint PK | |
 | nome | varchar(150) | obrigatório |
 | descricao | text null | |
-| modalidade | varchar(20) | enum `ModalidadePromocao`: `esportes`, `cassino` |
-| categoria | varchar(30) | enum `CategoriaPromocao`: `primeiro_cadastro`, `primeiro_deposito`, `qualquer_deposito`, `indicacao` |
-| valor | decimal(15,2) | > 0 |
-| data_inicio | datetime | obrigatório |
+| modalidade | varchar(20) | `ModalidadePromocao`: `'Esportes'`, `'Cassino'` |
+| categoria | varchar(30) | `CategoriaPromocao`: `'Primeiro cadastro'`, `'Primeiro depósito'`, `'Qualquer depósito'`, `'Indicação'` |
+| tipo_ganho | varchar(20) | `TipoGanho`: `'Fixo'`, `'Percentual'` (Percentual só nas categorias de depósito) |
+| valor | decimal(15,2) | Fixo: reais > 0; Percentual: > 0 e ≤ 100 |
+| rollover | unsigned smallint | ≥ 0; ≥ 1 em `'Primeiro depósito'` |
+| valor_minimo_aposta | decimal(15,2) | > 0 e ≤ máximo |
+| valor_maximo_aposta | decimal(15,2) | > 0 |
+| valor_maximo_deposito | decimal(15,2) null | > 0; obrigatório se Percentual |
+| valor_maximo_conversao | decimal(15,2) | > 0; teto do que vira saldo real após o rollover |
+| odd_minima_aposta_simples | decimal(8,2) | ≥ 1,00 |
+| odd_minima_aposta_multipla | decimal(8,2) | ≥ 1,00 |
+| data_inicio | datetime | |
 | data_fim | datetime null | ≥ `data_inicio`; `null` = sem fim |
 | ativa | boolean | padrão `true` |
+| estorno_situacao | varchar(20) null | `SituacaoEstorno`: `'Em andamento'`, `'Concluído'`; `null` = não estornada |
+| estorno_motivo | varchar(255) null | |
+| estorno_usuarios_id | FK → `usuarios.id` null | quem estornou |
+| estorno_iniciado_em | datetime null | |
+| estorno_concluido_em | datetime null | |
+| estorno_total_clientes | unsigned int | padrão 0 |
+| estorno_clientes_processados | unsigned int | padrão 0 |
+| estorno_valor_total | decimal(15,2) | padrão 0 |
 | created_at / updated_at / deleted_at | timestamp | |
 
-**Vigente** = `ativa`, não excluída e `data_inicio ≤ agora ≤ data_fim` (ou `data_fim` nula).
-**Sobreposição proibida**: duas promoções ativas da mesma categoria e mesma modalidade com
-períodos que se cruzam; categorias diferentes podem se sobrepor (R-15).
+**Índice**: (`categoria`, `modalidade`, `ativa`).
+
+**Vigente** = `ativa`, não excluída, `estorno_situacao` nula e `data_inicio ≤ agora ≤ data_fim`
+(ou `data_fim` nula). **Sobreposição proibida**: duas ativas da mesma categoria e modalidade com
+períodos que se cruzam (R-16). **Aplicada** = existe transação `'Promoção'` com `referencia_id` da
+promoção (bloqueia alterar valor, tipo de ganho, categoria e modalidade).
 
 ## Tabela `clientes_codigos_recuperacao`
 
@@ -114,32 +164,40 @@ períodos que se cruzam; categorias diferentes podem se sobrepor (R-15).
 | id | bigint PK | |
 | clientes_id | FK → `clientes.id` | |
 | codigo | varchar(255) | hash do código de 6 dígitos |
-| tentativas | unsigned tinyint | padrão 0; na 5ª errada o código é invalidado |
+| tentativas | unsigned tinyint | padrão 0; invalidado na 5ª errada |
 | expira_em | datetime | criação + 15 minutos |
-| usado_em | datetime null | preenchido na troca de senha |
-| invalidado_em | datetime null | novo pedido ou 5 tentativas erradas |
+| usado_em | datetime null | |
+| invalidado_em | datetime null | novo pedido ou 5 tentativas |
 | created_at / updated_at / deleted_at | timestamp | |
 
 **Código válido** = `usado_em` e `invalidado_em` nulos e `expira_em > agora`.
 
 ## Relacionamentos (models)
 
-- `Clientes` hasOne `ClientesConfiguracoes`; hasMany `ClientesTransacoes`; hasMany
-  `ClientesCodigosRecuperacao`.
-- `ClientesTransacoes` belongsTo `Clientes`; belongsTo `Usuarios` (autor, opcional).
-- `ClientesConfiguracoesPadrao`: método estático `atual()` que devolve o registro único.
+- `Clientes` hasOne `ClientesConfiguracoes`; hasMany `ClientesTransacoes`,
+  `ClientesMeiosPagamento`, `ClientesCodigosRecuperacao`.
+- `ClientesTransacoes` belongsTo `Clientes` e `Usuarios` (autor, opcional).
+- `ClientesPromocoes` belongsTo `Usuarios` (`estorno_usuarios_id`).
+- `ClientesConfiguracoesPadrao::atual()` devolve o registro único.
 
 ## Enums (`app/Enums`)
 
-| Enum | Valores |
+Nomes das classes sem acento; casos em `PascalCase` com acento (R-05).
+
+| Enum | Casos |
 |---|---|
-| `Genero` | masculino, feminino, outro, nao_informado |
-| `Carteira` | saldo, saldo_promocao_esportes, saldo_promocao_cassino |
-| `TipoTransacao` | credito, debito |
-| `OrigemTransacao` | ajuste_manual, promocao, aposta, premio, estorno |
-| `ModalidadePromocao` | esportes, cassino (método `carteira()` → `Carteira`) |
-| `CategoriaPromocao` | primeiro_cadastro, primeiro_deposito, qualquer_deposito, indicacao |
-| `PermissaoCliente` | as 9 permissões; método `funcoes_permitidas()` (R-03) |
+| `Genero` | Masculino, Feminino, Outro, NãoInformado |
+| `Carteira` | Saldo, PromoçãoEsportes, PromoçãoCassino (+ `coluna()`) |
+| `TipoTransacao` | Crédito, Débito |
+| `OrigemTransacao` | AjusteManual, Promoção, Aposta, Prêmio, Estorno |
+| `ModalidadePromocao` | Esportes, Cassino (+ `carteira(): Carteira`) |
+| `CategoriaPromocao` | PrimeiroCadastro, PrimeiroDepósito, QualquerDepósito, Indicação (+ `aceita_percentual(): bool`) |
+| `TipoGanho` | Fixo, Percentual |
+| `SituacaoEstorno` | EmAndamento, Concluído |
+| `TipoMeioPagamento` | Pix, TransferênciaBancária |
+| `TipoChavePix` | Cpf, Cnpj, Email, Telefone, ChaveAleatória |
+| `TipoConta` | Corrente, Poupança |
+| `PermissaoCliente` | as 10 permissões (+ `funcoes_permitidas()`, `permitida_para()`) |
 
 ## Permissões (guard `api`)
 
@@ -154,17 +212,27 @@ períodos que se cruzam; categorias diferentes podem se sobrepor (R-15).
 | `clientes.excluir` | Admin, Supervisor | Admin |
 | `clientes.restaurar` | Admin, Supervisor | Admin |
 | `clientes.editar_configuracoes_padrao` | Admin, Supervisor | Admin |
+| `clientes_promocoes.estornar` | Admin, Supervisor | Admin |
 
-## Estados do cliente
+## Estados
+
+**Cliente**
 
 ```text
 cadastro ──► ativo ◄──► inativo
                │            │
-               └──► excluído ◄┘   (sufixo em telefone/cpf, tokens_validos_desde = agora)
+               └──► excluído ◄┘   (sufixo em telefone/cpf/email, tokens_validos_desde = agora)
                        │
-                       └──► restaurado (ativo ou inativo, como estava) — só sem conflito de dados únicos
+                       └──► restaurado — só sem conflito de dados únicos
 ```
 
-- Inativo ou excluído: `pode_acessar()` falso; login, renovação, recuperação e rotas da área do
-  cliente recusadas — inativo com `403`, excluído com `401` (o guard não encontra o registro).
-- Desativar, excluir, trocar senha ou recuperar senha: `tokens_validos_desde = agora`.
+- Inativo: `403` na área do cliente; excluído: `401` (o guard não encontra o registro).
+- Desativar, excluir, trocar ou recuperar senha: `tokens_validos_desde = agora`.
+
+**Promoção**
+
+```text
+ativa ◄──► inativa
+  │           │
+  └──► estorno "Em andamento" ──► estorno "Concluído"   (fica inativa; não edita nem reativa)
+```

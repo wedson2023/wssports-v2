@@ -3,188 +3,226 @@
 **Feature**: `002-clientes` | **Data**: 2026-09-29 | **Plano**: [plan.md](plan.md)
 
 Decisões técnicas da feature. Não há itens `NEEDS CLARIFICATION` pendentes: as dúvidas de negócio
-foram resolvidas no `/speckit-clarify` (seção Clarifications da [spec](spec.md)).
+foram resolvidas nas sessões de Clarifications da [spec](spec.md).
 
 ## R-01. Guard próprio de clientes (JWT)
 
 - **Decisão**: novo guard `clientes` (driver `jwt`) com o provider `clientes` (model
-  `App\Models\Clientes`) em `config/auth.php`. O model implementa `JWTSubject`. O pacote
-  `php-open-source-saver/jwt-auth` já está instalado e o `config/jwt.php` já tem
-  `lock_subject => true`: cada token leva a claim `prv` (hash da classe do model) e um guard
-  recusa tokens emitidos para outro model. Isso garante FR-015 e SC-004 sem código extra.
-- **Motivo**: reaproveita o pacote e a configuração da spec 001 (TTL de 60 min, blacklist
-  ligada), sem nova dependência.
-- **Alternativas**: usar o mesmo guard `api` com uma coluna de tipo (misturaria usuários e
-  clientes na mesma tabela e nas mesmas permissões); Sanctum (nova dependência e outro modelo de
-  token).
+  `App\Models\Clientes`) em `config/auth.php`. O model implementa `JWTSubject`. O
+  `config/jwt.php` já tem `lock_subject => true`: cada token leva a claim `prv` (hash da classe do
+  model) e um guard recusa tokens emitidos para outro model (FR-015, SC-004).
+- **Motivo**: reaproveita o pacote e a configuração da spec 001 (TTL de 60 min, blacklist ligada).
+- **Alternativas**: mesmo guard `api` com coluna de tipo (misturaria usuários e clientes);
+  Sanctum (nova dependência).
 
-## R-02. Bloqueio de clientes inativos, excluídos e tokens anteriores à troca de senha
+## R-02. Bloqueio de inativos e tokens anteriores à data de corte
 
-- **Decisão**: novo middleware `App\Http\Middleware\GarantirAcessoCliente` nas rotas autenticadas
-  da área do cliente. Ele recusa com 403 quando `Clientes::pode_acessar()` é falso (na prática,
-  cliente inativo: o excluído nem chega ao middleware, pois o guard não encontra registros com soft
-  delete e responde 401) e com 401 quando o `iat` do token é anterior a `clientes.tokens_validos_desde`. A
-  coluna `tokens_validos_desde` é preenchida na recuperação de senha (FR-025), na troca de senha
-  e na desativação ou exclusão pelo painel.
-- **Motivo**: o JWT não guarda estado; a blacklist só invalida o token usado na requisição. Com
-  a data de corte no cliente, todos os tokens antigos deixam de valer de uma vez (FR-025,
-  FR-017, FR-054).
-- **Alternativas**: reaproveitar o `GarantirAcesso` da spec 001 (não conhece a data de corte do
-  token); guardar cada token emitido numa tabela (estado desnecessário).
-- **Limitação aceita**: o `iat` tem precisão de segundos; um token emitido no mesmo segundo da
-  data de corte continua válido. Com `refresh_iat = false` (config atual), o token renovado mantém
-  o `iat` original, então a renovação não burla a data de corte.
+- **Decisão**: middleware `App\Http\Middleware\GarantirAcessoCliente` nas rotas autenticadas da
+  área do cliente. Responde `403` quando `Clientes::pode_acessar()` é falso (na prática, cliente
+  inativo: o excluído nem chega ao middleware, porque o guard não encontra registros com soft
+  delete e responde `401`) e `401` quando o `iat` do token é anterior a
+  `clientes.tokens_validos_desde`. Essa coluna é preenchida na recuperação e na troca de senha e na
+  desativação ou exclusão pelo painel.
+- **Motivo**: o JWT não guarda estado; com a data de corte, todos os tokens antigos deixam de
+  valer de uma vez (FR-017, FR-025, FR-030, FR-059).
+- **Limitação aceita**: o `iat` tem precisão de segundos; com `refresh_iat = false` (config
+  atual), o token renovado mantém o `iat` original e não burla a data de corte.
 
-## R-03. Permissões de clientes no spatie e restrição por função
+## R-03. Permissões de clientes e restrição por função
 
-- **Decisão**: as 9 permissões da spec entram no guard `api` com os nomes definidos nela
-  (`clientes.listar`, `clientes.ver_dados_completos`, `clientes.editar`, `clientes.excluir`,
-  `clientes.restaurar`, `clientes.editar_configuracoes`, `clientes.movimentar_saldo`,
-  `clientes.editar_configuracoes_padrao`, `clientes_promocoes.gerenciar`). Elas ficam num novo enum
-  `App\Enums\PermissaoCliente`, que também informa quais funções podem usar cada uma:
+- **Decisão**: as 10 permissões (guard `api`, formato `<recurso>.<acao>`, constituição v1.11.0)
+  ficam no enum `App\Enums\PermissaoCliente`, que informa as funções que podem usar cada uma:
   - Admin, Supervisor e Gerente: `clientes.listar`, `clientes.ver_dados_completos`,
     `clientes.editar`, `clientes.editar_configuracoes`, `clientes.movimentar_saldo`,
     `clientes_promocoes.gerenciar`;
   - somente Admin e Supervisor: `clientes.excluir`, `clientes.restaurar`,
-    `clientes.editar_configuracoes_padrao`;
+    `clientes.editar_configuracoes_padrao`, `clientes_promocoes.estornar`;
   - Vendedor: nenhuma.
 
   Os controllers do painel checam as duas coisas numa única verificação (trait
-  `GarantirPermissaoCliente`): ter a permissão direta **e** ter uma função permitida. Assim, um
-  Gerente que receba `clientes.excluir` continua recusado (FR-049).
-- **Motivo**: segue o modelo da spec 001 (permissões diretas no usuário) sem alterar o
-  `PermissoesUsuariosController` nem o enum `Funcao`.
-- **Distribuição padrão**: o novo `ClientesSeeder` cria as permissões e as dá ao(s) usuário(s) com
-  papel Admin. Os demais recebem pela gestão de permissões da spec 001.
-- **Nomes**: por decisão do responsável (2026-09-29), todas as permissões seguem o padrão
-  `<recurso>.<acao>` da spec 001 (`usuarios.listar`). O recurso é o nome da tabela principal
-  (`clientes`, `clientes_promocoes`). `clientes.listar` cobre listar, consultar, ver extrato e ver
-  configurações, como a antiga `ver_clientes` da spec.
+  `GarantirPermissaoCliente`): permissão direta **e** função permitida (FR-055, FR-081).
+- **Distribuição padrão**: o `ClientesSeeder` cria as permissões e as dá aos usuários com papel
+  Admin. Não altera o `PermissoesUsuariosController` nem o enum `Funcao` da spec 001.
 
 ## R-04. Saldos em centavos inteiros e bloqueio de linha
 
-- **Decisão**: o serviço `App\Services\SaldoClientes` (métodos `creditar()` e `debitar()`) abre
-  uma transação no banco, lê o cliente com `lockForUpdate()`, converte o saldo da carteira de
-  texto decimal para centavos inteiros (sem `float`), calcula o saldo posterior, recusa débito
-  maior que o saldo, grava o novo valor e cria a transação com saldo anterior e posterior. O
-  retorno volta ao formato decimal com 2 casas.
-- **Motivo**: evita erros de arredondamento de `float` com dinheiro (FR-032, FR-036) e serializa
-  movimentações simultâneas no mesmo cliente (FR-038, SC-002). O bloqueio é por cliente, então
-  clientes diferentes não esperam uns pelos outros.
-- **Alternativas**: `bcmath` (extensão pode não estar instalada); `UPDATE ... SET saldo = saldo +
-  ?` sem ler antes (não permite gravar o saldo anterior com segurança nem recusar débito antes).
+- **Decisão**: serviço `App\Services\SaldoClientes` (`creditar()` e `debitar()`): dentro de
+  `DB::transaction`, relê o cliente com `lockForUpdate()`, converte o saldo da carteira de texto
+  decimal para centavos inteiros (sem `float`), calcula o posterior, recusa débito maior que o
+  saldo, grava o novo valor e cria a transação com saldo anterior e posterior.
+- **Motivo**: sem erro de arredondamento (FR-040, FR-044) e com movimentações do mesmo cliente
+  serializadas (FR-046, SC-002). Clientes diferentes não esperam uns pelos outros.
+- **Alternativas**: `bcmath` (extensão pode não estar instalada); `UPDATE saldo = saldo + ?`
+  sem ler antes (não permite gravar o saldo anterior nem recusar o débito antes).
 
-## R-05. Carteiras, tipos e origens como enums PHP
+## R-05. Enums: casos com acento e valores em português (constituição v1.13.0)
 
-- **Decisão**: enums string `Carteira` (`saldo`, `saldo_promocao_esportes`,
-  `saldo_promocao_cassino` — o valor é o nome da coluna em `clientes`), `TipoTransacao`
-  (`credito`, `debito`), `OrigemTransacao` (`ajuste_manual`, `promocao`, `aposta`, `premio`,
-  `estorno`), `Genero` (`masculino`, `feminino`, `outro`, `nao_informado`), `ModalidadePromocao`
-  (`esportes`, `cassino`) e `CategoriaPromocao` (`primeiro_cadastro`, `primeiro_deposito`, `qualquer_deposito`, `indicacao`). No banco ficam como `varchar`.
-- **Motivo**: validação com `Rule::enum`, sem `ENUM` do MySQL (acrescentar valores depois não
-  exige alterar a coluna — a spec de apostas vai usar `aposta` e `premio`).
+- **Decisão**: enums PHP backed `string`, com **nome da classe sem acento** (o nome do arquivo e o
+  autoload PSR-4 dependem dele) e **casos em `PascalCase` com acento**. Os valores gravados no
+  banco ficam em português, com a primeira letra maiúscula e acentos:
+
+  | Enum | Casos → valores |
+  |---|---|
+  | `Genero` | `Masculino`, `Feminino`, `Outro`, `NãoInformado` → `'Não informado'` |
+  | `Carteira` | `Saldo` → `'Saldo'`, `PromoçãoEsportes` → `'Promoção esportes'`, `PromoçãoCassino` → `'Promoção cassino'` |
+  | `TipoTransacao` | `Crédito`, `Débito` |
+  | `OrigemTransacao` | `AjusteManual` → `'Ajuste manual'`, `Promoção`, `Aposta`, `Prêmio`, `Estorno` |
+  | `ModalidadePromocao` | `Esportes`, `Cassino` |
+  | `CategoriaPromocao` | `PrimeiroCadastro` → `'Primeiro cadastro'`, `PrimeiroDepósito` → `'Primeiro depósito'`, `QualquerDepósito` → `'Qualquer depósito'`, `Indicação` |
+  | `TipoGanho` | `Fixo`, `Percentual` |
+  | `SituacaoEstorno` | `EmAndamento` → `'Em andamento'`, `Concluído` |
+  | `TipoMeioPagamento` | `Pix`, `TransferênciaBancária` → `'Transferência bancária'` |
+  | `TipoChavePix` | `Cpf` → `'CPF'`, `Cnpj` → `'CNPJ'`, `Email` → `'E-mail'`, `Telefone`, `ChaveAleatória` → `'Chave aleatória'` |
+  | `TipoConta` | `Corrente`, `Poupança` |
+
+- **Carteira × coluna**: como o valor do enum não é o nome da coluna, `Carteira` tem o método
+  `coluna(): string` (`Saldo` → `saldo`, `PromoçãoEsportes` → `saldo_promocao_esportes`,
+  `PromoçãoCassino` → `saldo_promocao_cassino`).
+- **Banco**: colunas `varchar` com `utf8mb4` (padrão do projeto), sem `ENUM` do MySQL, para
+  acrescentar valores sem alterar coluna. Validação com `Rule::enum`.
+- **Risco aceito**: casos com acento funcionam no PHP 8.2 (identificadores UTF-8), mas exigem os
+  arquivos em UTF-8 — já é o padrão do projeto.
 
 ## R-06. Campos Sim/Não como boolean
 
-- **Decisão**: configurações e flags (`ativo`, `aceita_promocao`, `ativa`, permissões das configurações) são
-  `boolean`, e não `enum('Sim','Não')` como no sistema antigo.
-- **Motivo**: liberado pelo responsável na clarificação; mais simples de validar e consultar.
+- **Decisão**: flags (`ativo`, `aceita_promocao`, `bloquear_saque`, `ativa`, `principal`,
+  permissões das configurações) são `boolean`.
 
 ## R-07. Nomes das tabelas e colunas
 
-- **Decisão**: prefixo `clientes_` em todas as tabelas ligadas a `clientes` (constituição v1.9.0):
+- **Decisão**: prefixo `clientes_` em todas as tabelas ligadas a `clientes` (v1.9.0):
   `clientes_transacoes`, `clientes_configuracoes`, `clientes_configuracoes_padrao`,
-  `clientes_promocoes`, `clientes_codigos_recuperacao`. Colunas renomeadas para nomes claros (ex.:
-  `n_minimo_confrontos` → `quantidade_minima_opcoes`, `v_aposta_maxima` → `valor_maximo_aposta`).
-  Chaves estrangeiras no formato `<tabela>_id` (`clientes_id`, `usuarios_id`), como na spec 001.
-- **Senha**: coluna `password`, como em `usuarios`, porque o guard e o `attempt()` do Laravel
-  esperam esse nome. Coberta pela exceção de colunas exigidas pela autenticação do framework
-  (constituição v1.12.0).
+  `clientes_meios_pagamento`, `clientes_promocoes`, `clientes_codigos_recuperacao`.
+  `ddi` e `email` usam a exceção de siglas consagradas (v1.13.0). Nomes completos no lugar das
+  abreviações do sistema antigo (`v_apostas_minima` → `valor_minimo_aposta`,
+  `v_converter_bonus` → `valor_maximo_conversao`...). FKs no formato `<tabela>_id`.
+- **Senha**: coluna `password`, coberta pela exceção de colunas de autenticação (v1.12.0).
+- **Meios de pagamento**: `clientes_meios_pagamento` (plural correto de "meio de pagamento").
 
 ## R-08. Colunas sem chave estrangeira (constituição v1.10.0)
 
-- **Decisão**: `clientes.codigo_afiliado` (`varchar`, afiliados ainda não existem),
-  `clientes_transacoes.referencia_id` (id solto do registro de origem — promoção agora, aposta no
-  futuro) e `esportes_permitidos` (`json` com nomes de esporte). Ficam registradas nas premissas da
-  spec e serão ajustadas nas specs de afiliados, apostas e esportes.
+- **Decisão**: `clientes.codigo_afiliado` (`varchar`), `clientes_transacoes.referencia_id` (id solto
+  do registro de origem: promoção agora, aposta no futuro) e `esportes_permitidos` (`json`).
+  Registradas nas premissas da spec; ajustadas nas specs de afiliados, apostas e esportes.
 
-## R-09. Exclusão com sufixo e restauração
+## R-09. Dados únicos opcionais, exclusão com sufixo e restauração
 
-- **Decisão**: `ClientesController@destroy` grava, na mesma transação, `telefone` e `cpf` com o
-  sufixo `_deleted_<timestamp Unix>` e preenche `deleted_at` e `tokens_validos_desde`. A
-  restauração (`POST /api/clientes/{cliente}/restaurar`) remove o sufixo com expressão regular
-  `/_deleted_\d+$/`, verifica conflito entre os clientes não excluídos e, se houver, responde 422
-  com os campos em conflito; aceita `telefone`, `codigo_pais` e `cpf` novos no corpo para resolver.
-  As colunas `telefone` e `cpf` têm 40 caracteres para caber o sufixo.
-- **Motivo**: a unicidade continua garantida pelos índices únicos do banco, sem índice parcial
-  (que o MySQL não tem).
+- **Decisão**: `cpf` e `email` são `nullable` com índice único (o MySQL aceita vários `NULL` num
+  índice único, então clientes sem CPF ou sem e-mail não conflitam). Strings vazias são convertidas
+  para `NULL` antes de gravar.
+- **Exclusão**: na mesma transação, acrescenta `_deleted_<timestamp Unix>` a `telefone`, `cpf` e
+  `email` (os preenchidos), preenche `deleted_at` e `tokens_validos_desde`. `email` tem 150
+  caracteres e `telefone`/`cpf` 40, para caber o sufixo.
+- **Restauração**: remove o sufixo com `/_deleted_\d+$/`, verifica conflito com clientes não
+  excluídos e responde `422` com os campos em conflito; aceita `ddi`, `telefone`, `cpf` e `email`
+  novos no corpo para resolver (FR-060, FR-061).
 
 ## R-10. Senha forte e confirmação
 
-- **Decisão**: `Password::min(8)->letters()->numbers()` + `confirmed` (campo
-  `password_confirmation`) no cadastro, troca, recuperação e edição pelo painel. Mensagens
-  customizadas em português, como nos FormRequests da spec 001.
+- **Decisão**: `Password::min(8)->letters()->numbers()` + `confirmed`, com mensagens em português,
+  no cadastro, troca, recuperação e edição pelo painel.
 
-## R-11. CPF e telefone
+## R-11. Validações de documentos, telefone, e-mail e chave Pix
 
-- **Decisão**: regra de validação `App\Rules\CpfValido` (11 dígitos, não todos iguais, dígitos
-  verificadores). Telefone e CPF são normalizados para só dígitos no `prepareForValidation()` dos
-  FormRequests. Telefone: 10 ou 11 dígitos para o código 55; 4 a 14 para os demais; código do país
-  de 1 a 3 dígitos, padrão `55`.
+- **Decisão**: regras `App\Rules\CpfValido` e `App\Rules\CnpjValido` (dígitos verificadores, não
+  todos iguais). Telefone, CPF e CNPJ normalizados para só dígitos no `prepareForValidation()`;
+  e-mail em minúsculas e sem espaços. Telefone: 10 ou 11 dígitos com DDI 55; 4 a 14 nos demais;
+  DDI de 1 a 3 dígitos, padrão `55`.
+- **Chave Pix por tipo** (FR-033): CPF → `CpfValido`; CNPJ → `CnpjValido`; E-mail → `email`;
+  Telefone → só dígitos, de 10 a 13 (com ou sem DDI); Chave aleatória → UUID
+  (`/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i`).
 
-## R-12. Mascaramento de CPF e telefone no painel
+## R-12. Mascaramento no painel
 
-- **Decisão**: `ClientesResource` mascara `cpf` (`***.456.789-**`) e `telefone` (só os 4 últimos
-  dígitos) quando o usuário do painel não tem `clientes.ver_dados_completos`. Sem essa permissão, a
-  busca por CPF e telefone passa a ser exata (`=`) em vez de por prefixo (`LIKE 'x%'`).
-- **Busca**: nome por `LIKE '%x%'`; telefone e CPF por prefixo (quem tem a permissão). Busca de
-  excluídos considera o valor antes do sufixo (o prefixo continua batendo).
+- **Decisão**: resources de cliente e de meio de pagamento mascaram quando o usuário do painel não
+  tem `clientes.ver_dados_completos` (FR-057): CPF `***.456.789-**`; telefone `(11) *****-7777`
+  (DDI 55) ou só os 4 últimos dígitos; e-mail `a***@mail.com`; chave Pix e conta com só os 4
+  últimos caracteres. Sem a permissão, a busca por CPF, telefone e e-mail passa a ser exata.
+- **Busca**: nome por `LIKE '%x%'`; telefone, CPF e e-mail por prefixo (quem tem a permissão). A
+  busca de excluídos casa com o valor antes do sufixo.
 
 ## R-13. Recuperação de senha
 
-- **Decisão**: tabela `clientes_codigos_recuperacao`. O código de 6 dígitos (`random_int`) é
-  gravado com `Hash::make`, validade de 15 minutos, contador de tentativas e datas de uso e de
-  invalidação. Um novo pedido invalida o código anterior. O limite de 1 pedido por minuto usa o
-  `RateLimiter` (chave `codigo_pais+telefone`), como o login da spec 001. A resposta ao pedido é
-  sempre a mesma (FR-023).
-- **Motivo**: guardar o código em hash impede o uso de códigos lidos direto do banco.
+- **Decisão**: tabela `clientes_codigos_recuperacao`; código de 6 dígitos (`random_int`) gravado
+  com `Hash::make`, validade de 15 min, contador de tentativas, datas de uso e invalidação. Novo
+  pedido invalida o anterior. Limite de 1 pedido/min por `ddi.telefone` com `RateLimiter`. Resposta
+  sempre igual (FR-023).
 
 ## R-14. WhatsApp por eventos, registrado no log
 
-- **Decisão**: eventos `App\Events\ClienteCadastrado` e `App\Events\CodigoRecuperacaoGerado`
-  (implementam `ShouldDispatchAfterCommit`) e o listener `App\Listeners\RegistrarMensagemWhatsapp`,
-  que só grava a mensagem no log da aplicação (`Log::info`) dentro de `try/catch`. Listeners em
-  `app/Listeners` são descobertos automaticamente pelo Laravel 12.
-- **Motivo**: a spec de WhatsApp só vai trocar o listener; o cadastro e a recuperação não mudam.
+- **Decisão**: eventos `ClienteCadastrado` e `CodigoRecuperacaoGerado` (`ShouldDispatchAfterCommit`)
+  e o listener `RegistrarMensagemWhatsapp`, que só grava no log (`Log::info`) dentro de
+  `try/catch`. A futura spec de WhatsApp só troca o listener.
 
 ## R-15. Cadastro atômico e promoção de primeiro cadastro
 
-- **Decisão**: o serviço `App\Services\CadastroClientes` cria, numa transação: o cliente, a cópia
-  das configurações padrão em `clientes_configuracoes` e, se `aceita_promocao`, um crédito por promoção
-  de cadastro vigente (via `SaldoClientes`, origem `promocao`, `referencia_id` = id da promoção).
-  O evento `ClienteCadastrado` sai depois do commit.
-- **Sobreposição de promoções (FR-063)**: ao salvar uma promoção ativa, o controller procura outra
-  ativa, não excluída, da **mesma categoria e mesma modalidade**, com período que se sobrepõe
-  (`inicio_a <= fim_b` e `inicio_b <= fim_a`, fim nulo = sem fim) e recusa com 422. Categorias
-  diferentes podem se sobrepor. A modalidade entra na regra para permitir, ao mesmo tempo, um
-  bônus de primeiro cadastro em esportes e outro em cassino.
-- **Categorias (antigo gatilho)**: `primeiro_cadastro` (aplicada nesta spec), `primeiro_deposito`,
-  `qualquer_deposito` e `indicacao` (cadastráveis agora, aplicadas pelas specs de depósito e de
-  afiliados).
+- **Decisão**: serviço `App\Services\CadastroClientes` cria, numa transação, o cliente, a cópia das
+  configurações padrão (com `aceita_promocao` do cadastro) e, se `aceita_promocao`, um crédito por
+  promoção vigente de `Primeiro cadastro` (origem `Promoção`, `referencia_id` = id da promoção). O
+  evento `ClienteCadastrado` sai depois do commit.
 
-## R-16. Paginação e ordenação
+## R-16. Regras da promoção
 
-- **Decisão**: parâmetro `por_pagina` de 1 a 100, padrão 20 (listagem de clientes, extratos e
-  promoções), como na spec 001. Ordenação da listagem: `ordenar_por` (`nome`, `created_at`,
-  `saldo`) e `direcao` (`asc`, `desc`).
+- **Sobreposição (FR-070)**: ao salvar uma promoção ativa, procura outra ativa, não excluída, não
+  estornada, da **mesma categoria e mesma modalidade**, com período sobreposto
+  (`inicio_a <= fim_b` e `inicio_b <= fim_a`, fim nulo = sem fim) e recusa com `422`.
+- **Tipo de ganho (FR-065)**: `Percentual` só em `Primeiro depósito` e `Qualquer depósito`, com
+  valor maior que 0 e até 100 e `valor_maximo_deposito` obrigatório; `Primeiro cadastro` e
+  `Indicação` só `Fixo`.
+- **Rollover (FR-066)**: inteiro ≥ 0; ≥ 1 em `Primeiro depósito`.
+- **Regras de uso (FR-067)**: valores > 0, `valor_minimo_aposta ≤ valor_maximo_aposta`, odds
+  ≥ 1,00. Só armazenadas e validadas (FR-072).
+- **Imutabilidade (FR-073)**: se existir transação de origem `Promoção` com `referencia_id` da
+  promoção, `valor`, `tipo_ganho`, `categoria` e `modalidade` não podem mudar (`422`). Promoção
+  estornada não pode ser editada nem reativada (FR-068).
 
-## R-17. Banco local
+## R-17. Estorno de promoção em segundo plano
 
-- **Decisão**: só migrations novas, aplicadas com `php artisan migrate`, e o seeder novo com
-  `php artisan db:seed --class=ClientesSeeder`. Nenhuma tabela existente muda, e não há
-  `migrate:refresh` nem `migrate:fresh` (o banco local é compartilhado com o legado).
+- **Decisão**: `POST /api/clientes_promocoes/{promocao}/estornar` valida (não estornada, sem
+  estorno em andamento), grava na promoção `ativa = false`, `estorno_situacao = 'Em andamento'`,
+  motivo, autor, início e o total de clientes a processar, e despacha o job
+  `App\Jobs\EstornarPromocao` na fila `database` (já configurada: `QUEUE_CONNECTION=database` e
+  migration `jobs` existente). Responde `202`.
+- **Job**: percorre, em lotes de 500 (`chunkById`), os `clientes_id` distintos com transação de
+  origem `Promoção` e `referencia_id` da promoção (inclui clientes inativos e excluídos, via
+  `withTrashed`). Para cada cliente, **pula** se já existir transação de origem `Estorno` com o
+  mesmo `referencia_id` (idempotência, FR-080); senão calcula o total recebido da promoção e
+  debita `min(total recebido, saldo promocional da modalidade)` via `SaldoClientes::debitar()`
+  (origem `Estorno`, observação = motivo), ou não faz nada se o saldo for 0,00. Atualiza os
+  contadores da promoção (`estorno_clientes_processados`, `estorno_valor_total`) a cada lote. No
+  fim grava `estorno_situacao = 'Concluído'` e `estorno_concluido_em`.
+- **Retomada**: se o worker cair, o job volta para a fila após o `retry_after` e recomeça; a
+  checagem de idempotência impede estornar alguém duas vezes. `tries = 5`, `ShouldBeUnique` por
+  promoção.
+- **Sem pendência**: o que faltar é descartado; `saldo` real e a outra modalidade nunca mudam
+  (FR-079).
+- **Desempenho (SC-010)**: 10.000 clientes em lotes de 500, com uma transação curta por cliente.
+- **Alternativas**: processar na própria requisição (estouraria o tempo de resposta); `UPDATE` em
+  massa (não gera as transações de estorno exigidas por FR-041).
 
-## R-18. Validação sem testes automatizados
+## R-18. Meios de pagamento
 
-- **Decisão**: nenhum arquivo em `tests/`; validação manual pelo [quickstart.md](quickstart.md)
-  e pela coleção do Postman regenerada (constituição).
+- **Decisão**: tabela única `clientes_meios_pagamento` com colunas dos dois tipos (as do tipo que
+  não se aplica ficam nulas) e validação condicional por `tipo` (`required_if`). Unicidade por
+  cliente (FR-035) verificada na aplicação, entre os não excluídos. `principal` mantido pela
+  aplicação numa transação (desmarca os outros; ao excluir o principal, promove o mais antigo).
+- **Rotas**: `apiResource` na área do cliente (`/area_cliente/meios_pagamento`) e no painel
+  (`/clientes/{cliente}/meios_pagamento`, sem `show`). Marcar principal = `update` com
+  `principal: true`.
+- **Alternativas**: uma tabela por tipo (mais joins e duas rotas por operação).
+
+## R-19. Paginação e ordenação
+
+- **Decisão**: `por_pagina` de 1 a 100, padrão 20. Ordenação da listagem de clientes por
+  `ordenar_por` (`nome`, `created_at`, `saldo`) e `direcao` (`asc`, `desc`).
+
+## R-20. Banco local e fila
+
+- **Decisão**: só migrations novas com `php artisan migrate` e o seeder novo com
+  `php artisan db:seed --class=ClientesSeeder`. Sem `migrate:refresh`/`migrate:fresh` (banco
+  compartilhado com o legado). Para o estorno, rodar `php artisan queue:work`.
+
+## R-21. Validação sem testes automatizados
+
+- **Decisão**: nenhum arquivo em `tests/`; validação manual pelo [quickstart.md](quickstart.md) e
+  pela coleção do Postman regenerada (constituição).

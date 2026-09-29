@@ -1,10 +1,14 @@
 <!--
 Sync Impact Report
-- Version change: 1.11.0 → 1.12.0 (MINOR: nova exceção para colunas exigidas pela autenticação)
+- Version change: 1.12.0 → 1.13.0 (MINOR: exceção para siglas/termos consagrados e padrão de
+  enums)
 - Princípios modificados:
-  - I. Nomenclatura em snake_case: `password` e `remember_token` mantêm o nome em inglês nas
-    tabelas de quem se autentica (guard do Laravel e `jwt-auth`); regulariza `usuarios` (spec 001)
-    e `clientes` (spec 002)
+  - I. Nomenclatura em snake_case: siglas e termos consagrados na programação (ex.: `ddi`,
+    `email`) podem ser usados em nomes; casos de enum PHP em `PascalCase` com acentos
+    (`Promoção`); valores de enum no banco com primeira letra maiúscula e acentos (`'Promoção'`,
+    `'Primeiro depósito'`)
+- Impacto: a spec 002-clientes (ainda não implementada) precisa trocar `codigo_pais` por `ddi` e
+  os valores de enum em minúsculas (`ajuste_manual`, `primeiro_cadastro`...) pelo novo padrão
 - Princípios adicionados: nenhum
 - Seções alteradas: nenhuma
 - Seções adicionadas: nenhuma
@@ -41,6 +45,16 @@ Sync Impact Report
   `remember_token` mantêm o nome em inglês nas tabelas de quem se autentica (ex.: `usuarios`,
   `clientes`), pois o guard do Laravel e o `jwt-auth` dependem desses nomes. As demais colunas
   dessas tabelas continuam em português.
+- **Exceção — siglas e termos consagrados**: siglas e termos em inglês de uso consagrado na
+  programação PODEM ser usados como estão em nomes de colunas, variáveis, chaves e campos (ex.:
+  `ddi`, `email`, `url`, `ip`, `token`, `pix`), no lugar de uma tradução ou nome longo em
+  português (ex.: `ddi` e não `codigo_pais`). Continuam em `snake_case` e minúsculas.
+- **Enums (casos e valores)**: os casos de enum PHP DEVEM ser escritos em `PascalCase` em
+  português, com acentos quando a palavra tiver (ex.: `Promoção`, `Estorno`, `Apostas`,
+  `PrimeiroDepósito`). Os valores gravados no banco para esses enums (colunas `varchar` ou `enum`)
+  DEVEM ser em português, com a primeira letra maiúscula, acentos e espaços normais (ex.:
+  `'Promoção'`, `'Estorno'`, `'Apostas'`, `'Primeiro depósito'`). Nomes de permissões e papéis do
+  spatie seguem as regras próprias deste princípio, e não esta.
 - **Prefixo de tabelas relacionadas**: tabelas ligadas a uma tabela principal DEVEM usar o nome
   dela como prefixo, seguido do complemento (ex.: `clientes` → `clientes_transacoes`,
   `clientes_configuracoes`), para ficarem listadas juntas no banco.
@@ -176,4 +190,4 @@ de memória previsíveis mesmo com grandes volumes de dados.
 - A conformidade DEVE ser verificada em todo plano (Constitution Check), em toda lista de
   tarefas e em toda revisão de código.
 
-**Version**: 1.12.0 | **Ratified**: 2026-09-25 | **Last Amended**: 2026-09-29
+**Version**: 1.13.0 | **Ratified**: 2026-09-25 | **Last Amended**: 2026-09-29
