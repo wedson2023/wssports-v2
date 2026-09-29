@@ -1,11 +1,12 @@
 <!--
 Sync Impact Report
-- Version change: 1.7.0 → 1.8.0 (MINOR: nova regra de coleção do Postman sempre atualizada)
+- Version change: 1.9.0 → 1.10.0 (MINOR: nova regra para colunas que referenciam tabelas ainda
+  inexistentes)
 - Princípios modificados: nenhum (I a V mantidos sem alteração)
 - Princípios adicionados: nenhum
 - Seções alteradas:
-  - Fluxo de Desenvolvimento: toda criação ou alteração de rota da API DEVE regenerar a coleção
-    do Postman em `docs/postman/`, substituindo o arquivo existente
+  - Stack e Restrições Técnicas: colunas que dependem de tabela ainda não criada DEVEM ser criadas
+    sem chave estrangeira (varchar ou id solto) e ajustadas na spec que criar a tabela de destino
 - Seções adicionadas: nenhuma
 - Seções removidas: nenhuma
 - TODOs pendentes: nenhum
@@ -36,6 +37,9 @@ Sync Impact Report
   `model_has_permissions`, `role_has_permissions`) mantêm os nomes padrão do pacote em inglês
   (tabelas e colunas) e NÃO precisam ter `deleted_at`. Tabelas criadas pelo próprio projeto
   continuam em português, com `created_at`, `updated_at` e `deleted_at`.
+- **Prefixo de tabelas relacionadas**: tabelas ligadas a uma tabela principal DEVEM usar o nome
+  dela como prefixo, seguido do complemento (ex.: `clientes` → `clientes_transacoes`,
+  `clientes_configuracoes`), para ficarem listadas juntas no banco.
 - Nomes de pastas DEVEM ser escritos em **inglês** e `snake_case` (ex.: `components`,
   `services`, `pages`, `user_roles`).
 - **Exceção — pastas PSR-4**: pastas dentro de `app/` que correspondem a namespaces PSR-4
@@ -114,6 +118,10 @@ violar o escopo estrito de edição.
   `$table->softDeletes()`), e o model correspondente DEVE usar a trait `SoftDeletes`.
   Exclusões de registros DEVEM ser lógicas (soft delete); exclusão física só é permitida se
   justificada no plano da feature.
+- Referências a tabelas ainda inexistentes: colunas que dependem de uma tabela ainda não criada
+  DEVEM ser criadas sem chave estrangeira (como `varchar` ou como id solto) e DEVEM ser ajustadas
+  (tipo e chave estrangeira) na spec que criar a tabela de destino. A spec que cria essas colunas
+  DEVE registrá-las nas suas premissas, para que a spec futura saiba o que ajustar.
 - Paginação: toda listagem (backend e frontend) DEVE ser paginada e NÃO DEVE retornar mais de
   **100 registros por página**. Pedidos de tamanho de página acima de 100 NÃO DEVEM ser
   atendidos acima desse limite. O tamanho padrão de cada listagem é definido na spec ou no plano
@@ -160,4 +168,4 @@ de memória previsíveis mesmo com grandes volumes de dados.
 - A conformidade DEVE ser verificada em todo plano (Constitution Check), em toda lista de
   tarefas e em toda revisão de código.
 
-**Version**: 1.8.0 | **Ratified**: 2026-09-25 | **Last Amended**: 2026-09-28
+**Version**: 1.10.0 | **Ratified**: 2026-09-25 | **Last Amended**: 2026-09-29
