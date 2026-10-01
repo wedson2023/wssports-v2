@@ -37,3 +37,7 @@
   cotações aparecem na spec por decisão explícita do responsável no pedido (mesmo padrão das specs
   001 e 002), e não como detalhe de implementação escolhido aqui.
 - As configurações gerais e a situação da trava geral ficam na tabela `configuracoes` (FR-035a).
+- Revalidado em 2026-09-30 após os ajustes do responsável (listagem por dia, alternância pré-jogo
+  e ao vivo, novos nomes de tabelas, rotas de alteração de cotações, alimentação manual de
+  campeonato, permissões e regras vindas do `AoVivoController` antigo): os 16 itens continuam
+  passando.
