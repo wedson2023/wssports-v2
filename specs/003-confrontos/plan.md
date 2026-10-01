@@ -96,14 +96,14 @@ colunas `json` com valor padrão; cache `database` para as travas de sobreposiç
 |---|---|---|
 | I. `snake_case` | Métodos, variáveis, parâmetros, chaves JSON, query string e colunas em `snake_case`; métodos do framework mantêm o nome | ✅ Pass |
 | I. Banco em português | Tabelas e colunas em português; `codigo_externo` no lugar de `fonte_id` | ✅ Pass |
-| I. Prefixo de tabelas | `confrontos_jogadores`, `confrontos_ao_vivo`, `confrontos_teto_cotacoes`, `campeonatos_nao_permitidos`, `confrontos_*_nao_permitidos`, `usuarios_configuracoes`, `visitantes_configuracoes`. As de porcentagem usam `porcentagens_` na frente por decisão do responsável (ver Complexity Tracking) | ⚠️ Justificado |
+| I. Prefixo de tabelas | `confrontos_jogadores`, `confrontos_ao_vivo`, `confrontos_teto_cotacoes`, `campeonatos_nao_permitidos`, `confrontos_*_nao_permitidos`, `usuarios_configuracoes`, `visitantes_configuracoes`. As de porcentagem (`porcentagens_clientes`, `porcentagens_vendedores`, as duas `_ao_vivo`, `porcentagens_campeonatos`, `porcentagens_confrontos`) seguem a "Exceção — tabelas de porcentagem de cotação" (v1.17.0) | ✅ Pass |
 | I. Permissões `<recurso>.<acao>` | `campeonatos.listar`, `porcentagens_clientes.editar`, `usuarios_configuracoes.editar`… | ✅ Pass |
 | I. Enums | `AlvoRegra`, `SituacaoConfronto`, `SituacaoAoVivo`; valores em português (`'1 tempo'` segue o provedor) | ✅ Pass |
 | I. Pastas | Novas pastas PSR-4 em `PascalCase` (`app/Console/Commands`, `app/Support`) | ✅ Pass |
 | I. Rotas em kebab-case | `/publico/confrontos`, `/porcentagens-clientes`, `/confrontos-ao-vivo-nao-permitidos` | ✅ Pass |
 | II. Idioma | Artefatos e comentários do backend em português | ✅ Pass |
 | III. Componentes React | Sem frontend | ➖ N/A |
-| IV. Escopo estrito | Arquivos existentes alterados listados abaixo; as mudanças nas specs 001 e 002 foram decididas pelo responsável na spec; as demais alterações listadas aguardam confirmação | ⚠️ Aguardando confirmação |
+| IV. Escopo estrito | Arquivos existentes alterados listados abaixo; as mudanças nas specs 001 e 002 foram decididas pelo responsável na spec e as demais foram autorizadas em 2026-10-01 | ✅ Pass (confirmado) |
 | V. Legibilidade | Revisão ao final de cada tarefa | ✅ Pass |
 | VI. Consistência entre recursos | Permissões no `Funcao` (R-15); controllers com `HasMiddleware` e o trait `GarantirPermissaoCliente`; FormRequests com mensagens em português; Resources; serviços em `app/Services` | ✅ Pass |
 | Timestamps e soft delete | As 17 tabelas com `timestamps()` + `softDeletes()`; jogadores e não permitidos removidos por soft delete | ✅ Pass |
@@ -115,8 +115,12 @@ colunas `json` com valor padrão; cache `database` para as travas de sobreposiç
 | Alterações em código já implementado | Artefatos da spec 002 atualizados na mesma entrega (FR-080) | ✅ Pass |
 | Novas dependências | Nenhuma | ✅ Pass |
 
-**Resultado do gate**: aprovado para seguir com o planejamento. Antes da implementação, falta a
-confirmação dos arquivos marcados com "confirmar" abaixo (Princípio IV).
+**Resultado do gate**: aprovado.
+
+**Confirmações do responsável (2026-10-01)**:
+
+- Alteração de todos os arquivos existentes listados abaixo: autorizada.
+- Exceção de prefixo para as tabelas `porcentagens_*`: emenda da constituição v1.17.0.
 
 ### Arquivos existentes que serão alterados (Princípio IV)
 
@@ -126,15 +130,15 @@ confirmação dos arquivos marcados com "confirmar" abaixo (Princípio IV).
 | `app/Services/CadastroClientes.php` | Criar a configuração só com `aceita_promocao` (valores do banco); tirar o uso do padrão | FR-079 | decidido na spec |
 | `database/factories/ClientesFactory.php` | Idem, sem o padrão | FR-079 | decidido na spec |
 | `database/seeders/ClientesSeeder.php` | Tirar a criação do padrão | FR-079 | decidido na spec |
-| `routes/api.php` | Acrescentar a rota pública e o grupo do painel; remover as 2 rotas e o `use` do padrão | contrato, FR-079 | confirmar |
-| `routes/console.php` | Agendar os 3 comandos | R-06 | confirmar |
-| `config/services.php` | Bloco `provedor_cotacoes` (URLs, chave, nome do cabeçalho) | R-05, FR-053 | confirmar |
-| `.env.example` | Variáveis `PROVEDOR_COTACOES_*` (sem valores reais) | R-05 | confirmar |
-| `app/Enums/Funcao.php` | `PERMISSOES_CONFRONTOS`, `PERMISSOES_CONFRONTOS_GERENTE`, `permissoes_padrao()` e `pode_usar()`; tirar `clientes.editar_configuracoes_padrao` | R-15, FR-079 | confirmar |
-| `app/Models/Usuarios.php` | Métodos `ids_hierarquia_acima()` e relação `configuracoes()` | R-10, R-16 | confirmar |
-| `database/seeders/PapeisPermissoesSeeder.php` | Criar também as permissões de confrontos | R-15 | confirmar |
-| `database/seeders/DatabaseSeeder.php` | `$this->call(ConfrontosSeeder::class)` ao final | R-15 | confirmar |
-| `app/Http/Requests/ClientesConfiguracoesRequest.php` | Só o comentário da classe ("do cliente ou as padrão" → "do cliente") | FR-079 | confirmar |
+| `routes/api.php` | Acrescentar a rota pública e o grupo do painel; remover as 2 rotas e o `use` do padrão | contrato, FR-079 | autorizado (2026-10-01) |
+| `routes/console.php` | Agendar os 3 comandos | R-06 | autorizado (2026-10-01) |
+| `config/services.php` | Bloco `provedor_cotacoes` (URLs, chave, nome do cabeçalho) | R-05, FR-053 | autorizado (2026-10-01) |
+| `.env.example` | Variáveis `PROVEDOR_COTACOES_*` (sem valores reais) | R-05 | autorizado (2026-10-01) |
+| `app/Enums/Funcao.php` | `PERMISSOES_CONFRONTOS`, `PERMISSOES_CONFRONTOS_GERENTE`, `permissoes_padrao()` e `pode_usar()`; tirar `clientes.editar_configuracoes_padrao` | R-15, FR-079 | autorizado (2026-10-01) |
+| `app/Models/Usuarios.php` | Métodos `ids_hierarquia_acima()` e relação `configuracoes()` | R-10, R-16 | autorizado (2026-10-01) |
+| `database/seeders/PapeisPermissoesSeeder.php` | Criar também as permissões de confrontos | R-15 | autorizado (2026-10-01) |
+| `database/seeders/DatabaseSeeder.php` | `$this->call(ConfrontosSeeder::class)` ao final | R-15 | autorizado (2026-10-01) |
+| `app/Http/Requests/ClientesConfiguracoesRequest.php` | Só o comentário da classe ("do cliente ou as padrão" → "do cliente") | FR-079 | autorizado (2026-10-01) |
 | `docs/postman/wssports_api.postman_collection.json` | Regenerada | constituição | obrigatório |
 | `specs/002-clientes/*` (`spec.md`, `plan.md`, `research.md`, `data-model.md`, `contracts/api.md`, `quickstart.md`, `tasks.md`) | Descrever o funcionamento sem a tabela padrão | FR-080 | decidido na spec |
 
@@ -156,14 +160,14 @@ O [data-model.md](data-model.md) e os contratos ([contracts/api.md](contracts/ap
 [contracts/provedor.md](contracts/provedor.md)) foram conferidos:
 
 - nomes em português e `snake_case`;
-- prefixos conforme a tabela acima (exceção das porcentagens justificada);
+- prefixos conforme a tabela acima (porcentagens pela exceção da v1.17.0);
 - 17 tabelas com timestamps e soft delete;
 - valores de enum em português;
 - paginação ≤ 100;
 - rotas em kebab-case;
 - nenhuma tarefa de teste e nenhuma dependência nova.
 
-**Status: aprovado**, com a confirmação de arquivos do Princípio IV pendente.
+**Status: aprovado.**
 
 ## Project Structure
 
@@ -322,7 +326,9 @@ Sem Policies e sem arquivos em `tests/`.
 
 ## Complexity Tracking
 
+Os nomes `porcentagens_*` deixaram de ser violação com a emenda da constituição v1.17.0
+(2026-10-01), que criou a exceção para as tabelas de porcentagem de cotação.
+
 | Violação | Por que é necessária | Alternativa mais simples rejeitada porque |
 |---|---|---|
-| Tabelas `porcentagens_clientes`, `porcentagens_clientes_ao_vivo`, `porcentagens_vendedores`, `porcentagens_vendedores_ao_vivo`, `porcentagens_campeonatos` e `porcentagens_confrontos` não começam pelo nome da tabela a que se ligam (Princípio I, prefixo) | Decisão explícita do responsável (Clarifications 2026-09-30): as tabelas de porcentagem ficam listadas juntas, com `porcentagens` tratado como recurso principal (também no nome das permissões) | `clientes_porcentagens`, `usuarios_porcentagens`… espalhariam as regras de cotação pelo banco, contra o pedido do responsável. Se a regra passar a valer para outros recursos, cabe uma emenda via `/speckit-constitution` |
 | Exclusão física da tabela `clientes_configuracoes_padrao` e da permissão `clientes.editar_configuracoes_padrao` | Decisão do responsável: não existe tabela padrão de configurações (Clarifications 2026-10-01) | Manter a tabela sem uso deixaria dois lugares para o mesmo padrão (coluna e tabela) |

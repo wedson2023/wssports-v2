@@ -1,13 +1,15 @@
 <!--
 Sync Impact Report
-- Version change: 1.15.0 → 1.16.0 (MINOR: redefine o alcance da exceção de kebab-case)
+- Version change: 1.16.0 → 1.17.0 (MINOR: nova exceção à regra de prefixo de tabelas)
 - Princípios modificados:
-  - I. Nomenclatura em snake_case: a exceção "nomes em URLs" passa a valer só para caminhos de
-    rota e prefixos; parâmetros de query string voltam a usar `snake_case`
+  - I. Nomenclatura em snake_case: acrescentada a "Exceção — tabelas de porcentagem de cotação
+    (`porcentagens_*`)", que usam `porcentagens` como nome principal em vez do nome da tabela a
+    que se ligam
 - Princípios adicionados: nenhum
 - Seções alteradas: nenhuma
-- Impacto: código e artefatos das specs 001 e 002 precisam voltar os parâmetros de query string
-  para `snake_case` (`por_pagina`, `data_inicial`, `ordenar_por`...), mantendo os caminhos com hífen
+- Impacto: a spec 003-confrontos deixa de violar o Princípio I (achado C1 do /speckit-analyze);
+  o item "porcentagens_*" do Complexity Tracking do plan.md da spec 003 passa a ter base na
+  constituição. Nenhum código existente muda (specs 001 e 002 não têm tabelas de porcentagem)
 - Seções adicionadas: nenhuma
 - Seções removidas: nenhuma
 - TODOs pendentes: nenhum
@@ -55,6 +57,15 @@ Sync Impact Report
 - **Prefixo de tabelas relacionadas**: tabelas ligadas a uma tabela principal DEVEM usar o nome
   dela como prefixo, seguido do complemento (ex.: `clientes` → `clientes_transacoes`,
   `clientes_configuracoes`), para ficarem listadas juntas no banco.
+- **Exceção — tabelas de porcentagem de cotação (`porcentagens_*`)**: as tabelas que guardam
+  porcentagens de ajuste de cotação DEVEM usar `porcentagens` como nome principal, seguido do
+  público ou do recurso a que a regra se aplica (ex.: `porcentagens_clientes`,
+  `porcentagens_clientes_ao_vivo`, `porcentagens_vendedores`, `porcentagens_vendedores_ao_vivo`,
+  `porcentagens_campeonatos`, `porcentagens_confrontos`), e não o nome da tabela a que se ligam,
+  para que todas as regras de cotação fiquem listadas juntas no banco. `porcentagens_<complemento>`
+  é o recurso dessas tabelas também no nome das permissões (ex.: `porcentagens_clientes.editar`).
+  A exceção vale só para tabelas de porcentagem de cotação; as demais tabelas relacionadas
+  continuam com o prefixo da tabela principal.
 - **Nomes de permissões**: toda permissão DEVE seguir o padrão `<recurso>.<acao>`, em que
   `recurso` é o nome da tabela principal a que a ação se refere e `acao` é um verbo ou expressão
   em `snake_case` (ex.: `usuarios.listar`, `clientes.excluir`, `clientes.movimentar_saldo`,
@@ -213,4 +224,4 @@ de memória previsíveis mesmo com grandes volumes de dados.
 - A conformidade DEVE ser verificada em todo plano (Constitution Check), em toda lista de
   tarefas e em toda revisão de código.
 
-**Version**: 1.16.0 | **Ratified**: 2026-09-25 | **Last Amended**: 2026-09-29
+**Version**: 1.17.0 | **Ratified**: 2026-09-25 | **Last Amended**: 2026-10-01
