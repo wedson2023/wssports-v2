@@ -21,10 +21,10 @@ php artisan db:seed --class=ClientesSeeder
 
 ⚠️ Não use `migrate:refresh` nem `migrate:fresh` ([research.md](research.md) R-20).
 
-**Esperado**: 7 tabelas novas (`clientes`, `clientes_transacoes`, `clientes_configuracoes`,
-`clientes_configuracoes_padrao`, `clientes_meios_pagamento`, `clientes_promocoes`,
-`clientes_codigos_recuperacao`); 1 registro de configurações padrão com os valores do data-model;
-10 permissões novas no guard `api`, dadas ao Admin; clientes de exemplo; tabelas existentes
+**Esperado**: 6 tabelas novas (`clientes`, `clientes_transacoes`, `clientes_configuracoes`,
+`clientes_meios_pagamento`, `clientes_promocoes`, `clientes_codigos_recuperacao`), com os valores
+padrão das colunas de `clientes_configuracoes` do data-model (a tabela padrão foi removida pela spec
+003); 9 permissões no guard `api`, dadas ao Admin; clientes de exemplo; tabelas existentes
 intactas.
 
 ## 2. Conferir as rotas
@@ -34,7 +34,7 @@ php artisan route:list --path=api/area-cliente
 php artisan route:list --path=api/clientes
 ```
 
-**Esperado**: 15 rotas em `area-cliente` e 23 em `clientes`/`clientes_*` (sem `store` em
+**Esperado**: 15 rotas em `area-cliente` e 21 em `clientes`/`clientes_*` (sem `store` em
 `clientes`).
 
 ## 3. Roteiro
@@ -46,7 +46,7 @@ permissão, dê ou tire permissões pelas rotas da spec 001.
 
 | # | Ação | Esperado | Ref. |
 |---|---|---|---|
-| 1 | `POST /api/area-cliente/cadastro` com dados válidos, sem CPF e sem e-mail, sem promoção ativa | `201` com token; 3 saldos `"0.00"`; configurações iguais ao padrão; log "WhatsApp" de boas-vindas | US1-1, US1-5 |
+| 1 | `POST /api/area-cliente/cadastro` com dados válidos, sem CPF e sem e-mail, sem promoção ativa | `201` com token; 3 saldos `"0.00"`; configurações com os valores padrão das colunas; log "WhatsApp" de boas-vindas | US1-1, US1-5 |
 | 2 | Cadastro com telefone repetido (com máscara `(11) 98888-7777`); com CPF repetido; com e-mail repetido em maiúsculas | `422` de duplicidade em cada caso | US1-3, US1-4, Edge |
 | 3 | Dois cadastros sem CPF e sem e-mail | ambos `201` (vazios não conflitam) | Edge |
 | 4 | CPF inválido; e-mail inválido; nascido há 17 anos; senha `abcdefgh`; confirmação diferente | `422` com a mensagem de cada caso | US1-6 a US1-8 |
@@ -102,7 +102,7 @@ permissão, dê ou tire permissões pelas rotas da spec 001.
 | # | Ação | Esperado | Ref. |
 |---|---|---|---|
 | 31 | `PUT /api/clientes/{id}/configuracoes` mudando `valor_maximo_aposta` e `bloquear_saque: true`; depois mínimo > máximo ou `quantidade_maxima_saques_diaria: 0` | `200`; depois `422` | US6-1, US6-2 |
-| 32 | Alterar `clientes_configuracoes_padrao` e cadastrar um cliente | o novo recebe o padrão novo; os antigos não mudam | FR-049 |
+| 32 | Cadastrar um cliente e conferir as configurações dele; `GET /api/clientes-configuracoes-padrao` | valores padrão das colunas (FR-050); a rota responde `404` (removida pela spec 003) | FR-049 |
 | 33 | Vendedor tenta alterar configurações | `403` | US6-4 |
 
 ### Gestão de clientes

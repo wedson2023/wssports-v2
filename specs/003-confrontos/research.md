@@ -4,8 +4,8 @@
 
 Decisões técnicas da feature. Não há itens `NEEDS CLARIFICATION` pendentes: as dúvidas de negócio
 foram resolvidas nas sessões de Clarifications da [spec](spec.md). O formato das respostas dos
-provedores foi definido aqui ([contracts/provedor.md](contracts/provedor.md)), porque a API do
-provedor é do próprio responsável e será ajustada a ele.
+provedores é o que as rotas do sistema antigo já devolvem ([contracts/provedor.md](contracts/provedor.md));
+a API do provedor não muda (Clarifications 2026-10-05).
 
 ## R-01. Cotações numa coluna JSON (medido)
 
@@ -30,24 +30,50 @@ provedor é do próprio responsável e será ajustada a ele.
 - **Alternativas**: 323 colunas (como o antigo; mais lento para gravar e regras com 324 colunas
   cada); uma linha por cotação (mais lento para listar e 160 mil linhas reescritas a cada carga).
 
-## R-02. Gravação em lote, numa transação, sem SQL montado por texto
+## R-02. Três cargas do pré-jogo, em lote, cada uma numa transação, sem SQL montado por texto
 
-- **Decisão**: serviço `App\Services\ImportacaoPreJogo`. Valida o JSON, monta os arrays e grava com
-  `DB::table(...)->upsert($linhas, ['codigo_externo'], $colunas_atualizadas)` em lotes de 500
-  (bindings do PDO, FR-054), tudo dentro de um `DB::transaction` (FR-005). Ordem: campeonatos →
-  mapa `codigo_externo → id` (uma consulta) → confrontos → mapa → jogadores.
+- **Decisão (revista em 2026-10-05)**: a API do provedor continua com uma rota por assunto, como
+  no sistema antigo, então o pré-jogo tem um serviço por rota. Cada um valida a resposta, traduz os
+  nomes do provedor e grava com `DB::table(...)->upsert($linhas, ['codigo_externo'],
+  $colunas_atualizadas)` em lotes (bindings do PDO, FR-054), dentro de um `DB::transaction`
+  (FR-005):
+  - `App\Services\ImportacaoCampeonatos` (rota `campeonatos`): campeonatos novos ou alterados e
+    herança (R-04);
+  - `App\Services\ImportacaoConfrontos` (rota `confrontos`): mapa `codigo_externo → id` dos
+    campeonatos (uma consulta) → confrontos. Na criação, `cotacoes = {}` e
+    `quantidade_cotacoes = 0`; na atualização, só times, escudos, esporte, situação e horário;
+  - `App\Services\ImportacaoCotacoes` (rota `cotacao`): lê os confrontos existentes da carga (uma
+    consulta, que já traz o esporte e o sorteio atual, R-03) → sorteio → upsert só de `cotacoes`,
+    `quantidade_cotacoes`, `odd4_sorteada` e `odd7_sorteada` (as colunas obrigatórias vão com os
+    valores atuais, só para completar a linha) → jogadores.
+- **Por que três comandos e não um que chame as três rotas em sequência**: cada rota tem seu
+  tempo e sua frequência (campeonatos mudam pouco; cotações mudam mais e a resposta tem 16 MB com
+  as 323 cotações de cada jogo); uma falha ou demora numa rota não segura as outras; e cada carga
+  continua atômica. A ordem entre elas vem do escalonamento do agendador (R-06). O que chega antes
+  da carga de que depende (confronto sem campeonato, cotação sem confronto) é ignorado, contado no
+  log e entra na rodada seguinte (FR-005a).
 - **Colunas atualizadas**: o upsert de campeonatos atualiza só `nome`, `pais`, `bandeira`,
-  `updated_at` (nunca `ativo`, `favorito`, `manual`, FR-006); o de confrontos não atualiza `ativo`
-  nem `manual`. Registros manuais têm `codigo_externo` nulo e nunca casam com o upsert (FR-064).
+  `updated_at` (nunca `ativo`, `favorito`, `manual`, FR-006); o de confrontos não atualiza `ativo`,
+  `manual`, cotações nem sorteio; o de cotações só as colunas de cotação. Registros manuais têm
+  `codigo_externo` nulo e nunca casam com o upsert (FR-064).
+- **Medição com as rotas separadas** (2026-10-05, mesmos dados reais, resposta no formato antigo
+  com as 323 cotações por jogo): campeonatos 0,1 s, confrontos 1,4 s, cotações 2,4 s.
 - **Jogadores (FR-010)**: upsert por (`confrontos_id`, `codigo_externo`, `tipo`) com
-  `deleted_at = null`; em seguida, soft delete dos jogadores dos confrontos da carga que não vieram
-  (`updated_at` anterior ao início da carga). Assim a tabela não cresce sem limite e não há
-  exclusão física.
-- **Validação**: estrutura de topo inválida (sem `campeonatos`, tipo errado) recusa a carga inteira
-  (FR-011). Cada confronto é validado por uma classe simples (`App\Services\ValidacaoCargaProvedor`),
-  sem o `Validator` do Laravel, que seria lento para 4 mil itens com até 323 chaves: código fora de
-  `odd1`–`odd323`, valor não numérico ou negativo, data inválida → confronto ignorado e motivo no
-  log, sem derrubar os demais.
+  `deleted_at = null`, só dos jogadores novos, alterados ou que estavam excluídos (a comparação é
+  feita em memória com os jogadores já gravados); os que não vieram na carga recebem soft delete
+  pelo id. Assim a tabela não cresce sem limite e não há exclusão física.
+- **Ajuste da implementação (2026-10-01)**: com o upsert de tudo a carga levava ~4 s; gravando só
+  jogadores e campeonatos novos ou alterados, e com lotes de 1.000 (confrontos) e 2.000
+  (campeonatos e jogadores), caiu para ~1,9 s com os dados reais. Os ids de `confrontos` avançam a
+  cada carga (o InnoDB reserva ids no `INSERT ... ON DUPLICATE KEY UPDATE`); não há impacto, a
+  coluna é `bigint`.
+- **Validação**: resposta que não é uma lista recusa a carga inteira (FR-011). Cada item é validado
+  por uma classe simples (`App\Services\ValidacaoCargaProvedor`, um método por rota), sem o
+  `Validator` do Laravel, que seria lento para 4 mil itens com até 323 chaves. As cotações vêm uma
+  por campo (`odd1` a `odd323`); a leitura percorre só esses códigos, aceita ausente ou nulo como
+  zero e invalida o item com valor não numérico ou negativo. Data inválida também ignora o item,
+  com motivo no log, sem derrubar os demais. A mesma classe traduz os nomes do provedor para os do
+  sistema.
 
 ## R-03. Sorteio de `odd4` e `odd7` (FR-008)
 
@@ -72,26 +98,51 @@ provedor é do próprio responsável e será ajustada a ele.
 ## R-05. Cliente HTTP dos provedores
 
 - **Decisão**: `App\Services\ProvedorCotacoes`, com o `Http` do Laravel (Guzzle, já instalado):
-  - endereços e chave em `config/services.php` → `provedor_cotacoes`, lidos de variáveis de
-    ambiente (`PROVEDOR_COTACOES_URL_PRE_JOGO`, `..._URL_AO_VIVO`, `..._URL_CONFERENCIA`,
-    `PROVEDOR_COTACOES_CHAVE`, `PROVEDOR_COTACOES_CABECALHO_CHAVE` com padrão `X-Api-Key`);
-    nunca `env()` fora do arquivo de config (funciona com `config:cache`);
-  - chave sempre em cabeçalho, nunca na URL nem no log (FR-053); `Accept-Encoding: gzip`
-    (descompressão automática do Guzzle, FR-056);
-  - tempo limite: 60 s no pré-jogo, 4 s no ao vivo (cabe no ciclo de 5 s), 10 s na conferência;
-  - qualquer exceção ou status ≠ 2xx vira `App\Exceptions\FalhaProvedorException`, registrada no
-    log sem a chave.
+  - um método por rota: `buscar_campeonatos()`, `buscar_confrontos()`, `buscar_cotacoes()`,
+    `buscar_ao_vivo()` e `consultar_minuto()`;
+  - endereços base e chave em `config/services.php` → `provedor_cotacoes`, lidos de variáveis de
+    ambiente (`PROVEDOR_COTACOES_URL_PRE_JOGO`, `..._URL_AO_VIVO`, `..._URL_CONFERENCIA`, com os
+    endereços atuais do provedor como padrão, `PROVEDOR_COTACOES_CHAVE` e
+    `PROVEDOR_COTACOES_APP`, que vazio usa o `app.url`); as rotas ficam no código; nunca `env()`
+    fora do arquivo de config (funciona com `config:cache`);
+  - chave nos parâmetros `key` e `app` da URL, porque a API do provedor exige assim e não vai mudar
+    (revisto em 2026-10-05, FR-053). Para a chave não vazar, nem a URL nem a mensagem original da
+    exceção vão para o log: só o nome da rota, o status ou o nome da classe da exceção;
+    `Accept-Encoding: gzip` (descompressão automática do Guzzle, FR-056);
+  - tempo limite: 60 s em campeonatos, 180 s em confrontos e cotações (como no antigo), 4 s no ao
+    vivo (cabe no ciclo de 5 s), 10 s na conferência;
+  - qualquer exceção ou status ≠ 2xx vira `App\Exceptions\FalhaProvedorException`.
 - **Alternativas**: Guzzle direto (mais código); SDK próprio (desnecessário).
 
 ## R-06. Agendamento
 
-- **Decisão**: em `routes/console.php` (Laravel 12):
-  - `confrontos:importar` → `everyFiveMinutes()->withoutOverlapping(10)`;
-  - `confrontos_ao_vivo:importar` → `everyFiveSeconds()->withoutOverlapping(1)`;
-  - `confrontos_ao_vivo:conferir` → `everyMinute()->withoutOverlapping(2)`.
-  As travas de sobreposição usam o cache `database` já configurado. Em produção, o cron chama
+- **Decisão (revista em 2026-10-05)**: em `routes/console.php` (Laravel 12), um agendamento por
+  comando:
+
+  | Comando | Quando | Configuração |
+  |---|---|---|
+  | `campeonatos:importar` | a cada 10 min (:00, :10...) | `cron('*/10 * * * *')->runInBackground()->withoutOverlapping(10)` |
+  | `confrontos:importar` | a cada 5 min (:01, :06...) | `cron('1-59/5 * * * *')->runInBackground()->withoutOverlapping(10)` |
+  | `confrontos_cotacoes:importar` | a cada 5 min (:02, :07...) | `cron('2-59/5 * * * *')->runInBackground()->withoutOverlapping(10)` |
+  | `confrontos_ao_vivo:importar` | a cada 5 s | `everyFiveSeconds()->withoutOverlapping(1)` |
+  | `confrontos_ao_vivo:conferir` | a cada 1 min | `everyMinute()->runInBackground()->withoutOverlapping(2)` |
+
+- **Por que esses tempos**: campeonatos mudam pouco (o antigo rodava a cada 5 min, mas só grava o
+  que mudou; 10 min basta e um campeonato novo espera no máximo isso). Confrontos e cotações a cada
+  5 min mantêm a mesma atualização da decisão anterior (o antigo usava 9 e 33 min). O minuto de
+  diferença entre as três põe cada carga depois daquela de que depende: um jogo novo entra com
+  cotações em até ~2 min depois do seu campeonato.
+- **Por que em segundo plano**: o `schedule:run` roda primeiro as tarefas do minuto e só depois
+  repete as de segundos; uma carga do pré-jogo em primeiro plano (até 180 s de tempo limite)
+  atrasaria o ao vivo e faria os jogos travarem. Com `runInBackground()` cada carga roda em processo
+  próprio e o ao vivo segue no ritmo de 5 s. O ao vivo continua em primeiro plano, que é o que
+  permite a repetição a cada 5 s.
+- As travas de sobreposição usam o cache `database` já configurado. Em produção, o cron chama
   `php artisan schedule:run` a cada minuto (o Laravel repete as tarefas de segundos dentro do
   minuto); localmente, `php artisan schedule:work`.
+- **Alternativa rejeitada**: um único comando chamando campeonatos → confrontos → cotações em
+  sequência. Garante a ordem, mas obriga a mesma frequência para as três e uma rota lenta ou fora
+  do ar atrasa ou impede as outras.
 - **Checagens no início de cada comando**: `somente_cassino` → não roda (FR-012); no ao vivo e na
   conferência, `ao_vivo_habilitado` desmarcado em `configuracoes` → não roda (FR-046c).
 - **Comandos** em `app/Console/Commands/` (descobertos automaticamente pelo Laravel 12, sem mexer
@@ -113,7 +164,8 @@ provedor é do próprio responsável e será ajustada a ele.
 ## R-08. Conferência do ao vivo (FR-021 a FR-024)
 
 - **Decisão**: `App\Services\ConferenciaAoVivo` sorteia (`inRandomOrder()->first()`) um jogo em
-  andamento atualizado dentro da permanência, pede o minuto ao segundo provedor e compara. Se o
+  andamento atualizado dentro da permanência, pede o minuto ao segundo provedor (campo
+  `minuto_exato` da rota `confrontos/{id}`, a mesma do antigo `comparar:aovivo`) e compara. Se o
   minuto do provedor for maior que o do sistema em mais de 1, grava `ao_vivo_travado = true` e
   `ao_vivo_travado_em`; se a diferença for ≤ 1 e estava travado, libera. Cada mudança vai para o log
   com o jogo e os dois minutos. Sem jogo ou com falha do provedor: nada muda.
@@ -254,7 +306,7 @@ provedor é do próprio responsável e será ajustada a ele.
 | Enum | Casos → valores |
 |---|---|
 | `AlvoRegra` | `Clientes`, `Vendedores`, `Todos` |
-| `SituacaoConfronto` | `Aguardando`, `Encerrado`, `Cancelado`, `Adiado` |
+| `SituacaoConfronto` | `Aguardando`, `Encerrado`, `Cancelado`, `Adiado`, `Bloqueado` |
 | `SituacaoAoVivo` | `PrimeiroTempo` → `'1 tempo'`, `Intervalo`, `SegundoTempo` → `'2 tempo'` |
 
 - Colunas `varchar`, sem `ENUM` do MySQL (como na spec 002). Os valores de situação seguem o
@@ -265,7 +317,9 @@ provedor é do próprio responsável e será ajustada a ele.
 
 ## R-19. Datas em UTC
 
-- **Decisão**: `config/app.php` já está em `UTC`; o provedor manda `data_inicio` em UTC; toda
+- **Decisão**: `config/app.php` já está em `UTC`; o provedor manda `horario` em UTC (o sistema
+  antigo também roda em UTC e compara `horario` direto com a hora atual), gravado em
+  `data_inicio`; toda
   conversão de fuso acontece só na leitura (listagem) e na entrada do confronto manual (data
   informada no fuso de quem cadastra, FR-063b).
 

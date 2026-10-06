@@ -120,6 +120,27 @@ device_id."
   o dele. `confrontos` guarda quais desses valores foram sorteados (`odd4_sorteada` e
   `odd7_sorteada`).
 
+### Session 2026-10-05
+
+- Q: A API do provedor muda para a chamada única aninhada do pré-jogo? → A: Não. A API do
+  provedor já está montada e continua como no sistema antigo, com uma rota por assunto:
+  campeonatos, confrontos do pré-jogo, cotações do pré-jogo e ao vivo (mais a conferência). O
+  sistema se adapta a ela, com os nomes de campo do provedor, e traduz para os nomes do sistema na
+  gravação. Isso substitui a decisão anterior de uma única chamada.
+- Q: As rotas do pré-jogo rodam num cron só ou em crons separados, e com que intervalo? → A: Um
+  comando e um agendamento por rota, em segundo plano e sem execuções sobrepostas, escalonados na
+  ordem em que um depende do outro: campeonatos a cada 10 minutos (:00, :10...), confrontos a
+  cada 5 minutos começando 1 minuto depois (:01, :06...), cotações a cada 5 minutos começando 2
+  minutos depois (:02, :07...). O ao vivo continua a cada 5 segundos e a conferência a cada
+  minuto.
+- Q: Como vai a chave do provedor, se a API exige a chave na URL? → A: Como a API exige: nos
+  parâmetros `key` e `app` da URL, lidos da configuração do servidor. Em troca, nenhuma URL do
+  provedor nem a mensagem original de erro da chamada vai para o log.
+- Q: O que fazer com os confrontos que o provedor manda com a situação `Bloqueado`? → A: Aceitar
+  como situação válida, como no sistema antigo: o confronto é gravado e atualizado, mas não aparece
+  na listagem (que só mostra Aguardando) até o provedor desbloquear. Não é opção do confronto
+  manual.
+
 ## User Scenarios & Testing *(mandatory)*
 
 > Conforme a constituição, o projeto não terá testes automatizados. Os cenários abaixo são
@@ -127,23 +148,25 @@ device_id."
 
 ### User Story 1 - Carga do pré-jogo (Priority: P1)
 
-De 5 em 5 minutos, o sistema busca no provedor de cotações, numa única chamada, todos os
-campeonatos com seus confrontos, cotações e jogadores, e grava tudo de uma vez. A banca passa a ter
-os jogos do dia e dos próximos dias sempre atualizados, sem depender de três cargas em horários
-diferentes.
+O sistema busca no provedor de cotações, pelas rotas que o provedor já tem, os campeonatos (a cada
+10 minutos), os confrontos (a cada 5 minutos) e as cotações com os jogadores (a cada 5 minutos),
+em cargas separadas e escalonadas, e grava cada uma em lote. A banca passa a ter os jogos do dia e
+dos próximos dias sempre atualizados, com as três cargas organizadas para não se atropelarem.
 
 **Why this priority**: sem os jogos e as cotações no banco não há o que listar nem o que apostar;
 é a base de todas as outras stories.
 
-**Independent Test**: rodar `confrontos:importar` com o provedor respondendo um JSON conhecido e
-conferir no banco os campeonatos, confrontos, cotações e jogadores; rodar de novo com uma cotação
-alterada e conferir que o confronto foi atualizado, sem duplicar.
+**Independent Test**: rodar `campeonatos:importar`, `confrontos:importar` e
+`confrontos_cotacoes:importar`, nessa ordem, com o provedor respondendo um JSON conhecido e
+conferir no banco os campeonatos, confrontos, cotações e jogadores; rodar de novo as cotações com
+uma cotação alterada e conferir que o confronto foi atualizado, sem duplicar.
 
 **Acceptance Scenarios**:
 
-1. **Given** o banco sem jogos e o provedor devolvendo 2 campeonatos com 3 confrontos, **When** a
-   carga roda, **Then** existem 2 campeonatos e 3 confrontos, cada confronto com suas cotações,
-   seus jogadores e a quantidade de cotações disponíveis.
+1. **Given** o banco sem jogos e o provedor devolvendo 2 campeonatos com 3 confrontos, **When** as
+   cargas de campeonatos, confrontos e cotações rodam, **Then** existem 2 campeonatos e 3
+   confrontos, cada confronto com suas cotações, seus jogadores e a quantidade de cotações
+   disponíveis.
 2. **Given** um confronto já gravado com `odd1` 1,40, **When** a carga roda e o provedor manda
    `odd1` 1,55 para o mesmo `codigo_externo`, **Then** o mesmo confronto passa a ter `odd1` 1,55 e
    nenhum registro novo é criado.
@@ -176,6 +199,15 @@ alterada e conferir que o confronto foi atualizado, sem duplicar.
 14. **Given** `permitir_entrada_campeonatos` desmarcado, **When** a carga traz um campeonato que o
     sistema não conhecia, **Then** ele é criado desativado e seus jogos não aparecem na listagem
     até ele ser ativado; os campeonatos que já existiam não mudam.
+15. **Given** um confronto cujo campeonato ainda não foi gravado, **When** a carga dos confrontos
+    roda, **Then** ele é ignorado (contado no log) e entra na primeira carga dos confrontos depois
+    da carga dos campeonatos que criar o campeonato.
+16. **Given** cotações de um confronto que ainda não foi gravado, **When** a carga das cotações
+    roda, **Then** elas são ignoradas (contadas no log) e entram na primeira carga das cotações
+    depois da carga dos confrontos que criar o confronto.
+17. **Given** um confronto já gravado, **When** a carga dos confrontos roda, **Then** times,
+    situação e horário são atualizados e as cotações, o sorteio e os jogadores não mudam (são da
+    carga das cotações).
 
 ---
 
@@ -557,8 +589,9 @@ com o ao vivo desligado.
 ### Edge Cases
 
 - Campeonato que chega do provedor sem nenhum confronto é gravado normalmente.
-- Confronto que chega com situação diferente de "Aguardando" (Encerrado, Cancelado, Adiado) é
-  atualizado e deixa de aparecer na listagem do pré-jogo.
+- Confronto que chega com situação diferente de "Aguardando" (Encerrado, Cancelado, Adiado,
+  Bloqueado) é atualizado e deixa de aparecer na listagem do pré-jogo. O Bloqueado é uma suspensão
+  do provedor: quando ele voltar a mandar Aguardando, o jogo volta a aparecer na carga seguinte.
 - Confronto que some da resposta do provedor não é apagado pela carga; deixa de aparecer quando o
   horário de início passa.
 - Cotação com código fora de `odd1` a `odd323`, valor negativo ou não numérico é tratada como dado
@@ -568,7 +601,7 @@ com o ao vivo desligado.
   nome considera nome e país).
 - Intervalo de sorteio não configurado ou com mínimo maior que o máximo: a cotação continua zerada.
 - Jogo do ao vivo cujo campeonato ainda não existe no sistema é ignorado naquela carga e o motivo
-  fica em log; entra assim que a carga do pré-jogo criar o campeonato.
+  fica em log; entra assim que a carga dos campeonatos criar o campeonato.
 - Jogo que termina deixa de vir do provedor do ao vivo: fica travado após 15 segundos e sai da
   listagem após o limite de permanência.
 - "Hoje" no pré-jogo só traz os jogos de hoje que ainda vão começar; os já iniciados ficam no ao
@@ -592,21 +625,37 @@ com o ao vivo desligado.
 
 **Carga do pré-jogo**
 
-- **FR-001**: O sistema DEVE ter um único comando, `confrontos:importar`, que busca o pré-jogo no
-  provedor de cotações em uma única chamada, agendado a cada 5 minutos e sem execuções sobrepostas.
-  Ele substitui os antigos `fonte:campeonatos`, `fonte:confrontos` e `fonte:cotacao`.
-- **FR-002**: A resposta do provedor DEVE ser um JSON aninhado no formato:
-  `campeonatos[] { codigo_externo, nome, pais, bandeira, confrontos[] { codigo_externo, time_casa,
-  escudo_casa, time_fora, escudo_fora, esporte, situacao, data_inicio, cotacoes { odd1, odd3, ... },
-  jogadores[] { codigo_externo, nome, opcao, tipo, odd } } }`, com `data_inicio` em horário
-  universal (UTC).
+- **FR-001**: O pré-jogo DEVE ser carregado por três comandos, um por rota do provedor, cada um
+  agendado em segundo plano e sem execuções sobrepostas, escalonados para que cada carga encontre
+  os dados da anterior:
+  - `campeonatos:importar` (substitui `fonte:campeonatos`): a cada 10 minutos (:00, :10, ...);
+  - `confrontos:importar` (substitui `fonte:confrontos`): a cada 5 minutos, de :01 em diante
+    (:01, :06, ...);
+  - `confrontos_cotacoes:importar` (substitui `fonte:cotacao`): a cada 5 minutos, de :02 em diante
+    (:02, :07, ...).
+- **FR-002**: O sistema DEVE consumir as rotas do provedor como elas existem hoje (detalhes em
+  `contracts/provedor.md`), cada uma devolvendo uma lista:
+  - campeonatos: `{ fonte_id, nome, pais, bandeira }`;
+  - confrontos: `{ fonte_id, campeonatos_id, casa, escudo_casa, fora, escudo_fora, situacao,
+    tipo_esporte, horario }`, com `campeonatos_id` sendo o código do campeonato no provedor e
+    `horario` em horário universal (UTC);
+  - cotações: `{ fonte_id, odd1 ... odd323, jogador[] { atletas_id, nome, opcao, tipo, odd } }`.
+  Os nomes do provedor DEVEM ser traduzidos para os do sistema na gravação (`fonte_id` →
+  `codigo_externo`, `casa` → `time_casa`, `tipo_esporte` → `esporte`, `horario` → `data_inicio`,
+  `jogador` → jogadores, `atletas_id` → `codigo_externo` do jogador).
 - **FR-003**: O sistema DEVE aceitar e guardar os 323 códigos de cotação (`odd1` a `odd323`);
   código ausente ou zerado DEVE valer zero (indisponível).
-- **FR-004**: Na chamada, o sistema DEVE enviar ao provedor a lista de `codigo_externo` dos
-  campeonatos desativados, para que não retornem.
-- **FR-005**: Campeonatos, confrontos e jogadores DEVEM ser gravados por inserir-ou-atualizar em
-  lote, pela chave `codigo_externo`, numa única transação: ou a carga inteira é gravada, ou nada
-  muda. Rodar a mesma carga duas vezes NÃO DEVE criar registros duplicados.
+- **FR-004**: Nas chamadas de confrontos, cotações e ao vivo, o sistema DEVE enviar ao provedor a
+  lista de `codigo_externo` dos campeonatos desativados (campo `campeonatos_id` do corpo), para
+  que os jogos deles não retornem. A rota de campeonatos traz todos.
+- **FR-005**: Cada carga DEVE gravar por inserir-ou-atualizar em lote, pela chave
+  `codigo_externo`, numa única transação: ou aquela carga inteira é gravada, ou nada muda. Rodar a
+  mesma carga duas vezes NÃO DEVE criar registros duplicados. A carga dos campeonatos grava os
+  campeonatos; a dos confrontos, times, escudos, esporte, situação e horário; a das cotações, as
+  cotações, o sorteio e os jogadores. Uma carga NÃO DEVE alterar o que é da outra.
+- **FR-005a**: Confronto cujo campeonato ainda não existe, e cotação de confronto que ainda não
+  existe, DEVEM ser ignorados naquela carga, com a quantidade em log; entram na carga seguinte,
+  depois da carga de que dependem.
 - **FR-006**: Campeonato novo DEVE ser criado não favorito e, conforme a configuração
   `permitir_entrada_campeonatos` (FR-035a): ativo quando ela estiver marcada (padrão) e desativado
   quando estiver desmarcada. Campeonato novo NÃO DEVE receber nenhuma restrição de exibição
@@ -625,10 +674,11 @@ com o ao vivo desligado.
   jogadores do confronto.
 - **FR-010**: Os jogadores de um confronto DEVEM ser substituídos pelos que vierem na carga:
   jogador que não vier mais deixa de valer para aquele confronto.
-- **FR-011**: Falha na chamada (provedor fora do ar, tempo esgotado, erro) ou JSON fora do formato
-  de FR-002 NÃO DEVE alterar nenhum dado e DEVE ser registrada em log. Um confronto com dado
-  inválido DEVE ser ignorado, com o motivo em log, sem impedir a gravação dos demais.
-- **FR-012**: A carga do pré-jogo, a carga do ao vivo e a conferência NÃO DEVEM rodar quando o
+- **FR-011**: Falha na chamada (provedor fora do ar, tempo esgotado, erro) ou resposta que não seja
+  a lista de FR-002 NÃO DEVE alterar nenhum dado daquela carga e DEVE ser registrada em log; as
+  outras cargas seguem normalmente. Um item com dado inválido DEVE ser ignorado, com o motivo em
+  log, sem impedir a gravação dos demais.
+- **FR-012**: As cargas do pré-jogo, a carga do ao vivo e a conferência NÃO DEVEM rodar quando o
   sistema estiver configurado só para cassino.
 - **FR-013**: As cargas NÃO DEVEM consultar as tabelas de restrição de exibição nem as de
   porcentagem: gravam tudo o que o provedor mandar.
@@ -638,7 +688,10 @@ com o ao vivo desligado.
 - **FR-014**: O sistema DEVE ter um comando separado, `confrontos_ao_vivo:importar`, que busca no
   provedor os jogos em andamento a cada 5 segundos, sem execuções sobrepostas, enviando a lista de
   campeonatos desativados (como em FR-004). Ele substitui o antigo `fonte:aovivo` e só roda com
-  `ao_vivo_habilitado` marcado (FR-046c).
+  `ao_vivo_habilitado` marcado (FR-046c). A rota do ao vivo é a que o provedor já tem, com os nomes
+  dele traduzidos na gravação (`minuto_exato` → `minuto`, `tempo` → `cronometro`, `g1_tempo_casa`
+  → `gols_primeiro_tempo_casa`, `escanteio_casa` → `escanteios_casa` e equivalentes; detalhes em
+  `contracts/provedor.md`).
 - **FR-015**: Para cada jogo em andamento, o sistema DEVE gravar ou atualizar, pela chave
   `codigo_externo`: campeonato, times, escudos, esporte, `data_inicio`, `placar_casa`,
   `placar_fora`, gols de cada time no primeiro e no segundo tempo, escanteios de cada time,
@@ -661,7 +714,8 @@ com o ao vivo desligado.
 
 - **FR-021**: O sistema DEVE ter o comando `confrontos_ao_vivo:conferir`, agendado a cada minuto,
   em qualquer horário do dia, que sorteia um jogo em andamento e compara o `minuto` dele com o
-  minuto do mesmo jogo num segundo provedor. Ele substitui o antigo `comparar:aovivo`.
+  minuto do mesmo jogo num segundo provedor (campo `minuto_exato` da rota de confronto que ele já
+  tem). Ele substitui o antigo `comparar:aovivo`.
 - **FR-022**: Quando o minuto do segundo provedor estiver mais de 1 minuto à frente do minuto do
   sistema, DEVE ser acionada a trava geral do ao vivo: todos os jogos do ao vivo passam a ser
   entregues com as cotações zeradas e marcados como travados.
@@ -1011,8 +1065,9 @@ com o ao vivo desligado.
 
 **Segurança e desempenho**
 
-- **FR-053**: A chave de acesso aos provedores DEVE ser enviada em cabeçalho e lida da
-  configuração do sistema; NUNCA DEVE ir na URL nem aparecer em log.
+- **FR-053**: A chave de acesso aos provedores DEVE ser lida da configuração do servidor e enviada
+  como a API do provedor exige (parâmetros `key` e `app` da URL); a chave, as URLs chamadas e a
+  mensagem original de erro das chamadas NUNCA DEVEM aparecer em log.
 - **FR-054**: Nenhum dado vindo do provedor ou de parâmetro de requisição DEVE ser usado para
   montar comandos de banco por concatenação de texto.
 - **FR-055**: NÃO DEVE existir lista fixa de ids de clientes ou usuários no código; toda redução
@@ -1062,11 +1117,11 @@ com o ao vivo desligado.
 
 ### Measurable Outcomes
 
-- **SC-001**: A carga completa do pré-jogo, com cerca de 7 mil campeonatos, 4 mil confrontos e
-  25 mil jogadores, termina em menos de 5 segundos.
+- **SC-001**: Com cerca de 7 mil campeonatos, 4 mil confrontos e 25 mil jogadores, cada carga do
+  pré-jogo (campeonatos, confrontos e cotações) termina em menos de 5 segundos.
 - **SC-002**: Depois de cada carga bem-sucedida, 100% dos confrontos enviados pelo provedor estão
   no sistema com as mesmas cotações enviadas (exceto `odd4` e `odd7` sorteadas).
-- **SC-003**: Em 100% das falhas de carga do pré-jogo, nenhum dado existente é alterado.
+- **SC-003**: Em 100% das falhas de uma carga do pré-jogo, nenhum dado daquela carga é alterado.
 - **SC-004**: Com a carga do ao vivo parada, nenhum apostador recebe cotação do ao vivo diferente
   de zero depois de 15 segundos da última atualização.
 - **SC-005**: Uma mudança de cotação ou de placar no provedor do ao vivo aparece na listagem em
@@ -1121,11 +1176,9 @@ com o ao vivo desligado.
   de permanência e o minuto limite já tiram o jogo encerrado da lista), a lista `variations` da
   resposta (o frontend compara a cotação recebida com a anterior), o `delay_ao_vivo` (é regra de
   aposta) e a `data_trava`.
-- O provedor de cotações passará a devolver o pré-jogo no formato aninhado de FR-002; esse ajuste
-  na API do provedor é uma dependência externa a esta spec.
-- O formato da resposta do provedor do ao vivo e do segundo provedor (conferência) segue o que já
-  existe hoje, com os nomes novos (`codigo_externo`, `time_casa`, `minuto`, `cronometro`); os
-  detalhes ficam para o plano.
+- A API do provedor não muda: as rotas de campeonatos, confrontos, cotações, ao vivo e conferência
+  são as que o sistema antigo já usa, com os mesmos nomes de campo e a chave na URL. Os nomes novos
+  (`codigo_externo`, `time_casa`, `minuto`, `cronometro`) existem só dentro do sistema.
 - A tabela `configuracoes` nasce só com os campos desta spec; os demais campos da antiga `configs`
   (nome do site, redes sociais, senhas mestre, temas e outros) serão acrescentados pelas specs que
   precisarem deles. Enquanto o painel não existir, os valores são alterados direto no banco.
@@ -1136,8 +1189,9 @@ com o ao vivo desligado.
   deixa de receber confrontos até ser ativado.
 - O esporte é guardado como o provedor envia (ex.: `FUTEBOL`, `BASQUETE`, `LUTAS`), igual aos nomes
   já usados em `esportes_permitidos` na spec 002; o cadastro de esportes continua sem existir.
-- As situações do confronto seguem o sistema antigo: Aguardando, Encerrado, Cancelado e Adiado no
-  pré-jogo; 1 tempo, Intervalo e 2 tempo no ao vivo.
+- As situações do confronto seguem o sistema antigo: Aguardando, Encerrado, Cancelado, Adiado e
+  Bloqueado no pré-jogo (Bloqueado só vem do provedor; o confronto manual não usa); 1 tempo,
+  Intervalo e 2 tempo no ao vivo.
 - Os códigos de cotação (`odd1` a `odd323`) são os do provedor; o significado de cada código
   (nome do mercado) não é cadastrado nesta spec.
 - A quantidade de cotações disponíveis sempre inclui as cotações de jogadores; a antiga opção de

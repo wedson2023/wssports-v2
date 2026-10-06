@@ -12,16 +12,17 @@ regenerada (`docs/postman/wssports_api.postman_collection.json`). Campos e respo
 - Specs 001 e 002 aplicadas (Admin `admin` / `password`, hierarquia de exemplo, clientes de
   exemplo).
 - MySQL 8.4.
-- **Provedor simulado**: um mock server do Postman com três exemplos, copiados de
-  [contracts/provedor.md](contracts/provedor.md): `POST /pre-jogo`, `POST /ao-vivo` e
-  `GET /confrontos/:codigo`. Ajuste as datas dos exemplos para hoje, amanhã e depois de amanhã
-  (UTC).
+- **Provedor simulado**: um mock server do Postman com os cinco exemplos de
+  [contracts/provedor.md](contracts/provedor.md), no formato do provedor (listas, com `fonte_id`,
+  `casa`, `horario`...): `GET /api/campeonatos`, `POST /api/confrontos`, `POST /api/cotacao`,
+  `POST /api/aovivo` e `GET /bet/v2/confrontos/:fonte_id`. Ajuste o `horario` dos exemplos para
+  hoje, amanhã e depois de amanhã (UTC).
 - No `.env`:
 
   ```dotenv
-  PROVEDOR_COTACOES_URL_PRE_JOGO=https://<mock>/pre-jogo
-  PROVEDOR_COTACOES_URL_AO_VIVO=https://<mock>/ao-vivo
-  PROVEDOR_COTACOES_URL_CONFERENCIA=https://<mock>
+  PROVEDOR_COTACOES_URL_PRE_JOGO=https://<mock>/api
+  PROVEDOR_COTACOES_URL_AO_VIVO=https://<mock>/api
+  PROVEDOR_COTACOES_URL_CONFERENCIA=https://<mock>/bet/v2
   PROVEDOR_COTACOES_CHAVE=chave-local
   ```
 
@@ -53,7 +54,8 @@ php artisan schedule:list
 ```
 
 **Esperado**: `GET api/publico/confrontos` mais as 37 rotas do painel do contrato, e nenhuma rota
-`clientes-configuracoes-padrao`. O agendamento mostra `confrontos:importar` (5 min),
+`clientes-configuracoes-padrao`. O agendamento mostra `campeonatos:importar` (`*/10 * * * *`),
+`confrontos:importar` (`1-59/5 * * * *`), `confrontos_cotacoes:importar` (`2-59/5 * * * *`),
 `confrontos_ao_vivo:importar` (5 s) e `confrontos_ao_vivo:conferir` (1 min).
 
 ## 3. Roteiro
@@ -65,17 +67,20 @@ exemplo) e `token_cliente` (área do cliente).
 
 | # | Ação | Esperado | Ref. |
 |---|---|---|---|
-| 1 | `php artisan confrontos:importar` com o mock devolvendo 2 campeonatos e 3 confrontos | registros criados com cotações, jogadores e `quantidade_cotacoes`; tempo < 5 s | US1-1, SC-001 |
-| 2 | Mudar `odd1` no mock e rodar de novo | mesmo confronto atualizado, sem duplicar | US1-2 |
-| 3 | Confronto de futebol com `odd4` ausente; rodar duas vezes | `odd4` entre 1,30 e 1,50, `odd4_sorteada = 1`, mesmo valor nas duas | US1-4 |
+| 1 | `php artisan campeonatos:importar`, `confrontos:importar` e `confrontos_cotacoes:importar`, nessa ordem, com o mock devolvendo 2 campeonatos e 3 confrontos | registros criados com cotações, jogadores e `quantidade_cotacoes`; cada carga < 5 s | US1-1, SC-001 |
+| 2 | Mudar `odd1` no mock e rodar `confrontos_cotacoes:importar` | mesmo confronto atualizado, sem duplicar | US1-2 |
+| 3 | Confronto de futebol com `odd4: 0`; rodar as cotações duas vezes | `odd4` entre 1,30 e 1,50, `odd4_sorteada = 1`, mesmo valor nas duas | US1-4 |
 | 4 | Mock passa a mandar `odd4: 2.05` | `odd4 = 2.05`, `odd4_sorteada = 0` | US1-5 |
-| 5 | Basquete com `odd4` ausente | `odd4` continua ausente | US1-6 |
-| 6 | Desativar um campeonato (rota do painel) e rodar | o corpo enviado ao mock traz o `codigo_externo` em `campeonatos_desativados` (ver o log do mock) | US1-7 |
-| 7 | Campeonato com porcentagem e não permitido; mock manda o mesmo nome e país com outro `codigo_externo` | regras movidas para o campeonato novo | US1-8 |
-| 8 | Mock devolvendo 500, depois JSON sem `campeonatos` | nenhum dado muda; falha no `storage/logs/laravel.log`, sem a chave | US1-9, FR-053 |
-| 9 | `UPDATE configuracoes SET somente_cassino = 1` e rodar | o comando termina sem chamar o mock | US1-10 |
+| 5 | Basquete com `odd4: 0` | `odd4` continua ausente | US1-6 |
+| 6 | Desativar um campeonato (rota do painel) e rodar confrontos, cotações e ao vivo | o corpo enviado ao mock traz o `codigo_externo` em `campeonatos_id` (ver o log do mock) | US1-7 |
+| 7 | Campeonato com porcentagem e não permitido; mock manda o mesmo nome e país com outro `fonte_id`; rodar `campeonatos:importar` | regras movidas para o campeonato novo | US1-8 |
+| 8 | Mock devolvendo 500, depois um objeto no lugar da lista, em cada rota | nenhum dado daquela carga muda; falha no `storage/logs/laravel.log`, sem a chave nem a URL | US1-9, FR-053 |
+| 9 | `UPDATE configuracoes SET somente_cassino = 1` e rodar as três | os comandos terminam sem chamar o mock | US1-10 |
 | 10 | `permitir_entrada_campeonatos = 0` e mock com campeonato novo | criado com `ativo = 0`; os antigos não mudam | US1-14 |
-| 11 | Confronto com `odd999` ou valor negativo | só esse confronto ignorado, motivo no log | Edge |
+| 11 | Cotação com valor negativo ou texto | só esse confronto ignorado, motivo no log | Edge |
+| 11a | Mock com confronto de campeonato novo: rodar confrontos antes dos campeonatos, depois na ordem | primeiro ignorado ("sem campeonato" no resumo), depois gravado | US1-15 |
+| 11b | Mock com cotação de confronto novo: rodar cotações antes dos confrontos, depois na ordem | primeiro ignorada ("ainda inexistentes" no resumo), depois gravada | US1-16 |
+| 11c | Mudar `casa` no mock e rodar `confrontos:importar` | `time_casa` muda; cotações e jogadores intactos | US1-17 |
 
 ### Listagem pública (pré-jogo)
 
@@ -120,7 +125,7 @@ Em outro terminal: `php artisan schedule:work`.
 
 | # | Ação | Esperado | Ref. |
 |---|---|---|---|
-| 34 | Jogo no minuto 30 e mock da conferência com 33; `php artisan confrontos_ao_vivo:conferir` | `ao_vivo_travado = 1`; todo o ao vivo zerado; log com os dois minutos | US6-1, US6-2 |
+| 34 | Jogo no minuto 30 e mock da conferência com `minuto_exato` 33; `php artisan confrontos_ao_vivo:conferir` | `ao_vivo_travado = 1`; todo o ao vivo zerado; log com os dois minutos | US6-1, US6-2 |
 | 35 | Mock com 30 e rodar de novo | liberado; log da liberação | US6-3 |
 | 36 | Mock fora do ar | `ao_vivo_travado` não muda; falha no log | US6-4 |
 
@@ -129,7 +134,7 @@ Em outro terminal: `php artisan schedule:work`.
 | # | Ação | Esperado | Ref. |
 |---|---|---|---|
 | 37 | `POST /api/campeonatos` (manual) e `POST /api/confrontos` para amanhã com 3 cotações | `201`; aparece na listagem de amanhã; `quantidade_cotacoes = 3` | US9-1, US9-2 |
-| 38 | Rodar `confrontos:importar` | manuais intactos | US9-4, SC-015 |
+| 38 | Rodar as três cargas do pré-jogo | manuais intactos | US9-4, SC-015 |
 | 39 | `PUT` num confronto do provedor; confronto manual sem cotação ou com data passada | `422` | US9-6, US9-7 |
 | 40 | `DELETE /api/campeonatos/{manual}` | campeonato e confrontos somem (soft delete) | US9-8 |
 | 41 | Gerente: `POST /api/confrontos-nao-permitidos` `{"confrontos_id":X,"alvo":"Vendedores"}` | some para os vendedores dele; aparece para outro gerente e para visitante | US7-2, US10-5 |

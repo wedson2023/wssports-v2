@@ -11,10 +11,11 @@ opcionais), login por DDI + telefone e senha num guard JWT próprio (`clientes`)
 senha por código (evento registrado no log até existir a spec de WhatsApp), "meus dados", extrato
 e meios de pagamento (Pix ou transferência bancária). Três saldos movimentados só pelo serviço
 `SaldoClientes` (bloqueio de linha e cálculo em centavos), com transações de saldo anterior e
-posterior. Configurações de aposta e saque por cliente, copiadas de um registro padrão. Promoções
+posterior. Configurações de aposta e saque por cliente, com os valores iniciais no padrão das colunas
+(revisão de 2026-10-01, spec 003: a tabela padrão foi removida). Promoções
 com categoria, tipo de ganho, rollover e regras de uso (cadastradas e validadas; só "Primeiro
 cadastro" é aplicada nesta spec) e estorno de promoção em segundo plano, por fila. Gestão no painel
-com 10 permissões do spatie restritas por função, mascaramento de dados pessoais e exclusão com
+com 9 permissões do spatie restritas por função (a de configurações padrão saiu na spec 003), mascaramento de dados pessoais e exclusão com
 sufixo `_deleted_<timestamp>` + restauração. Decisões em [research.md](research.md).
 
 ## Technical Context
@@ -43,7 +44,8 @@ telefone + IP; 1 pedido de recuperação/min por telefone; saldos nunca negativo
 serializadas por cliente; estorno idempotente; mensagens em português
 
 **Scale/Scope**: 7 tabelas, 12 enums, 10 permissões, 38 rotas (15 da área do cliente, 23 do
-painel), 1 job
+painel), 1 job. Depois da spec 003 (2026-10-01): 6 tabelas, 9 permissões e 21 rotas do painel
+(a tabela padrão, a permissão e as 2 rotas dela foram removidas)
 
 ## Constitution Check
 
@@ -53,7 +55,7 @@ painel), 1 job
 |---|---|---|
 | I. `snake_case` | Métodos, variáveis, parâmetros, chaves JSON, rotas e colunas em `snake_case`; métodos exigidos pelo framework/pacotes mantêm o nome (exceção) | ✅ Pass |
 | I. Banco em português | Tabelas e colunas em português; `password` coberta pela exceção de autenticação (v1.12.0); `ddi` e `email` pela exceção de siglas consagradas (v1.13.0) | ✅ Pass |
-| I. Prefixo de tabelas (v1.9.0) | `clientes_transacoes`, `clientes_configuracoes`, `clientes_configuracoes_padrao`, `clientes_meios_pagamento`, `clientes_promocoes`, `clientes_codigos_recuperacao` | ✅ Pass |
+| I. Prefixo de tabelas (v1.9.0) | `clientes_transacoes`, `clientes_configuracoes`, `clientes_meios_pagamento`, `clientes_promocoes`, `clientes_codigos_recuperacao` | ✅ Pass |
 | I. Permissões `<recurso>.<acao>` (v1.11.0) | `clientes.listar`, `clientes.excluir`, `clientes_promocoes.estornar`... | ✅ Pass |
 | I. Enums (v1.13.0) | Casos em `PascalCase` com acento (`Promoção`, `NãoInformado`); valores gravados em português com inicial maiúscula e acentos (`'Ajuste manual'`, `'Primeiro depósito'`). Nomes de classe sem acento por causa do autoload (R-05) | ✅ Pass |
 | I. Pastas | Novas pastas PSR-4 em `PascalCase` (`app/Services`, `app/Events`, `app/Listeners`, `app/Jobs`, `app/Rules`, `app/Exceptions`) — exceção do Princípio I | ✅ Pass |
@@ -151,7 +153,7 @@ app/
 │   │   ├── AreaClienteRecuperacaoSenhaController.php # NOVO
 │   │   ├── ClientesController.php                    # NOVO: gestão, situação, exclusão, restauração
 │   │   ├── ClientesConfiguracoesController.php       # NOVO
-│   │   ├── ClientesConfiguracoesPadraoController.php # NOVO
+│   │   ├── ClientesConfiguracoesPadraoController.php # REMOVIDO na spec 003
 │   │   ├── ClientesMeiosPagamentoController.php      # NOVO (painel)
 │   │   ├── ClientesPromocoesController.php           # NOVO: CRUD + estornar
 │   │   ├── ClientesTransacoesController.php          # NOVO
@@ -161,7 +163,7 @@ app/
 │   │   └── GarantirAcessoCliente.php                 # NOVO (R-02)
 │   ├── Requests/
 │   │   ├── AlterarSenhaClienteRequest.php            # NOVO
-│   │   ├── ClientesConfiguracoesRequest.php          # NOVO: configurações e padrão
+│   │   ├── ClientesConfiguracoesRequest.php          # NOVO: configurações do cliente
 │   │   ├── ClientesMeiosPagamentoRequest.php         # NOVO: área do cliente e painel
 │   │   ├── ClientesPromocoesRequest.php              # NOVO
 │   │   ├── ClientesTransacoesRequest.php             # NOVO
@@ -186,7 +188,7 @@ app/
 │   ├── Clientes.php                                  # NOVO: JWTSubject, pode_acessar()
 │   ├── ClientesCodigosRecuperacao.php                # NOVO
 │   ├── ClientesConfiguracoes.php                     # NOVO
-│   ├── ClientesConfiguracoesPadrao.php               # NOVO
+│   ├── ClientesConfiguracoesPadrao.php               # REMOVIDO na spec 003
 │   ├── ClientesMeiosPagamento.php                    # NOVO
 │   ├── ClientesPromocoes.php                         # NOVO
 │   └── ClientesTransacoes.php                        # NOVO
@@ -207,7 +209,7 @@ database/
 │   ├── 2026_09_29_000001_create_clientes_table.php                       # NOVO
 │   ├── 2026_09_29_000002_create_clientes_transacoes_table.php            # NOVO
 │   ├── 2026_09_29_000003_create_clientes_configuracoes_table.php         # NOVO
-│   ├── 2026_09_29_000004_create_clientes_configuracoes_padrao_table.php  # NOVO
+│   ├── 2026_09_29_000004_create_clientes_configuracoes_padrao_table.php  # NOVO (tabela apagada pela spec 003)
 │   ├── 2026_09_29_000005_create_clientes_meios_pagamento_table.php       # NOVO
 │   ├── 2026_09_29_000006_create_clientes_promocoes_table.php             # NOVO
 │   └── 2026_09_29_000007_create_clientes_codigos_recuperacao_table.php   # NOVO

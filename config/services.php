@@ -35,4 +35,22 @@ return [
         ],
     ],
 
+    // provedor de cotações (pré-jogo, ao vivo e conferência); a API exige a chave e o endereço do
+    // site nos parâmetros "key" e "app" da URL, por isso a URL nunca vai para o log
+    'provedor_cotacoes' => [
+        // endereços base; as rotas (campeonatos, confrontos, cotacao, aovivo, confrontos/{id}) ficam no código
+        'url_pre_jogo' => env('PROVEDOR_COTACOES_URL_PRE_JOGO', 'https://apiprejogo.wssports.bet/api'),
+        'url_ao_vivo' => env('PROVEDOR_COTACOES_URL_AO_VIVO', 'https://apiaovivo.wssports.bet/api'),
+        'url_conferencia' => env('PROVEDOR_COTACOES_URL_CONFERENCIA', 'https://api.oddbrasil.com/bet/v2'),
+        'chave' => env('PROVEDOR_COTACOES_CHAVE'),
+        // endereço do site enviado no parâmetro "app"; vazio usa o app.url
+        'app' => env('PROVEDOR_COTACOES_APP'),
+        // tempos limite, em segundos: o ao vivo precisa caber no ciclo de 5 segundos
+        'tempo_limite_campeonatos' => 60,
+        'tempo_limite_confrontos' => 180,
+        'tempo_limite_cotacoes' => 180,
+        'tempo_limite_ao_vivo' => 4,
+        'tempo_limite_conferencia' => 10,
+    ],
+
 ];

@@ -9,7 +9,7 @@ use Spatie\Permission\Models\Role;
 use Spatie\Permission\PermissionRegistrar;
 
 /**
- * Cria os papéis (funções) e as permissões de gestão de usuários e de clientes.
+ * Cria os papéis (funções) e as permissões de gestão de usuários, de clientes e de confrontos.
  * Os papéis não recebem permissões: elas são atribuídas diretamente a cada usuário.
  */
 class PapeisPermissoesSeeder extends Seeder
@@ -18,7 +18,7 @@ class PapeisPermissoesSeeder extends Seeder
     {
         app(PermissionRegistrar::class)->forgetCachedPermissions();
 
-        foreach ([...Funcao::PERMISSOES_GESTAO, ...Funcao::PERMISSOES_CLIENTES] as $permissao) {
+        foreach ([...Funcao::PERMISSOES_GESTAO, ...Funcao::PERMISSOES_CLIENTES, ...Funcao::PERMISSOES_CONFRONTOS] as $permissao) {
             Permission::firstOrCreate(['name' => $permissao, 'guard_name' => 'api']);
         }
 

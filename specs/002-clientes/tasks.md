@@ -368,6 +368,13 @@ Task: "Criar app/Http/Requests/ClientesPromocoesRequest.php"
   passaram a ser ignorados (`nullable` no lugar de `sometimes`) em `ClientesController`,
   `ClientesPromocoesController` e `FiltrosExtrato`, com mensagens em português para todos os filtros
   (research R-19).
+- Alteração feita pela spec 003-confrontos (2026-10-01, decisão do responsável): não existe mais
+  tabela padrão. Removidos `ClientesConfiguracoesPadrao`, `ClientesConfiguracoesPadraoController`,
+  as 2 rotas `clientes-configuracoes-padrao` e a permissão `clientes.editar_configuracoes_padrao`;
+  `clientes_configuracoes` ganhou os valores padrão nas colunas (migration
+  `2026_10_01_000018_remover_clientes_configuracoes_padrao`), e `CadastroClientes`, `ClientesFactory`
+  e `ClientesSeeder` passaram a usar esses valores. As tarefas T013, T020 e as da rota padrão
+  descrevem a versão anterior.
 
 - [P] = arquivos diferentes, sem dependências pendentes
 - ⚠️ = arquivo existente com alteração já autorizada (Princípio IV)

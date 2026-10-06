@@ -1,17 +1,20 @@
 # Implementation Plan: Confrontos (jogos e cotações do provedor)
 
-**Branch**: `003-confrontos` | **Date**: 2026-10-01 | **Spec**: [spec.md](spec.md)
+**Branch**: `003-confrontos` | **Date**: 2026-10-01 (revisto em 2026-10-05: rotas separadas do provedor) | **Spec**: [spec.md](spec.md)
 
 **Input**: Feature specification from `specs/003-confrontos/spec.md`
 
 ## Summary
 
-Três comandos agendados trazem os jogos do provedor:
+Cinco comandos agendados trazem os jogos do provedor, um por rota que o provedor já tem (a API do
+provedor não muda; o sistema traduz os nomes dela, R-02):
 
-- **`confrontos:importar`** (a cada 5 min): numa única chamada, grava campeonatos, confrontos, as
-  323 cotações (numa coluna JSON) e jogadores, por upsert em lote numa transação. Também sorteia
-  `odd4`/`odd7` quando vêm zeradas e passa as regras de um campeonato para o novo quando ele chega
-  com outro código e o mesmo nome e país.
+- **`campeonatos:importar`** (a cada 10 min, :00): grava os campeonatos novos ou alterados e passa
+  as regras de um campeonato para o novo quando ele chega com outro código e o mesmo nome e país.
+- **`confrontos:importar`** (a cada 5 min, :01): grava times, escudos, esporte, situação e
+  horário dos confrontos, por upsert em lote numa transação.
+- **`confrontos_cotacoes:importar`** (a cada 5 min, :02): grava as 323 cotações (numa coluna JSON)
+  e os jogadores dos confrontos já existentes e sorteia `odd4`/`odd7` quando vêm zeradas.
 - **`confrontos_ao_vivo:importar`** (a cada 5 s): atualiza os jogos em andamento numa tabela
   própria. A trava é calculada na leitura pela data da última atualização, então funciona mesmo
   com o comando parado.
@@ -61,7 +64,7 @@ colunas `json` com valor padrão; cache `database` para as travas de sobreposiç
 
 | Meta | Alvo | Medido |
 |---|---|---|
-| Carga completa do pré-jogo (SC-001) | < 5 s | < 1 s no teste, R-01 |
+| Cada carga do pré-jogo (SC-001) | < 5 s | campeonatos 0,1 s, confrontos 1,4 s, cotações 2,4 s (R-02) |
 | Ao vivo refletido na listagem (SC-005) | até 10 s | — |
 | Trava após parada da carga (SC-004) | 15 s | — |
 | Listagem de 500 jogos (SC-007) | < 1 s | — |
@@ -70,9 +73,9 @@ colunas `json` com valor padrão; cache `database` para as travas de sobreposiç
 **Constraints**:
 
 - ciclo do ao vivo de 5 s, com tempo limite de 4 s;
-- carga atômica;
+- cada carga atômica;
 - nada de SQL montado por texto, e o fuso nunca entra no SQL;
-- chave do provedor só em cabeçalho;
+- chave do provedor na URL, como a API exige (`key` e `app`); URL e erro original nunca no log;
 - paginação ≤ 100 (padrão 50 na listagem pública e 20 no painel);
 - 120 requisições/min por IP na listagem pública;
 - mensagens em português.
@@ -85,7 +88,7 @@ colunas `json` com valor padrão; cache `database` para as travas de sobreposiç
 | Enums | 3 |
 | Permissões | 21 novas, 1 removida |
 | Rotas | 38 novas (1 pública e 37 do painel), 2 removidas |
-| Comandos agendados | 3 |
+| Comandos agendados | 5 |
 | Volume da carga | ~7 mil campeonatos, ~4 mil confrontos e ~25 mil jogadores |
 
 ## Constitution Check
@@ -131,9 +134,9 @@ colunas `json` com valor padrão; cache `database` para as travas de sobreposiç
 | `database/factories/ClientesFactory.php` | Idem, sem o padrão | FR-079 | decidido na spec |
 | `database/seeders/ClientesSeeder.php` | Tirar a criação do padrão | FR-079 | decidido na spec |
 | `routes/api.php` | Acrescentar a rota pública e o grupo do painel; remover as 2 rotas e o `use` do padrão | contrato, FR-079 | autorizado (2026-10-01) |
-| `routes/console.php` | Agendar os 3 comandos | R-06 | autorizado (2026-10-01) |
-| `config/services.php` | Bloco `provedor_cotacoes` (URLs, chave, nome do cabeçalho) | R-05, FR-053 | autorizado (2026-10-01) |
-| `.env.example` | Variáveis `PROVEDOR_COTACOES_*` (sem valores reais) | R-05 | autorizado (2026-10-01) |
+| `routes/console.php` | Agendar os 5 comandos | R-06 | autorizado (2026-10-01; revisto em 2026-10-05) |
+| `config/services.php` | Bloco `provedor_cotacoes` (URLs base, chave, `app` e tempos limite) | R-05, FR-053 | autorizado (2026-10-01; revisto em 2026-10-05) |
+| `.env.example` | Variáveis `PROVEDOR_COTACOES_*` (endereços públicos do provedor; chave sem valor) | R-05 | autorizado (2026-10-01; revisto em 2026-10-05) |
 | `app/Enums/Funcao.php` | `PERMISSOES_CONFRONTOS`, `PERMISSOES_CONFRONTOS_GERENTE`, `permissoes_padrao()` e `pode_usar()`; tirar `clientes.editar_configuracoes_padrao` | R-15, FR-079 | autorizado (2026-10-01) |
 | `app/Models/Usuarios.php` | Métodos `ids_hierarquia_acima()` e relação `configuracoes()` | R-10, R-16 | autorizado (2026-10-01) |
 | `database/seeders/PapeisPermissoesSeeder.php` | Criar também as permissões de confrontos | R-15 | autorizado (2026-10-01) |
@@ -193,9 +196,13 @@ specs/003-confrontos/
 app/
 ├── Console/
 │   └── Commands/
+│       ├── Concerns/
+│       │   └── ExecutarCargaPreJogo.php               # NOVO: execução comum às 3 cargas do pré-jogo
 │       ├── ConferirConfrontosAoVivoCommand.php        # NOVO: confrontos_ao_vivo:conferir
+│       ├── ImportarCampeonatosCommand.php             # NOVO: campeonatos:importar
 │       ├── ImportarConfrontosAoVivoCommand.php        # NOVO: confrontos_ao_vivo:importar
-│       └── ImportarConfrontosCommand.php              # NOVO: confrontos:importar
+│       ├── ImportarConfrontosCommand.php              # NOVO: confrontos:importar
+│       └── ImportarCotacoesCommand.php                # NOVO: confrontos_cotacoes:importar
 ├── Enums/
 │   ├── AlvoRegra.php                                  # NOVO
 │   ├── Funcao.php                                     # ALTERADO
@@ -238,7 +245,7 @@ app/
 │       ├── NaoPermitidosResource.php                  # NOVO
 │       └── UsuariosConfiguracoesResource.php          # NOVO
 ├── Models/
-│   ├── Campeonatos.php                                # NOVO
+│   ├── Campeonatos.php                                # NOVO: codigos_desativados()
 │   ├── CampeonatosNaoPermitidos.php                   # NOVO
 │   ├── ClientesConfiguracoesPadrao.php                # REMOVIDO
 │   ├── Configuracoes.php                              # NOVO: atual()
@@ -265,7 +272,9 @@ app/
 │   ├── ConfiguracoesVendedores.php                    # NOVO (R-16)
 │   ├── IdentificacaoPublico.php                       # NOVO (R-09)
 │   ├── ImportacaoAoVivo.php                           # NOVO (R-07)
-│   ├── ImportacaoPreJogo.php                          # NOVO (R-02 a R-04)
+│   ├── ImportacaoCampeonatos.php                      # NOVO (R-02, R-04)
+│   ├── ImportacaoConfrontos.php                       # NOVO (R-02)
+│   ├── ImportacaoCotacoes.php                         # NOVO (R-02, R-03)
 │   ├── ListagemConfrontos.php                         # NOVO (R-11)
 │   ├── ProvedorCotacoes.php                           # NOVO (R-05)
 │   ├── Publico.php                                    # NOVO: quem está vendo

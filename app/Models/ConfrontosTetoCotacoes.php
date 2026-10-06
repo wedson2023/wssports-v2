@@ -6,30 +6,29 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 /**
- * Registro único com as configurações que cada cliente novo recebe no cadastro.
+ * Teto de cotação por código (registro único), igual para todos os públicos.
  */
-class ClientesConfiguracoesPadrao extends Model
+class ConfrontosTetoCotacoes extends Model
 {
     use SoftDeletes;
 
-    protected $table = 'clientes_configuracoes_padrao';
+    protected $table = 'confrontos_teto_cotacoes';
 
     /**
      * @var list<string>
      */
-    protected $fillable = ClientesConfiguracoes::CAMPOS;
+    protected $fillable = ['tetos'];
 
     /**
      * @return array<string, string>
      */
     protected function casts(): array
     {
-        return ClientesConfiguracoes::CASTS;
+        return [
+            'tetos' => 'array',
+        ];
     }
 
-    /**
-     * O registro único de configurações padrão (criado pelo seeder).
-     */
     public static function atual(): self
     {
         return static::query()->firstOrFail();

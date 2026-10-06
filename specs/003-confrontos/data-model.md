@@ -96,7 +96,7 @@ haver dois manuais não excluídos com o mesmo `nome` e `pais` (checado na aplic
 | time_casa / time_fora | varchar(150) | |
 | escudo_casa / escudo_fora | varchar(255) null | |
 | esporte | varchar(50) | como o provedor envia (`FUTEBOL`, `BASQUETE`…) |
-| situacao | varchar(20) | `SituacaoConfronto`: `'Aguardando'`, `'Encerrado'`, `'Cancelado'`, `'Adiado'` |
+| situacao | varchar(20) | `SituacaoConfronto`: `'Aguardando'`, `'Encerrado'`, `'Cancelado'`, `'Adiado'`, `'Bloqueado'` (suspenso pelo provedor) |
 | data_inicio | datetime | UTC |
 | ativo | boolean | padrão `true` |
 | manual | boolean | padrão `false` |
@@ -222,7 +222,9 @@ marcar de novo restaura (R-12).
 
 ## Ciclos de vida
 
-- **Confronto do provedor**: criado pela carga (`Aguardando`); `situacao` acompanha o provedor; sai
+- **Confronto do provedor**: criado pela carga dos confrontos, ainda sem cotações (`cotacoes = {}`,
+  `quantidade_cotacoes = 0`), que chegam na carga das cotações seguinte; `situacao` acompanha o
+  provedor; sai
   do pré-jogo quando `data_inicio` passa ou a situação muda; nunca é apagado pela carga.
 - **Confronto manual**: criado pelo painel (`Aguardando`); pode ir para `Adiado` ou `Cancelado`;
   exclusão lógica (com o campeonato manual, em cascata).
@@ -234,7 +236,7 @@ marcar de novo restaura (R-12).
 
 | Origem | Regra |
 |---|---|
-| Carga do provedor | estrutura de topo inválida recusa tudo; confronto com código de cotação fora da lista, valor negativo ou não numérico, data inválida ou campeonato ausente é ignorado e vai para o log |
+| Cargas do provedor | resposta que não é lista recusa aquela carga; item com cotação negativa ou não numérica, data inválida, campeonato ainda inexistente (confrontos) ou confronto ainda inexistente (cotações) é ignorado e vai para o log |
 | Porcentagens | −100 a 100, 2 casas; códigos da lista (`odd1`…`odd323`, `jogador`) |
 | Teto | ≥ 1,00, 2 casas |
 | Cotação de confronto | > 0; código com base zero no provedor é recusado |

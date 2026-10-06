@@ -43,9 +43,6 @@ Route::middleware(['auth:api', 'garantir_acesso'])->group(function () {
     Route::apiResource('clientes.meios-pagamento', ClientesMeiosPagamentoController::class)
         ->except('show')->parameters(['meios-pagamento' => 'meio_pagamento']);  // pertença ao cliente checada no controller
 
-    Route::get('clientes-configuracoes-padrao', [ClientesConfiguracoesPadraoController::class, 'show']);
-    Route::put('clientes-configuracoes-padrao', [ClientesConfiguracoesPadraoController::class, 'update']);
-
     Route::post('clientes-promocoes/{promocao}/estornar', [ClientesPromocoesController::class, 'estornar']);
     Route::apiResource('clientes-promocoes', ClientesPromocoesController::class)
         ->parameters(['clientes-promocoes' => 'promocao']);
@@ -54,7 +51,8 @@ Route::middleware(['auth:api', 'garantir_acesso'])->group(function () {
 
 Rotas com `{cliente}` usam `->missing(fn () => abort(404, 'Cliente não encontrado.'))`; com
 `{promocao}`, "Promoção não encontrada."; com `{meio_pagamento}`, "Meio de pagamento não
-encontrado.". Total: **15 rotas** na área do cliente e **23** no painel.
+encontrado.". Total: **15 rotas** na área do cliente e **21** no painel (as 2 rotas de
+`clientes-configuracoes-padrao` foram removidas pela spec 003 em 2026-10-01).
 
 ## Regras gerais
 
@@ -182,8 +180,6 @@ campos `pix_*` nulos. No painel, sem `clientes.ver_dados_completos`, `pix_chave`
 | `POST /api/clientes/{cliente}/meios-pagamento` | `clientes.editar` | campos de `meio_pagamento` | `201` | `404`; `422` |
 | `PUT/PATCH /api/clientes/{cliente}/meios-pagamento/{meio_pagamento}` | `clientes.editar` | campos; `principal?` | `200` | `404`; `422` |
 | `DELETE /api/clientes/{cliente}/meios-pagamento/{meio_pagamento}` | `clientes.editar` | — | `204` | `404` |
-| `GET /api/clientes-configuracoes-padrao` | `clientes.editar_configuracoes_padrao` (Admin/Supervisor) | — | `200` | `403` |
-| `PUT /api/clientes-configuracoes-padrao` | `clientes.editar_configuracoes_padrao` (Admin/Supervisor) | todos os campos | `200` | `403`; `422` |
 
 ```json
 {
