@@ -30,22 +30,23 @@ foram resolvidas nas sessões de Clarifications da [spec](spec.md).
 
 ## R-03. Permissões de clientes e restrição por função
 
-- **Decisão (revisada em 2026-09-29, Princípio VI)**: as 10 permissões (guard `api`, formato
-  `<recurso>.<acao>`) ficam no enum `App\Enums\Funcao`, no mesmo padrão das permissões de
+- **Decisão (revisada em 2026-09-29, Princípio VI)**: as 9 permissões (guard `api`, formato
+  `<recurso>.<acao>`; eram 10, e a `clientes.editar_configuracoes_padrao` foi removida pela spec
+  003 em 2026-10-01) ficam no enum `App\Enums\Funcao`, no mesmo padrão das permissões de
   usuários: constante `PERMISSOES_CLIENTES` (e `PERMISSOES_CLIENTES_RESTRITAS`), com
   `permissoes_padrao()` e `pode_usar()` definindo o que cada função recebe e pode usar:
   - Admin, Supervisor e Gerente: `clientes.listar`, `clientes.ver_dados_completos`,
     `clientes.editar`, `clientes.editar_configuracoes`, `clientes.movimentar_saldo`,
     `clientes_promocoes.gerenciar`;
   - somente Admin e Supervisor: `clientes.excluir`, `clientes.restaurar`,
-    `clientes.editar_configuracoes_padrao`, `clientes_promocoes.estornar`;
+    `clientes_promocoes.estornar`;
   - Vendedor: nenhuma.
 
   Os controllers do painel checam as duas coisas numa única verificação
   (`Funcao::usuario_pode()`, usado pelo trait `GarantirPermissaoCliente`): permissão direta **e**
   função permitida (FR-055, FR-081).
 - **Distribuição padrão**: `Funcao::permissoes_padrao()` inclui as permissões de clientes — Admin e
-  Supervisor recebem as 10, Gerente as 6 não restritas, Vendedor nenhuma. Usuários novos recebem
+  Supervisor recebem as 9, Gerente as 6 não restritas, Vendedor nenhuma. Usuários novos recebem
   no cadastro (fluxo da spec 001, sem mudar o `UsuariosController`); o `PapeisPermissoesSeeder`
   cria as permissões e o `ClientesSeeder` distribui aos usuários já existentes.
 - **Histórico**: a primeira versão usava um enum separado (`PermissaoCliente`) só com o Admin
@@ -99,8 +100,7 @@ foram resolvidas nas sessões de Clarifications da [spec](spec.md).
 ## R-07. Nomes das tabelas e colunas
 
 - **Decisão**: prefixo `clientes_` em todas as tabelas ligadas a `clientes` (v1.9.0):
-  `clientes_transacoes`, `clientes_configuracoes`, `clientes_configuracoes_padrao`,
-  `clientes_meios_pagamento`, `clientes_promocoes`, `clientes_codigos_recuperacao`.
+  `clientes_transacoes`, `clientes_configuracoes`, `clientes_meios_pagamento`, `clientes_promocoes`, `clientes_codigos_recuperacao`.
   `ddi` e `email` usam a exceção de siglas consagradas (v1.13.0). Nomes completos no lugar das
   abreviações do sistema antigo (`v_apostas_minima` → `valor_minimo_aposta`,
   `v_converter_bonus` → `valor_maximo_conversao`...). FKs no formato `<tabela>_id`.
@@ -164,8 +164,9 @@ foram resolvidas nas sessões de Clarifications da [spec](spec.md).
 
 ## R-15. Cadastro atômico e promoção de primeiro cadastro
 
-- **Decisão**: serviço `App\Services\CadastroClientes` cria, numa transação, o cliente, a cópia das
-  configurações padrão (com `aceita_promocao` do cadastro) e, se `aceita_promocao`, um crédito por
+- **Decisão**: serviço `App\Services\CadastroClientes` cria, numa transação, o cliente, as
+  configurações (valores padrão das colunas, com `aceita_promocao` do cadastro; sem tabela padrão
+  desde a spec 003) e, se `aceita_promocao`, um crédito por
   promoção vigente de `Primeiro cadastro` (origem `Promoção`, `referencia_id` = id da promoção). O
   evento `ClienteCadastrado` sai depois do commit.
 

@@ -8,6 +8,7 @@ use App\Http\Requests\StoreUsuariosRequest;
 use App\Http\Requests\UpdateUsuariosRequest;
 use App\Http\Resources\UsuariosResource;
 use App\Models\Usuarios;
+use App\Services\ConfiguracoesVendedores;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
@@ -76,6 +77,11 @@ class UsuariosController extends Controller implements HasMiddleware
 
             $usuario->assignRole($request->validated('funcao'));
             $usuario->atribuir_permissoes_padrao($request->user());
+
+            // vendedor novo nasce com a configuração de um colega (ou com os valores padrão)
+            if ($usuario->funcao() === Funcao::Vendedor) {
+                app(ConfiguracoesVendedores::class)->criar_para($usuario);
+            }
 
             return $usuario;
         });

@@ -29,5 +29,6 @@ class DatabaseSeeder extends Seeder
         Usuarios::factory()->count(2)->subordinado_de($gerente)->create();
 
         $this->call(ClientesSeeder::class);
+        $this->call(ConfrontosSeeder::class);
     }
 }

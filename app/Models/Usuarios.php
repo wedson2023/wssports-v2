@@ -7,6 +7,7 @@ use Database\Factories\UsuariosFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -117,6 +118,39 @@ class Usuarios extends Authenticatable implements JWTSubject
         }
 
         return $ids_encontrados;
+    }
+
+    /**
+     * Ids deste usuário e de todos os superiores, subindo a hierarquia (no máximo 4 níveis).
+     * Superiores excluídos logicamente interrompem a subida.
+     *
+     * @return list<int>
+     */
+    public function ids_hierarquia_acima(): array
+    {
+        $ids = [$this->id];
+        $id_superior = $this->usuarios_id;
+
+        while ($id_superior !== null && ! in_array($id_superior, $ids, true)) {
+            $superior = static::find($id_superior, ['id', 'usuarios_id']);
+
+            if ($superior === null) {
+                break;
+            }
+
+            $ids[] = $superior->id;
+            $id_superior = $superior->usuarios_id;
+        }
+
+        return $ids;
+    }
+
+    /**
+     * Configurações de listagem e aposta do vendedor.
+     */
+    public function configuracoes(): HasOne
+    {
+        return $this->hasOne(UsuariosConfiguracoes::class, 'usuarios_id');
     }
 
     /**

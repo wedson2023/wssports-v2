@@ -39,7 +39,6 @@ enum Funcao: string
         'clientes.movimentar_saldo',
         'clientes.excluir',
         'clientes.restaurar',
-        'clientes.editar_configuracoes_padrao',
         'clientes_promocoes.gerenciar',
         'clientes_promocoes.estornar',
     ];
@@ -50,8 +49,51 @@ enum Funcao: string
     public const PERMISSOES_CLIENTES_RESTRITAS = [
         'clientes.excluir',
         'clientes.restaurar',
-        'clientes.editar_configuracoes_padrao',
         'clientes_promocoes.estornar',
+    ];
+
+    /**
+     * Todas as permissões de confrontos: cotações, campeonatos, confrontos, não permitidos e
+     * configurações.
+     */
+    public const PERMISSOES_CONFRONTOS = [
+        'porcentagens_vendedores.editar',
+        'porcentagens_clientes.editar',
+        'porcentagens_campeonatos.editar',
+        'porcentagens_confrontos.editar',
+        'confrontos_teto_cotacoes.editar',
+        'campeonatos.listar',
+        'campeonatos.cadastrar',
+        'campeonatos.editar',
+        'campeonatos.excluir',
+        'campeonatos.alterar_situacao',
+        'campeonatos.favoritar',
+        'confrontos.listar',
+        'confrontos.cadastrar',
+        'confrontos.editar',
+        'confrontos.excluir',
+        'confrontos.alterar_situacao',
+        'campeonatos_nao_permitidos.gerenciar',
+        'confrontos_nao_permitidos.gerenciar',
+        'confrontos_ao_vivo_nao_permitidos.gerenciar',
+        'usuarios_configuracoes.editar',
+        'visitantes_configuracoes.editar',
+    ];
+
+    /**
+     * Permissões de confrontos que o Gerente recebe e pode usar; as demais são só de Admin e
+     * Supervisor.
+     */
+    public const PERMISSOES_CONFRONTOS_GERENTE = [
+        'porcentagens_vendedores.editar',
+        'porcentagens_campeonatos.editar',
+        'porcentagens_confrontos.editar',
+        'campeonatos.listar',
+        'confrontos.listar',
+        'campeonatos_nao_permitidos.gerenciar',
+        'confrontos_nao_permitidos.gerenciar',
+        'confrontos_ao_vivo_nao_permitidos.gerenciar',
+        'usuarios_configuracoes.editar',
     ];
 
     /**
@@ -105,8 +147,9 @@ enum Funcao: string
         }
 
         $permissoes_clientes = array_filter(self::PERMISSOES_CLIENTES, fn (string $permissao) => $this->pode_usar($permissao));
+        $permissoes_confrontos = array_filter(self::PERMISSOES_CONFRONTOS, fn (string $permissao) => $this->pode_usar($permissao));
 
-        return [...self::PERMISSOES_GESTAO, ...array_values($permissoes_clientes)];
+        return [...self::PERMISSOES_GESTAO, ...array_values($permissoes_clientes), ...array_values($permissoes_confrontos)];
     }
 
     /**
@@ -119,11 +162,20 @@ enum Funcao: string
     }
 
     /**
-     * Se a função pode usar a permissão: Vendedor não acessa a gestão de clientes e Gerente não
-     * usa as permissões de clientes restritas (excluir, restaurar, configurações padrão e estorno).
+     * Se a função pode usar a permissão: Vendedor não acessa a gestão de clientes nem a de
+     * confrontos; Gerente não usa as permissões de clientes restritas (excluir, restaurar e
+     * estorno) e, das de confrontos, só as de PERMISSOES_CONFRONTOS_GERENTE.
      */
     public function pode_usar(string $permissao): bool
     {
+        if (in_array($permissao, self::PERMISSOES_CONFRONTOS, true)) {
+            return match ($this) {
+                self::Admin, self::Supervisor => true,
+                self::Gerente => in_array($permissao, self::PERMISSOES_CONFRONTOS_GERENTE, true),
+                self::Vendedor => false,
+            };
+        }
+
         if (! in_array($permissao, self::PERMISSOES_CLIENTES, true)) {
             return true;
         }

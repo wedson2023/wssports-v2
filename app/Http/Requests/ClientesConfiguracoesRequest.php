@@ -5,7 +5,7 @@ namespace App\Http\Requests;
 use Illuminate\Foundation\Http\FormRequest;
 
 /**
- * Configurações de aposta e saque (do cliente ou as padrão), com limites coerentes.
+ * Configurações de aposta e saque do cliente, com limites coerentes.
  */
 class ClientesConfiguracoesRequest extends FormRequest
 {

@@ -1,7 +1,7 @@
 {
     "info": {
         "name": "WSSports API",
-        "description": "Rotas da API do WSSports (autenticação JWT, gestão de usuários e permissões, área do cliente e gestão de clientes).\n\nVariáveis da coleção:\n- base_url: endereço da API (ex.: http://127.0.0.1:8000/api)\n- token: token do painel, preenchido pelo login e refresh do painel\n- token_cliente: token do cliente, preenchido pelo cadastro, login e refresh da área do cliente\n- usuario_id / permissao: usados nas rotas de usuários e permissões\n- cliente_id / meio_pagamento_id / promocao_id: usados nas rotas de clientes\n\nFluxo: execute 'Login' (painel) e 'Login do cliente'; as demais rotas usam os tokens salvos.",
+        "description": "Rotas da API do WSSports (autenticação JWT, gestão de usuários e permissões, área do cliente, gestão de clientes e confrontos).\n\nVariáveis da coleção:\n- base_url: endereço da API (ex.: http://127.0.0.1:8000/api)\n- token: token do painel, preenchido pelo login e refresh do painel\n- token_cliente: token do cliente, preenchido pelo cadastro, login e refresh da área do cliente\n- usuario_id / permissao: usados nas rotas de usuários e permissões\n- cliente_id / meio_pagamento_id / promocao_id: usados nas rotas de clientes\n- campeonato_id / confronto_id / registro_id / gerente_id: usados nas rotas de confrontos\n\nFluxo: execute 'Login' (painel) e 'Login do cliente'; as demais rotas usam os tokens salvos.",
         "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
     },
     "auth": {
@@ -53,6 +53,26 @@
         {
             "key": "promocao_id",
             "value": "1",
+            "type": "string"
+        },
+        {
+            "key": "campeonato_id",
+            "value": "1",
+            "type": "string"
+        },
+        {
+            "key": "confronto_id",
+            "value": "1",
+            "type": "string"
+        },
+        {
+            "key": "registro_id",
+            "value": "1",
+            "type": "string"
+        },
+        {
+            "key": "gerente_id",
+            "value": "3",
             "type": "string"
         }
     ],
@@ -1509,62 +1529,6 @@
                     }
                 },
                 {
-                    "name": "Configurações padrão",
-                    "request": {
-                        "method": "GET",
-                        "header": [
-                            {
-                                "key": "Accept",
-                                "value": "application/json"
-                            },
-                            {
-                                "key": "Content-Type",
-                                "value": "application/json"
-                            }
-                        ],
-                        "url": {
-                            "raw": "{{base_url}}/clientes-configuracoes-padrao",
-                            "host": [
-                                "{{base_url}}"
-                            ],
-                            "path": [
-                                "clientes-configuracoes-padrao"
-                            ]
-                        },
-                        "description": "clientes.editar_configuracoes_padrao (Admin/Supervisor)."
-                    }
-                },
-                {
-                    "name": "Alterar configurações padrão",
-                    "request": {
-                        "method": "PUT",
-                        "header": [
-                            {
-                                "key": "Accept",
-                                "value": "application/json"
-                            },
-                            {
-                                "key": "Content-Type",
-                                "value": "application/json"
-                            }
-                        ],
-                        "url": {
-                            "raw": "{{base_url}}/clientes-configuracoes-padrao",
-                            "host": [
-                                "{{base_url}}"
-                            ],
-                            "path": [
-                                "clientes-configuracoes-padrao"
-                            ]
-                        },
-                        "description": "clientes.editar_configuracoes_padrao. Vale só para novos cadastros.",
-                        "body": {
-                            "mode": "raw",
-                            "raw": "{\n    \"realizar_aposta\": true,\n    \"apostar_ao_vivo\": true,\n    \"apostar_outros_esportes\": true,\n    \"cancelar_aposta\": false,\n    \"aceita_promocao\": true,\n    \"bloquear_saque\": false,\n    \"quantidade_minima_opcoes\": 1,\n    \"quantidade_maxima_opcoes\": 20,\n    \"valor_minimo_aposta\": \"2.00\",\n    \"valor_maximo_aposta\": \"1000.00\",\n    \"premio_maximo\": \"50000.00\",\n    \"valor_maximo_diario\": \"5000.00\",\n    \"valor_maximo_saque_diario\": \"5000.00\",\n    \"quantidade_maxima_saques_diaria\": 5,\n    \"odd_minima\": \"1.90\",\n    \"odd_maxima\": \"30.00\",\n    \"esportes_permitidos\": [\n        \"FUTEBOL\",\n        \"HOQUEI NO GELO\",\n        \"BAISEBOL\"\n    ]\n}"
-                        }
-                    }
-                },
-                {
                     "name": "Listar promoções",
                     "request": {
                         "method": "GET",
@@ -1741,6 +1705,1278 @@
                             "mode": "raw",
                             "raw": "{\n    \"motivo\": \"Promoção criada por engano\"\n}"
                         }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Confrontos (público e painel)",
+            "item": [
+                {
+                    "name": "Listagem pública (pré-jogo)",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/publico/confrontos?tipo=pre_jogo&dia=hoje&busca=&esporte=FUTEBOL&somente_favoritos=0&fuso_horario=-03:00&por_pagina=50",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "publico",
+                                "confrontos"
+                            ],
+                            "query": [
+                                {
+                                    "key": "tipo",
+                                    "value": "pre_jogo"
+                                },
+                                {
+                                    "key": "dia",
+                                    "value": "hoje"
+                                },
+                                {
+                                    "key": "busca",
+                                    "value": ""
+                                },
+                                {
+                                    "key": "esporte",
+                                    "value": "FUTEBOL"
+                                },
+                                {
+                                    "key": "somente_favoritos",
+                                    "value": "0"
+                                },
+                                {
+                                    "key": "fuso_horario",
+                                    "value": "-03:00"
+                                },
+                                {
+                                    "key": "por_pagina",
+                                    "value": "50"
+                                }
+                            ]
+                        },
+                        "description": "Sem login. Com token de cliente ou do painel, aplica as regras de quem está vendo (enviar o Authorization manualmente). dia: hoje, amanha, depois_de_amanha; com busca, procura nos três dias. 422 filtros inválidos; 429 mais de 120 por minuto do mesmo IP.",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    }
+                },
+                {
+                    "name": "Listagem pública (ao vivo)",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/publico/confrontos?tipo=ao_vivo&fuso_horario=-03:00",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "publico",
+                                "confrontos"
+                            ],
+                            "query": [
+                                {
+                                    "key": "tipo",
+                                    "value": "ao_vivo"
+                                },
+                                {
+                                    "key": "fuso_horario",
+                                    "value": "-03:00"
+                                }
+                            ]
+                        },
+                        "description": "Jogos em andamento com placar, minuto e travado (cotações zeradas). 403 quando o ao vivo está desligado.",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    }
+                },
+                {
+                    "name": "Listar campeonatos",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/campeonatos?busca=&ativo=&favorito=&manual=&pais=&por_pagina=20",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "campeonatos"
+                            ],
+                            "query": [
+                                {
+                                    "key": "busca",
+                                    "value": ""
+                                },
+                                {
+                                    "key": "ativo",
+                                    "value": ""
+                                },
+                                {
+                                    "key": "favorito",
+                                    "value": ""
+                                },
+                                {
+                                    "key": "manual",
+                                    "value": ""
+                                },
+                                {
+                                    "key": "pais",
+                                    "value": ""
+                                },
+                                {
+                                    "key": "por_pagina",
+                                    "value": "20"
+                                }
+                            ]
+                        },
+                        "description": "campeonatos.listar."
+                    }
+                },
+                {
+                    "name": "Consultar campeonato",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/campeonatos/{{campeonato_id}}",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "campeonatos",
+                                "{{campeonato_id}}"
+                            ]
+                        },
+                        "description": "campeonatos.listar."
+                    }
+                },
+                {
+                    "name": "Cadastrar campeonato manual",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/campeonatos",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "campeonatos"
+                            ]
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"nome\": \"Copa Local\",\n    \"pais\": \"Brasil\",\n    \"bandeira\": \"br\"\n}"
+                        },
+                        "description": "campeonatos.cadastrar (Admin e Supervisor). 201."
+                    }
+                },
+                {
+                    "name": "Alterar campeonato manual",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/campeonatos/{{campeonato_id}}",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "campeonatos",
+                                "{{campeonato_id}}"
+                            ]
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"nome\": \"Copa Local\",\n    \"pais\": \"Brasil\",\n    \"bandeira\": \"br\"\n}"
+                        },
+                        "description": "campeonatos.editar. 422 se não for manual."
+                    }
+                },
+                {
+                    "name": "Excluir campeonato manual",
+                    "request": {
+                        "method": "DELETE",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/campeonatos/{{campeonato_id}}",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "campeonatos",
+                                "{{campeonato_id}}"
+                            ]
+                        },
+                        "description": "campeonatos.excluir. Exclusão lógica com os confrontos dele. 204."
+                    }
+                },
+                {
+                    "name": "Ativar/desativar campeonato",
+                    "request": {
+                        "method": "PATCH",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/campeonatos/{{campeonato_id}}/situacao",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "campeonatos",
+                                "{{campeonato_id}}",
+                                "situacao"
+                            ]
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"ativo\": false\n}"
+                        },
+                        "description": "campeonatos.alterar_situacao (Admin e Supervisor)."
+                    }
+                },
+                {
+                    "name": "Favoritar campeonato",
+                    "request": {
+                        "method": "PATCH",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/campeonatos/{{campeonato_id}}/favorito",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "campeonatos",
+                                "{{campeonato_id}}",
+                                "favorito"
+                            ]
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"favorito\": true\n}"
+                        },
+                        "description": "campeonatos.favoritar (Admin e Supervisor)."
+                    }
+                },
+                {
+                    "name": "Listar confrontos",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/confrontos?busca=&campeonatos_id=&ativo=&manual=&esporte=&situacao=&dia=&fuso_horario=-03:00&por_pagina=20",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "confrontos"
+                            ],
+                            "query": [
+                                {
+                                    "key": "busca",
+                                    "value": ""
+                                },
+                                {
+                                    "key": "campeonatos_id",
+                                    "value": ""
+                                },
+                                {
+                                    "key": "ativo",
+                                    "value": ""
+                                },
+                                {
+                                    "key": "manual",
+                                    "value": ""
+                                },
+                                {
+                                    "key": "esporte",
+                                    "value": ""
+                                },
+                                {
+                                    "key": "situacao",
+                                    "value": ""
+                                },
+                                {
+                                    "key": "dia",
+                                    "value": ""
+                                },
+                                {
+                                    "key": "fuso_horario",
+                                    "value": "-03:00"
+                                },
+                                {
+                                    "key": "por_pagina",
+                                    "value": "20"
+                                }
+                            ]
+                        },
+                        "description": "confrontos.listar. Mostra a cotação do provedor."
+                    }
+                },
+                {
+                    "name": "Consultar confronto",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/confrontos/{{confronto_id}}",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "confrontos",
+                                "{{confronto_id}}"
+                            ]
+                        },
+                        "description": "confrontos.listar. Com jogadores."
+                    }
+                },
+                {
+                    "name": "Cadastrar confronto manual",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/confrontos",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "confrontos"
+                            ]
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"campeonatos_id\": \"{{campeonato_id}}\",\n    \"time_casa\": \"Time A\",\n    \"time_fora\": \"Time B\",\n    \"esporte\": \"FUTEBOL\",\n    \"data_inicio\": \"2026-12-31 16:00\",\n    \"fuso_horario\": \"-03:00\",\n    \"cotacoes\": {\n        \"odd1\": 2,\n        \"odd2\": 3.1,\n        \"odd3\": 3.5\n    }\n}"
+                        },
+                        "description": "confrontos.cadastrar. Campeonato manual; data futura; cotações ≥ 1,00. 201."
+                    }
+                },
+                {
+                    "name": "Alterar confronto manual",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/confrontos/{{confronto_id}}",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "confrontos",
+                                "{{confronto_id}}"
+                            ]
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"campeonatos_id\": \"{{campeonato_id}}\",\n    \"time_casa\": \"Time A\",\n    \"time_fora\": \"Time B\",\n    \"esporte\": \"FUTEBOL\",\n    \"data_inicio\": \"2026-12-31 16:00\",\n    \"cotacoes\": {\n        \"odd1\": 2.1\n    },\n    \"situacao\": \"Cancelado\"\n}"
+                        },
+                        "description": "confrontos.editar. situacao: Aguardando, Adiado ou Cancelado. 422 se não for manual."
+                    }
+                },
+                {
+                    "name": "Excluir confronto manual",
+                    "request": {
+                        "method": "DELETE",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/confrontos/{{confronto_id}}",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "confrontos",
+                                "{{confronto_id}}"
+                            ]
+                        },
+                        "description": "confrontos.excluir. 204."
+                    }
+                },
+                {
+                    "name": "Ativar/desativar confronto",
+                    "request": {
+                        "method": "PATCH",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/confrontos/{{confronto_id}}/situacao",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "confrontos",
+                                "{{confronto_id}}",
+                                "situacao"
+                            ]
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"ativo\": false\n}"
+                        },
+                        "description": "confrontos.alterar_situacao (Admin e Supervisor). Some também do ao vivo."
+                    }
+                },
+                {
+                    "name": "Listar ao vivo (painel)",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/confrontos-ao-vivo?por_pagina=20",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "confrontos-ao-vivo"
+                            ],
+                            "query": [
+                                {
+                                    "key": "por_pagina",
+                                    "value": "20"
+                                }
+                            ]
+                        },
+                        "description": "confrontos.listar. Jogos dentro da permanência, com travado."
+                    }
+                },
+                {
+                    "name": "Listar não permitidos de campeonato",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/campeonatos-nao-permitidos?alvo=&por_pagina=20",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "campeonatos-nao-permitidos"
+                            ],
+                            "query": [
+                                {
+                                    "key": "alvo",
+                                    "value": ""
+                                },
+                                {
+                                    "key": "por_pagina",
+                                    "value": "20"
+                                }
+                            ]
+                        },
+                        "description": "campeonatos_nao_permitidos.gerenciar."
+                    }
+                },
+                {
+                    "name": "Marcar campeonato como não permitido",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/campeonatos-nao-permitidos",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "campeonatos-nao-permitidos"
+                            ]
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"campeonatos_id\": \"{{campeonato_id}}\",\n    \"alvo\": \"Vendedores\",\n    \"usuarios_id\": null,\n    \"clientes_id\": null\n}"
+                        },
+                        "description": "campeonatos_nao_permitidos.gerenciar. alvo: Vendedores (dono = quem marca ou subordinado), Clientes (todos ou clientes_id) e Todos — os dois últimos só Admin e Supervisor. 201 novo; 200 já existia."
+                    }
+                },
+                {
+                    "name": "Desmarcar campeonato",
+                    "request": {
+                        "method": "DELETE",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/campeonatos-nao-permitidos/{{registro_id}}",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "campeonatos-nao-permitidos",
+                                "{{registro_id}}"
+                            ]
+                        },
+                        "description": "campeonatos_nao_permitidos.gerenciar. Exclusão lógica. 204."
+                    }
+                },
+                {
+                    "name": "Listar não permitidos de confronto (pré-jogo)",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/confrontos-nao-permitidos?alvo=&por_pagina=20",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "confrontos-nao-permitidos"
+                            ],
+                            "query": [
+                                {
+                                    "key": "alvo",
+                                    "value": ""
+                                },
+                                {
+                                    "key": "por_pagina",
+                                    "value": "20"
+                                }
+                            ]
+                        },
+                        "description": "confrontos_nao_permitidos.gerenciar."
+                    }
+                },
+                {
+                    "name": "Marcar confronto (pré-jogo) como não permitido",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/confrontos-nao-permitidos",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "confrontos-nao-permitidos"
+                            ]
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"confrontos_id\": \"{{confronto_id}}\",\n    \"alvo\": \"Vendedores\",\n    \"usuarios_id\": null,\n    \"clientes_id\": null\n}"
+                        },
+                        "description": "confrontos_nao_permitidos.gerenciar. alvo: Vendedores (dono = quem marca ou subordinado), Clientes (todos ou clientes_id) e Todos — os dois últimos só Admin e Supervisor. 201 novo; 200 já existia."
+                    }
+                },
+                {
+                    "name": "Desmarcar confronto (pré-jogo)",
+                    "request": {
+                        "method": "DELETE",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/confrontos-nao-permitidos/{{registro_id}}",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "confrontos-nao-permitidos",
+                                "{{registro_id}}"
+                            ]
+                        },
+                        "description": "confrontos_nao_permitidos.gerenciar. Exclusão lógica. 204."
+                    }
+                },
+                {
+                    "name": "Listar não permitidos de confronto (ao vivo)",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/confrontos-ao-vivo-nao-permitidos?alvo=&por_pagina=20",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "confrontos-ao-vivo-nao-permitidos"
+                            ],
+                            "query": [
+                                {
+                                    "key": "alvo",
+                                    "value": ""
+                                },
+                                {
+                                    "key": "por_pagina",
+                                    "value": "20"
+                                }
+                            ]
+                        },
+                        "description": "confrontos_ao_vivo_nao_permitidos.gerenciar."
+                    }
+                },
+                {
+                    "name": "Marcar confronto (ao vivo) como não permitido",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/confrontos-ao-vivo-nao-permitidos",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "confrontos-ao-vivo-nao-permitidos"
+                            ]
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"confrontos_id\": \"{{confronto_id}}\",\n    \"alvo\": \"Vendedores\",\n    \"usuarios_id\": null,\n    \"clientes_id\": null\n}"
+                        },
+                        "description": "confrontos_ao_vivo_nao_permitidos.gerenciar. alvo: Vendedores (dono = quem marca ou subordinado), Clientes (todos ou clientes_id) e Todos — os dois últimos só Admin e Supervisor. 201 novo; 200 já existia."
+                    }
+                },
+                {
+                    "name": "Desmarcar confronto (ao vivo)",
+                    "request": {
+                        "method": "DELETE",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/confrontos-ao-vivo-nao-permitidos/{{registro_id}}",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "confrontos-ao-vivo-nao-permitidos",
+                                "{{registro_id}}"
+                            ]
+                        },
+                        "description": "confrontos_ao_vivo_nao_permitidos.gerenciar. Exclusão lógica. 204."
+                    }
+                },
+                {
+                    "name": "Porcentagens de um usuário",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/porcentagens-vendedores/{{usuario_id}}",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "porcentagens-vendedores",
+                                "{{usuario_id}}"
+                            ]
+                        },
+                        "description": "porcentagens_vendedores.editar. O próprio usuário ou alguém da sub-hierarquia."
+                    }
+                },
+                {
+                    "name": "Alterar porcentagens de um usuário",
+                    "request": {
+                        "method": "PATCH",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/porcentagens-vendedores/{{usuario_id}}",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "porcentagens-vendedores",
+                                "{{usuario_id}}"
+                            ]
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"tipo\": \"pre_jogo\",\n    \"valores\": {\n        \"odd1\": -5,\n        \"jogador\": -2\n    }\n}"
+                        },
+                        "description": "porcentagens_vendedores.editar. tipo: pre_jogo ou ao_vivo; valores (só os códigos alterados) ou todos (os 324 códigos); −100 a 100; 0 remove o código."
+                    }
+                },
+                {
+                    "name": "Porcentagens dos clientes",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/porcentagens-clientes?clientes_id=",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "porcentagens-clientes"
+                            ],
+                            "query": [
+                                {
+                                    "key": "clientes_id",
+                                    "value": ""
+                                }
+                            ]
+                        },
+                        "description": "porcentagens_clientes.editar (Admin e Supervisor). Sem clientes_id = regra geral (também para visitantes)."
+                    }
+                },
+                {
+                    "name": "Alterar porcentagens dos clientes",
+                    "request": {
+                        "method": "PATCH",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/porcentagens-clientes",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "porcentagens-clientes"
+                            ]
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"tipo\": \"pre_jogo\",\n    \"clientes_id\": null,\n    \"todos\": -10\n}"
+                        },
+                        "description": "porcentagens_clientes.editar. A regra de um cliente soma com a geral."
+                    }
+                },
+                {
+                    "name": "Porcentagens de um campeonato",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/porcentagens-campeonatos/{{campeonato_id}}",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "porcentagens-campeonatos",
+                                "{{campeonato_id}}"
+                            ]
+                        },
+                        "description": "porcentagens_campeonatos.editar."
+                    }
+                },
+                {
+                    "name": "Alterar porcentagens de um campeonato",
+                    "request": {
+                        "method": "PATCH",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/porcentagens-campeonatos/{{campeonato_id}}",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "porcentagens-campeonatos",
+                                "{{campeonato_id}}"
+                            ]
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"alvo\": \"Vendedores\",\n    \"usuarios_id\": null,\n    \"valores\": {\n        \"odd1\": -1\n    }\n}"
+                        },
+                        "description": "porcentagens_campeonatos.editar. alvo Clientes e Todos só Admin e Supervisor."
+                    }
+                },
+                {
+                    "name": "Cotação de um confronto",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/porcentagens-confrontos/{{confronto_id}}",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "porcentagens-confrontos",
+                                "{{confronto_id}}"
+                            ]
+                        },
+                        "description": "porcentagens_confrontos.editar. Cotação do provedor e regras visíveis."
+                    }
+                },
+                {
+                    "name": "Alterar cotação de um confronto",
+                    "request": {
+                        "method": "PATCH",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/porcentagens-confrontos/{{confronto_id}}",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "porcentagens-confrontos",
+                                "{{confronto_id}}"
+                            ]
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"alvo\": \"Clientes\",\n    \"cotacoes\": {\n        \"odd1\": 1.95\n    }\n}"
+                        },
+                        "description": "porcentagens_confrontos.editar. Guarda a diferença para a cotação do provedor; 422 se o código estiver indisponível."
+                    }
+                },
+                {
+                    "name": "Teto de cotação",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/confrontos-teto-cotacoes",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "confrontos-teto-cotacoes"
+                            ]
+                        },
+                        "description": "confrontos_teto_cotacoes.editar (Admin e Supervisor)."
+                    }
+                },
+                {
+                    "name": "Alterar teto de cotação",
+                    "request": {
+                        "method": "PATCH",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/confrontos-teto-cotacoes",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "confrontos-teto-cotacoes"
+                            ]
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"valores\": {\n        \"odd1\": 250\n    }\n}"
+                        },
+                        "description": "confrontos_teto_cotacoes.editar. Tetos ≥ 1,00; 0 remove."
+                    }
+                },
+                {
+                    "name": "Configurações dos vendedores de um gerente",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/usuarios-configuracoes?gerente_id={{gerente_id}}&por_pagina=20",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "usuarios-configuracoes"
+                            ],
+                            "query": [
+                                {
+                                    "key": "gerente_id",
+                                    "value": "{{gerente_id}}"
+                                },
+                                {
+                                    "key": "por_pagina",
+                                    "value": "20"
+                                }
+                            ]
+                        },
+                        "description": "usuarios_configuracoes.editar."
+                    }
+                },
+                {
+                    "name": "Alterar configurações de vendedores",
+                    "request": {
+                        "method": "PATCH",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/usuarios-configuracoes",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "usuarios-configuracoes"
+                            ]
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"usuarios_id\": \"{{gerente_id}}\",\n    \"ao_vivo_habilitado\": false\n}"
+                        },
+                        "description": "usuarios_configuracoes.editar. usuarios_id = alcance: Admin → supervisor, gerente ou vendedor; Supervisor → gerente ou vendedor; Gerente → vendedor. Só os campos enviados mudam."
+                    }
+                },
+                {
+                    "name": "Configurações dos visitantes",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/visitantes-configuracoes",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "visitantes-configuracoes"
+                            ]
+                        },
+                        "description": "visitantes_configuracoes.editar (Admin e Supervisor)."
+                    }
+                },
+                {
+                    "name": "Alterar configurações dos visitantes",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/visitantes-configuracoes",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "visitantes-configuracoes"
+                            ]
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"esportes_permitidos\": [\n        \"FUTEBOL\",\n        \"HOQUEI NO GELO\",\n        \"BAISEBOL\"\n    ],\n    \"apostar_outros_esportes\": true,\n    \"ao_vivo_habilitado\": true\n}"
+                        },
+                        "description": "visitantes_configuracoes.editar."
                     }
                 }
             ]

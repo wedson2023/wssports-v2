@@ -58,7 +58,8 @@ de afiliados, depósito via PIX/gateway e saque, bônus, rollover, cashback e ca
   (`clientes_configuracoes_padrao`), criado pelo seeder com os valores da antiga `travas_gerentes`
   e editável pelo painel; cada cliente novo recebe uma cópia. As configurações do cliente ficam na
   tabela `clientes_configuracoes`, e toda tabela ligada a uma tabela principal leva o nome dela
-  como prefixo.
+  como prefixo. (Revisto em 2026-10-01 pela spec 003: não existe mais tabela padrão; os valores
+  iniciais ficam no padrão das colunas de `clientes_configuracoes`.)
 - Q: Qual deve ser o tamanho mínimo da senha do cliente? → A: Mínimo de 8 caracteres, com pelo
   menos uma letra e um número.
 - Q: Na gestão de clientes, dados pessoais aparecem completos ou mascarados? → A: Mascarados por
@@ -113,6 +114,13 @@ de afiliados, depósito via PIX/gateway e saque, bônus, rollover, cashback e ca
 - Q: No estorno, o que acontece quando o saldo promocional não cobre o valor recebido? → A: Retira
   só do saldo promocional da modalidade: o valor recebido ou, se não houver tudo isso, zera o
   saldo promocional. Nada fica pendente e o saldo real nunca é usado.
+
+### Session 2026-10-01 (alteração feita pela spec 003-confrontos)
+
+- Q: Existe tabela padrão de configurações? → A: Não, para nenhum público (decisão do responsável
+  na spec 003). A tabela `clientes_configuracoes_padrao`, as rotas `clientes-configuracoes-padrao`
+  e a permissão `clientes.editar_configuracoes_padrao` foram removidas. O cliente novo nasce com os
+  valores padrão das colunas de `clientes_configuracoes` (os mesmos de FR-050).
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -670,11 +678,11 @@ transações de estorno.
   - limites de saque por dia do calendário: valor máximo em reais e quantidade máxima de saques;
   - odd mínima e odd máxima;
   - esportes permitidos (lista).
-- **FR-049**: O sistema DEVE ter um registro único de configurações padrão (tabela
-  `clientes_configuracoes_padrao`), com os mesmos campos de FR-048. No cadastro, cada cliente novo
-  DEVE receber uma cópia desses valores em `clientes_configuracoes` (FR-011); alterar o padrão
-  depois NÃO DEVE mudar as configurações de clientes já cadastrados.
-- **FR-050**: O seeder DEVE criar o registro de configurações padrão com os valores da antiga
+- **FR-049**: Não existe tabela padrão (revisão de 2026-10-01, spec 003). No cadastro, a
+  configuração do cliente novo DEVE ser criada com os valores padrão das colunas de
+  `clientes_configuracoes` (FR-011); mudar esses valores exige uma migration e NÃO muda as
+  configurações de clientes já cadastrados.
+- **FR-050**: Os valores padrão das colunas de `clientes_configuracoes` DEVEM ser os da antiga
   `travas_gerentes` e `travas_vendedors` (`database.sql`):
   - realizar aposta, apostar ao vivo e apostar em outros esportes: liberado; cancelar aposta:
     bloqueado;
@@ -686,9 +694,8 @@ transações de estorno.
   - limite de saque por dia: R$ 5.000,00 e 5 saques (antigo `limite_saque`);
   - odd mínima 1,90 e odd máxima 30,00;
   - esportes permitidos: FUTEBOL, HOQUEI NO GELO e BAISEBOL (grafados como no sistema antigo).
-- **FR-051**: Somente Admin e Supervisor com a permissão `clientes.editar_configuracoes_padrao`
-  DEVEM poder consultar e alterar as configurações padrão, seguindo as regras de coerência de
-  FR-052.
+- **FR-051**: (Removido em 2026-10-01 pela spec 003.) Não há rota nem permissão para editar
+  configurações padrão.
 - **FR-052**: Os limites DEVEM ser coerentes: quantidade mínima de opções ≥ 1 e ≤ quantidade
   máxima; valor mínimo por aposta > 0 e ≤ valor máximo; odd mínima ≥ 1,00 e ≤ odd máxima; prêmio
   máximo e valor máximo por dia > 0; valor máximo de saque por dia > 0; quantidade máxima de saques
@@ -747,8 +754,9 @@ transações de estorno.
   excluídos, com a mesma busca e paginação de FR-056 (a busca considera o valor original).
 - **FR-062**: As novas permissões (`clientes.listar`, `clientes.ver_dados_completos`,
   `clientes.editar`, `clientes.editar_configuracoes`, `clientes.movimentar_saldo`,
-  `clientes.excluir`, `clientes.restaurar`, `clientes.editar_configuracoes_padrao`,
-  `clientes_promocoes.gerenciar` e `clientes_promocoes.estornar`) DEVEM ser criadas no
+  `clientes.excluir`, `clientes.restaurar`, `clientes_promocoes.gerenciar` e
+  `clientes_promocoes.estornar`; a `clientes.editar_configuracoes_padrao` foi removida pela spec
+  003) DEVEM ser criadas no
   `spatie/laravel-permission` pelo seeder e seguir as regras de atribuição da spec 001 (permissões
   diretas no usuário; um gestor só dá a subordinados permissões que ele mesmo tem), respeitando as
   restrições por função de FR-055 e FR-081.
@@ -836,11 +844,9 @@ transações de estorno.
   ligação obrigatória), valor, saldo anterior, saldo posterior, autor (sistema ou usuário do
   painel), observação e data. A sequência de transações de cada saldo explica o valor atual dele.
 - **Configurações do cliente** (tabela `clientes_configuracoes`): limites e permissões de aposta e
-  de saque de um cliente e se ele aceita promoções (uma por cliente), criadas no cadastro como
-  cópia das configurações padrão e alteradas pelo painel (exceto `aceita_promocao`, que o cliente
-  também altera).
-- **Configurações padrão** (tabela `clientes_configuracoes_padrao`): registro único com os valores
-  que cada cliente novo recebe; criado pelo seeder e editável pelo painel.
+  de saque de um cliente e se ele aceita promoções (uma por cliente), criadas no cadastro com os
+  valores padrão das colunas e alteradas pelo painel (exceto `aceita_promocao`, que o cliente
+  também altera). A tabela padrão (`clientes_configuracoes_padrao`) foi removida pela spec 003.
 - **Meio de pagamento do cliente** (tabela `clientes_meios_pagamento`): Pix (nome do titular, tipo e
   chave) ou Transferência bancária (banco, agência, conta, dígito, tipo de conta e titular); um
   deles é o principal.
@@ -883,8 +889,8 @@ transações de estorno.
 - "Movimentação de apostas" na gestão de clientes depende da spec de apostas e será acrescentada
   por ela.
 - Permissões padrão por função, no mesmo padrão das permissões de usuários (`Funcao`): Admin e
-  Supervisor recebem as 10 permissões de clientes e de promoções; Gerente recebe as 6 que pode usar
-  (todas, exceto excluir, restaurar, configurações padrão e estorno); Vendedor não recebe nenhuma.
+  Supervisor recebem as 9 permissões de clientes e de promoções; Gerente recebe as 6 que pode usar
+  (todas, exceto excluir, restaurar e estorno); Vendedor não recebe nenhuma.
   Ajustes individuais continuam pela gestão de permissões da spec 001.
 - Os valores de enum seguem a constituição v1.13.0: gravados em português, com a primeira letra
   maiúscula e acentos (ex.: `'Não informado'`, `'Ajuste manual'`, `'Primeiro depósito'`,

@@ -4,8 +4,6 @@ namespace Database\Factories;
 
 use App\Enums\Genero;
 use App\Models\Clientes;
-use App\Models\ClientesConfiguracoes;
-use App\Models\ClientesConfiguracoesPadrao;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Facades\Hash;
 
@@ -40,14 +38,12 @@ class ClientesFactory extends Factory
     }
 
     /**
-     * Todo cliente nasce com uma cópia das configurações padrão.
+     * Todo cliente nasce com configurações; os valores vêm do padrão das colunas.
      */
     public function configure(): static
     {
         return $this->afterCreating(function (Clientes $cliente) {
-            $cliente->configuracoes()->create(
-                ClientesConfiguracoesPadrao::atual()->only(ClientesConfiguracoes::CAMPOS)
-            );
+            $cliente->configuracoes()->create([]);
         });
     }
 

@@ -6,8 +6,6 @@ use App\Enums\CategoriaPromocao;
 use App\Enums\OrigemTransacao;
 use App\Events\ClienteCadastrado;
 use App\Models\Clientes;
-use App\Models\ClientesConfiguracoes;
-use App\Models\ClientesConfiguracoesPadrao;
 use App\Models\ClientesPromocoes;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Arr;
@@ -15,8 +13,8 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
 /**
- * Cadastro do cliente, feito de forma atômica: cliente, cópia das configurações padrão e
- * promoções de primeiro cadastro (quando ele aceita receber promoções).
+ * Cadastro do cliente, feito de forma atômica: cliente, configurações (com os valores padrão das
+ * colunas) e promoções de primeiro cadastro (quando ele aceita receber promoções).
  */
 class CadastroClientes
 {
@@ -33,10 +31,8 @@ class CadastroClientes
             $cliente = DB::transaction(function () use ($dados, $aceita_promocao) {
                 $cliente = Clientes::create([...Arr::except($dados, 'aceita_promocao'), 'ativo' => true]);
 
-                $cliente->configuracoes()->create([
-                    ...ClientesConfiguracoesPadrao::atual()->only(ClientesConfiguracoes::CAMPOS),
-                    'aceita_promocao' => $aceita_promocao,
-                ]);
+                // sem tabela padrão: os demais valores vêm do padrão das colunas
+                $cliente->configuracoes()->create(['aceita_promocao' => $aceita_promocao]);
 
                 if ($aceita_promocao) {
                     $this->aplicar_promocoes_de_cadastro($cliente);

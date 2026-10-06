@@ -77,9 +77,11 @@ primeira letra maiúscula e acentos (v1.13.0). Decisões em [research.md](resear
 | esportes_permitidos | json | lista de nomes, pelo menos 1; sem FK (R-08) |
 | created_at / updated_at / deleted_at | timestamp | |
 
-## Tabela `clientes_configuracoes_padrao` (registro único)
+## Valores padrão das colunas de `clientes_configuracoes`
 
-Mesmas colunas de `clientes_configuracoes`, sem `clientes_id`. Valores do seeder:
+A tabela `clientes_configuracoes_padrao` foi removida pela spec 003 (2026-10-01): não existe tabela
+padrão. Os valores abaixo passaram a ser o padrão das colunas de `clientes_configuracoes` e valem
+para todo cliente novo:
 
 | Campo | Valor |
 |---|---|
@@ -178,7 +180,6 @@ promoção (bloqueia alterar valor, tipo de ganho, categoria e modalidade).
   `ClientesMeiosPagamento`, `ClientesCodigosRecuperacao`.
 - `ClientesTransacoes` belongsTo `Clientes` e `Usuarios` (autor, opcional).
 - `ClientesPromocoes` belongsTo `Usuarios` (`estorno_usuarios_id`).
-- `ClientesConfiguracoesPadrao::atual()` devolve o registro único.
 
 ## Enums (`app/Enums`)
 
@@ -212,7 +213,6 @@ Definidas em `App\Enums\Funcao` (`PERMISSOES_CLIENTES`), no mesmo padrão das de
 | `clientes_promocoes.gerenciar` | Admin, Supervisor, Gerente | Admin, Supervisor, Gerente |
 | `clientes.excluir` | Admin, Supervisor | Admin, Supervisor |
 | `clientes.restaurar` | Admin, Supervisor | Admin, Supervisor |
-| `clientes.editar_configuracoes_padrao` | Admin, Supervisor | Admin, Supervisor |
 | `clientes_promocoes.estornar` | Admin, Supervisor | Admin, Supervisor |
 
 ## Estados
