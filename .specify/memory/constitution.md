@@ -1,15 +1,16 @@
 <!--
 Sync Impact Report
-- Version change: 1.16.0 → 1.17.0 (MINOR: nova exceção à regra de prefixo de tabelas)
-- Princípios modificados:
-  - I. Nomenclatura em snake_case: acrescentada a "Exceção — tabelas de porcentagem de cotação
-    (`porcentagens_*`)", que usam `porcentagens` como nome principal em vez do nome da tabela a
-    que se ligam
-- Princípios adicionados: nenhum
-- Seções alteradas: nenhuma
-- Impacto: a spec 003-confrontos deixa de violar o Princípio I (achado C1 do /speckit-analyze);
-  o item "porcentagens_*" do Complexity Tracking do plan.md da spec 003 passa a ter base na
-  constituição. Nenhum código existente muda (specs 001 e 002 não têm tabelas de porcentagem)
+- Version change: 1.17.0 → 1.18.0 (MINOR: novo princípio)
+- Princípios modificados: nenhum
+- Princípios adicionados:
+  - VII. Consulta ao Sistema Antigo: consultar o sistema antigo (`wssports.bet`, somente leitura)
+    ao especificar, planejar e implementar; propor melhorias e refatorações; apresentar ao
+    responsável toda diferença de comportamento; registrar no `research.md` o que foi consultado
+- Seções alteradas:
+  - Fluxo de Desenvolvimento: o Constitution Check passa a verificar os Princípios I a VII
+- Impacto: vale para as próximas specs, planos e implementações. As specs 001 a 004 já
+  implementadas não são alteradas; a comparação feita para a spec 004 (rota de apostas) apontou
+  pendências (noteiro, redução de cotação por cliente, limite duplo) que seguem como Next Actions
 - Seções adicionadas: nenhuma
 - Seções removidas: nenhuma
 - TODOs pendentes: nenhum
@@ -156,6 +157,32 @@ violar o escopo estrito de edição.
 decidir um desvio sem consultar o responsável tira dele o controle sobre a arquitetura do
 projeto.
 
+### VII. Consulta ao Sistema Antigo
+
+- Ao especificar (`/speckit-specify`, `/speckit-clarify`), planejar (`/speckit-plan`) ou
+  implementar (`/speckit-implement` ou alteração manual) uma funcionalidade, o sistema antigo
+  DEVE ser consultado para entender como ela funcionava: rotas, controllers, models, regras de
+  negócio, validações e mensagens. O sistema antigo fica na pasta
+  `C:\Users\wedso\OneDrive\Área de Trabalho\projetos\wssports.bet` (repositório
+  `wssports/api`).
+- O sistema antigo é **somente leitura**: nenhum arquivo dele DEVE ser criado, alterado ou
+  excluído.
+- A partir do que foi consultado, DEVEM ser propostas melhorias e refatorações para o novo
+  sistema (ex.: regras fixas no código passando a ser configuração, consultas com SQL
+  concatenado passando a usar o query builder, cálculos de dinheiro sem ponto flutuante). O
+  sistema antigo é referência de comportamento, não de estrutura: o código novo continua
+  seguindo os padrões do novo sistema (Princípio VI).
+- Toda diferença de comportamento em relação ao sistema antigo (regra removida, alterada ou
+  acrescentada) DEVE ser apresentada ao responsável antes de entrar na spec, no plano ou no
+  código, e a decisão DEVE ficar registrada na spec (Clarifications) ou no `research.md`.
+- O `research.md` da feature DEVE listar os arquivos do sistema antigo consultados e resumir
+  como a funcionalidade funcionava. Quando a funcionalidade não existir no sistema antigo, isso
+  DEVE ser registrado explicitamente.
+
+**Rationale**: o novo sistema substitui um sistema em produção; conhecer o comportamento antigo
+evita perder regras de negócio de que os usuários dependem e permite corrigir, de forma
+consciente, os problemas que ele tinha, em vez de repeti-los ou descartá-los sem decisão.
+
 ## Stack e Restrições Técnicas
 
 - Backend: PHP ^8.2 com Laravel ^12.
@@ -184,7 +211,7 @@ de memória previsíveis mesmo com grandes volumes de dados.
 ## Fluxo de Desenvolvimento
 
 - Toda spec, plano e lista de tarefas DEVE passar pelo Constitution Check, verificando os
-  Princípios I a VI antes da implementação.
+  Princípios I a VII antes da implementação.
 - Tarefas geradas DEVEM declarar explicitamente os arquivos que serão alterados, para que o
   escopo de edição (Princípio IV) seja verificável.
 - Antes de concluir cada tarefa, DEVE ser executada a revisão de legibilidade do código
@@ -224,4 +251,4 @@ de memória previsíveis mesmo com grandes volumes de dados.
 - A conformidade DEVE ser verificada em todo plano (Constitution Check), em toda lista de
   tarefas e em toda revisão de código.
 
-**Version**: 1.17.0 | **Ratified**: 2026-09-25 | **Last Amended**: 2026-10-01
+**Version**: 1.18.0 | **Ratified**: 2026-09-25 | **Last Amended**: 2026-10-08
