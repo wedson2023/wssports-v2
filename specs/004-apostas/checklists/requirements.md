@@ -47,3 +47,5 @@
   Aguardando, aposta mista permitida com regras do ao vivo, apostas de cliente canceladas e editadas
   por Gerente, Supervisor e Admin com permissão, vendedor com cancelamento liberado e prazo de 5
   minutos): os 16 itens continuam passando.
+- Revalidado em 2026-10-07 após o /speckit-plan (rota pública de detalhe do confronto com todas as
+  cotações, FR-065a e FR-065b): os 16 itens continuam passando.

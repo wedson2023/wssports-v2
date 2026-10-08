@@ -93,6 +93,14 @@ de cassino e frontend."
   com as próprias apostas.
 - Q: O vendedor novo já nasce podendo cancelar as próprias apostas, e com que prazo? → A: Sim,
   `cancelar_aposta` liberado por padrão, com `tempo_cancelamento_aposta` de 5 minutos.
+- Q: Como o apostador vê as demais cotações (além das 4 da listagem) e os jogadores para apostar?
+  → A: Por uma rota pública de detalhe de um confronto (pré-jogo e ao vivo), separada da listagem,
+  como no sistema antigo; a listagem continua com as 4 cotações principais.
+
+### Session 2026-10-08
+
+- Q: A mensagem do bilhete deve ser copiada para a aposta? → A: Não. Fica só nas configurações (do
+  vendedor e do site), e o comprovante usa sempre a mensagem atual.
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -541,6 +549,11 @@ e conferir que as cotações de jogador somem da listagem e são recusadas na ap
    `limite_valor_apostado` de um confronto, **Then** o novo limite vale para as próximas apostas.
 7. **Given** alterações de configuração com valores incoerentes (mínimo maior que o máximo, tempo
    negativo, percentual fora de 0 a 100), **When** são enviadas, **Then** são recusadas.
+8. **Given** um confronto visível ao público, **When** o detalhe dele é pedido, **Then** vêm todas
+   as cotações disponíveis já ajustadas para quem pede, com o nome do mercado, e os jogadores
+   quando `apostar_jogadores` estiver liberado; a cotação de cada código é igual à aceita na aposta.
+9. **Given** um confronto não permitido, fora do período ou de esporte não permitido para o
+   público, **When** o detalhe é pedido, **Then** a resposta é 404.
 
 ---
 
@@ -691,8 +704,10 @@ e conferir que as cotações de jogador somem da listagem e são recusadas na ap
      reduzido até o total ficar igual ao prêmio máximo.
   O cálculo vale para todos os públicos e também na validação de código.
 - **FR-026**: A aposta DEVE gravar os valores usados no momento da confirmação (multiplicador,
-  prêmio máximo, ganho por múltiplos palpites, comissão, comissão sobre o prêmio, tempo de
-  cancelamento e mensagem do bilhete), que não mudam se a configuração mudar depois.
+  prêmio máximo, ganho por múltiplos palpites, comissão, comissão sobre o prêmio e tempo de
+  cancelamento), que não mudam se a configuração mudar depois. A mensagem do bilhete NÃO é gravada
+  na aposta: o comprovante usa sempre a mensagem atual das configurações (do vendedor da aposta ou,
+  nas apostas de cliente e de visitante, a do site).
 
 **Mudança de cotação e cotação indisponível**
 
@@ -886,8 +901,8 @@ e conferir que as cotações de jogador somem da listagem e são recusadas na ap
   (1), `quantidade_maxima_opcoes` (20), `valor_minimo_aposta` (2,00), `valor_maximo_aposta`
   (1.000,00), `odd_minima` (1,00), `premio_maximo` (5.000,00), `multiplicador` (1.000),
   `ganho_multiplo_palpites` (0%) e `horas_validade_codigo` (48).
-- **FR-062**: `configuracoes` DEVE ganhar a `mensagem_bilhete` do site (usada nas apostas de
-  clientes) e o nome do sistema, se ainda não existir, para o comprovante.
+- **FR-062**: `configuracoes` DEVE ganhar a `mensagem_bilhete` do site (usada nas apostas sem
+  vendedor: de clientes e de visitantes ainda Pendentes) e o nome do sistema, se ainda não existir, para o comprovante.
 - **FR-063**: `confrontos` DEVE ganhar `limite_valor_apostado` (padrão 50.000,00) e
   `confrontos_ao_vivo` também (padrão 5.000,00). Usuários do painel com a permissão própria (ex.:
   `confrontos.alterar_limite`) DEVEM poder alterar o limite de um confronto.
@@ -898,6 +913,18 @@ e conferir que as cotações de jogador somem da listagem e são recusadas na ap
   cotações de jogador), `periodo_jogos` (esconder os dias além do período) e
   `data_travamento_sistema` (vendedor e visitante: nada a partir da data e só jogos que começam
   antes dela), para que o exibido seja igual ao que pode ser apostado.
+
+**Detalhe do confronto**
+
+- **FR-065a**: O sistema DEVE ter uma rota pública de detalhe de um confronto do pré-jogo e uma de
+  um jogo do ao vivo, separadas da listagem, que identificam o público pelo token como a listagem
+  (spec 003) e devolvem todas as cotações disponíveis (diferentes de zero) já ajustadas pelo mesmo
+  cálculo (FR-007), com o nome legível de cada mercado, e os jogadores com as cotações ajustadas
+  quando `apostar_jogadores` estiver liberado (só pré-jogo). No ao vivo, jogo travado devolve as
+  cotações zeradas e marcado como travado.
+- **FR-065b**: O detalhe DEVE seguir as mesmas regras de exibição da listagem (FR-008): confronto
+  não visível para o público responde como inexistente (404). O detalhe tem o mesmo limite de
+  tentativas da listagem pública.
 
 **Rotinas e documentação**
 
@@ -910,7 +937,7 @@ e conferir que as cotações de jogador somem da listagem e são recusadas na ap
 - **Aposta** (`apostas`): uma aposta de visitante, vendedor ou cliente. Código único, nome do
   apostador, valor, cotação total, prêmio, valor acrescido, comissão, valores de configuração
   usados (comissão sobre o prêmio, multiplicador, prêmio máximo, ganho por múltiplos palpites,
-  tempo de cancelamento, mensagem do bilhete), situação (Pendente, Em análise, Ativa, Recusada,
+  tempo de cancelamento), situação (Pendente, Em análise, Ativa, Recusada,
   Expirada, Cancelada), resultado (Aguardando, Vencedor, Perdedor; apurado em outra spec), tipo
   (Pré-jogo, Ao vivo), forma de pagamento (Dinheiro, Saldo, Promoção esportes), preferência de
   aceitar alterações, vendedor (usuário), cliente, datas de recebimento, decisão, validação e
