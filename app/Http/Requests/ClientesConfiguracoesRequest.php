@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use App\Http\Requests\Concerns\ConfiguracoesAposta;
 use Illuminate\Foundation\Http\FormRequest;
 
 /**
@@ -9,7 +10,14 @@ use Illuminate\Foundation\Http\FormRequest;
  */
 class ClientesConfiguracoesRequest extends FormRequest
 {
+    use ConfiguracoesAposta;
+
     private const VALOR = 'regex:/^\d{1,13}(\.\d{1,2})?$/';
+
+    /**
+     * Regras de aposta do cliente acrescentadas pela spec 004 (opcionais no envio).
+     */
+    private const CAMPOS_APOSTA = ['apostar_jogadores', 'periodo_jogos', 'delay_ao_vivo', 'multiplicador', 'ganho_multiplo_palpites'];
 
     public function authorize(): bool
     {
@@ -41,6 +49,7 @@ class ClientesConfiguracoesRequest extends FormRequest
             'odd_maxima' => ['required', 'numeric', 'min:1'],
             'esportes_permitidos' => ['required', 'array', 'min:1'],
             'esportes_permitidos.*' => ['required', 'string', 'max:50', 'distinct'],
+            ...$this->regras_aposta(self::CAMPOS_APOSTA),
         ];
     }
 
@@ -68,6 +77,7 @@ class ClientesConfiguracoesRequest extends FormRequest
             'esportes_permitidos.min' => 'Informe pelo menos um esporte permitido.',
             'esportes_permitidos.*.max' => 'Cada esporte deve ter no máximo 50 caracteres.',
             'esportes_permitidos.*.distinct' => 'Os esportes permitidos não podem se repetir.',
+            ...$this->mensagens_aposta(self::CAMPOS_APOSTA),
         ];
     }
 }

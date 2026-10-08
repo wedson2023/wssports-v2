@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\PeriodoJogos;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
@@ -16,6 +17,18 @@ class VisitantesConfiguracoes extends Model
         'esportes_permitidos',
         'apostar_outros_esportes',
         'ao_vivo_habilitado',
+        'apostar_jogadores',
+        'periodo_jogos',
+        'data_travamento_sistema',
+        'quantidade_minima_opcoes',
+        'quantidade_maxima_opcoes',
+        'valor_minimo_aposta',
+        'valor_maximo_aposta',
+        'odd_minima',
+        'premio_maximo',
+        'multiplicador',
+        'ganho_multiplo_palpites',
+        'horas_validade_codigo',
     ];
 
     protected $table = 'visitantes_configuracoes';
@@ -34,6 +47,18 @@ class VisitantesConfiguracoes extends Model
             'esportes_permitidos' => 'array',
             'apostar_outros_esportes' => 'boolean',
             'ao_vivo_habilitado' => 'boolean',
+            'apostar_jogadores' => 'boolean',
+            'periodo_jogos' => PeriodoJogos::class,
+            'data_travamento_sistema' => 'datetime',
+            'quantidade_minima_opcoes' => 'integer',
+            'quantidade_maxima_opcoes' => 'integer',
+            'valor_minimo_aposta' => 'decimal:2',
+            'valor_maximo_aposta' => 'decimal:2',
+            'odd_minima' => 'decimal:2',
+            'premio_maximo' => 'decimal:2',
+            'multiplicador' => 'integer',
+            'ganho_multiplo_palpites' => 'decimal:2',
+            'horas_validade_codigo' => 'integer',
         ];
     }
 

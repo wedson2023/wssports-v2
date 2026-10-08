@@ -19,7 +19,7 @@ class ConfrontosAoVivo extends Model
     /**
      * @var list<string>
      */
-    protected $fillable = [];
+    protected $fillable = ['limite_valor_apostado'];
 
     /**
      * @return array<string, string>
@@ -36,6 +36,7 @@ class ConfrontosAoVivo extends Model
             'quantidade_cotacoes' => 'integer',
             'cotacoes' => 'array',
             'ultima_atualizacao_em' => 'datetime',
+            'limite_valor_apostado' => 'decimal:2',
         ];
     }
 

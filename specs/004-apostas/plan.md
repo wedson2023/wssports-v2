@@ -125,6 +125,7 @@ da fila (`queue:work --queue=apostas,default`)
 |---|---|---|---|
 | `app/Services/CalculoCotacoes.php` | `ajustar()` aceita a lista de códigos (padrão = os 4 da listagem) e novo `ajustar_jogadores()` | FR-007, R-03 | autorizado (2026-10-07) |
 | `app/Services/ListagemConfrontos.php` | Usar `RegrasExibicao` (métodos privados de exibição saem daqui); período de jogos, data de travamento e exclusão do jogo que está no ao vivo do pré-jogo | FR-017, FR-065, R-04 | comportamento decidido na spec; extração autorizada (2026-10-07) |
+| `app/Services/ConfiguracoesVendedores.php` | `criar_para` não copia os limites de venda do colega (nascem com o padrão da coluna) | FR-059 | autorizado (2026-10-08) |
 | `app/Services/CadastroClientes.php` | Criar o registro de `clientes_rollovers` ao creditar o bônus de Primeiro cadastro com rollover > 0 | FR-047 | decidido na spec |
 | `app/Jobs/EstornarPromocao.php` | Marcar `cancelado_em` nos rollovers pendentes da promoção estornada | R-13 | autorizado (2026-10-07) |
 | `app/Enums/Funcao.php` | `PERMISSOES_APOSTAS`; `confrontos.alterar_limite` em `PERMISSOES_CONFRONTOS`; `pode_usar()` e `permissoes_padrao()` (o Vendedor passa a receber as de apostas) | FR-003, R-15 | autorizado (2026-10-07) |
@@ -136,7 +137,7 @@ da fila (`queue:work --queue=apostas,default`)
 | `app/Http/Requests/UsuariosConfiguracoesRequest.php` | Regras e mensagens dos campos novos (FR-064) | FR-059 | decidido na spec |
 | `app/Http/Requests/ClientesConfiguracoesRequest.php` | Idem | FR-060 | decidido na spec |
 | `app/Http/Requests/VisitantesConfiguracoesRequest.php` | Idem | FR-061 | decidido na spec |
-| `app/Http/Resources/UsuariosConfiguracoesResource.php`, `ClientesConfiguracoesResource.php` | Devolver os campos novos | FR-059, FR-060 | decidido na spec |
+| `app/Http/Resources/UsuariosConfiguracoesResource.php` | Devolver os campos novos (o `ClientesConfiguracoesResource` não muda: já devolve `ClientesConfiguracoes::CAMPOS`) | FR-059, FR-060 | decidido na spec |
 | `routes/api.php` | 16 rotas novas e `use` dos controllers | contrato | autorizado (2026-10-07) |
 | `routes/console.php` | Agendar `apostas:expirar_pendentes` e `apostas:recusar_analises_presas` | R-18 | autorizado (2026-10-07) |
 | `database/seeders/PapeisPermissoesSeeder.php` | Criar também as permissões de apostas | R-15 | autorizado (2026-10-07) |
@@ -145,7 +146,7 @@ da fila (`queue:work --queue=apostas,default`)
 | `specs/002-clientes/*` e `specs/003-confrontos/*` | Registrar o rollover no cadastro (002) e as regras novas da listagem e o limite por confronto (003) | constituição (artefatos coerentes com o código) | autorizado (2026-10-07) |
 
 **Nenhum outro arquivo existente muda**: `SaldoClientes` (usado como está), `IdentificacaoPublico`,
-`Publico`, `AlcanceHierarquia`, `ConfiguracoesVendedores`, `VisitantesConfiguracoesController`
+`Publico`, `AlcanceHierarquia`, `VisitantesConfiguracoesController`
 (usa `VisitantesConfiguracoes::CAMPOS`), middlewares, `config/*`, cargas do
 provedor (o upsert não inclui `limite_valor_apostado`) e os controllers de confrontos (o limite usa
 um controller novo).
@@ -211,6 +212,8 @@ app/
 │   │   ├── ApostasPalpitesController.php              # NOVO: cancelar/restaurar palpite
 │   │   ├── AreaClienteApostasController.php           # NOVO: cliente cria e acompanha
 │   │   ├── CancelamentoApostasController.php          # NOVO
+│   │   ├── Concerns/
+│   │   │   └── RespostasApostas.php                   # NOVO: limite de tentativas e status da criação
 │   │   ├── ConfrontosLimitesController.php            # NOVO: limite por confronto
 │   │   ├── PublicoApostasController.php               # NOVO: visitante, comprovante, consulta
 │   │   ├── PublicoConfrontosDetalheController.php     # NOVO: detalhe com todas as cotações
@@ -218,6 +221,8 @@ app/
 │   ├── Requests/
 │   │   ├── ApostasRequest.php                         # NOVO: corpo da aposta
 │   │   ├── ApostaVisitanteRequest.php                 # NOVO: + limite por IP
+│   │   ├── Concerns/
+│   │   │   └── ConfiguracoesAposta.php                # NOVO: regras FR-064 dos 3 requests de configuração
 │   │   ├── ConsultarApostasRequest.php                # NOVO: até 50 códigos
 │   │   ├── LimiteConfrontoRequest.php                 # NOVO
 │   │   ├── ClientesConfiguracoesRequest.php           # ALTERADO
@@ -226,7 +231,6 @@ app/
 │   └── Resources/
 │       ├── ComprovanteApostaResource.php              # NOVO
 │       ├── SimulacaoApostaResource.php                # NOVO
-│       ├── ClientesConfiguracoesResource.php          # ALTERADO
 │       └── UsuariosConfiguracoesResource.php          # ALTERADO
 ├── Jobs/
 │   ├── DecidirApostaAoVivo.php                        # NOVO (R-01, R-02)
@@ -262,6 +266,7 @@ app/
 │   ├── RolloverClientes.php                           # NOVO: somar e desfazer (R-13)
 │   └── ValidacaoCodigos.php                           # NOVO: simulação e validação
 └── Support/
+    ├── Apostador.php                                  # NOVO: apostador e as regras do seu público
     ├── CodigoAposta.php                               # NOVO: gerador de 8 caracteres (R-09)
     ├── FusoSistema.php                                # NOVO: -03:00 (R-05)
     └── NomesCotacoes.php                              # NOVO: nomes dos mercados (R-17)

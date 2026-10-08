@@ -35,6 +35,7 @@ class Confrontos extends Model
         'data_inicio',
         'cotacoes',
         'quantidade_cotacoes',
+        'limite_valor_apostado',
     ];
 
     /**
@@ -52,6 +53,7 @@ class Confrontos extends Model
             'odd7_sorteada' => 'boolean',
             'quantidade_cotacoes' => 'integer',
             'cotacoes' => 'array',
+            'limite_valor_apostado' => 'decimal:2',
         ];
     }
 

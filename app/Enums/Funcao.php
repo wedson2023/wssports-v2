@@ -78,6 +78,27 @@ enum Funcao: string
         'confrontos_ao_vivo_nao_permitidos.gerenciar',
         'usuarios_configuracoes.editar',
         'visitantes_configuracoes.editar',
+        'confrontos.alterar_limite',
+    ];
+
+    /**
+     * Todas as permissões de apostas: apostar e validar código (só Vendedor), cancelar (todos)
+     * e cancelar com jogo iniciado e editar palpites (só Gerente, Supervisor e Admin).
+     */
+    public const PERMISSOES_APOSTAS = [
+        'apostas.criar',
+        'apostas.validar',
+        'apostas.cancelar',
+        'apostas.cancelar_iniciada',
+        'apostas.editar',
+    ];
+
+    /**
+     * Permissões de apostas que só o Vendedor usa: quem aposta e valida código é só ele.
+     */
+    public const PERMISSOES_APOSTAS_VENDEDOR = [
+        'apostas.criar',
+        'apostas.validar',
     ];
 
     /**
@@ -143,13 +164,22 @@ enum Funcao: string
     public function permissoes_padrao(): array
     {
         if ($this === self::Vendedor) {
-            return [];
+            return array_values(array_filter(self::PERMISSOES_APOSTAS, fn (string $permissao) => $this->pode_usar($permissao)));
         }
+
+        // os gestores recebem todas as de apostas para poder repassá-las aos vendedores que
+        // cadastram; o pode_usar impede que eles mesmos apostem ou validem códigos
+        $permissoes_apostas = self::PERMISSOES_APOSTAS;
 
         $permissoes_clientes = array_filter(self::PERMISSOES_CLIENTES, fn (string $permissao) => $this->pode_usar($permissao));
         $permissoes_confrontos = array_filter(self::PERMISSOES_CONFRONTOS, fn (string $permissao) => $this->pode_usar($permissao));
 
-        return [...self::PERMISSOES_GESTAO, ...array_values($permissoes_clientes), ...array_values($permissoes_confrontos)];
+        return [
+            ...self::PERMISSOES_GESTAO,
+            ...array_values($permissoes_clientes),
+            ...array_values($permissoes_confrontos),
+            ...$permissoes_apostas,
+        ];
     }
 
     /**
@@ -164,10 +194,19 @@ enum Funcao: string
     /**
      * Se a função pode usar a permissão: Vendedor não acessa a gestão de clientes nem a de
      * confrontos; Gerente não usa as permissões de clientes restritas (excluir, restaurar e
-     * estorno) e, das de confrontos, só as de PERMISSOES_CONFRONTOS_GERENTE.
+     * estorno) e, das de confrontos, só as de PERMISSOES_CONFRONTOS_GERENTE. Nas apostas, criar e
+     * validar código são só do Vendedor; cancelar, de todos; o resto, de Gerente para cima.
      */
     public function pode_usar(string $permissao): bool
     {
+        if (in_array($permissao, self::PERMISSOES_APOSTAS, true)) {
+            return match (true) {
+                $permissao === 'apostas.cancelar' => true,
+                in_array($permissao, self::PERMISSOES_APOSTAS_VENDEDOR, true) => $this === self::Vendedor,
+                default => $this !== self::Vendedor,
+            };
+        }
+
         if (in_array($permissao, self::PERMISSOES_CONFRONTOS, true)) {
             return match ($this) {
                 self::Admin, self::Supervisor => true,

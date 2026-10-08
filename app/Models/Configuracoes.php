@@ -31,6 +31,8 @@ class Configuracoes extends Model
         'cotacao_maxima_ao_vivo',
         'ao_vivo_travado',
         'ao_vivo_travado_em',
+        'nome_sistema',
+        'mensagem_bilhete',
     ];
 
     /**

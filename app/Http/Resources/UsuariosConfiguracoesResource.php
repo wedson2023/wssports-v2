@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources;
 
+use App\Models\UsuariosConfiguracoes;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -23,6 +24,12 @@ class UsuariosConfiguracoesResource extends JsonResource
             'ao_vivo_habilitado' => $this->ao_vivo_habilitado,
             'minuto_limite_ao_vivo' => $this->minuto_limite_ao_vivo,
             'cotacao_maxima_ao_vivo' => $this->cotacao_maxima_ao_vivo,
+            // regras de aposta do vendedor (spec 004)
+            ...$this->resource->only([
+                ...UsuariosConfiguracoes::CAMPOS_APOSTA,
+                ...UsuariosConfiguracoes::COMISSOES_PRE_JOGO,
+                ...UsuariosConfiguracoes::COMISSOES_AO_VIVO,
+            ]),
             'updated_at' => $this->updated_at,
         ];
     }

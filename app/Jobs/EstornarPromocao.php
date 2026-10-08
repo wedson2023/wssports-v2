@@ -7,6 +7,7 @@ use App\Enums\SituacaoEstorno;
 use App\Models\Clientes;
 use App\Models\ClientesPromocoes;
 use App\Models\ClientesTransacoes;
+use App\Services\RolloverClientes;
 use App\Services\SaldoClientes;
 use Illuminate\Contracts\Queue\ShouldBeUnique;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -32,14 +33,16 @@ class EstornarPromocao implements ShouldBeUnique, ShouldQueue
         return (string) $this->promocao_id;
     }
 
-    public function handle(SaldoClientes $saldo): void
+    public function handle(SaldoClientes $saldo, RolloverClientes $rollover): void
     {
         $promocao = ClientesPromocoes::withTrashed()->findOrFail($this->promocao_id);
         $clientes_avaliados = 0;
 
         // a consulta agrupada não tem "id": o lote avança pela coluna clientes_id
-        $this->consulta_recebimentos()->chunkById(self::TAMANHO_LOTE, function (Collection $lote) use ($promocao, $saldo, &$clientes_avaliados) {
+        $this->consulta_recebimentos()->chunkById(self::TAMANHO_LOTE, function (Collection $lote) use ($promocao, $saldo, $rollover, &$clientes_avaliados) {
             foreach ($lote as $recebimento) {
+                // o bônus estornado deixa de exigir rollover e suas regras de uso deixam de valer (spec 004)
+                $rollover->cancelar_da_promocao((int) $recebimento->clientes_id, $promocao->id);
                 $this->estornar_cliente($promocao, $saldo, (int) $recebimento->clientes_id, (string) $recebimento->total_recebido);
             }
 

@@ -18,7 +18,7 @@ use Illuminate\Validation\ValidationException;
  */
 class CadastroClientes
 {
-    public function __construct(private SaldoClientes $saldo) {}
+    public function __construct(private SaldoClientes $saldo, private RolloverClientes $rollover) {}
 
     /**
      * @param  array<string, mixed>  $dados  dados validados do cadastro
@@ -60,7 +60,7 @@ class CadastroClientes
             ->get();
 
         foreach ($promocoes as $promocao) {
-            $this->saldo->creditar(
+            $transacao = $this->saldo->creditar(
                 $cliente,
                 $promocao->modalidade->carteira(),
                 (string) $promocao->valor,
@@ -68,6 +68,9 @@ class CadastroClientes
                 referencia_id: $promocao->id,
                 observacao: "Promoção: {$promocao->nome}",
             );
+
+            // o bônus com rollover passa a ser acompanhado (spec 004, FR-047)
+            $this->rollover->criar_bonus($cliente, $transacao, $promocao);
         }
     }
 }

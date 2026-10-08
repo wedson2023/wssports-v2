@@ -101,6 +101,9 @@ de cassino e frontend."
 
 - Q: A mensagem do bilhete deve ser copiada para a aposta? → A: Não. Fica só nas configurações (do
   vendedor e do site), e o comprovante usa sempre a mensagem atual.
+- Q: O vendedor novo copia os limites de venda do colega? → A: Não. `limite_simples`,
+  `limite_duplo` e `limite_geral` nascem com o padrão da coluna (5.000,00); o resto da configuração
+  continua copiado do colega.
 - Q: (análise de consistência) Quais ajustes foram feitos antes da implementação? → A: palpite em
   jogador precisa ser do mesmo confronto ("Jogador não pertence ao confronto."); repetição de
   jogo conferida pelo confronto já resolvido (pré-jogo ou ao vivo); chave de idempotência
@@ -905,6 +908,8 @@ e conferir que as cotações de jogador somem da listagem e são recusadas na ap
   `multiplicador` (1.000), `ganho_multiplo_palpites` (0%), `comissao_pre_jogo_1` a
   `comissao_pre_jogo_12` e `comissao_ao_vivo_1` a `comissao_ao_vivo_12` (0%),
   `comissao_por_premio` (0%), `limite_simples`, `limite_duplo` e `limite_geral` (5.000,00 cada).
+  O vendedor novo copia a configuração de um colega (FR-076 da spec 003), menos os três limites de
+  venda, que são saldos do colega e nascem sempre com o padrão da coluna.
   Essas colunas seguem o fluxo de consulta e alteração por hierarquia das configurações de
   vendedores da spec 003.
 - **FR-060**: `clientes_configuracoes` DEVE ganhar: `apostar_jogadores` (liberado), `periodo_jogos` (Depois de amanhã), `delay_ao_vivo` (15),

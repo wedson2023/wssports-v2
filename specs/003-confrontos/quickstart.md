@@ -153,6 +153,9 @@ Em outro terminal: `php artisan schedule:work`.
 | 49 | Admin: `PUT /api/visitantes-configuracoes` com `ao_vivo_habilitado: false` | visitante recebe `403` no ao vivo; cliente e vendedor não | US11-7 |
 | 50 | Cadastrar cliente novo (rota da spec 002) | configuração criada com os valores padrão das colunas | US11-8 |
 | 51 | `GET /api/clientes-configuracoes-padrao` | `404` (rota removida) | FR-079 |
+| 52 | Spec 004: vendedor com `periodo_jogos: Hoje` lista `dia=amanha` | lista vazia | FR-065 (004) |
+| 53 | Spec 004: `data_travamento_sistema` do visitante no passado | listagem do pré-jogo e do ao vivo vazia | FR-019 (004) |
+| 54 | Spec 004: confronto futuro com registro em andamento em `confrontos_ao_vivo` | some da listagem do pré-jogo | FR-017 (004) |
 
 ## 4. Fechamento
 

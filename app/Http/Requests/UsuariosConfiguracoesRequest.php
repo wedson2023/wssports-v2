@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use App\Http\Requests\Concerns\ConfiguracoesAposta;
 use App\Models\UsuariosConfiguracoes;
 use Illuminate\Foundation\Http\FormRequest;
 
@@ -10,10 +11,31 @@ use Illuminate\Foundation\Http\FormRequest;
  */
 class UsuariosConfiguracoesRequest extends FormRequest
 {
+    use ConfiguracoesAposta;
+
     public function authorize(): bool
     {
         // a permissão é checada pelo middleware do controller
         return true;
+    }
+
+    protected function prepareForValidation(): void
+    {
+        $this->converter_data_travamento();
+    }
+
+    /**
+     * Regras de aposta do vendedor (spec 004).
+     *
+     * @return list<string>
+     */
+    private function campos_aposta(): array
+    {
+        return [
+            ...UsuariosConfiguracoes::CAMPOS_APOSTA,
+            ...UsuariosConfiguracoes::COMISSOES_PRE_JOGO,
+            ...UsuariosConfiguracoes::COMISSOES_AO_VIVO,
+        ];
     }
 
     /**
@@ -29,6 +51,7 @@ class UsuariosConfiguracoesRequest extends FormRequest
             'ao_vivo_habilitado' => ['sometimes', 'boolean'],
             'minuto_limite_ao_vivo' => ['sometimes', 'integer', 'between:1,130'],
             'cotacao_maxima_ao_vivo' => ['sometimes', 'numeric', 'min:1', 'regex:/^\d+(\.\d{1,2})?$/'],
+            ...$this->regras_aposta($this->campos_aposta()),
         ];
     }
 
@@ -53,6 +76,7 @@ class UsuariosConfiguracoesRequest extends FormRequest
             'cotacao_maxima_ao_vivo.numeric' => 'A cotação máxima do ao vivo deve ser um número.',
             'cotacao_maxima_ao_vivo.min' => 'A cotação máxima do ao vivo deve ser maior ou igual a 1,00.',
             'cotacao_maxima_ao_vivo.regex' => 'A cotação máxima do ao vivo deve ter até 2 casas decimais.',
+            ...$this->mensagens_aposta($this->campos_aposta()),
         ];
     }
 

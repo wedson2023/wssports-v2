@@ -149,7 +149,7 @@ dos dois; `usuarios_id` é preenchido na validação. Transições em [research.
 | comissao_pre_jogo_1 … comissao_pre_jogo_12 | decimal(5,2) | 0 |
 | comissao_ao_vivo_1 … comissao_ao_vivo_12 | decimal(5,2) | 0 |
 | comissao_por_premio | decimal(5,2) | 0 |
-| limite_simples / limite_duplo / limite_geral | decimal(15,2) | 5000.00 cada (saldo disponível de vendas) |
+| limite_simples / limite_duplo / limite_geral | decimal(15,2) | 5000.00 cada (saldo disponível de vendas); o vendedor novo nunca os copia do colega (`UsuariosConfiguracoes::LIMITES_VENDA`) |
 
 `UsuariosConfiguracoes::CAMPOS` e o `UsuariosConfiguracoesRequest` passam a aceitar as colunas novas
 (alteração em massa da spec 003). Validação (FR-064): mínimos ≤ máximos; percentuais 0–100;

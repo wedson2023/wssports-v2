@@ -209,6 +209,10 @@ foram resolvidas nas sessões de Clarifications da [spec](spec.md).
 - **Desempenho (SC-010)**: 10.000 clientes em lotes de 500, com uma transação curta por cliente.
 - **Alternativas**: processar na própria requisição (estouraria o tempo de resposta); `UPDATE` em
   massa (não gera as transações de estorno exigidas por FR-041).
+- **Rollover (spec 004)**: antes de estornar cada cliente, o job chama
+  `RolloverClientes::cancelar_da_promocao`, que marca `cancelado_em` nos rollovers pendentes da
+  promoção (idempotente). O cadastro (`CadastroClientes`) cria esses rollovers ao creditar o bônus
+  de Primeiro cadastro com rollover > 0.
 
 ## R-18. Meios de pagamento
 

@@ -1,5 +1,8 @@
 <?php
 
+use App\Http\Controllers\ApostasController;
+use App\Http\Controllers\ApostasPalpitesController;
+use App\Http\Controllers\AreaClienteApostasController;
 use App\Http\Controllers\AreaClienteAutenticacaoController;
 use App\Http\Controllers\AreaClienteCadastroController;
 use App\Http\Controllers\AreaClienteMeiosPagamentoController;
@@ -8,6 +11,7 @@ use App\Http\Controllers\AreaClienteRecuperacaoSenhaController;
 use App\Http\Controllers\AutenticacaoController;
 use App\Http\Controllers\CampeonatosController;
 use App\Http\Controllers\CampeonatosNaoPermitidosController;
+use App\Http\Controllers\CancelamentoApostasController;
 use App\Http\Controllers\ClientesConfiguracoesController;
 use App\Http\Controllers\ClientesController;
 use App\Http\Controllers\ClientesMeiosPagamentoController;
@@ -16,6 +20,7 @@ use App\Http\Controllers\ClientesTransacoesController;
 use App\Http\Controllers\ConfrontosAoVivoController;
 use App\Http\Controllers\ConfrontosAoVivoNaoPermitidosController;
 use App\Http\Controllers\ConfrontosController;
+use App\Http\Controllers\ConfrontosLimitesController;
 use App\Http\Controllers\ConfrontosNaoPermitidosController;
 use App\Http\Controllers\ConfrontosTetoCotacoesController;
 use App\Http\Controllers\PermissoesUsuariosController;
@@ -23,9 +28,12 @@ use App\Http\Controllers\PorcentagensCampeonatosController;
 use App\Http\Controllers\PorcentagensClientesController;
 use App\Http\Controllers\PorcentagensConfrontosController;
 use App\Http\Controllers\PorcentagensVendedoresController;
+use App\Http\Controllers\PublicoApostasController;
 use App\Http\Controllers\PublicoConfrontosController;
+use App\Http\Controllers\PublicoConfrontosDetalheController;
 use App\Http\Controllers\UsuariosConfiguracoesController;
 use App\Http\Controllers\UsuariosController;
+use App\Http\Controllers\ValidacaoApostasController;
 use App\Http\Controllers\VisitantesConfiguracoesController;
 use App\Http\Middleware\GarantirAcessoCliente;
 use Illuminate\Support\Facades\Route;
@@ -77,6 +85,10 @@ Route::prefix('area-cliente')->group(function () {
         Route::apiResource('meios-pagamento', AreaClienteMeiosPagamentoController::class)
             ->parameters(['meios-pagamento' => 'meio_pagamento'])
             ->missing(fn () => abort(404, 'Meio de pagamento não encontrado.'));
+
+        // apostas do cliente com o próprio saldo (o cliente não cancela nem edita)
+        Route::post('apostas', [AreaClienteApostasController::class, 'store']);
+        Route::get('apostas/{codigo}/situacao', [AreaClienteApostasController::class, 'situacao']);
     });
 });
 
@@ -119,6 +131,17 @@ Route::middleware(['auth:api', 'garantir_acesso'])->group(function () {
 
 // listagem pública de jogos (pré-jogo e ao vivo): sem login; aceita token de cliente ou do painel
 Route::get('publico/confrontos', [PublicoConfrontosController::class, 'index']);
+
+// detalhe de um jogo com todas as cotações: mesmas regras e mesmo limite da listagem
+Route::get('publico/confrontos/{confronto}', [PublicoConfrontosDetalheController::class, 'pre_jogo'])
+    ->whereNumber('confronto');
+Route::get('publico/confrontos-ao-vivo/{confronto_ao_vivo}', [PublicoConfrontosDetalheController::class, 'ao_vivo'])
+    ->whereNumber('confronto_ao_vivo');
+
+// apostas pelo site sem login: o visitante gera o código; qualquer um consulta pelo código
+Route::post('publico/apostas/consultar', [PublicoApostasController::class, 'consultar']);
+Route::post('publico/apostas', [PublicoApostasController::class, 'store']);
+Route::get('publico/apostas/{codigo}', [PublicoApostasController::class, 'show']);
 
 // gestão de confrontos no painel: mesmo token dos usuários da spec 001
 Route::middleware(['auth:api', 'garantir_acesso'])->group(function () {
@@ -174,4 +197,27 @@ Route::middleware(['auth:api', 'garantir_acesso'])->group(function () {
     Route::patch('usuarios-configuracoes', [UsuariosConfiguracoesController::class, 'update']);
     Route::get('visitantes-configuracoes', [VisitantesConfiguracoesController::class, 'show']);
     Route::put('visitantes-configuracoes', [VisitantesConfiguracoesController::class, 'update']);
+
+    // limite de valor apostado por confronto (pré-jogo e ao vivo)
+    Route::patch('confrontos/{confronto}/limite', [ConfrontosLimitesController::class, 'pre_jogo'])
+        ->missing($confronto_nao_encontrado);
+    Route::patch('confrontos-ao-vivo/{confronto_ao_vivo}/limite', [ConfrontosLimitesController::class, 'ao_vivo'])
+        ->missing($confronto_nao_encontrado);
+});
+
+// apostas no painel: vendedor aposta, acompanha e valida código; vendedor e hierarquia cancelam;
+// a hierarquia edita palpites
+Route::middleware(['auth:api', 'garantir_acesso'])->group(function () {
+    Route::post('apostas', [ApostasController::class, 'store']);
+    Route::get('apostas/{codigo}/situacao', [ApostasController::class, 'situacao']);
+
+    Route::get('apostas/pendentes/{codigo}', [ValidacaoApostasController::class, 'show']);
+    Route::post('apostas/pendentes/{codigo}/validar', [ValidacaoApostasController::class, 'store']);
+
+    Route::post('apostas/{codigo}/cancelar', [CancelamentoApostasController::class, 'store']);
+
+    Route::post('apostas/{codigo}/palpites/{palpite}/cancelar', [ApostasPalpitesController::class, 'cancelar'])
+        ->whereNumber('palpite');
+    Route::post('apostas/{codigo}/palpites/{palpite}/restaurar', [ApostasPalpitesController::class, 'restaurar'])
+        ->whereNumber('palpite');
 });
