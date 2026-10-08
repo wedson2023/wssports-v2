@@ -141,6 +141,25 @@ device_id."
   na listagem (que só mostra Aguardando) até o provedor desbloquear. Não é opção do confronto
   manual.
 
+### Session 2026-10-08
+
+- Q: A listagem pública (pré-jogo e ao vivo) ordena os campeonatos por país? → A: Sim. A ordem
+  passa a ser: favorito primeiro, país do campeonato, nome do campeonato, `data_inicio` e
+  `time_casa`. No sistema antigo a API ordenava só por favorito e nome, e o agrupamento por país
+  ficava a cargo do frontend com o índice `pais`; como a listagem nova é paginada, a ordem por país
+  precisa vir da API para que as páginas continuem umas das outras sem repetir países. Os
+  favoritos continuam no topo, como no sistema antigo.
+- Q: Por que o ao vivo não aparecia para ninguém (nem visitante)? → A: O provedor manda o
+  `tipo_esporte` do ao vivo com o sufixo ` AO VIVO` (`FUTEBOL AO VIVO`, como no sistema antigo, em
+  que o sufixo marcava o ao vivo), e a carga gravava esse texto; a listagem filtra por `FUTEBOL` e
+  a aposta confere o esporte nos permitidos, então nada aparecia e nada podia ser apostado. Decisão:
+  retirar o sufixo na gravação (FR-014). Os jogos antigos que ficaram gravados com o sufixo já não
+  são atualizados e saem da listagem pelo tempo de permanência; não há migração de dados.
+- Q: Os esportes permitidos com grafia diferente da do provedor (padrão `HOQUEI NO GELO`, provedor
+  `HÓQUEI NO GELO`) bloqueiam os jogos? → A: Não devem. A comparação passa a ignorar maiúsculas e
+  acentos, como o banco já faz (FR-041); os padrões das configurações continuam como no sistema
+  antigo.
+
 ## User Scenarios & Testing *(mandatory)*
 
 > Conforme a constituição, o projeto não terá testes automatizados. Os cenários abaixo são
@@ -691,7 +710,9 @@ com o ao vivo desligado.
   `ao_vivo_habilitado` marcado (FR-046c). A rota do ao vivo é a que o provedor já tem, com os nomes
   dele traduzidos na gravação (`minuto_exato` → `minuto`, `tempo` → `cronometro`, `g1_tempo_casa`
   → `gols_primeiro_tempo_casa`, `escanteio_casa` → `escanteios_casa` e equivalentes; detalhes em
-  `contracts/provedor.md`).
+  `contracts/provedor.md`). O `tipo_esporte` do ao vivo vem com o sufixo ` AO VIVO` (ex.:
+  `FUTEBOL AO VIVO`), que DEVE ser retirado na gravação: o esporte do ao vivo é o mesmo do
+  pré-jogo, e o que marca o ao vivo é a tabela `confrontos_ao_vivo`.
 - **FR-015**: Para cada jogo em andamento, o sistema DEVE gravar ou atualizar, pela chave
   `codigo_externo`: campeonato, times, escudos, esporte, `data_inicio`, `placar_casa`,
   `placar_fora`, gols de cada time no primeiro e no segundo tempo, escanteios de cada time,
@@ -831,10 +852,12 @@ com o ao vivo desligado.
   `esportes_permitidos` e `apostar_outros_esportes` (desmarcado = só Futebol) da configuração do
   público dele: para o visitante, `visitantes_configuracoes`; para o cliente logado, as
   `clientes_configuracoes` dele; para o vendedor logado, as `usuarios_configuracoes` dele. Gerente,
-  Supervisor e Admin logados veem todos os esportes.
+  Supervisor e Admin logados veem todos os esportes. A comparação do esporte com os permitidos NÃO
+  DEVE diferenciar maiúsculas nem acentos (como o banco, `utf8mb4_unicode_ci`): `HOQUEI NO GELO`
+  permite os jogos gravados como `HÓQUEI NO GELO`.
 - **FR-042**: A resposta DEVE trazer:
   - os confrontos da página agrupados por campeonato, ordenados por campeonato favorito primeiro,
-    nome do campeonato, `data_inicio` e `time_casa`;
+    país do campeonato, nome do campeonato, `data_inicio` e `time_casa`;
   - em cada confronto: id, times, escudos, esporte, data e hora de início (no fuso pedido),
     minutos até o início, `odd1` a `odd4` já ajustadas (FR-047) e a quantidade de cotações
     disponíveis;

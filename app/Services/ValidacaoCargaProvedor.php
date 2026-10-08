@@ -162,6 +162,9 @@ class ValidacaoCargaProvedor
             return null;
         }
 
+        // o provedor marca o ao vivo no esporte ("FUTEBOL AO VIVO"); no sistema o ao vivo é a tabela
+        $dados['esporte'] = preg_replace('/\s+AO VIVO$/iu', '', $dados['esporte']);
+
         if (SituacaoAoVivo::tryFrom((string) ($confronto['situacao'] ?? '')) === null) {
             return $this->ignorar($confronto, 'situação inválida');
         }

@@ -209,8 +209,11 @@ a API do provedor não muda (Clarifications 2026-10-05).
     sem `CONVERT_TZ` no SQL; `hoje` começa em `now()`. Com `busca`, a janela vai de `now()` ao fim
     de depois de amanhã (FR-039, SC-011);
   - **não permitidos**: `whereNotExists` com subconsultas parametrizadas para os alvos do público;
-  - **esportes**: `whereIn('esporte', ...)` com a configuração do público (FR-041, FR-074);
-  - ordenação: `campeonatos.favorito desc`, `campeonatos.nome`, `data_inicio`, `time_casa`;
+  - **esportes**: `whereIn('esporte', ...)` com a configuração do público (FR-041, FR-074); a
+    conferência em PHP (`RegrasExibicao::esporte_permitido`) compara com `Str::ascii` em maiúsculas,
+    para ignorar acentos como o `utf8mb4_unicode_ci` do banco (2026-10-08);
+  - ordenação: `campeonatos.favorito desc`, `campeonatos.pais`, `campeonatos.nome`, `data_inicio`,
+    `time_casa` (país incluído em 2026-10-08, para as páginas seguirem a ordem do índice de países);
   - paginação de confrontos: `por_pagina` 1–100, padrão 50; o agrupamento por campeonato é feito
     sobre a página;
   - **países**: uma segunda consulta agregada (mesmos filtros, sem paginação) com a contagem por

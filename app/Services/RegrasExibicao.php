@@ -14,6 +14,7 @@ use App\Support\FusoSistema;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use Symfony\Component\HttpKernel\Exception\HttpException;
 
 /**
@@ -149,7 +150,10 @@ class RegrasExibicao
     {
         $permitidos = $this->esportes_permitidos($publico);
 
-        return $permitidos === null || in_array(mb_strtoupper($esporte), array_map('mb_strtoupper', $permitidos), true);
+        // compara como o banco (utf8mb4_unicode_ci): sem diferenciar maiúsculas nem acentos
+        $normalizar = fn (string $nome) => mb_strtoupper(Str::ascii($nome));
+
+        return $permitidos === null || in_array($normalizar($esporte), array_map($normalizar, $permitidos), true);
     }
 
     /**
