@@ -1,7 +1,7 @@
 {
     "info": {
         "name": "WSSports API",
-        "description": "Rotas da API do WSSports (autenticação JWT, gestão de usuários e permissões, área do cliente, gestão de clientes e confrontos).\n\nVariáveis da coleção:\n- base_url: endereço da API (ex.: http://127.0.0.1:8000/api)\n- token: token do painel, preenchido pelo login e refresh do painel\n- token_cliente: token do cliente, preenchido pelo cadastro, login e refresh da área do cliente\n- usuario_id / permissao: usados nas rotas de usuários e permissões\n- cliente_id / meio_pagamento_id / promocao_id: usados nas rotas de clientes\n- campeonato_id / confronto_id / registro_id / gerente_id: usados nas rotas de confrontos\n\nFluxo: execute 'Login' (painel) e 'Login do cliente'; as demais rotas usam os tokens salvos.",
+        "description": "Rotas da API do WSSports (autenticação JWT, gestão de usuários e permissões, área do cliente, gestão de clientes, confrontos e apostas).\n\nVariáveis da coleção:\n- base_url: endereço da API (ex.: http://127.0.0.1:8000/api)\n- token: token do painel, preenchido pelo login e refresh do painel\n- token_cliente: token do cliente, preenchido pelo cadastro, login e refresh da área do cliente\n- usuario_id / permissao: usados nas rotas de usuários e permissões\n- cliente_id / meio_pagamento_id / promocao_id: usados nas rotas de clientes\n- campeonato_id / confronto_id / registro_id / gerente_id: usados nas rotas de confrontos\n- codigo_aposta / palpite_id / confronto_ao_vivo_id: usados nas rotas de apostas\n\nFluxo: execute 'Login' (painel) e 'Login do cliente'; as demais rotas usam os tokens salvos.",
         "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
     },
     "auth": {
@@ -73,6 +73,21 @@
         {
             "key": "gerente_id",
             "value": "3",
+            "type": "string"
+        },
+        {
+            "key": "codigo_aposta",
+            "value": "",
+            "type": "string"
+        },
+        {
+            "key": "palpite_id",
+            "value": "1",
+            "type": "string"
+        },
+        {
+            "key": "confronto_ao_vivo_id",
+            "value": "1",
             "type": "string"
         }
     ],
@@ -1399,10 +1414,10 @@
                                 "configuracoes"
                             ]
                         },
-                        "description": "clientes.editar_configuracoes (Admin, Supervisor ou Gerente).",
+                        "description": "clientes.editar_configuracoes (Admin, Supervisor ou Gerente). Spec 004: campos de aposta opcionais.",
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \"realizar_aposta\": true,\n    \"apostar_ao_vivo\": true,\n    \"apostar_outros_esportes\": true,\n    \"cancelar_aposta\": false,\n    \"aceita_promocao\": true,\n    \"bloquear_saque\": false,\n    \"quantidade_minima_opcoes\": 1,\n    \"quantidade_maxima_opcoes\": 20,\n    \"valor_minimo_aposta\": \"2.00\",\n    \"valor_maximo_aposta\": \"1000.00\",\n    \"premio_maximo\": \"50000.00\",\n    \"valor_maximo_diario\": \"5000.00\",\n    \"valor_maximo_saque_diario\": \"5000.00\",\n    \"quantidade_maxima_saques_diaria\": 5,\n    \"odd_minima\": \"1.90\",\n    \"odd_maxima\": \"30.00\",\n    \"esportes_permitidos\": [\n        \"FUTEBOL\",\n        \"HOQUEI NO GELO\",\n        \"BAISEBOL\"\n    ]\n}"
+                            "raw": "{\n    \"realizar_aposta\": true,\n    \"apostar_ao_vivo\": true,\n    \"apostar_outros_esportes\": true,\n    \"cancelar_aposta\": false,\n    \"aceita_promocao\": true,\n    \"bloquear_saque\": false,\n    \"quantidade_minima_opcoes\": 1,\n    \"quantidade_maxima_opcoes\": 20,\n    \"valor_minimo_aposta\": \"2.00\",\n    \"valor_maximo_aposta\": \"1000.00\",\n    \"premio_maximo\": \"50000.00\",\n    \"valor_maximo_diario\": \"5000.00\",\n    \"valor_maximo_saque_diario\": \"5000.00\",\n    \"quantidade_maxima_saques_diaria\": 5,\n    \"odd_minima\": \"1.90\",\n    \"odd_maxima\": \"30.00\",\n    \"esportes_permitidos\": [\n        \"FUTEBOL\",\n        \"HOQUEI NO GELO\",\n        \"BAISEBOL\"\n    ],\n    \"apostar_jogadores\": true,\n    \"periodo_jogos\": \"Depois de amanhã\",\n    \"delay_ao_vivo\": 15,\n    \"multiplicador\": 1000,\n    \"ganho_multiplo_palpites\": \"0.00\"\n}"
                         }
                     }
                 },
@@ -2918,9 +2933,9 @@
                         },
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \"usuarios_id\": \"{{gerente_id}}\",\n    \"ao_vivo_habilitado\": false\n}"
+                            "raw": "{\n    \"usuarios_id\": \"{{gerente_id}}\",\n    \"realizar_aposta\": true,\n    \"cancelar_aposta\": true,\n    \"tempo_cancelamento_aposta\": 5,\n    \"apostar_jogadores\": true,\n    \"periodo_jogos\": \"Depois de amanhã\",\n    \"data_travamento_sistema\": null,\n    \"mensagem_bilhete\": \"BOA SORTE!\",\n    \"delay_ao_vivo\": 15,\n    \"quantidade_minima_opcoes\": 1,\n    \"quantidade_maxima_opcoes\": 20,\n    \"valor_minimo_aposta\": \"2.00\",\n    \"valor_maximo_aposta\": \"1000.00\",\n    \"odd_minima\": \"1.00\",\n    \"premio_maximo\": \"5000.00\",\n    \"multiplicador\": 1000,\n    \"ganho_multiplo_palpites\": \"0.00\",\n    \"comissao_pre_jogo_1\": \"10.00\",\n    \"comissao_ao_vivo_1\": \"10.00\",\n    \"comissao_por_premio\": \"0.00\",\n    \"limite_simples\": \"5000.00\",\n    \"limite_duplo\": \"5000.00\",\n    \"limite_geral\": \"5000.00\"\n}"
                         },
-                        "description": "usuarios_configuracoes.editar. usuarios_id = alcance: Admin → supervisor, gerente ou vendedor; Supervisor → gerente ou vendedor; Gerente → vendedor. Só os campos enviados mudam."
+                        "description": "usuarios_configuracoes.editar. usuarios_id = alcance: Admin → supervisor, gerente ou vendedor; Supervisor → gerente ou vendedor; Gerente → vendedor. Só os campos enviados mudam. Spec 004: regras de aposta do vendedor (comissao_pre_jogo_1…12, comissao_ao_vivo_1…12, limites, delay, período, travamento etc.); data_travamento_sistema sem fuso vale -03:00."
                     }
                 },
                 {
@@ -2974,9 +2989,570 @@
                         },
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \"esportes_permitidos\": [\n        \"FUTEBOL\",\n        \"HOQUEI NO GELO\",\n        \"BAISEBOL\"\n    ],\n    \"apostar_outros_esportes\": true,\n    \"ao_vivo_habilitado\": true\n}"
+                            "raw": "{\n    \"esportes_permitidos\": [\n        \"FUTEBOL\",\n        \"HOQUEI NO GELO\",\n        \"BAISEBOL\"\n    ],\n    \"apostar_outros_esportes\": true,\n    \"ao_vivo_habilitado\": true,\n    \"apostar_jogadores\": true,\n    \"periodo_jogos\": \"Depois de amanhã\",\n    \"data_travamento_sistema\": null,\n    \"quantidade_minima_opcoes\": 1,\n    \"quantidade_maxima_opcoes\": 20,\n    \"valor_minimo_aposta\": \"2.00\",\n    \"valor_maximo_aposta\": \"1000.00\",\n    \"odd_minima\": \"1.00\",\n    \"premio_maximo\": \"5000.00\",\n    \"multiplicador\": 1000,\n    \"ganho_multiplo_palpites\": \"0.00\",\n    \"horas_validade_codigo\": 48\n}"
                         },
-                        "description": "visitantes_configuracoes.editar."
+                        "description": "visitantes_configuracoes.editar. Spec 004: campos de aposta opcionais."
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Apostas",
+            "description": "Spec 004. Criação, validação de código, cancelamento e edição de apostas. O servidor recalcula cotações, prêmio, comissão e carteira; o front envia só os palpites com a cotação vista, o valor, o nome, aceitar_alteracoes (Nenhuma, Somente para maior, Qualquer) e uma chave_idempotencia (UUID; {{$guid}} gera uma nova a cada envio). Variáveis: codigo_aposta, palpite_id, confronto_ao_vivo_id.",
+            "item": [
+                {
+                    "name": "Detalhe do confronto (pré-jogo)",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/publico/confrontos/{{confronto_id}}?fuso_horario=-03:00",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "publico",
+                                "confrontos",
+                                "{{confronto_id}}"
+                            ],
+                            "query": [
+                                {
+                                    "key": "fuso_horario",
+                                    "value": "-03:00"
+                                }
+                            ]
+                        },
+                        "description": "Sem login (aceita token de cliente ou do painel). Todas as cotações disponíveis já ajustadas para quem vê, com o nome do mercado, e os jogadores. 404 se o confronto não estiver visível; 429 acima de 120/min.",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    }
+                },
+                {
+                    "name": "Detalhe do jogo ao vivo",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/publico/confrontos-ao-vivo/{{confronto_ao_vivo_id}}?fuso_horario=-03:00",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "publico",
+                                "confrontos-ao-vivo",
+                                "{{confronto_ao_vivo_id}}"
+                            ],
+                            "query": [
+                                {
+                                    "key": "fuso_horario",
+                                    "value": "-03:00"
+                                }
+                            ]
+                        },
+                        "description": "Sem login. Cotações, placar, minuto e travado (travado → cotações 0.00).",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    }
+                },
+                {
+                    "name": "Aposta do visitante (gerar código)",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/publico/apostas",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "publico",
+                                "apostas"
+                            ]
+                        },
+                        "description": "Sem login. Só pré-jogo. 201 com a aposta Pendente e o código de 8 caracteres; 422 com jogo ao vivo ('Para apostar no ao vivo é preciso fazer login.'); 429 acima de 10/min por IP.",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"chave_idempotencia\": \"{{$guid}}\",\n    \"nome\": \"João\",\n    \"valor\": \"10.00\",\n    \"aceitar_alteracoes\": \"Nenhuma\",\n    \"palpites\": [\n        {\n            \"confrontos_id\": \"{{confronto_id}}\",\n            \"codigo_cotacao\": \"odd1\",\n            \"cotacao_vista\": \"2.00\"\n        }\n    ]\n}"
+                        },
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    }
+                },
+                {
+                    "name": "Consultar aposta pelo código",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/publico/apostas/{{codigo_aposta}}",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "publico",
+                                "apostas",
+                                "{{codigo_aposta}}"
+                            ]
+                        },
+                        "description": "Sem login. Comprovante sem dados internos. 404 inexistente; 429 acima de 60/min por IP.",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    }
+                },
+                {
+                    "name": "Consultar várias apostas pelos códigos",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/publico/apostas/consultar",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "publico",
+                                "apostas",
+                                "consultar"
+                            ]
+                        },
+                        "description": "Sem login. Até 50 códigos; os inexistentes são ignorados.",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"codigos\": [\n        \"{{codigo_aposta}}\"\n    ]\n}"
+                        },
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    }
+                },
+                {
+                    "name": "Aposta do cliente",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/area-cliente/apostas",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "area-cliente",
+                                "apostas"
+                            ]
+                        },
+                        "description": "Token do cliente. Paga com o saldo real ou, sem ele, com o bônus de esportes (nunca os dois). Respostas: 201 Ativa (comprovante); 202 Em análise (ao vivo, acompanhar em /situacao); 200 envio repetido com a mesma chave; 409 cotação alterada (reenviar com cotacao_vista = cotacao_atual); 422 regra ou palpites indisponíveis.",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"chave_idempotencia\": \"{{$guid}}\",\n    \"nome\": \"João\",\n    \"valor\": \"10.00\",\n    \"aceitar_alteracoes\": \"Nenhuma\",\n    \"palpites\": [\n        {\n            \"confrontos_id\": \"{{confronto_id}}\",\n            \"codigo_cotacao\": \"odd1\",\n            \"cotacao_vista\": \"2.00\"\n        }\n    ]\n}"
+                        },
+                        "auth": {
+                            "type": "bearer",
+                            "bearer": [
+                                {
+                                    "key": "token",
+                                    "value": "{{token_cliente}}",
+                                    "type": "string"
+                                }
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Situação da aposta do cliente",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/area-cliente/apostas/{{codigo_aposta}}/situacao",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "area-cliente",
+                                "apostas",
+                                "{{codigo_aposta}}",
+                                "situacao"
+                            ]
+                        },
+                        "description": "Token do cliente. Comprovante (Ativa), segundos_restantes (Em análise) ou motivo_recusa (Recusada).",
+                        "auth": {
+                            "type": "bearer",
+                            "bearer": [
+                                {
+                                    "key": "token",
+                                    "value": "{{token_cliente}}",
+                                    "type": "string"
+                                }
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Aposta do vendedor",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/apostas",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "apostas"
+                            ]
+                        },
+                        "description": "apostas.criar (só Vendedor). Respostas: 201 Ativa (comprovante); 202 Em análise (ao vivo, acompanhar em /situacao); 200 envio repetido com a mesma chave; 409 cotação alterada (reenviar com cotacao_vista = cotacao_atual); 422 regra ou palpites indisponíveis.",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"chave_idempotencia\": \"{{$guid}}\",\n    \"nome\": \"João\",\n    \"valor\": \"10.00\",\n    \"aceitar_alteracoes\": \"Nenhuma\",\n    \"palpites\": [\n        {\n            \"confrontos_id\": \"{{confronto_id}}\",\n            \"codigo_cotacao\": \"odd1\",\n            \"cotacao_vista\": \"2.00\"\n        }\n    ]\n}"
+                        }
+                    }
+                },
+                {
+                    "name": "Aposta do vendedor no ao vivo",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/apostas",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "apostas"
+                            ]
+                        },
+                        "description": "apostas.criar. Com jogo ao vivo: 202 Em análise; a decisão sai no fim do delay (worker da fila apostas).",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"chave_idempotencia\": \"{{$guid}}\",\n    \"nome\": \"João\",\n    \"valor\": \"10.00\",\n    \"aceitar_alteracoes\": \"Nenhuma\",\n    \"palpites\": [\n        {\n            \"confrontos_ao_vivo_id\": \"{{confronto_ao_vivo_id}}\",\n            \"codigo_cotacao\": \"odd1\",\n            \"cotacao_vista\": \"2.50\"\n        }\n    ]\n}"
+                        }
+                    }
+                },
+                {
+                    "name": "Situação da aposta do vendedor",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/apostas/{{codigo_aposta}}/situacao",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "apostas",
+                                "{{codigo_aposta}}",
+                                "situacao"
+                            ]
+                        },
+                        "description": "apostas.criar. Só as apostas do próprio vendedor; 60/min."
+                    }
+                },
+                {
+                    "name": "Simular código do visitante",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/apostas/pendentes/{{codigo_aposta}}",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "apostas",
+                                "pendentes",
+                                "{{codigo_aposta}}"
+                            ]
+                        },
+                        "description": "apostas.validar. Palpites com as cotações e as regras do vendedor; nada é gravado. 404 já validada; 422 expirada; 20/min por vendedor e 60/min por IP."
+                    }
+                },
+                {
+                    "name": "Validar código do visitante",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/apostas/pendentes/{{codigo_aposta}}/validar",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "apostas",
+                                "pendentes",
+                                "{{codigo_aposta}}",
+                                "validar"
+                            ]
+                        },
+                        "description": "apostas.validar. Só pré-jogo; cotacao_vista = cotação da simulação. 200 Ativa com o mesmo código; 409 cotação mudou desde a simulação; 404 já validada.",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"chave_idempotencia\": \"{{$guid}}\",\n    \"nome\": \"João\",\n    \"valor\": \"10.00\",\n    \"aceitar_alteracoes\": \"Nenhuma\",\n    \"palpites\": [\n        {\n            \"confrontos_id\": \"{{confronto_id}}\",\n            \"codigo_cotacao\": \"odd1\",\n            \"cotacao_vista\": \"2.00\"\n        }\n    ]\n}"
+                        }
+                    }
+                },
+                {
+                    "name": "Cancelar aposta",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/apostas/{{codigo_aposta}}/cancelar",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "apostas",
+                                "{{codigo_aposta}}",
+                                "cancelar"
+                            ]
+                        },
+                        "description": "apostas.cancelar. Vendedor: as próprias, no tempo, sem jogo iniciado nem ao vivo. Gerente/Supervisor/Admin: a hierarquia e as de clientes (jogo iniciado com apostas.cancelar_iniciada). Só resultado Aguardando."
+                    }
+                },
+                {
+                    "name": "Cancelar palpite da aposta",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/apostas/{{codigo_aposta}}/palpites/{{palpite_id}}/cancelar",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "apostas",
+                                "{{codigo_aposta}}",
+                                "palpites",
+                                "{{palpite_id}}",
+                                "cancelar"
+                            ]
+                        },
+                        "description": "apostas.editar (Gerente, Supervisor e Admin). Recalcula o prêmio; não cancela o último palpite ativo."
+                    }
+                },
+                {
+                    "name": "Restaurar palpite da aposta",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/apostas/{{codigo_aposta}}/palpites/{{palpite_id}}/restaurar",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "apostas",
+                                "{{codigo_aposta}}",
+                                "palpites",
+                                "{{palpite_id}}",
+                                "restaurar"
+                            ]
+                        },
+                        "description": "apostas.editar. Volta o palpite com a cotação gravada e recalcula o prêmio."
+                    }
+                },
+                {
+                    "name": "Alterar limite do confronto (pré-jogo)",
+                    "request": {
+                        "method": "PATCH",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/confrontos/{{confronto_id}}/limite",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "confrontos",
+                                "{{confronto_id}}",
+                                "limite"
+                            ]
+                        },
+                        "description": "confrontos.alterar_limite (Admin e Supervisor).",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"limite_valor_apostado\": \"50000.00\"\n}"
+                        }
+                    }
+                },
+                {
+                    "name": "Alterar limite do jogo ao vivo",
+                    "request": {
+                        "method": "PATCH",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/confrontos-ao-vivo/{{confronto_ao_vivo_id}}/limite",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "confrontos-ao-vivo",
+                                "{{confronto_ao_vivo_id}}",
+                                "limite"
+                            ]
+                        },
+                        "description": "confrontos.alterar_limite (Admin e Supervisor).",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"limite_valor_apostado\": \"5000.00\"\n}"
+                        }
                     }
                 }
             ]

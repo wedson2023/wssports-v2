@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\PeriodoJogos;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -34,6 +35,11 @@ class ClientesConfiguracoes extends Model
         'odd_minima',
         'odd_maxima',
         'esportes_permitidos',
+        'apostar_jogadores',
+        'periodo_jogos',
+        'delay_ao_vivo',
+        'multiplicador',
+        'ganho_multiplo_palpites',
     ];
 
     /**
@@ -57,6 +63,11 @@ class ClientesConfiguracoes extends Model
         'odd_minima' => 'decimal:2',
         'odd_maxima' => 'decimal:2',
         'esportes_permitidos' => 'array',
+        'apostar_jogadores' => 'boolean',
+        'periodo_jogos' => PeriodoJogos::class,
+        'delay_ao_vivo' => 'integer',
+        'multiplicador' => 'integer',
+        'ganho_multiplo_palpites' => 'decimal:2',
     ];
 
     protected $table = 'clientes_configuracoes';

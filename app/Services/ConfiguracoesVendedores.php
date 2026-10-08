@@ -18,14 +18,16 @@ class ConfiguracoesVendedores
     /**
      * Configuração do vendedor novo: cópia da de outro vendedor do mesmo gerente; se for o
      * primeiro, de um vendedor da mesma supervisão; se não houver, os valores padrão das colunas.
+     * Os limites de venda nunca são copiados: são saldos do colega e nascem com o padrão da coluna.
      */
     public function criar_para(Usuarios $vendedor): UsuariosConfiguracoes
     {
         $modelo = $this->configuracao_de_colega($vendedor);
+        $campos_copiados = array_diff(UsuariosConfiguracoes::CAMPOS, UsuariosConfiguracoes::LIMITES_VENDA);
 
         $configuracao = UsuariosConfiguracoes::firstOrCreate(
             ['usuarios_id' => $vendedor->id],
-            $modelo?->only(UsuariosConfiguracoes::CAMPOS) ?? [],
+            $modelo?->only($campos_copiados) ?? [],
         );
 
         return $configuracao->refresh();

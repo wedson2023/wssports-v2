@@ -816,7 +816,12 @@ com o ao vivo desligado.
   convertidas para ele, pois o sistema atende regiões com fusos diferentes.
 - **FR-039**: No pré-jogo só DEVEM entrar confrontos ativos, de campeonato ativo, com situação
   "Aguardando" e `data_inicio` futura. A listagem do pré-jogo NUNCA DEVE trazer jogo que comece
-  depois do fim de depois de amanhã, nem com `busca`.
+  depois do fim de depois de amanhã, nem com `busca`. Desde a spec 004 (FR-017 e FR-065 de lá),
+  a listagem também respeita o `periodo_jogos` do público (Hoje, Amanhã ou Depois de amanhã), a
+  `data_travamento_sistema` do vendedor e do visitante (nada a partir da data e só jogos que começam
+  antes dela) e deixa de mostrar no pré-jogo o confronto que já está no ao vivo. Essas regras ficam
+  no serviço `RegrasExibicao`, compartilhado com a aposta e com o detalhe do confronto (rotas da
+  spec 004).
 - **FR-040**: NÃO DEVEM entrar na listagem os campeonatos e confrontos não permitidos para quem
   está vendo: os de alvo Todos, para qualquer público; para o visitante, também os de alvo
   Clientes sem cliente indicado; para o cliente logado, também os de alvo Clientes sem cliente
@@ -1016,7 +1021,9 @@ com o ao vivo desligado.
   (cadastro de usuários da spec 001), o vendedor DEVE receber uma cópia da configuração de outro
   vendedor do mesmo gerente; se for o primeiro do gerente, de um vendedor da mesma supervisão; se
   não houver nenhum, os valores padrão das colunas. Os vendedores que já existem DEVEM receber a
-  linha com os valores padrão das colunas pelo seeder.
+  linha com os valores padrão das colunas pelo seeder. Desde a spec 004, os limites de venda
+  (`limite_simples`, `limite_duplo` e `limite_geral`) nunca são copiados do colega: o vendedor novo
+  os recebe com o valor padrão da coluna.
 - **FR-077**: Usuários com `visitantes_configuracoes.editar` DEVEM poder consultar e alterar as
   configurações dos visitantes. Só Admin e Supervisor DEVEM usar essa permissão, mesmo que outra
   função a receba.

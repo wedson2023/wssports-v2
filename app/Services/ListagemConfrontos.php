@@ -2,25 +2,18 @@
 
 namespace App\Services;
 
-use App\Enums\AlvoRegra;
-use App\Enums\SituacaoAoVivo;
-use App\Enums\SituacaoConfronto;
-use App\Models\ClientesConfiguracoes;
 use App\Models\Configuracoes;
-use App\Models\UsuariosConfiguracoes;
-use App\Models\VisitantesConfiguracoes;
 use Carbon\CarbonTimeZone;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
-use Symfony\Component\HttpKernel\Exception\HttpException;
 
 /**
- * Listagem pública de jogos do pré-jogo e do ao vivo, para o público identificado. Os filtros de
- * dia são calculados no fuso pedido e convertidos para UTC antes da consulta; o fuso nunca entra
- * no SQL.
+ * Listagem pública de jogos do pré-jogo e do ao vivo, para o público identificado. O que o
+ * público pode ver vem de RegrasExibicao (o mesmo usado na aposta). Os filtros de dia são
+ * calculados no fuso pedido e convertidos para UTC antes da consulta; o fuso nunca entra no SQL.
  */
 class ListagemConfrontos
 {
@@ -30,7 +23,7 @@ class ListagemConfrontos
 
     private const ESPORTE_PADRAO = 'FUTEBOL';
 
-    public function __construct(private CalculoCotacoes $calculo) {}
+    public function __construct(private CalculoCotacoes $calculo, private RegrasExibicao $regras) {}
 
     /**
      * @param  array<string, mixed>  $filtros
@@ -41,18 +34,11 @@ class ListagemConfrontos
         $fuso = new CarbonTimeZone($filtros['fuso_horario'] ?? self::FUSO_PADRAO);
         [$inicio, $fim] = $this->janela($filtros, $fuso);
 
-        $consulta = DB::table('confrontos as co')
-            ->join('campeonatos as ca', 'ca.id', '=', 'co.campeonatos_id')
-            ->whereNull('co.deleted_at')
-            ->whereNull('ca.deleted_at')
-            ->where('co.ativo', true)
-            ->where('ca.ativo', true)
-            ->where('co.situacao', SituacaoConfronto::Aguardando->value)
+        // jogos visíveis ao público (período, travamento, ao vivo e não permitidos) dentro do dia pedido
+        $consulta = $this->regras->consulta_pre_jogo($publico)
             ->whereBetween('co.data_inicio', [$inicio, $fim]);
 
         $this->filtros_comuns($consulta, $publico, $filtros);
-        $this->excluir_nao_permitidos($consulta, $publico, 'campeonatos_nao_permitidos', 'campeonatos_id', 'co.campeonatos_id');
-        $this->excluir_nao_permitidos($consulta, $publico, 'confrontos_nao_permitidos', 'confrontos_id', 'co.id');
 
         $pagina = (clone $consulta)
             ->select([
@@ -84,30 +70,14 @@ class ListagemConfrontos
      */
     public function ao_vivo(Publico $publico, array $filtros): array
     {
+        $this->regras->garantir_ao_vivo_habilitado($publico);
+
         $configuracoes = Configuracoes::atual();
-        $configuracao_vendedor = $publico->e_vendedor() ? UsuariosConfiguracoes::do_vendedor($publico->usuario->id) : null;
-
-        $this->garantir_ao_vivo_habilitado($publico, $configuracoes, $configuracao_vendedor);
-
         $fuso = new CarbonTimeZone($filtros['fuso_horario'] ?? self::FUSO_PADRAO);
-        $minuto_limite = $configuracao_vendedor?->minuto_limite_ao_vivo ?? $configuracoes->minuto_limite_ao_vivo;
 
-        $consulta = DB::table('confrontos_ao_vivo as av')
-            // o ao vivo só exibe jogos que a banca tem na grade, com o confronto do pré-jogo ativo
-            ->join('confrontos as co', 'co.id', '=', 'av.confrontos_id')
-            ->join('campeonatos as ca', 'ca.id', '=', 'av.campeonatos_id')
-            ->whereNull('av.deleted_at')
-            ->whereNull('co.deleted_at')
-            ->whereNull('ca.deleted_at')
-            ->where('co.ativo', true)
-            ->where('ca.ativo', true)
-            ->whereIn('av.situacao', array_column(SituacaoAoVivo::cases(), 'value'))
-            ->where('av.minuto', '<=', $minuto_limite)
-            ->where('av.ultima_atualizacao_em', '>=', now()->subMinutes($configuracoes->minutos_permanencia_ao_vivo));
+        $consulta = $this->regras->consulta_ao_vivo($publico);
 
         $this->filtros_comuns($consulta, $publico, $filtros, 'av');
-        $this->excluir_nao_permitidos($consulta, $publico, 'campeonatos_nao_permitidos', 'campeonatos_id', 'av.campeonatos_id');
-        $this->excluir_nao_permitidos($consulta, $publico, 'confrontos_ao_vivo_nao_permitidos', 'confrontos_id', 'av.confrontos_id');
 
         $pagina = (clone $consulta)
             ->select([
@@ -180,11 +150,10 @@ class ListagemConfrontos
     private function filtros_comuns(Builder $consulta, Publico $publico, array $filtros, string $tabela = 'co'): void
     {
         $esporte = mb_strtoupper($filtros['esporte'] ?? self::ESPORTE_PADRAO);
-        $permitidos = $this->esportes_permitidos($publico);
 
         $consulta->where("{$tabela}.esporte", $esporte);
 
-        if ($permitidos !== null && ! in_array($esporte, array_map('mb_strtoupper', $permitidos), true)) {
+        if (! $this->regras->esporte_permitido($publico, $esporte)) {
             // esporte fora dos permitidos ao público: nenhum jogo
             $consulta->whereRaw('1 = 0');
         }
@@ -198,73 +167,6 @@ class ListagemConfrontos
 
             $consulta->where(fn (Builder $busca) => $busca->where("{$tabela}.time_casa", 'like', $termo)
                 ->orWhere("{$tabela}.time_fora", 'like', $termo));
-        }
-    }
-
-    /**
-     * Esportes que o público pode ver; null = todos (gestores).
-     *
-     * @return list<string>|null
-     */
-    private function esportes_permitidos(Publico $publico): ?array
-    {
-        return match (true) {
-            $publico->e_visitante() => VisitantesConfiguracoes::atual()->esportes_visiveis(),
-            $publico->e_cliente() => $this->esportes_do_cliente($publico),
-            $publico->e_vendedor() => UsuariosConfiguracoes::do_vendedor($publico->usuario->id)->esportes_visiveis(),
-            default => null,
-        };
-    }
-
-    /**
-     * @return list<string>
-     */
-    private function esportes_do_cliente(Publico $publico): array
-    {
-        $configuracao = ClientesConfiguracoes::where('clientes_id', $publico->cliente->id)->first();
-
-        if ($configuracao === null) {
-            return [self::ESPORTE_PADRAO];
-        }
-
-        return $configuracao->apostar_outros_esportes ? array_values($configuracao->esportes_permitidos ?? []) : [self::ESPORTE_PADRAO];
-    }
-
-    /**
-     * Tira da consulta os itens não permitidos para o público: alvo Todos; alvo Clientes sem
-     * cliente indicado (site) ou indicado para o cliente logado; alvo Vendedores com dono na
-     * cadeia do usuário do painel.
-     */
-    private function excluir_nao_permitidos(Builder $consulta, Publico $publico, string $tabela, string $coluna, string $referencia): void
-    {
-        $consulta->whereNotExists(function (Builder $restricao) use ($publico, $tabela, $coluna, $referencia) {
-            $restricao->selectRaw('1')
-                ->from("{$tabela} as np")
-                ->whereColumn("np.{$coluna}", $referencia)
-                ->whereNull('np.deleted_at')
-                ->where(function (Builder $alvos) use ($publico) {
-                    $alvos->where('np.alvo', AlvoRegra::Todos->value);
-
-                    if ($publico->e_site()) {
-                        $alvos->orWhere(fn (Builder $c) => $c->where('np.alvo', AlvoRegra::Clientes->value)
-                            ->where(fn (Builder $cliente) => $cliente->whereNull('np.clientes_id')
-                                ->when($publico->e_cliente(), fn (Builder $x) => $x->orWhere('np.clientes_id', $publico->cliente->id))));
-                    } else {
-                        $alvos->orWhere(fn (Builder $c) => $c->where('np.alvo', AlvoRegra::Vendedores->value)
-                            ->whereIn('np.usuarios_id', $publico->ids_hierarquia_acima()));
-                    }
-                });
-        });
-    }
-
-    private function garantir_ao_vivo_habilitado(Publico $publico, Configuracoes $configuracoes, ?UsuariosConfiguracoes $configuracao_vendedor): void
-    {
-        $habilitado = $configuracoes->ao_vivo_habilitado
-            && (! $publico->e_visitante() || VisitantesConfiguracoes::atual()->ao_vivo_habilitado)
-            && ($configuracao_vendedor === null || $configuracao_vendedor->ao_vivo_habilitado);
-
-        if (! $habilitado) {
-            throw new HttpException(403, 'O ao vivo não está disponível.');
         }
     }
 

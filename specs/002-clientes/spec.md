@@ -807,7 +807,9 @@ transações de estorno.
 - **FR-075**: No cadastro de um cliente com `aceita_promocao` marcado, para cada promoção de
   Primeiro cadastro vigente, o sistema DEVE creditar o valor dela no saldo promocional da
   modalidade (Esportes → `saldo_promocao_esportes`, Cassino → `saldo_promocao_cassino`) por uma
-  transação de origem "Promoção" que referencia a promoção (FR-042).
+  transação de origem "Promoção" que referencia a promoção (FR-042). Desde a spec 004 (FR-047 de lá),
+  quando a promoção tem rollover maior que zero, o crédito também cria o registro de
+  acompanhamento em `clientes_rollovers`, com as regras de uso da promoção gravadas.
 - **FR-076**: A promoção de Primeiro cadastro DEVE ser aplicada uma única vez por cliente, somente
   no momento do cadastro; marcar `aceita_promocao` depois NÃO DEVE aplicar a promoção
   retroativamente, e desmarcar depois NÃO DEVE retirar saldo promocional já recebido.
@@ -816,7 +818,9 @@ transações de estorno.
 
 - **FR-077**: Admin ou Supervisor com a permissão `clientes_promocoes.estornar` DEVE poder estornar
   uma promoção, informando o motivo. O estorno alcança todos os clientes que têm transação de
-  origem "Promoção" referenciando essa promoção, inclusive inativos e excluídos.
+  origem "Promoção" referenciando essa promoção, inclusive inativos e excluídos. Desde a spec 004,
+  o estorno também marca como cancelados (`cancelado_em`) os rollovers pendentes daquela promoção,
+  para que as regras de uso do bônus deixem de valer.
 - **FR-078**: Ao iniciar o estorno, a promoção DEVE ser desativada e passar a guardar: situação do
   estorno (Em andamento ou Concluído), quem estornou, quando, o motivo, a quantidade de clientes a
   processar, a quantidade processada e o total estornado.

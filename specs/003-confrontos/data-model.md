@@ -103,6 +103,7 @@ haver dois manuais não excluídos com o mesmo `nome` e `pais` (checado na aplic
 | odd4_sorteada / odd7_sorteada | boolean | padrão `false`; valor sorteado (R-03) |
 | quantidade_cotacoes | unsigned smallint | códigos ≠ 0 + jogadores |
 | cotacoes | json | só códigos ≠ 0 |
+| limite_valor_apostado | decimal(15,2) | padrão 50000.00; acrescentada pela spec 004 (a carga não altera) |
 
 **Índices**: (`situacao`, `esporte`, `data_inicio`); `campeonatos_id`.
 
@@ -141,6 +142,7 @@ recebe soft delete; voltando, é restaurado (R-02).
 | cotacoes | json | só códigos ≠ 0 |
 | quantidade_cotacoes | unsigned smallint | |
 | ultima_atualizacao_em | timestamp | base da trava e da permanência (R-07) |
+| limite_valor_apostado | decimal(15,2) | padrão 5000.00; acrescentada pela spec 004 (a carga não altera) |
 
 **Índices**: (`situacao`, `ultima_atualizacao_em`); `confrontos_id`; `campeonatos_id`.
 

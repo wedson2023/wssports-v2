@@ -24,3 +24,7 @@ Schedule::command('confrontos_ao_vivo:importar')->everyFiveSeconds()->withoutOve
 
 // conferência do ao vivo com o segundo provedor, em qualquer horário
 Schedule::command('confrontos_ao_vivo:conferir')->everyMinute()->runInBackground()->withoutOverlapping(2);
+
+// apostas: expira os códigos de visitante vencidos e recusa as análises do ao vivo presas
+Schedule::command('apostas:expirar_pendentes')->everyMinute()->withoutOverlapping(2);
+Schedule::command('apostas:recusar_analises_presas')->everyMinute()->withoutOverlapping(2);

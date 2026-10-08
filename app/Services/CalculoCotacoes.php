@@ -12,6 +12,7 @@ use App\Models\PorcentagensConfrontos;
 use App\Models\PorcentagensVendedores;
 use App\Models\PorcentagensVendedoresAoVivo;
 use App\Models\UsuariosConfiguracoes;
+use App\Support\CodigosCotacao;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
 
@@ -34,9 +35,10 @@ class CalculoCotacoes
 
     /**
      * @param  Collection<int, object>  $itens  cada item com id, campeonatos_id, confrontos_id e cotacoes (array)
+     * @param  list<string>  $codigos  códigos a calcular (a listagem usa só os 4 principais)
      * @return array<int, array<string, float>> cotações ajustadas por id do item
      */
-    public function ajustar(Publico $publico, string $tipo, Collection $itens): array
+    public function ajustar(Publico $publico, string $tipo, Collection $itens, array $codigos = self::CODIGOS_LISTAGEM): array
     {
         if ($itens->isEmpty()) {
             return [];
@@ -56,32 +58,79 @@ class CalculoCotacoes
         $ajustadas = [];
 
         foreach ($itens as $item) {
-            foreach (self::CODIGOS_LISTAGEM as $codigo) {
-                $base = (float) ($item->cotacoes[$codigo] ?? 0);
-
-                if ($base <= 0) {
-                    $ajustadas[$item->id][$codigo] = 0.0;
-
-                    continue;
-                }
-
+            foreach ($codigos as $codigo) {
                 $porcentagem = ($porcentagens_publico[$codigo] ?? 0)
                     + ($porcentagens_campeonatos[$item->campeonatos_id][$codigo] ?? 0);
-                $valor = $base + $base * $porcentagem / 100 + ($valores_fixos[$item->confrontos_id][$codigo] ?? 0);
 
-                if (isset($tetos[$codigo])) {
-                    $valor = min($valor, (float) $tetos[$codigo]);
-                }
-
-                if ($maximo_ao_vivo !== null) {
-                    $valor = min($valor, $maximo_ao_vivo);
-                }
-
-                $ajustadas[$item->id][$codigo] = round(max($valor, 1.00), 2);
+                $ajustadas[$item->id][$codigo] = $this->aplicar(
+                    (float) ($item->cotacoes[$codigo] ?? 0),
+                    $porcentagem,
+                    (float) ($valores_fixos[$item->confrontos_id][$codigo] ?? 0),
+                    isset($tetos[$codigo]) ? (float) $tetos[$codigo] : null,
+                    $maximo_ao_vivo,
+                );
             }
         }
 
         return $ajustadas;
+    }
+
+    /**
+     * Cotação de jogadores do pré-jogo para o público: odd do provedor ajustada pelas
+     * porcentagens do código "jogador" (público e campeonato) e limitada ao teto "jogador".
+     *
+     * @param  Collection<int, object>  $jogadores  cada um com id, campeonatos_id e odd
+     * @return array<int, float> cotação ajustada por id do jogador
+     */
+    public function ajustar_jogadores(Publico $publico, Collection $jogadores): array
+    {
+        if ($jogadores->isEmpty()) {
+            return [];
+        }
+
+        $codigo = CodigosCotacao::JOGADOR;
+        $porcentagem_publico = $this->porcentagens_publico($publico, self::PRE_JOGO)[$codigo] ?? 0;
+        $porcentagens_campeonatos = $this->regras_por_item(
+            PorcentagensCampeonatos::query(), 'campeonatos_id', $jogadores->pluck('campeonatos_id')->unique(), $publico,
+        );
+        $teto = ConfrontosTetoCotacoes::atual()->tetos[$codigo] ?? null;
+
+        $ajustadas = [];
+
+        foreach ($jogadores as $jogador) {
+            $ajustadas[$jogador->id] = $this->aplicar(
+                (float) $jogador->odd,
+                $porcentagem_publico + ($porcentagens_campeonatos[$jogador->campeonatos_id][$codigo] ?? 0),
+                0.0,
+                $teto !== null ? (float) $teto : null,
+                null,
+            );
+        }
+
+        return $ajustadas;
+    }
+
+    /**
+     * Regra do cálculo para uma cotação: zerada continua zerada; senão base + base × porcentagem
+     * ÷ 100 + valor fixo, limitada ao teto e à cotação máxima, nunca menor que 1,00, em 2 casas.
+     */
+    private function aplicar(float $base, float $porcentagem, float $valor_fixo, ?float $teto, ?float $maximo): float
+    {
+        if ($base <= 0) {
+            return 0.0;
+        }
+
+        $valor = $base + $base * $porcentagem / 100 + $valor_fixo;
+
+        if ($teto !== null) {
+            $valor = min($valor, $teto);
+        }
+
+        if ($maximo !== null) {
+            $valor = min($valor, $maximo);
+        }
+
+        return round(max($valor, 1.00), 2);
     }
 
     /**

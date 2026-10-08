@@ -69,6 +69,12 @@ não encontrado.". Total: **1 rota pública** e **37 do painel**; **2 removidas*
 
 ### `GET /api/publico/confrontos`
 
+> Spec 004: o pré-jogo também respeita o período de jogos e a data de travamento do público e não
+> mostra o confronto que já está no ao vivo; com a data de travamento passada (vendedor e
+> visitante), a listagem vem vazia. O detalhe de um confronto com todas as cotações
+> (`GET /api/publico/confrontos/{confronto}` e `GET /api/publico/confrontos-ao-vivo/{confronto_ao_vivo}`)
+> e as rotas de limite por confronto estão no contrato da spec 004.
+
 | Parâmetro | Valores | Padrão |
 |---|---|---|
 | `tipo` | `pre_jogo`, `ao_vivo` | `pre_jogo` |

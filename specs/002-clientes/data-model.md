@@ -61,7 +61,7 @@ primeira letra maiúscula e acentos (v1.13.0). Decisões em [research.md](resear
 | realizar_aposta | boolean | |
 | apostar_ao_vivo | boolean | |
 | apostar_outros_esportes | boolean | |
-| cancelar_aposta | boolean | |
+| cancelar_aposta | boolean | sem uso desde a spec 004: o cliente online não cancela apostas (FR-050b da spec 004) |
 | aceita_promocao | boolean | único campo que o cliente também altera |
 | bloquear_saque | boolean | |
 | quantidade_minima_opcoes | unsigned smallint | ≥ 1 e ≤ máxima |
@@ -75,6 +75,7 @@ primeira letra maiúscula e acentos (v1.13.0). Decisões em [research.md](resear
 | odd_minima | decimal(8,2) | ≥ 1,00 e ≤ máxima |
 | odd_maxima | decimal(8,2) | |
 | esportes_permitidos | json | lista de nomes, pelo menos 1; sem FK (R-08) |
+| apostar_jogadores, periodo_jogos, delay_ao_vivo, multiplicador, ganho_multiplo_palpites | | acrescentadas pela spec 004 (ver o data-model de lá) |
 | created_at / updated_at / deleted_at | timestamp | |
 
 ## Valores padrão das colunas de `clientes_configuracoes`
