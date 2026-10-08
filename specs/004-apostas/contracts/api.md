@@ -75,7 +75,7 @@ Usado em `POST /publico/apostas`, `POST /area-cliente/apostas`, `POST /apostas` 
 
 | Campo | Regras |
 |---|---|
-| chave_idempotencia | obrigatório; UUID (na validação, opcional) |
+| chave_idempotencia | obrigatório; UUID (também na validação do código, onde é guardado em `chave_validacao`) |
 | nome | obrigatório; até 100 caracteres; HTML removido |
 | valor | obrigatório; > 0; até 2 casas |
 | aceitar_alteracoes | `Nenhuma` (padrão), `Somente para maior`, `Qualquer` |

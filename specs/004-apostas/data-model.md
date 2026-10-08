@@ -15,6 +15,7 @@
 |---|---|---|
 | codigo | char(8) | único; alfabeto sem 0, O, 1, I (R-09) |
 | chave_idempotencia | char(36) | única; UUID enviado pelo front (R-08) |
+| chave_validacao | char(36) null | única; UUID da validação do código (R-08) |
 | nome | varchar(100) | nome do apostador, sem HTML |
 | situacao | varchar(20) | `SituacaoAposta` |
 | resultado | varchar(20) | `ResultadoAposta`; padrão `Aguardando` |
@@ -136,7 +137,7 @@ dos dois; `usuarios_id` é preenchido na validação. Transições em [research.
 | tempo_cancelamento_aposta | unsigned smallint | 5 (minutos) |
 | apostar_jogadores | boolean | `true` |
 | periodo_jogos | varchar(20) | `Depois de amanhã` |
-| data_travamento_sistema | dateTime null | sem trava |
+| data_travamento_sistema | dateTime null | sem trava; gravada em UTC (entrada sem fuso vale -03:00) |
 | mensagem_bilhete | varchar(500) | `BOA SORTE!` |
 | delay_ao_vivo | unsigned smallint | 15 (segundos) |
 | quantidade_minima_opcoes / quantidade_maxima_opcoes | unsigned smallint | 1 / 20 |
@@ -172,7 +173,7 @@ tempos e limites ≥ 0; multiplicador e prêmio máximo > 0; `periodo_jogos` no 
 |---|---|---|
 | apostar_jogadores | boolean | `true` |
 | periodo_jogos | varchar(20) | `Depois de amanhã` |
-| data_travamento_sistema | dateTime null | sem trava |
+| data_travamento_sistema | dateTime null | sem trava; gravada em UTC (entrada sem fuso vale -03:00) |
 | quantidade_minima_opcoes / quantidade_maxima_opcoes | unsigned smallint | 1 / 20 |
 | valor_minimo_aposta / valor_maximo_aposta | decimal(15,2) | 2.00 / 1000.00 |
 | odd_minima | decimal(8,2) | 1.00 |

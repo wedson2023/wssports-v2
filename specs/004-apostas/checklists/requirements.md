@@ -49,3 +49,5 @@
   minutos): os 16 itens continuam passando.
 - Revalidado em 2026-10-07 após o /speckit-plan (rota pública de detalhe do confronto com todas as
   cotações, FR-065a e FR-065b): os 16 itens continuam passando.
+- Revalidado em 2026-10-08 após as correções do /speckit-analyze (FR-009, FR-016, FR-051 e casos de
+  borda; Clarifications 2026-10-08): os 16 itens continuam passando.

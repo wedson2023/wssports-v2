@@ -101,6 +101,13 @@ de cassino e frontend."
 
 - Q: A mensagem do bilhete deve ser copiada para a aposta? → A: Não. Fica só nas configurações (do
   vendedor e do site), e o comprovante usa sempre a mensagem atual.
+- Q: (análise de consistência) Quais ajustes foram feitos antes da implementação? → A: palpite em
+  jogador precisa ser do mesmo confronto ("Jogador não pertence ao confronto."); repetição de
+  jogo conferida pelo confronto já resolvido (pré-jogo ou ao vivo); chave de idempotência
+  obrigatória também na validação do código; no cancelamento, o vendedor recebe de volta o limite
+  abatido na confirmação, pela quantidade original de palpites; `data_travamento_sistema` sem fuso
+  explícito vale -03:00 e é gravada em UTC; idempotência do visitante pelo mesmo IP com a aposta
+  ainda Pendente.
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -565,7 +572,9 @@ e conferir que as cotações de jogador somem da listagem e são recusadas na ap
   código nunca é usado para montar consulta ao banco.
 - Confronto inexistente, excluído, inativo, não permitido para o público ou de esporte não
   permitido: a aposta é recusada citando o jogo.
-- Palpite em jogador sem jogador ou sem tipo, ou jogador que não pertence ao confronto: recusado.
+- Palpite em jogador sem jogador, ou com jogador que não pertence ao confronto do palpite:
+  recusado ("Jogador não pertence ao confronto."). O tipo (Primeiro, Último, Qualquer momento) vem
+  do registro do jogador, nunca do pedido.
 - Um jogo do pré-jogo que entra no ao vivo entre a montagem e o envio: o palpite enviado como
   pré-jogo é recusado ("já iniciou"); para apostar nele, o apostador precisa escolhê-lo no ao vivo,
   com as cotações e as regras do ao vivo.
@@ -640,7 +649,9 @@ e conferir que as cotações de jogador somem da listagem e são recusadas na ap
   permitidos, apostar em jogadores, período de jogos e data de travamento. Um jogo ou cotação que
   não aparece para o público NÃO DEVE poder ser apostado.
 - **FR-009**: A chave de idempotência DEVE garantir que o mesmo envio repetido pelo mesmo
-  apostador devolva a mesma aposta, sem gravar outra nem debitar de novo.
+  apostador devolva a mesma aposta, sem gravar outra nem debitar de novo. Para o visitante, "mesmo
+  apostador" é a mesma aposta ainda Pendente criada pelo mesmo IP. A validação do código também
+  exige a chave, e a repetição pelo mesmo vendedor devolve o comprovante já validado.
 - **FR-010**: O nome do apostador DEVE ser limpo de qualquer HTML e ter tamanho máximo de 100
   caracteres.
 - **FR-011**: Valores em dinheiro DEVEM ter duas casas decimais e cotações duas casas decimais,
@@ -659,7 +670,7 @@ e conferir que as cotações de jogador somem da listagem e são recusadas na ap
 - **FR-016**: Confronto: DEVE existir, estar ativo ("O confronto CASA x FORA está inativo,
   retire-o para concluir"), ter esporte permitido e não estar entre os campeonatos, confrontos e
   ao vivo não permitidos do público (spec 003). Aposta em jogador só com `apostar_jogadores`
-  liberado.
+  liberado e com jogador do mesmo confronto do palpite ("Jogador não pertence ao confronto.").
 - **FR-017**: Pré-jogo: o jogo NÃO DEVE ter começado nem estar no ao vivo, mesmo antes do horário
   de início ("O confronto CASA x FORA já iniciou, retire-o para concluir"). A listagem do pré-jogo
   da spec 003 DEVE deixar de exibir o jogo que já está no ao vivo.
@@ -831,7 +842,9 @@ e conferir que as cotações de jogador somem da listagem e são recusadas na ap
   aposta como Cancelada com data, autor, IP e user agent, mantendo a aposta e os palpites; devolver
   ao cliente o valor na carteira de onde saiu (transação de origem Estorno referenciando a aposta)
   e desfazer exatamente o que a aposta somou nos rollovers; ou devolver ao vendedor os limites de
-  venda abatidos. Uma aposta já cancelada NÃO DEVE ser cancelada de novo.
+  venda abatidos na confirmação (`limite_geral` e, pela quantidade de palpites da confirmação,
+  inclusive os cancelados depois por edição, `limite_simples` ou `limite_duplo`). Uma aposta já
+  cancelada NÃO DEVE ser cancelada de novo.
 - **FR-052**: Apostas Pendentes de visitante, Em análise, Recusadas ou Expiradas NÃO DEVEM ser
   canceladas. Só apostas Ativas com resultado Aguardando DEVEM poder ser canceladas, por qualquer
   pessoa ("Não é possível cancelar uma aposta já apurada"); a correção de apostas apuradas fica para

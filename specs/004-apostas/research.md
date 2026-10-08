@@ -116,6 +116,11 @@ já implementado estão marcados e listados no [plan.md](plan.md) (Princípio IV
   corpo); a mesma chave de outro apostador devolve 422 ("Chave de idempotência já usada"). Recusas por regra
   (422) e pedidos de confirmação de cotação não gravam nada, então a chave pode ser reusada no
   reenvio.
+- **Visitante** (sem identidade): a aposta existente só é devolvida se ainda estiver Pendente e
+  tiver sido criada pelo mesmo IP; nos demais casos, 422.
+- **Validação do código**: a chave também é obrigatória e fica em `apostas.chave_validacao`; a
+  repetição pelo mesmo vendedor com a mesma chave devolve o comprovante já validado (200), em vez
+  de "já validada".
 - **Motivo**: duplo clique e reenvio de rede (FR-009, SC-008).
 
 ## R-09. Código da aposta
