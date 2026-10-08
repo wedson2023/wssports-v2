@@ -94,6 +94,9 @@ exemplo) e `token_cliente` (área do cliente).
 | 17 | `fuso_horario=abc`; `por_pagina=101` | `422` | US2-10 |
 | 18 | Token expirado de cliente | resposta de visitante com `token_recusado: true` | US2-11 |
 | 19 | 121 requisições em 1 minuto do mesmo IP | a 121ª recebe `429` | FR-044 |
+| 19a | Campeonatos de países diferentes (um favorito), com nomes intercalados em ordem alfabética; repetir com `tipo=ao_vivo` | favorito no topo; depois os campeonatos agrupados por país em ordem alfabética, e dentro do país por nome; mesma ordem do índice `paises` | FR-042 |
+| 19b | Sem token: `GET /api/publico/confrontos?tipo=ao_vivo` com o provedor mandando `tipo_esporte` `FUTEBOL AO VIVO` | jogos listados; em `confrontos_ao_vivo` o `esporte` gravado é `FUTEBOL` | FR-014 |
+| 19c | Visitante com `HOQUEI NO GELO` nos permitidos: `esporte=HÓQUEI NO GELO&dia=amanha` | jogos de hóquei listados | FR-041 |
 
 ### Cotação ajustada
 

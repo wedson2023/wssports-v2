@@ -119,7 +119,7 @@ O sorteio de `odd4`/`odd7` (FR-008) usa o esporte já gravado pela carga dos con
     "campeonatos_id": 6,
     "casa": "Australia", "escudo_casa": "https://.../4741.png",
     "fora": "Brasil", "escudo_fora": "https://.../4748.png",
-    "tipo_esporte": "FUTEBOL",
+    "tipo_esporte": "FUTEBOL AO VIVO",
     "horario": "2026-10-01 10:00:00",
     "situacao": "Intervalo",
     "minuto_exato": "45",
@@ -134,7 +134,8 @@ O sorteio de `odd4`/`odd7` (FR-008) usa o esporte já gravado pela carga dos con
 
 | Campo do provedor | Campo do sistema | Regra |
 |---|---|---|
-| `fonte_id`, `campeonatos_id`, `casa`, `fora`, escudos, `tipo_esporte`, `horario` | como nos confrontos | iguais à rota 2 |
+| `fonte_id`, `campeonatos_id`, `casa`, `fora`, escudos, `horario` | como nos confrontos | iguais à rota 2 |
+| `tipo_esporte` | `esporte` | o provedor manda o esporte com o sufixo ` AO VIVO` (ex.: `FUTEBOL AO VIVO`, como no sistema antigo); o sufixo é retirado na gravação, e o esporte fica igual ao do pré-jogo (`FUTEBOL`) |
 | `situacao` | `situacao` | 1 tempo, Intervalo ou 2 tempo |
 | `minuto_exato` | `minuto` | inteiro ≥ 0, obrigatório |
 | `tempo` | `cronometro` | texto, opcional |
