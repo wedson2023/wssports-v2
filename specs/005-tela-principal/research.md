@@ -303,3 +303,231 @@ notificações); entram em spec própria.
   errado e trocar em seguida.
 - **Ponto para o plano**: as cores fixas viram tokens do tema (ex.: fundo do cabeçalho, fundo do
   card, texto secundário), com um valor para cada modo; os componentes usam só os tokens.
+
+---
+
+# Fase 0 do plano (decisões técnicas)
+
+As seções R-12 a R-24 foram acrescentadas pelo `/speckit-plan` em 2026-10-09.
+
+## R-12. Dependências novas (Stack: justificar no plano)
+
+| Pacote | Versão | Motivo |
+|---|---|---|
+| `inertiajs/inertia-laravel` (composer) | ^2.0 | Páginas Inertia no servidor; versão do build por requisição (R-15) |
+| `@inertiajs/react` | ^2.0 | Lado React do Inertia; `usePoll`, `router.reload` com `only`, props com `merge` para a rolagem infinita |
+| `react`, `react-dom` | ^19 | Stack do frontend definida pelo responsável |
+| `@vitejs/plugin-react` | ^5 | JSX e recarga rápida no Vite 7 |
+| `styled-components` | ^6.1 | Stack definida; estilos em `styles.jsx` (Princípio III) |
+| `vite-plugin-pwa` | ^1.0 | Service worker gerado no build com a lista de arquivos com hash (R-15) |
+| `sweetalert2` | ^11 | Alertas e confirmações idênticos aos atuais (FR-047); o sistema antigo usa a mesma biblioteca |
+| `@fontsource/roboto` | ^5 | Roboto 400/500 servida pelo próprio site (o antigo buscava no Google); entra no cache do PWA |
+| `material-icons` | ^1.13 | Fonte Material Icons servida pelo próprio site (o antigo usava `/css/material.icon.css`) |
+
+**Removidos** (vieram no esqueleto do Laravel e não são usados): `tailwindcss`, `@tailwindcss/vite`
+e `resources/css/app.css`. **Mantidos**: `axios`, `laravel-vite-plugin`, `vite`, `concurrently`.
+
+**Não usados** do sistema antigo: `react-router-dom` (o Inertia faz as rotas), `redux` (estado do
+cupom em contexto), `moment` (`Intl.DateTimeFormat`), `react-responsive-carousel` e
+`react-loader-spinner` (componentes próprios que reproduzem o visual, sem depender de bibliotecas
+antigas sem suporte ao React 19).
+
+## R-13. Fluxo de dados: Inertia para a página, API pública para as ações
+
+- **Página (Inertia)**: `GET /` entrega como props a listagem (o mesmo serviço
+  `ListagemConfrontos` da API, com `Publico::visitante()`), as configurações reais e os fakes.
+  Trocar esporte, dia, busca e campeonato faz `router.reload` só da prop `listagem`, com os
+  filtros na URL (`?esporte=BASQUETE&dia=amanha`), preservando o estado e a rolagem.
+- **Rolagem infinita**: `router.reload({ only: ['listagem'], data: { pagina } })` com a prop
+  marcada como `merge` no servidor (Inertia 2); páginas de 50 (máximo 100, Constituição).
+- **Ao vivo**: `usePoll(7000, { only: ['listagem'] })`, ativo só com a aba "Ao vivo" aberta.
+- **Ações (API pública existente, sem token, mesma origem)**: detalhe do "+N"
+  (`GET /api/publico/confrontos/{id}` e `.../confrontos-ao-vivo/{id}`), código da aposta
+  (`POST /api/publico/apostas`) e bilhete por código (`GET /api/publico/apostas/{codigo}`).
+  Assim nenhuma regra de aposta é duplicada em rotas web.
+- **Motivo**: a página e as listas passam pelo Inertia, que confere a versão a cada requisição
+  (R-15); as ações reaproveitam rotas já validadas nas specs 003 e 004.
+- **Alternativas descartadas**: tudo pela API JSON (perde a checagem de versão e a página pronta
+  do servidor); ações também por rotas web (duplicaria `CriacaoApostas` e os limites de
+  tentativas).
+
+## R-14. Backend web (arquivos novos)
+
+| Arquivo | Papel |
+|---|---|
+| `app/Http/Middleware/TratarRequisicoesInertia.php` | Middleware do Inertia: `rootView` `app`, `version()` (hash do manifesto do build), `share()` com tema, contatos, nome do sistema e versão; `Cache-Control: no-cache, private` nas respostas de página |
+| `app/Http/Controllers/PaginaInicialController.php` | `GET /` → `Inertia::render('Home', …)` |
+| `app/Http/Controllers/RegrasController.php` | `GET /regras` → `Inertia::render('Rules', …)` com o texto fake |
+| `app/Http/Controllers/ArquivosPwaController.php` | `GET /sw.js` (service worker com `Service-Worker-Allowed: /`, sem cache) e `GET /manifest.webmanifest` (montado no servidor: nome real, ícones fake) |
+| `app/Http/Requests/PaginaInicialRequest.php` | Filtros da página: estende `ListagemPublicaRequest` (mesmas regras e mesmo limite por IP) |
+| `app/Fakes/DadosFake.php` | **Local único dos dados fake** (Princípio IX): `tema()`, `contatos()`, `banners()`, `indicadores()`, `regras()`, `icones()` |
+| `public/fakes/` | Imagens fake: logo, ícones do PWA e banners |
+| `resources/views/app.blade.php` | Página raiz do Inertia: `@vite`, `@inertiaHead`, viewport com zoom bloqueado, manifest e o script que aplica o modo salvo antes de desenhar (R-18) |
+
+Nomes de classes do backend em português, como os demais controllers (Princípio VI).
+
+## R-15. Atualização instantânea: implementação
+
+1. **Build com hash**: o Vite já gera `public/build/assets/*-[hash].js|css`; nenhum arquivo do
+   site é servido sem hash, exceto `sw.js`, o manifest e a página.
+2. **Versão**: `TratarRequisicoesInertia::version()` devolve o hash do
+   `public/build/manifest.json`. Toda requisição Inertia leva a versão do navegador; se for
+   diferente, o servidor responde 409 e o Inertia faz a recarga completa sozinho.
+3. **Voltar para a aba**: `useAtualizacaoVersao` escuta `visibilitychange` e, ao voltar, faz
+   `router.reload({ only: ['versao'] })` (prop mínima); no ao vivo o `usePoll` já faz isso.
+4. **Service worker** (`vite-plugin-pwa`, `generateSW`, `registerType: 'autoUpdate'`,
+   `skipWaiting`, `clientsClaim`, `cleanupOutdatedCaches`):
+   - pré-cache só dos arquivos do build com hash, das fontes e das imagens fixas;
+   - navegação (página): `NetworkFirst` com tempo limite curto, usada do cache só sem conexão;
+   - `/api/*`, `/fakes/*` e escudos/bandeiras externos: `NetworkOnly` (nunca do cache);
+   - o `sw.js` é servido pela rota `/sw.js`, sem cache, para valer no escopo `/`.
+5. **Envio em andamento**: a recarga de versão acontece em requisições Inertia; o envio do código
+   usa a API (axios) e não é interrompido. O cupom está no aparelho e sobrevive à recarga.
+6. **Servidor de produção**: `/build/assets/*` com `Cache-Control: public, max-age=31536000,
+   immutable`; página, `sw.js` e manifest com `no-cache` (registrado no `quickstart.md`).
+
+## R-16. Cupom: estado, armazenamento e cálculo
+
+- **Estado**: contexto React com `useReducer` (ações `alternarPalpite`, `removerPalpite`,
+  `definirValor`, `definirNome`, `limpar`, `atualizarCotacoes`), sempre imutável. O estado
+  "selecionado" do botão é derivado do cupom; os objetos dos jogos nunca são alterados.
+- **Onde fica**: o provedor do contexto fica no `PublicLayout`, layout persistente do Inertia,
+  então o cupom não reinicia ao navegar entre `/` e `/regras`.
+- **Armazenamento**: `localStorage`, chave `wssports.cupom`, com `versao_formato: 1`; leitura
+  validada (formato inválido → cupom vazio, FR-039); escrita a cada mudança; leitura e escrita
+  em `try/catch`.
+- **Cálculo**: `utils/dinheiro.js` reproduz `CalculoPremio` com inteiros (`BigInt`):
+  - valor em centavos × produto das cotações em centésimos, truncado em centavos;
+  - o menor entre esse valor, valor × `multiplicador` e `premio_maximo`;
+  - acréscimo de `ganho_multiplo_palpites`% com 3 ou mais palpites, limitado ao prêmio máximo;
+  - "vendedor paga" = total − `comissao_por_premio`%, só com comissão maior que zero (FR-037a).
+  Com mais de 5 palpites o backend trunca o produto em 10 casas; diferenças de centavos são
+  possíveis e o backend decide (estimativa).
+- **Envio**: `POST /api/publico/apostas` com `chave_idempotencia` (`crypto.randomUUID()`, uma por
+  tentativa), `nome`, `valor` em texto com 2 casas, `aceitar_alteracoes: "Nenhuma"` e os palpites
+  com `confrontos_id` ou `confrontos_ao_vivo_id`, `codigo_cotacao` e `cotacao_vista`.
+- **Respostas**:
+  - 201 → modal de sucesso com o código e cupom limpo;
+  - 409 (cotação alterada) → confirmação com a mensagem e o novo prêmio do backend; "Sim"
+    atualiza as cotações do cupom e reenvia; "Não" mantém o cupom com as cotações novas;
+  - 422 e 429 → alerta com a mensagem do backend; o cupom continua montado.
+
+## R-17. Responsivo (decisões aprovadas)
+
+- Um ponto de troca: `tema.telas.mobile = 900` (CSS `@media (max-width: 900px)` e o hook
+  `useTelaMobile` com `matchMedia`, que reage a girar e redimensionar). As regras de 1024px do
+  sistema antigo passam para 900px (FR-003).
+- Colunas laterais: `width: 20%; min-width: 240px` (FR-003a).
+- Altura: `100dvh`, com `100vh` de reserva para navegadores antigos (FR-003b).
+- Espaço do WhatsApp: no mobile, a lista de jogos termina com 85px livres (botão de 55px + 15px
+  de margem + 15px de folga) (FR-003c).
+- Zoom bloqueado: viewport com `maximum-scale=1, user-scalable=no` (FR-003d).
+- Barra de esportes no mobile: cada item com `calc((100vw - 20px) / 5)`, em CSS, sem mexer no
+  DOM.
+
+## R-18. Tema e modo claro/escuro: implementação
+
+- **Tokens**: `resources/js/theme/` define as cores do tema (principal e derivada, vindas das
+  props) e as cores fixas de cada modo (R-19). Os `styles.jsx` usam só tokens
+  (`props.theme.superficie_titulo` etc.), nunca a cor escrita direto.
+- **Provedor**: `ThemeProvider` do styled-components no `PublicLayout`, com o modo atual.
+- **Modo salvo**: `localStorage` `wssports.modo` (`claro` ou `escuro`); sem escolha, vale
+  `cor_fundo`. "Limpar cache" apaga a escolha.
+- **Sem piscar**: um script curto no `app.blade.php` lê o modo salvo antes do React, marca
+  `<html data-modo="…">` e a cor de fundo da página; o React lê esse valor na primeira
+  renderização.
+
+## R-19. Paleta do modo claro (proposta, aguardando aprovação do responsável)
+
+O modo escuro usa exatamente os valores do sistema antigo. O modo claro troca só as cores fixas;
+a cor principal e a derivada do tema ficam iguais.
+
+| Token | Uso | Escuro (antigo) | Claro (proposta) |
+|---|---|---|---|
+| `fundo_pagina` | página, cabeçalho, filtros de data, formulário do cupom | `#000` | `#ffffff` |
+| `superficie_pais` | linha do país no menu | `#111` | `#e6e6e6` |
+| `superficie_titulo` | títulos de painel, cabeçalho do campeonato, busca, copyright | `#222` | `#eeeeee` |
+| `superficie_barra` | barra de esportes, itens do menu, rodapé, palpite do cupom | `#333` | `#f5f5f5` |
+| `superficie_cupom` | fundo do cupom, campos da busca, palpite alternado | `#444` | `#fafafa` |
+| `superficie_campeonato` | linha do campeonato no menu, fundo das colunas, "Limpar" | `#666` | `#d9d9d9` |
+| `superficie_jogo` | card do jogo | `#f0f0f0` | `#ffffff` |
+| `texto_principal` | textos sobre superfícies escuras | `#fff` | `#222222` |
+| `texto_secundario` | esporte inativo, filtros, nome do 2º time no cupom | `#ccc` | `#555555` |
+| `texto_apagado` | mensagens vazias, versão | `#999` | `#777777` |
+| `texto_jogo` | times e horário no card | `#000` | `#000000` |
+
+Botões na cor do tema (odds, valor rápido, Finalizar, Criar Conta) mantêm o texto `#fff` nos dois
+modos. Os ajustes que o responsável pedir entram aqui antes da implementação (Princípio VIII).
+
+## R-20. Linha da cotação sem "vendedor paga" (proposta, aguardando aprovação)
+
+No cupom, a linha "cotação total | vendedor paga" tem dois campos de 50%. Quando o "vendedor paga"
+não aparece (FR-037a; sempre, nesta spec), a proposta é a cotação total ocupar a linha inteira,
+mantendo altura, ícone e alinhamento. Alternativa: manter a cotação em 50% e deixar o espaço vazio.
+
+## R-21. Inventário visual dos modais e da tela de regras
+
+| Antigo | Valores | Novo |
+|---|---|---|
+| `modals/odd` `Container` | fundo `#fff`; 40% × 450px, centralizado (topo 25%); ≤ 900px: 100% × 100vh, topo 20% | `MatchDetailsModal` |
+| `modals/odd` `Header` / `TextMatch` | 45px; fundo `#222`; texto `#fff` | `MatchDetailsModal` |
+| `modals/odd` `ButtonTabs` / `TextTabs` | padding 10px; ativa: fundo tema e texto `#fff`; inativa: fundo `#fff` e texto tema; 12px 500 | `MatchDetailsModal` |
+| `modals/odd` `Category` / `Item` | categoria: padding 10px, fundo tema, texto `#fff`; item: padding 10px 15px, `space-between` | `MatchDetailsModal` |
+| `modals/odd` `ValueOdd` | 80 × 40px; borda 2px tema; 14px negrito; selecionado transparente com texto tema | `OddButton` (variação larga) |
+| `modals/success` `Container` | fundo `#fff`; 40%, padding 10px, topo 25%; ≤ 900px: 100% × 100vh | `SuccessModal` |
+| `modals/success` `Title` / `Code` | 15px 500; código em `h1` negrito | `SuccessModal` |
+| `modals/success` `Button` | padding 12px 5px; 500; `#fff`; código `#28b351`, link tema, fechar vermelho; opacidade 0.8 | `SuccessModal` |
+| `modals/ticket` `Container` / `Header` | fundo `#fff`; 40%, topo 25%; cabeçalho 40px, padding 10px, fundo `#222` | `TicketModal` |
+| `modals/ticket` `Row` / `Label` / `Status` | linha `space-between`, 0.9em, padding 3px 0; rótulo 500; situação: verde (Vencedor), vermelho (Perdedor), `#222` (demais), 0.7em, raio 0.3em | `TicketModal` |
+| `modals/ticket` `ContainerHunches` | borda fina `#ccc`; margem 10px 0; padding 5px 10px; altura 290px com rolagem | `TicketModal` |
+| `screens/rules` `Container` / `section` | padding 25px; fundo `#000`; seção branca de 90%, padding 25px; título "REGULAMENTO" e logo | `RulesContent` (página `Rules`) |
+| Fundo dos modais (`Screen`) | `rgba(0,0,0,0.8)`, fixo, z-index 25 | `Backdrop` |
+| Alertas (`helpers.js`) | sweetalert2: "Sucesso"/OK, "Atenção"/Entendi, "Confirme por favor" Sim/Não (confirmar na cor do tema, cancelar `#999`), erros "Erro!"/Entendi | `utils/alertas.js` |
+
+## R-22. Carregamento, carrossel e ícones sem bibliotecas antigas
+
+- `LoadingScreen` reproduz o "Rings" (100px, `#ccc`) com o texto "Carregando jogos."; o
+  indicador do "Finalizar" reproduz o "TailSpin" (20px, `#fff`), em SVG próprio.
+- `BannerCarousel` reproduz o `react-responsive-carousel` usado (troca automática a cada 5s, em
+  loop, sem miniaturas, status nem indicadores; setas no mobile), com CSS próprio.
+- Ícones pela fonte Material Icons (pacote `material-icons`), com os mesmos nomes do sistema
+  antigo (`sports_soccer`, `live_tv`, `lock`, `delete`, `launch`, `menu`, `close` etc.); sol e lua
+  do `ThemeToggle`: `light_mode` e `dark_mode`.
+
+## R-23. Arquivos existentes alterados ou removidos (Princípio IV)
+
+| Arquivo | Alteração | Motivo |
+|---|---|---|
+| `composer.json` / `composer.lock` | `inertiajs/inertia-laravel` | R-12 |
+| `package.json` / `package-lock.json` | Dependências do R-12; remove o Tailwind | R-12 |
+| `vite.config.js` | Plugins React e PWA; entrada `resources/js/app.jsx`; remove o Tailwind | R-12, R-15 |
+| `resources/js/app.js` | Removido; substituído por `resources/js/app.jsx` (entrada do Inertia) | R-13 |
+| `resources/css/app.css` | Removido (era só o Tailwind) | R-12 |
+| `resources/views/welcome.blade.php` | Removido; substituído por `app.blade.php` | R-14 |
+| `routes/web.php` | Troca a rota de boas-vindas por `/`, `/regras`, `/sw.js` e `/manifest.webmanifest` | R-14 |
+| `bootstrap/app.php` | Adiciona `TratarRequisicoesInertia` ao grupo `web` | R-14 |
+
+`resources/js/bootstrap.js` é mantido sem mudança (importado pelo `app.jsx`). Nenhum arquivo do
+backend das specs 001 a 004 é alterado; os serviços são só usados.
+
+## R-24. Nomes de pastas e arquivos do frontend
+
+- Pastas comuns em inglês e `snake_case`: `pages`, `layouts`, `components`, `hooks`, `theme`,
+  `utils`.
+- Componentes (inclusive páginas e layouts) em pastas `PascalCase` com `index.jsx` e
+  `styles.jsx` (Princípio III). Não há componente sem estilo próprio: o provedor do cupom fica
+  dentro do `PublicLayout`.
+- Hooks e utilitários em arquivos com o nome da função (`hooks/useCupom.js`,
+  `utils/dinheiro.js`); funções e variáveis em `camelCase` português.
+
+## R-25. Filtro por campeonato no menu (alteração de código da spec 003, aguardando autorização)
+
+- **Problema**: clicar num campeonato do menu filtra a lista (FR-018). No sistema antigo o filtro
+  era feito no navegador sobre todos os jogos já carregados. No sistema novo a listagem é paginada
+  (Constituição), então filtrar no navegador mostraria só os jogos das páginas já carregadas.
+- **Proposta**: acrescentar o filtro opcional `campeonato` (id) em `ListagemPublicaRequest` e em
+  `ListagemConfrontos` (pré-jogo e ao vivo): `where campeonatos_id = ?`, sem mudar o restante.
+  Como muda uma rota da API, a mesma entrega atualiza o contrato da spec 003 e regenera a coleção
+  do Postman (Constituição, Fluxo).
+- **Alternativa**: filtro só no navegador sobre as páginas carregadas (incompleto; não
+  recomendado).
