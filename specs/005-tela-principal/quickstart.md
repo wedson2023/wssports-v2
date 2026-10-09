@@ -33,8 +33,7 @@ cenários de tema, troque ali `temas` e `cor_fundo`.
    inventário visual ([research.md](research.md), R-07 e R-21): medidas, cores, espaçamentos,
    textos e posição.
 3. Diferenças aceitas: colunas laterais com no mínimo 240px, altura visível real no celular,
-   espaço para o WhatsApp no fim da lista, botão dia/noite e a linha da cotação sem o "vendedor
-   paga" (R-20).
+   espaço para o WhatsApp no fim da lista e o botão dia/noite.
 
 **Esperado**: nenhuma outra diferença.
 
@@ -61,7 +60,7 @@ cenários de tema, troque ali `temas` e `cor_fundo`.
 3. Monte 3 palpites, toque em 10: o valor vira 10,00, e a cotação total e o retorno são
    recalculados. Confira o retorno com a fórmula do backend (`CalculoPremio`): valor ×
    cotações, truncado em centavos, limitado pelo multiplicador e pelo prêmio máximo.
-4. O "vendedor paga" não aparece (comissão zero do visitante, FR-037a).
+4. O "vendedor paga" aparece ao lado da cotação total com o mesmo valor do retorno (FR-037a).
 5. Recarregue a página: o cupom continua igual.
 6. "Limpar" → confirme: o cupom fica vazio.
 7. No celular, toque em "Conferir": o cupom abre sobre a tela.
@@ -117,10 +116,14 @@ cenários de tema, troque ali `temas` e `cor_fundo`.
 5. Com o PWA instalado, repita o passo 2 e reabra o app: já abre na versão nova, sem reinstalar
    e sem limpar o cache.
 6. Mude um banner em `DadosFake::banners()` (sem build) e recarregue: o banner novo aparece.
-7. No DevTools > Application > Cache Storage: só arquivos com hash, fontes e imagens fixas; nenhum
-   `/api/`, `/fakes/` ou página.
-8. No DevTools, marque "Offline" e recarregue: a estrutura abre, nenhum jogo ou cotação antiga
-   aparece, e aparece a mensagem de erro de conexão.
+7. No DevTools > Application > Cache Storage: só arquivos com hash, fontes, imagens fixas e
+   `/offline.html`; nenhum `/api/`, `/fakes/` nem a página da tela.
+8. No DevTools, marque "Offline" e recarregue: abre a página offline com a mensagem de erro de
+   conexão; nenhum jogo ou cotação antiga aparece. Com "Slow 3G" (conectado), a página vem
+   sempre da rede, mesmo demorando.
+9. Monte um cupom, gere uma versão nova (`npm run build`) e, com a rede em "Slow 3G", clique em
+   "Finalizar" e troque de aba e volte durante o envio: o envio termina, o código aparece e só
+   depois a página recarrega na versão nova.
 
 ## 10. PWA e menu (US9; FR-013 a FR-017, FR-045 a FR-048)
 

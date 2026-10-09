@@ -6,8 +6,8 @@
 003 e 004) e dados fake (Princípio IX). Este documento descreve os dados que a tela recebe e o
 estado que ela guarda no aparelho.
 
-Chaves vindas do backend ficam como chegam, em `snake_case` (Constituição 2.1.0, Princípio I). O
-estado interno do frontend usa `camelCase` em português.
+Chaves vindas do backend ficam como chegam, em `snake_case`; o estado interno do frontend também
+usa `snake_case`, em português (Constituição 3.1.0, Princípio I).
 
 ## 1. Dados recebidos do servidor (props do Inertia)
 
@@ -55,7 +55,7 @@ Contrato completo em [contracts/paginas.md](contracts/paginas.md).
 | `esportes_permitidos`, `apostar_outros_esportes` | `visitantes_configuracoes` | Esportes visíveis (FR-010) |
 | `multiplicador`, `premio_maximo`, `ganho_multiplo_palpites` | `visitantes_configuracoes` | Estimativa do cupom (R-16) |
 | `valor_minimo_aposta`, `valor_maximo_aposta`, `quantidade_minima_opcoes`, `quantidade_maxima_opcoes` | `visitantes_configuracoes` | Só exibição; quem valida é o backend |
-| `comissao_por_premio` | sempre `"0.00"` para o visitante | "Vendedor paga" oculto (FR-037a) |
+| `comissao_por_premio` | sempre `"0.00"` para o visitante | Não usado nesta spec; o "vendedor paga" mostra o mesmo valor do prêmio (FR-037a) |
 
 ### Listagem de jogos (real: `ListagemConfrontos`)
 
@@ -74,7 +74,7 @@ Formato igual ao da API (`GET /api/publico/confrontos`, contrato da spec 003): `
 | `placar_casa`, `placar_fora`, `minuto`, `situacao` (ao vivo) | Placar, período e minuto |
 
 **Variação da cotação** (piscar verde ou vermelho): a tela guarda em memória as cotações da
-atualização anterior de cada jogo (`cotacoesAnteriores[id][codigo]`) e compara com as novas; não
+atualização anterior de cada jogo (`cotacoes_anteriores[id][codigo]`) e compara com as novas; não
 vai para o armazenamento.
 
 ## 2. Estado guardado no aparelho
@@ -88,18 +88,18 @@ persistência. "Limpar cache" apaga as duas chaves (FR-016).
 {
   "versao_formato": 1,
   "nome": "João",
-  "valorCentavos": 1000,
+  "valor_centavos": 1000,
   "palpites": [
     {
       "tipo": "pre_jogo",
-      "confrontoId": 9001,
-      "codigoCotacao": "odd1",
+      "confronto_id": 9001,
+      "codigo_cotacao": "odd1",
       "mercado": "Casa",
       "cotacao": "2.10",
-      "timeCasa": "Flamengo",
-      "timeFora": "Palmeiras",
+      "time_casa": "Flamengo",
+      "time_fora": "Palmeiras",
       "campeonato": "Brasileirão Série A",
-      "dataInicio": "2026-10-09T21:30:00-03:00"
+      "data_inicio": "2026-10-09T21:30:00-03:00"
     }
   ]
 }
@@ -109,29 +109,29 @@ persistência. "Limpar cache" apaga as duas chaves (FR-016).
 |---|---|---|
 | `versao_formato` | inteiro | `1`; outro valor ou formato inválido → cupom descartado (FR-039) |
 | `nome` | texto | Até 100 caracteres (regra da API) |
-| `valorCentavos` | inteiro | ≥ 0; valores digitados com vírgula ou ponto viram centavos |
-| `palpites` | lista | Um por jogo (`tipo` + `confrontoId`); até 50 (regra da API) |
+| `valor_centavos` | inteiro | ≥ 0; valores digitados com vírgula ou ponto viram centavos |
+| `palpites` | lista | Um por jogo (`tipo` + `confronto_id`); até 50 (regra da API) |
 | `palpites[].tipo` | texto | `pre_jogo` ou `ao_vivo` |
-| `palpites[].codigoCotacao` | texto | `odd1`…`odd323` ou `jogador` |
-| `palpites[].jogadorId` | inteiro | Só com `jogador` (detalhe do "+N") |
+| `palpites[].codigo_cotacao` | texto | `odd1`…`odd323` ou `jogador` |
+| `palpites[].jogador_id` | inteiro | Só com `jogador` (detalhe do "+N") |
 | `palpites[].cotacao` | texto com 2 casas | Cotação vista; vira `cotacao_vista` no envio |
 
 **Transições (reducer `useCupom`)**:
 
 | Ação | Efeito |
 |---|---|
-| `alternarPalpite(jogo, codigo, cotacao)` | Sem palpite no jogo → adiciona; mesmo código → remove; outro código → troca (FR-034) |
-| `removerPalpite(tipo, confrontoId)` | Remove o palpite do jogo |
-| `definirValor(centavos)` | Substitui o valor (botões rápidos e campo) |
-| `definirNome(texto)` | Atualiza o nome do apostador |
-| `atualizarCotacoes(alteracoes)` | Aplica as cotações atuais devolvidas no 409 (R-16) |
+| `alternar_palpite(jogo, codigo, cotacao)` | Sem palpite no jogo → adiciona; mesmo código → remove; outro código → troca (FR-034) |
+| `remover_palpite(tipo, confronto_id)` | Remove o palpite do jogo |
+| `definir_valor(centavos)` | Substitui o valor (botões rápidos e campo) |
+| `definir_nome(texto)` | Atualiza o nome do apostador |
+| `atualizar_cotacoes(alteracoes)` | Aplica as cotações atuais devolvidas no 409 (R-16) |
 | `limpar()` | Cupom vazio (Limpar, sucesso do envio) |
 
 O cupom restaurado não é alterado pela tela (FR-039): jogos começados e cotações alteradas são
 resolvidos pelo backend no envio.
 
-**Valores derivados (não guardados)**: `cotacaoTotal`, `premioCentavos`, `acrescimoCentavos`,
-`totalCentavos`, `vendedorPagaCentavos` e `quantidade`, calculados por `utils/dinheiro.js`
+**Valores derivados (não guardados)**: `cotacao_total`, `premio_centavos`, `acrescimo_centavos`,
+`total_centavos`, `vendedor_paga_centavos` e `quantidade`, calculados por `utils/money.js`
 (R-16).
 
 ### Modo (`localStorage` `wssports.modo`)
@@ -148,11 +148,11 @@ resolvidos pelo backend no envio.
 |---|---|
 | `chave_idempotencia` | `crypto.randomUUID()` gerado a cada tentativa de envio |
 | `nome` | `cupom.nome` |
-| `valor` | `valorCentavos` em texto com 2 casas (`1000` → `"10.00"`) |
+| `valor` | `valor_centavos` em texto com 2 casas (`1000` → `"10.00"`) |
 | `aceitar_alteracoes` | `"Nenhuma"` |
-| `palpites[].confrontos_id` ou `confrontos_ao_vivo_id` | `confrontoId`, conforme `tipo` |
-| `palpites[].codigo_cotacao` | `codigoCotacao` |
-| `palpites[].confrontos_jogadores_id` | `jogadorId` (só `jogador`) |
+| `palpites[].confrontos_id` ou `confrontos_ao_vivo_id` | `confronto_id`, conforme `tipo` |
+| `palpites[].codigo_cotacao` | `codigo_cotacao` |
+| `palpites[].confrontos_jogadores_id` | `jogador_id` (só `jogador`) |
 | `palpites[].cotacao_vista` | `cotacao` |
 
 ## 4. Comprovante (modal do bilhete e de sucesso)

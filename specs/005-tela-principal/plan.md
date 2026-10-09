@@ -65,8 +65,10 @@ Decisões em [research.md](research.md) (R-12 a R-25).
 - nenhuma cotação ou jogo fake; fakes só em `app/Fakes/DadosFake.php` e `public/fakes/`;
 - página, API e fakes nunca servidos do cache com conexão;
 - um breakpoint (900px); zoom bloqueado;
-- nomes: componentes em inglês PascalCase; variáveis e funções em camelCase português; chaves da
-  API como chegam.
+- nomes (Constituição 3.2.0): componentes e styled-components em inglês PascalCase; variáveis,
+  funções, props e constantes em snake_case português; hooks no padrão do React (`useCupom`);
+  props só de estilo com `$` (`$selecionado`); arquivos de utilitários em inglês snake_case
+  (`utils/money.js`); chaves da API como chegam.
 
 **Scale/Scope**:
 
@@ -77,7 +79,7 @@ Decisões em [research.md](research.md) (R-12 a R-25).
 | Componentes | 30 |
 | Hooks | 5 |
 | Rotas web | 4 (`/`, `/regras`, `/sw.js`, `/manifest.webmanifest`) |
-| Rotas da API | 0 novas (1 parâmetro novo, R-25, aguardando autorização) |
+| Rotas da API | 0 novas (1 parâmetro novo, `campeonato`, R-25) |
 | Tabelas / migrations | 0 |
 
 ## Constitution Check
@@ -87,16 +89,16 @@ Decisões em [research.md](research.md) (R-12 a R-25).
 | Princípio / Regra | Verificação | Status |
 |---|---|---|
 | I. Nomes no backend | Classes em português PascalCase (`PaginaInicialController`, `TratarRequisicoesInertia`, `DadosFake`); métodos e variáveis em `snake_case`; métodos do pacote mantêm o nome (`version`, `share`, `rootView`) | ✅ Pass |
-| I. Exceção do frontend | Componentes em inglês PascalCase (`OddButton`, `BetSlip`); funções e hooks em camelCase português (`alternarPalpite`, `useCupom`); chaves da API como chegam (`time_casa`) | ✅ Pass |
+| I. Nomes no frontend (3.2.0) | Componentes e styled-components em inglês PascalCase (`OddButton`, `BetSlip`); variáveis, funções, props, chaves de objetos e constantes em snake_case português (`alternar_palpite`, `ao_clicar`, `chave_cupom`, `fundo_pagina`); hooks no padrão do React, em português (`useCupom`, `useModo`); props só de estilo com `$` (`$selecionado`); utilitários em arquivos em inglês (`utils/money.js`); chaves da API como chegam (`time_casa`); APIs de bibliotecas com o nome original (`useState`, `router.reload`) | ✅ Pass |
 | I. Pastas | `pages`, `layouts`, `components`, `hooks`, `theme`, `utils` em inglês `snake_case`; pastas de componentes em PascalCase; `app/Fakes` em PascalCase (PSR-4) | ✅ Pass |
 | I. Rotas em kebab-case | `/regras`, `/sw.js`, `/manifest.webmanifest`; query em `snake_case` (`depois_de_amanha`) | ✅ Pass |
 | II. Idioma | Artefatos e comentários em português | ✅ Pass |
 | III. Componentes | Cada componente em pasta própria com `index.jsx` e `styles.jsx`; nenhum componente solto (o provedor do cupom fica no `PublicLayout`) | ✅ Pass |
-| IV. Escopo estrito | Arquivos existentes alterados listados abaixo, **aguardando confirmação do responsável** | ⏳ Pendente |
+| IV. Escopo estrito | Arquivos existentes alterados listados abaixo, confirmados pelo responsável em 2026-10-09 | ✅ Pass (confirmado) |
 | V. Legibilidade | Revisão ao final de cada tarefa | ✅ Pass |
 | VI. Consistência | Controllers e request no padrão existente; serviços da spec 003/004 reaproveitados sem cópia; ações pela API pública já existente | ✅ Pass |
 | VII. Sistema antigo | Arquivos consultados e funcionamento no research.md (R-01, R-02, R-21); diferenças de comportamento aprovadas em Clarifications | ✅ Pass |
-| VIII. Fidelidade visual | Inventário R-07/R-21; diferenças aprovadas (FR-003a a FR-003c, botão dia/noite, modo claro). **Paleta do modo claro (R-19) e linha da cotação (R-20) aguardando aprovação** | ⏳ Pendente |
+| VIII. Fidelidade visual | Inventário R-07/R-21; diferenças aprovadas (FR-003a a FR-003c, botão dia/noite, modo claro com a paleta do R-19); linha da cotação e "vendedor paga" iguais ao antigo (R-20) | ✅ Pass (confirmado) |
 | VIII. Áreas por rota | Só `/` (e `/regras`); área definida pela URL; nada de área no `localStorage` | ✅ Pass |
 | IX. Dados fake | Local único (`app/Fakes/DadosFake.php`, `public/fakes/`), formato dos dados reais, nunca no envio da aposta; lista na spec (FR-060 a FR-063) e no research.md (R-09) | ✅ Pass |
 | Stack: dependências novas | Justificadas no R-12 | ✅ Pass |
@@ -104,27 +106,29 @@ Decisões em [research.md](research.md) (R-12 a R-25).
 | Timestamps e soft delete | Sem tabelas novas | ➖ N/A |
 | Paginação ≤ 100 | Lista em páginas de 50 | ✅ Pass |
 | Sem testes | Nenhum arquivo, tarefa ou dependência de teste | ✅ Pass |
-| Postman | Rotas web não entram na coleção. Só se o R-25 for autorizado (parâmetro novo na API) a coleção é regenerada na mesma entrega | ✅ Pass |
+| Postman | Rotas web não entram na coleção; o parâmetro `campeonato` (R-25) muda a API, então a coleção é regenerada na mesma entrega | ✅ Pass |
 
-**Resultado do gate**: aprovado com três pendências que dependem do responsável antes da
-implementação: confirmação dos arquivos existentes (Princípio IV), paleta do modo claro e linha
-da cotação (Princípio VIII), e filtro por campeonato (R-25).
+**Resultado do gate**: aprovado.
+
+**Confirmações do responsável (2026-10-09)**: arquivos existentes alterados ou removidos
+(Princípio IV); paleta do modo claro (R-19); "vendedor paga" sempre visível com o mesmo valor do
+prêmio, layout igual ao antigo (R-20, FR-037a); filtro por campeonato na API (R-25).
 
 ### Arquivos existentes que serão alterados ou removidos (Princípio IV)
 
 | Arquivo | Alteração | Motivo | Situação |
 |---|---|---|---|
-| `composer.json`, `composer.lock` | `inertiajs/inertia-laravel` | R-12 | aguardando confirmação |
-| `package.json`, `package-lock.json` | Dependências do R-12; remove Tailwind | R-12 | aguardando confirmação |
-| `vite.config.js` | Plugins React e PWA; entrada `app.jsx`; remove Tailwind | R-12, R-15 | aguardando confirmação |
-| `resources/js/app.js` | Removido (substituído por `app.jsx`) | R-13 | aguardando confirmação |
-| `resources/css/app.css` | Removido (só tinha o Tailwind) | R-12 | aguardando confirmação |
-| `resources/views/welcome.blade.php` | Removido (substituído por `app.blade.php`) | R-14 | aguardando confirmação |
-| `routes/web.php` | Rotas `/`, `/regras`, `/sw.js`, `/manifest.webmanifest` no lugar da rota de boas-vindas | R-14 | aguardando confirmação |
-| `bootstrap/app.php` | `TratarRequisicoesInertia` no grupo `web` | R-14 | aguardando confirmação |
-| `app/Http/Requests/ListagemPublicaRequest.php` | Regra e mensagem do filtro `campeonato` | R-25 | aguardando autorização |
-| `app/Services/ListagemConfrontos.php` | Filtro `campeonato` no pré-jogo e no ao vivo | R-25 | aguardando autorização |
-| `specs/003-confrontos/contracts/api.md`, `docs/postman/wssports_api.postman_collection.json` | Parâmetro `campeonato` | R-25 e Constituição (Postman) | aguardando autorização |
+| `composer.json`, `composer.lock` | `inertiajs/inertia-laravel` | R-12 | confirmado (2026-10-09) |
+| `package.json`, `package-lock.json` | Dependências do R-12; remove Tailwind | R-12 | confirmado (2026-10-09) |
+| `vite.config.js` | Plugins React e PWA; entrada `app.jsx`; remove Tailwind | R-12, R-15 | confirmado (2026-10-09) |
+| `resources/js/app.js` | Removido (substituído por `app.jsx`) | R-13 | confirmado (2026-10-09) |
+| `resources/css/app.css` | Removido (só tinha o Tailwind) | R-12 | confirmado (2026-10-09) |
+| `resources/views/welcome.blade.php` | Removido (substituído por `app.blade.php`) | R-14 | confirmado (2026-10-09) |
+| `routes/web.php` | Rotas `/`, `/regras`, `/sw.js`, `/manifest.webmanifest` no lugar da rota de boas-vindas | R-14 | confirmado (2026-10-09) |
+| `bootstrap/app.php` | `TratarRequisicoesInertia` no grupo `web` | R-14 | confirmado (2026-10-09) |
+| `app/Http/Requests/ListagemPublicaRequest.php` | Regra e mensagem do filtro `campeonato` | R-25 | autorizado (2026-10-09) |
+| `app/Services/ListagemConfrontos.php` | Filtro `campeonato` no pré-jogo e no ao vivo | R-25 | autorizado (2026-10-09) |
+| `specs/003-confrontos/contracts/api.md`, `docs/postman/wssports_api.postman_collection.json` | Parâmetro `campeonato` | R-25 e Constituição (Postman) | autorizado (2026-10-09) |
 
 `resources/js/bootstrap.js` continua igual. Nenhum outro arquivo das specs 001 a 004 muda.
 
@@ -163,6 +167,7 @@ app/
         └── PaginaInicialRequest.php        # filtros da página (estende ListagemPublicaRequest)
 
 public/fakes/                               # logo, ícones do PWA e banners fake
+public/offline.html                         # página offline estática, sem dados (R-15)
 
 resources/
 ├── views/
@@ -215,11 +220,11 @@ resources/
     ├── theme/
     │   └── tokens.js                       # cores do tema e paletas dos dois modos, breakpoint
     └── utils/
-        ├── dinheiro.js                     # centavos, cálculo do prêmio (espelho do CalculoPremio)
-        ├── armazenamento.js                # localStorage com try/catch
-        ├── alertas.js                      # sweetalert2 com os textos do sistema antigo
+        ├── money.js                     # centavos, cálculo do prêmio (espelho do CalculoPremio)
+        ├── storage.js                # localStorage com try/catch
+        ├── alerts.js                      # sweetalert2 com os textos do sistema antigo
         ├── api.js                          # axios para a API pública
-        └── datas.js                        # horário e nome do dia (Intl)
+        └── dates.js                        # horário e nome do dia (Intl)
 ```
 
 Cada pasta de componente, página e layout tem `index.jsx` e `styles.jsx` (Princípio III).
@@ -227,14 +232,7 @@ Cada pasta de componente, página e layout tem `index.jsx` e `styles.jsx` (Princ
 **Structure Decision**: monólito Laravel com Inertia. O frontend fica em `resources/js`, com
 páginas, layout e componentes por pasta; o backend ganha um controller por página, o middleware
 do Inertia e o arquivo único de fakes. A API e os serviços das specs 003 e 004 são reaproveitados
-sem mudança, exceto o filtro por campeonato (R-25), se autorizado.
-
-## Pendências antes do `/speckit-tasks`
-
-1. Confirmar os arquivos existentes alterados ou removidos (tabela acima).
-2. Aprovar ou ajustar a paleta do modo claro ([research.md](research.md), R-19).
-3. Aprovar a linha da cotação sem o "vendedor paga" ocupando a linha inteira (R-20).
-4. Autorizar o filtro `campeonato` na listagem (R-25).
+sem mudança, exceto o filtro por campeonato (R-25).
 
 ## Complexity Tracking
 

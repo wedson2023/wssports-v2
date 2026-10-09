@@ -1,18 +1,15 @@
 <!--
 Sync Impact Report
-- Version change: 2.0.0 → 2.1.0 (MINOR: exceções novas e regra nova de stack; nenhum artefato
-  existente deixa de cumprir a constituição)
+- Version change: 3.1.0 → 3.2.0 (MINOR: orientação nova no Princípio I, só frontend)
 - Princípios modificados:
-  - I. Nomenclatura em snake_case → I. Nomenclatura: exceção para o frontend (componentes e
-    styled-components em inglês PascalCase; variáveis, funções e hooks em camelCase português;
-    chaves da API como chegam) e para as pastas de componentes (PascalCase)
-  - III. Estrutura de Componentes React: pasta do componente em inglês PascalCase
+  - I. Nomenclatura: arquivos de utilitários com nome em inglês e snake_case (`utils/money.js`);
+    props só de estilo nos styled-components com prefixo `$` + snake_case português
+    (`$selecionado`). Backend sem mudança
 - Princípios adicionados: nenhum
-- Seções alteradas:
-  - Stack e Restrições Técnicas: regra de atualização e cache do frontend (servidor como fonte
-    da versão e das configurações; HTML nunca do cache com conexão)
-- Impacto: as specs 001 a 004 são só de backend e não mudam. A spec 005 (`research.md`) passa a
-  usar nomes de componentes em PascalCase. O `.claude/CLAUDE.md` é alinhado na mesma entrega
+- Seções alteradas: nenhuma
+- Impacto: os utilitários da spec 005 passam a `money.js`, `storage.js`, `alerts.js`,
+  `dates.js` e `api.js` (plan.md, research.md, data-model.md, tasks.md, quickstart.md) na mesma
+  entrega; o `.claude/CLAUDE.md` é alinhado
 - Seções adicionadas: nenhuma
 - Seções removidas: nenhuma
 - TODOs pendentes: nenhum
@@ -25,16 +22,24 @@ Sync Impact Report
 ### I. Nomenclatura
 
 - Variáveis, funções, métodos, propriedades, chaves de arrays/objetos, parâmetros e nomes
-  usados nas instruções (specs, planos, tarefas) DEVEM usar `snake_case` no backend (PHP).
-  `camelCase` é proibido no PHP. O frontend segue a exceção abaixo.
-- **Exceção — frontend (React/JavaScript)**:
+  usados nas instruções (specs, planos, tarefas) DEVEM usar `snake_case`, no backend (PHP) e no
+  frontend (React/JavaScript). `camelCase` é proibido nos nomes criados pelo projeto.
+- **Frontend (React/JavaScript)**:
   - componentes React e styled-components usam nomes em **inglês** e `PascalCase` (ex.:
-    `OddButton`, `BetSlip`, `MatchCard`);
-  - variáveis, funções, hooks e parâmetros usam `camelCase` em **português** (ex.:
-    `adicionarPalpite`, `cupomAberto`, `useCupom`);
+    `OddButton`, `BetSlip`, `Container`), porque o React trata nomes com inicial minúscula como
+    tags HTML;
+  - variáveis, funções, parâmetros, props de componentes, chaves de objetos criados no frontend
+    e constantes usam `snake_case` em **português** (ex.: `adicionar_palpite`, `cupom_aberto`,
+    `ao_clicar`, `chave_cupom`);
+  - **exceção — hooks React**: seguem o padrão do React, prefixo `use` + nome em `camelCase`, em
+    **português** (ex.: `useCupom`, `useModo`, `useTelaMobile`);
+  - props passadas a styled-components só para o estilo (transient props) usam o prefixo `$`
+    seguido do nome em `snake_case` português (ex.: `$selecionado`, `$ativo`, `$cor`), para não
+    chegarem ao HTML;
   - chaves de dados vindos do backend (JSON) são usadas como chegam, em `snake_case` (ex.:
     `time_casa`, `quantidade_cotacoes`), sem camada de conversão;
-  - o backend (PHP) e o banco continuam com as regras deste princípio, sem a exceção.
+  - nomes de APIs de bibliotecas e do navegador mantêm o nome original (ex.: `useState`,
+    `router.reload`, `localStorage`, `createGlobalStyle`).
 - **Exceção — métodos do framework e de pacotes**: métodos sobrescritos ou exigidos pelo
   framework (Laravel) ou por pacotes de terceiros mantêm o nome original (ex.: `casts`,
   `rules`, `messages`, `authorize`, `prepareForValidation`, `toArray`, `definition`,
@@ -94,7 +99,11 @@ Sync Impact Report
   `snake_case`.
 - **Exceção — pastas de componentes React**: a pasta de cada componente usa o nome do
   componente, em inglês e `PascalCase` (Princípio III). As demais pastas do frontend (ex.:
-  `components`, `pages`, `hooks`, `utils`) continuam em inglês e `snake_case`.
+  `components`, `pages`, `hooks`, `utils`) continuam em inglês e `snake_case`. Arquivos de hooks
+  têm o nome do hook (ex.: `hooks/useCupom.js`). Arquivos de utilitários têm nome em inglês e
+  `snake_case` (ex.: `utils/money.js`, `utils/storage.js`, `utils/alerts.js`); as funções e
+  variáveis dentro deles seguem a regra do frontend (`snake_case` português, ex.:
+  `calcular_premio`).
 
 **Rationale**: um padrão de nomes por camada elimina a ambiguidade; o
 banco em português reflete o domínio do negócio, e as pastas em inglês seguem a convenção do
@@ -102,9 +111,9 @@ ecossistema Laravel/React. As exceções existem porque o autoload PSR-4 liga a 
 namespace e o Laravel e os pacotes só reconhecem seus métodos pelo nome original; renomeá-los
 quebraria o funcionamento. Tabelas de pacotes seguem o padrão do pacote para manter
 compatibilidade com a sua documentação e com outros sistemas que usam o mesmo pacote. No
-frontend, `camelCase` e componentes em inglês seguem a convenção do ecossistema React, enquanto
-variáveis e funções em português mantêm o vocabulário do negócio; as chaves da API ficam como
-chegam para existir um único contrato entre backend e frontend.
+frontend, `snake_case` em português mantém o mesmo padrão e o vocabulário do negócio do backend;
+componentes em inglês `PascalCase` são exigência do React; as chaves da API ficam como chegam
+para existir um único contrato entre backend e frontend.
 
 ### II. Idioma Português
 
@@ -326,4 +335,4 @@ worker e de limpar o cache.
 - A conformidade DEVE ser verificada em todo plano (Constitution Check), em toda lista de
   tarefas e em toda revisão de código.
 
-**Version**: 2.1.0 | **Ratified**: 2026-09-25 | **Last Amended**: 2026-10-09
+**Version**: 3.2.0 | **Ratified**: 2026-09-25 | **Last Amended**: 2026-10-09

@@ -75,10 +75,33 @@ Cassino, impressão, áreas `/app` e `/cassino` e as visões de usuários logado
   de zero; o valor é o retorno possível menos esse percentual. A opção já existe no backend novo
   (`usuarios_configuracoes.comissao_por_premio`, vinda de `travas_vendedores` do sistema antigo).
   O visitante ainda não tem vendedor (o `pin` do link está fora do escopo), então a comissão dele
-  é zero e o campo não aparece nesta spec.
+  é zero. (Revisto na sessão seguinte: o campo aparece sempre.)
 - Q: Ao restaurar o cupom salvo no aparelho, o que fazer com jogos já começados e cotações
   alteradas? → A: Restaura como estava, sem prazo de validade; o backend decide no "Finalizar"
   (jogo começado ou cotação alterada → mensagem do backend, cupom mantido).
+
+### Session 2026-10-09 (decisões do plano)
+
+- Q: Os arquivos existentes listados no plano podem ser alterados ou removidos? → A: Sim
+  (`composer.json`, `package.json`, `vite.config.js`, `routes/web.php`, `bootstrap/app.php`;
+  remoção de `resources/js/app.js`, `resources/css/app.css` e `welcome.blade.php`).
+- Q: A paleta do modo claro (research.md, R-19) está aprovada? → A: Sim, como proposta.
+- Q: Como fica o "vendedor paga" até existir a configuração própria? → A: O campo aparece sempre,
+  no layout do sistema antigo (cotação total e "vendedor paga" lado a lado), com o mesmo valor do
+  prêmio (retorno possível). A configuração `vendedor_paga` ainda não existe no backend; o
+  responsável cria a coluna em outra spec, e essa spec define o desconto. Substitui a resposta
+  anterior sobre o campo aparecer só com comissão diferente de zero.
+- Q: Pode acrescentar o filtro por campeonato na listagem da API (código da spec 003)? → A: Sim
+  (research.md, R-25), com o contrato da spec 003 e a coleção do Postman atualizados.
+
+### Session 2026-10-09 (correções da análise)
+
+- Q: Sem conexão, o que a tela mostra? → A: Uma página offline estática, sem dados, com a
+  mensagem de erro de conexão. A página da tela nunca vem do cache, para nenhuma cotação antiga
+  aparecer, nem com internet lenta (research.md, R-15).
+- Q: E se a checagem de versão acontecer no meio do envio do código? → A: Enquanto o envio
+  estiver em andamento, a checagem de versão e a atualização do ao vivo ficam pausadas; a
+  checagem roda logo depois que o envio termina (FR-050a; research.md, R-15).
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -136,7 +159,7 @@ e conferir os totais e o estado visual dos botões.
    do cupom e o botão volta ao normal.
 4. **Given** palpites no cupom, **When** o visitante digita um valor ou toca em 2, 3, 5, 10, 20
    ou 50, **Then** o valor é aplicado e a cotação total e o retorno possível são recalculados
-   (e o "vendedor paga", quando aparece; FR-037a).
+   e o "vendedor paga" (FR-037a).
 5. **Given** palpites no cupom, **When** o visitante clica no ícone de remover de um palpite,
    **Then** ele sai do cupom e o botão da cotação volta ao normal na lista.
 6. **Given** palpites no cupom, **When** o visitante clica em "Limpar" e confirma, **Then** o
@@ -319,8 +342,8 @@ site.
 
 ### Edge Cases
 
-- Sem conexão: a estrutura da tela abre (cache do PWA), mas jogos, cotações e bilhetes não são
-  exibidos de cache; aparece a mensagem de erro de conexão e nenhum dado velho de cotação.
+- Sem conexão: abre a página offline do aplicativo, sem dados, com a mensagem de erro de
+  conexão; jogos, cotações e bilhetes nunca são exibidos de cache.
 - Cotação bloqueada: o botão mostra o cadeado e não pode ser escolhido.
 - Palpite no cupom de um jogo que saiu da lista (começou, foi removido ou ficou bloqueado): o
   palpite continua no cupom até o envio; o backend decide e a mensagem dele é mostrada.
@@ -461,7 +484,7 @@ site.
   adiciona; clicar na mesma cotação remove; clicar em outra cotação do mesmo jogo troca.
 - **FR-035**: O cupom DEVE mostrar a lista de palpites (times, mercado, cotação, remover e "mais
   opções") ou "Nenhum jogo selecionado"; o campo "Nome apostador"; o valor; o retorno possível;
-  a cotação total; o "vendedor paga" (só quando houver comissão, FR-037a); os botões de valor rápido 2, 3, 5, 10, 20 e 50; "Limpar"
+  a cotação total; o "vendedor paga" (FR-037a); os botões de valor rápido 2, 3, 5, 10, 20 e 50; "Limpar"
   (cinza) e "Finalizar" (cor do tema) com o selo da quantidade de palpites.
 - **FR-036**: No mobile, a barra de resumo (valor, retorno possível e "Conferir" com a quantidade
   de palpites) DEVE ficar abaixo da barra de esportes, e "Conferir" DEVE abrir o cupom sobre a
@@ -470,10 +493,10 @@ site.
   cada mudança de palpite ou de valor, com valores em dinheiro em centavos inteiros (sem ponto
   flutuante), seguindo as regras e limites do visitante informados pelo backend. Esses valores
   são estimativas; o valor final é o do backend.
-- **FR-037a**: O "vendedor paga" DEVE aparecer só quando a comissão sobre o prêmio de quem recebe
-  a aposta for diferente de zero, e DEVE valer o retorno possível menos esse percentual (ex.:
-  retorno R$ 100,00 com comissão de 10% → vendedor paga R$ 90,00). O visitante não tem vendedor
-  nesta spec; a comissão é zero e o campo não aparece. A regra fica pronta para a área `/app`.
+- **FR-037a**: O "vendedor paga" DEVE aparecer sempre, ao lado da cotação total, como no sistema
+  antigo, e DEVE mostrar o mesmo valor do prêmio (retorno possível). O desconto sobre esse valor
+  depende da configuração `vendedor_paga`, que ainda não existe no backend e será criada em outra
+  spec.
 - **FR-038**: "Limpar" DEVE pedir confirmação e esvaziar o cupom.
 - **FR-039**: O cupom DEVE ser mantido no aparelho ao recarregar a página. Um cupom salvo em
   formato inválido DEVE ser descartado sem erro.

@@ -94,10 +94,14 @@ tela (escuro ou claro), e o visitante pode alternar com o botão dia/noite (ver 
 ## R-05. Decisão: idioma e nomes
 
 - Spec, plano, tarefas e comentários em português (Constituição 2.0.0, Princípio II).
-- Frontend (Constituição 2.1.0, Princípios I e III): componentes e styled-components em inglês e
-  PascalCase (ex.: `OddButton`), com a pasta do componente com o mesmo nome; variáveis, funções e
-  hooks em camelCase e português (ex.: `adicionarPalpite`, `useCupom`); chaves vindas do backend
-  usadas como chegam (ex.: `time_casa`). Demais pastas em inglês e `snake_case`.
+- Frontend (Constituição 3.1.0, Princípios I e III): componentes e styled-components em inglês e
+  PascalCase (ex.: `OddButton`, `Container`), com a pasta do componente com o mesmo nome;
+  variáveis, funções, props, chaves de objetos criados no frontend e constantes em snake_case e
+  português (ex.: `adicionar_palpite`, `ao_clicar`, `chave_cupom`); hooks no padrão do React, em
+  português (ex.: `useCupom`, arquivo `hooks/useCupom.js`);
+  chaves vindas do backend usadas como chegam (ex.: `time_casa`); APIs de bibliotecas e do
+  navegador com o nome original (`useState`, `localStorage`). Demais pastas em inglês e
+  `snake_case`.
 
 ## R-06. Breakpoints
 
@@ -315,7 +319,7 @@ As seções R-12 a R-24 foram acrescentadas pelo `/speckit-plan` em 2026-10-09.
 | Pacote | Versão | Motivo |
 |---|---|---|
 | `inertiajs/inertia-laravel` (composer) | ^2.0 | Páginas Inertia no servidor; versão do build por requisição (R-15) |
-| `@inertiajs/react` | ^2.0 | Lado React do Inertia; `usePoll`, `router.reload` com `only`, props com `merge` para a rolagem infinita |
+| `@inertiajs/react` | ^2.0 | Lado React do Inertia; `usePoll`, `router.reload` com `only` (recargas parciais) |
 | `react`, `react-dom` | ^19 | Stack do frontend definida pelo responsável |
 | `@vitejs/plugin-react` | ^5 | JSX e recarga rápida no Vite 7 |
 | `styled-components` | ^6.1 | Stack definida; estilos em `styles.jsx` (Princípio III) |
@@ -338,8 +342,10 @@ antigas sem suporte ao React 19).
   `ListagemConfrontos` da API, com `Publico::visitante()`), as configurações reais e os fakes.
   Trocar esporte, dia, busca e campeonato faz `router.reload` só da prop `listagem`, com os
   filtros na URL (`?esporte=BASQUETE&dia=amanha`), preservando o estado e a rolagem.
-- **Rolagem infinita**: `router.reload({ only: ['listagem'], data: { pagina } })` com a prop
-  marcada como `merge` no servidor (Inertia 2); páginas de 50 (máximo 100, Constituição).
+- **Rolagem infinita**: `router.reload({ only: ['listagem'], data: { pagina } })`; a página
+  `Home` soma as páginas recebidas no próprio estado, juntando o mesmo campeonato que venha
+  dividido entre duas páginas (por `id`); páginas de 50 (máximo 100, Constituição). O `merge` do
+  Inertia não é usado porque repetiria o cabeçalho do campeonato dividido entre páginas.
 - **Ao vivo**: `usePoll(7000, { only: ['listagem'] })`, ativo só com a aba "Ao vivo" aberta.
 - **Ações (API pública existente, sem token, mesma origem)**: detalhe do "+N"
   (`GET /api/publico/confrontos/{id}` e `.../confrontos-ao-vivo/{id}`), código da aposta
@@ -377,30 +383,39 @@ Nomes de classes do backend em português, como os demais controllers (Princípi
    `router.reload({ only: ['versao'] })` (prop mínima); no ao vivo o `usePoll` já faz isso.
 4. **Service worker** (`vite-plugin-pwa`, `generateSW`, `registerType: 'autoUpdate'`,
    `skipWaiting`, `clientsClaim`, `cleanupOutdatedCaches`):
-   - pré-cache só dos arquivos do build com hash, das fontes e das imagens fixas;
-   - navegação (página): `NetworkFirst` com tempo limite curto, usada do cache só sem conexão;
+   - pré-cache só dos arquivos do build com hash, das fontes, das imagens fixas e da página
+     offline (`public/offline.html`);
+   - navegação (página): `NetworkOnly`; sem conexão, o service worker responde a página offline
+     estática pré-armazenada, sem dados, com a mensagem de erro de conexão. A página da tela
+     nunca é guardada em cache, porque traz os jogos e as cotações embutidos (props do Inertia);
+     assim nenhuma cotação antiga aparece, nem com internet lenta (FR-049, SC-006). Decisão do
+     responsável (2026-10-09), no lugar do `NetworkFirst` com tempo limite;
    - `/api/*`, `/fakes/*` e escudos/bandeiras externos: `NetworkOnly` (nunca do cache);
    - o `sw.js` é servido pela rota `/sw.js`, sem cache, para valer no escopo `/`.
-5. **Envio em andamento**: a recarga de versão acontece em requisições Inertia; o envio do código
-   usa a API (axios) e não é interrompido. O cupom está no aparelho e sobrevive à recarga.
+5. **Envio em andamento** (FR-050a): a recarga de versão acontece em requisições Inertia, que
+   poderiam cortar o envio do código pela API. Por isso, enquanto `enviando` for verdadeiro, a
+   checagem ao voltar para a aba (`useAtualizacaoVersao`) e a atualização do ao vivo (`usePoll`)
+   ficam pausadas; terminado o envio, a checagem que ficou pendente roda na hora e o ao vivo
+   volta. Decisão do responsável (2026-10-09). O cupom está no aparelho e sobrevive à recarga.
 6. **Servidor de produção**: `/build/assets/*` com `Cache-Control: public, max-age=31536000,
    immutable`; página, `sw.js` e manifest com `no-cache` (registrado no `quickstart.md`).
 
 ## R-16. Cupom: estado, armazenamento e cálculo
 
-- **Estado**: contexto React com `useReducer` (ações `alternarPalpite`, `removerPalpite`,
-  `definirValor`, `definirNome`, `limpar`, `atualizarCotacoes`), sempre imutável. O estado
+- **Estado**: contexto React com `useReducer` (ações `alternar_palpite`, `remover_palpite`,
+  `definir_valor`, `definir_nome`, `limpar`, `atualizar_cotacoes`), sempre imutável. O estado
   "selecionado" do botão é derivado do cupom; os objetos dos jogos nunca são alterados.
 - **Onde fica**: o provedor do contexto fica no `PublicLayout`, layout persistente do Inertia,
   então o cupom não reinicia ao navegar entre `/` e `/regras`.
 - **Armazenamento**: `localStorage`, chave `wssports.cupom`, com `versao_formato: 1`; leitura
   validada (formato inválido → cupom vazio, FR-039); escrita a cada mudança; leitura e escrita
   em `try/catch`.
-- **Cálculo**: `utils/dinheiro.js` reproduz `CalculoPremio` com inteiros (`BigInt`):
+- **Cálculo**: `utils/money.js` reproduz `CalculoPremio` com inteiros (`BigInt`):
   - valor em centavos × produto das cotações em centésimos, truncado em centavos;
   - o menor entre esse valor, valor × `multiplicador` e `premio_maximo`;
   - acréscimo de `ganho_multiplo_palpites`% com 3 ou mais palpites, limitado ao prêmio máximo;
-  - "vendedor paga" = total − `comissao_por_premio`%, só com comissão maior que zero (FR-037a).
+  - "vendedor paga" = o mesmo valor do prêmio (retorno possível), sempre visível (FR-037a); o
+    desconto virá da configuração `vendedor_paga`, a ser criada em outra spec.
   Com mais de 5 palpites o backend trunca o produto em 10 casas; diferenças de centavos são
   possíveis e o backend decide (estimativa).
 - **Envio**: `POST /api/publico/apostas` com `chave_idempotencia` (`crypto.randomUUID()`, uma por
@@ -437,7 +452,7 @@ Nomes de classes do backend em português, como os demais controllers (Princípi
   `<html data-modo="…">` e a cor de fundo da página; o React lê esse valor na primeira
   renderização.
 
-## R-19. Paleta do modo claro (proposta, aguardando aprovação do responsável)
+## R-19. Paleta do modo claro (aprovada pelo responsável em 2026-10-09)
 
 O modo escuro usa exatamente os valores do sistema antigo. O modo claro troca só as cores fixas;
 a cor principal e a derivada do tema ficam iguais.
@@ -459,11 +474,13 @@ a cor principal e a derivada do tema ficam iguais.
 Botões na cor do tema (odds, valor rápido, Finalizar, Criar Conta) mantêm o texto `#fff` nos dois
 modos. Os ajustes que o responsável pedir entram aqui antes da implementação (Princípio VIII).
 
-## R-20. Linha da cotação sem "vendedor paga" (proposta, aguardando aprovação)
+## R-20. Linha da cotação e "vendedor paga" (decidido)
 
-No cupom, a linha "cotação total | vendedor paga" tem dois campos de 50%. Quando o "vendedor paga"
-não aparece (FR-037a; sempre, nesta spec), a proposta é a cotação total ocupar a linha inteira,
-mantendo altura, ícone e alinhamento. Alternativa: manter a cotação em 50% e deixar o espaço vazio.
+**Decisão do responsável (2026-10-09)**: a linha fica igual ao sistema antigo, com "cotação total"
+e "vendedor paga" lado a lado (50% cada). O "vendedor paga" aparece sempre e mostra o mesmo valor
+do prêmio. A configuração `vendedor_paga` não existe no backend novo (só `comissao_por_premio`,
+por vendedor); o responsável cria a coluna em outra spec, que define o desconto. A proposta
+anterior (cotação ocupando a linha inteira) foi descartada.
 
 ## R-21. Inventário visual dos modais e da tela de regras
 
@@ -482,7 +499,7 @@ mantendo altura, ícone e alinhamento. Alternativa: manter a cotação em 50% e 
 | `modals/ticket` `ContainerHunches` | borda fina `#ccc`; margem 10px 0; padding 5px 10px; altura 290px com rolagem | `TicketModal` |
 | `screens/rules` `Container` / `section` | padding 25px; fundo `#000`; seção branca de 90%, padding 25px; título "REGULAMENTO" e logo | `RulesContent` (página `Rules`) |
 | Fundo dos modais (`Screen`) | `rgba(0,0,0,0.8)`, fixo, z-index 25 | `Backdrop` |
-| Alertas (`helpers.js`) | sweetalert2: "Sucesso"/OK, "Atenção"/Entendi, "Confirme por favor" Sim/Não (confirmar na cor do tema, cancelar `#999`), erros "Erro!"/Entendi | `utils/alertas.js` |
+| Alertas (`helpers.js`) | sweetalert2: "Sucesso"/OK, "Atenção"/Entendi, "Confirme por favor" Sim/Não (confirmar na cor do tema, cancelar `#999`), erros "Erro!"/Entendi | `utils/alerts.js` |
 
 ## R-22. Carregamento, carrossel e ícones sem bibliotecas antigas
 
@@ -517,10 +534,13 @@ backend das specs 001 a 004 é alterado; os serviços são só usados.
 - Componentes (inclusive páginas e layouts) em pastas `PascalCase` com `index.jsx` e
   `styles.jsx` (Princípio III). Não há componente sem estilo próprio: o provedor do cupom fica
   dentro do `PublicLayout`.
-- Hooks e utilitários em arquivos com o nome da função (`hooks/useCupom.js`,
-  `utils/dinheiro.js`); funções e variáveis em `camelCase` português.
+- Hooks em arquivos com o nome do hook (`hooks/useCupom.js`); utilitários em arquivos com nome
+  em inglês e `snake_case` (`utils/money.js`, `utils/storage.js`, `utils/alerts.js`,
+  `utils/dates.js`, `utils/api.js`); funções e variáveis em `snake_case` português; hooks no
+  padrão do React; props só de estilo nos styled-components com prefixo `$` (ex.:
+  `$selecionado`) (Constituição 3.2.0).
 
-## R-25. Filtro por campeonato no menu (alteração de código da spec 003, aguardando autorização)
+## R-25. Filtro por campeonato no menu (alteração de código da spec 003, autorizada em 2026-10-09)
 
 - **Problema**: clicar num campeonato do menu filtra a lista (FR-018). No sistema antigo o filtro
   era feito no navegador sobre todos os jogos já carregados. No sistema novo a listagem é paginada

@@ -48,7 +48,7 @@ Enviadas pelo `TratarRequisicoesInertia::share()`.
 | `esporte` | `FUTEBOL`, `BASQUETE`, `LUTAS`, `VÔLEI`… | `FUTEBOL` |
 | `dia` | `hoje`, `amanha`, `depois_de_amanha` | `hoje` |
 | `busca` | até 100 caracteres | — |
-| `campeonato` | id do campeonato (filtro do menu; parâmetro novo, R-25, aguardando autorização) | — |
+| `campeonato` | id do campeonato (filtro do menu; parâmetro novo, R-25, autorizado) | — |
 | `pagina` | inteiro ≥ 1 | 1 |
 
 `por_pagina` é fixo em 50 (máximo 100, Constituição).
@@ -78,10 +78,11 @@ Enviadas pelo `TratarRequisicoesInertia::share()`.
 ```
 
 - `listagem`: mesmo formato da resposta de `GET /api/publico/confrontos` (spec 003), gerado pelo
-  mesmo serviço com o público visitante; marcada como `merge` no servidor, para a rolagem
-  infinita somar as páginas (`campeonatos` e `meta`).
+  mesmo serviço com o público visitante. Cada recarga traz só a página pedida; a tela soma as
+  páginas e junta o campeonato dividido entre duas páginas (research.md, R-13).
 - `banners`: fake (`DadosFake::banners()`).
-- `comissao_por_premio`: sempre `"0.00"` para o visitante (FR-037a).
+- `comissao_por_premio`: sempre `"0.00"` para o visitante; o "vendedor paga" mostra o mesmo valor
+  do prêmio (FR-037a).
 
 **Recargas parciais usadas pela tela**:
 
