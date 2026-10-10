@@ -1778,6 +1778,12 @@
                                 {
                                     "key": "por_pagina",
                                     "value": "50"
+                                },
+                                {
+                                    "key": "campeonato",
+                                    "value": "{{campeonato_id}}",
+                                    "description": "id do campeonato: filtra só os jogos; os países continuam completos (spec 005)",
+                                    "disabled": true
                                 }
                             ]
                         },
@@ -1818,6 +1824,12 @@
                                 {
                                     "key": "fuso_horario",
                                     "value": "-03:00"
+                                },
+                                {
+                                    "key": "campeonato",
+                                    "value": "{{campeonato_id}}",
+                                    "description": "id do campeonato: filtra só os jogos; os países continuam completos (spec 005)",
+                                    "disabled": true
                                 }
                             ]
                         },

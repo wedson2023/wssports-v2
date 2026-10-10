@@ -1017,7 +1017,7 @@ com o ao vivo desligado.
 - **FR-073**: O sistema DEVE ter uma configuração para cada público, sem tabela padrão: os valores
   iniciais são os valores padrão das colunas.
   - `visitantes_configuracoes`: registro único, para quem não está logado, com
-    `esportes_permitidos` (padrão FUTEBOL, HOQUEI NO GELO e BAISEBOL), `apostar_outros_esportes`
+    `esportes_permitidos` (padrão FUTEBOL, HOQUEI NO GELO e BAISEBOL; todos os esportes desde a spec 005), `apostar_outros_esportes`
     (padrão marcado) e `ao_vivo_habilitado` (padrão marcado). O seeder DEVE criar o registro.
   - `clientes_configuracoes` (spec 002): uma linha por cliente, como já existe.
   - `usuarios_configuracoes`: uma linha por vendedor (o único que aposta), com `usuarios_id`

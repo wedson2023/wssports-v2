@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Middleware\GarantirAcesso;
+use App\Http\Middleware\TratarRequisicoesInertia;
 use Illuminate\Auth\AuthenticationException;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -21,6 +22,9 @@ return Application::configure(basePath: dirname(__DIR__))
             'permission' => PermissionMiddleware::class,
             'garantir_acesso' => GarantirAcesso::class,
         ]);
+
+        // páginas do site (Inertia): versão do build, props compartilhadas e respostas sem cache
+        $middleware->web(append: [TratarRequisicoesInertia::class]);
 
         // a API não redireciona visitantes não autenticados (responde 401); não há tela de login
         $middleware->redirectGuestsTo(fn (Request $request) => $request->is('api/*') ? null : '/');

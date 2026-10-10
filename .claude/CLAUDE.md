@@ -4,16 +4,24 @@
 - Trata-se de um **sistema de apostas esportivas**.
 
 ## Nomenclatura
-- Nas instruções e no código, sempre utilize **snake_case** ao invés de **camelCase**.
+- Backend (PHP), frontend e instruções: sempre utilize **snake_case** ao invés de **camelCase**.
+- Frontend (React/JavaScript):
+  - componentes e styled-components em **inglês** e **PascalCase** (ex.: `OddButton`, `Container`), exigência do React;
+  - variáveis, funções, props, chaves de objetos e constantes em **snake_case** e em **português** (ex.: `adicionar_palpite`, `ao_clicar`);
+  - hooks no padrão do React: `use` + nome em camelCase, em português (ex.: `useCupom`);
+  - chaves de dados vindos do backend usadas como chegam, em snake_case (ex.: `time_casa`);
+  - nomes de APIs de bibliotecas e do navegador mantêm o original (ex.: `useState`, `localStorage`);
+  - props só de estilo nos styled-components com prefixo `$` + snake_case português (ex.: `$selecionado`);
+  - arquivos de hooks com o nome do hook (ex.: `hooks/useCupom.js`); arquivos de utilitários em inglês snake_case (ex.: `utils/money.js`).
 - Nomenclaturas de banco de dados (migrations, tabelas, colunas, etc.) devem ser criadas em **português**.
-- Estrutura de pastas deve ser em **inglês**.
+- Estrutura de pastas deve ser em **inglês** (snake_case; pastas de componentes React em PascalCase).
 
-## Idioma por contexto
-- Backend (PHP): crie instruções em **português**. Comentários no código também em **português**.
-- Frontend (React/JavaScript): crie instruções em **inglês**. Comentários no código em **português**.
+## Idioma
+- Instruções (specs, planos, tarefas) em **português**, no backend e no frontend.
+- Comentários no código em **português**, no backend e no frontend.
 
 ## Componentes React
-- Cada componente deve ter sua própria pasta, nomeada com o nome do componente.
+- Cada componente deve ter sua própria pasta, nomeada com o nome do componente (inglês, PascalCase).
 - Dentro da pasta, dois arquivos:
   - `index.jsx`
   - `styles.jsx`

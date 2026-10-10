@@ -694,6 +694,7 @@ transações de estorno.
   - limite de saque por dia: R$ 5.000,00 e 5 saques (antigo `limite_saque`);
   - odd mínima 1,90 e odd máxima 30,00;
   - esportes permitidos: FUTEBOL, HOQUEI NO GELO e BAISEBOL (grafados como no sistema antigo).
+    Padrão alterado na spec 005 para todos os esportes do provedor.
 - **FR-051**: (Removido em 2026-10-01 pela spec 003.) Não há rota nem permissão para editar
   configurações padrão.
 - **FR-052**: Os limites DEVEM ser coerentes: quantidade mínima de opções ≥ 1 e ≤ quantidade

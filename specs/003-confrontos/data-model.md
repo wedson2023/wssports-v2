@@ -38,7 +38,7 @@ Sem rota de edição nesta spec (alterado direto no banco).
 
 | Coluna | Tipo | Padrão |
 |---|---|---|
-| esportes_permitidos | json | `["FUTEBOL", "HOQUEI NO GELO", "BAISEBOL"]` |
+| esportes_permitidos | json | todos os esportes (padrão alterado na spec 005: FUTEBOL, BASQUETE, LUTAS, VÔLEI, TÊNIS, TÊNIS DE MESA, E-SPORTS, FUTEBOL AMERICANO, RUGBY, HÓQUEI NO GELO, HANDEBOL, BAISEBOL) |
 | apostar_outros_esportes | boolean | `true` |
 | ao_vivo_habilitado | boolean | `true` |
 
@@ -47,7 +47,7 @@ Sem rota de edição nesta spec (alterado direto no banco).
 | Coluna | Tipo | Padrão | Regras |
 |---|---|---|---|
 | usuarios_id | FK → `usuarios.id`, único | | só vendedores |
-| esportes_permitidos | json | `["FUTEBOL", "HOQUEI NO GELO", "BAISEBOL"]` | pelo menos 1 |
+| esportes_permitidos | json | todos os esportes (padrão alterado na spec 005: FUTEBOL, BASQUETE, LUTAS, VÔLEI, TÊNIS, TÊNIS DE MESA, E-SPORTS, FUTEBOL AMERICANO, RUGBY, HÓQUEI NO GELO, HANDEBOL, BAISEBOL) | pelo menos 1 |
 | apostar_outros_esportes | boolean | `true` | desmarcado: só `FUTEBOL` |
 | ao_vivo_habilitado | boolean | `true` | |
 | minuto_limite_ao_vivo | unsigned smallint | 95 | 1 a 130 |
@@ -64,7 +64,7 @@ Mesmas colunas; passam a ter valor padrão (FR-079): `realizar_aposta` `true`, `
 `valor_minimo_aposta` 2.00, `valor_maximo_aposta` 1000.00, `premio_maximo` 50000.00,
 `valor_maximo_diario` 5000.00, `valor_maximo_saque_diario` 5000.00,
 `quantidade_maxima_saques_diaria` 5, `odd_minima` 1.90, `odd_maxima` 30.00, `esportes_permitidos`
-`["FUTEBOL", "HOQUEI NO GELO", "BAISEBOL"]`.
+`["FUTEBOL", "HOQUEI NO GELO", "BAISEBOL"]` (até a spec 005, que passou o padrão para todos os esportes).
 
 ### Tabela `clientes_configuracoes_padrao` (spec 002, **removida**)
 

@@ -1,16 +1,15 @@
 <!--
 Sync Impact Report
-- Version change: 1.17.0 → 1.18.0 (MINOR: novo princípio)
-- Princípios modificados: nenhum
-- Princípios adicionados:
-  - VII. Consulta ao Sistema Antigo: consultar o sistema antigo (`wssports.bet`, somente leitura)
-    ao especificar, planejar e implementar; propor melhorias e refatorações; apresentar ao
-    responsável toda diferença de comportamento; registrar no `research.md` o que foi consultado
-- Seções alteradas:
-  - Fluxo de Desenvolvimento: o Constitution Check passa a verificar os Princípios I a VII
-- Impacto: vale para as próximas specs, planos e implementações. As specs 001 a 004 já
-  implementadas não são alteradas; a comparação feita para a spec 004 (rota de apostas) apontou
-  pendências (noteiro, redução de cotação por cliente, limite duplo) que seguem como Next Actions
+- Version change: 3.1.0 → 3.2.0 (MINOR: orientação nova no Princípio I, só frontend)
+- Princípios modificados:
+  - I. Nomenclatura: arquivos de utilitários com nome em inglês e snake_case (`utils/money.js`);
+    props só de estilo nos styled-components com prefixo `$` + snake_case português
+    (`$selecionado`). Backend sem mudança
+- Princípios adicionados: nenhum
+- Seções alteradas: nenhuma
+- Impacto: os utilitários da spec 005 passam a `money.js`, `storage.js`, `alerts.js`,
+  `dates.js` e `api.js` (plan.md, research.md, data-model.md, tasks.md, quickstart.md) na mesma
+  entrega; o `.claude/CLAUDE.md` é alinhado
 - Seções adicionadas: nenhuma
 - Seções removidas: nenhuma
 - TODOs pendentes: nenhum
@@ -20,11 +19,27 @@ Sync Impact Report
 
 ## Core Principles
 
-### I. Nomenclatura em snake_case
+### I. Nomenclatura
 
 - Variáveis, funções, métodos, propriedades, chaves de arrays/objetos, parâmetros e nomes
-  usados nas instruções (specs, planos, tarefas) DEVEM usar `snake_case`. `camelCase` é
-  proibido nesses casos, tanto no PHP quanto no JavaScript/React.
+  usados nas instruções (specs, planos, tarefas) DEVEM usar `snake_case`, no backend (PHP) e no
+  frontend (React/JavaScript). `camelCase` é proibido nos nomes criados pelo projeto.
+- **Frontend (React/JavaScript)**:
+  - componentes React e styled-components usam nomes em **inglês** e `PascalCase` (ex.:
+    `OddButton`, `BetSlip`, `Container`), porque o React trata nomes com inicial minúscula como
+    tags HTML;
+  - variáveis, funções, parâmetros, props de componentes, chaves de objetos criados no frontend
+    e constantes usam `snake_case` em **português** (ex.: `adicionar_palpite`, `cupom_aberto`,
+    `ao_clicar`, `chave_cupom`);
+  - **exceção — hooks React**: seguem o padrão do React, prefixo `use` + nome em `camelCase`, em
+    **português** (ex.: `useCupom`, `useModo`, `useTelaMobile`);
+  - props passadas a styled-components só para o estilo (transient props) usam o prefixo `$`
+    seguido do nome em `snake_case` português (ex.: `$selecionado`, `$ativo`, `$cor`), para não
+    chegarem ao HTML;
+  - chaves de dados vindos do backend (JSON) são usadas como chegam, em `snake_case` (ex.:
+    `time_casa`, `quantidade_cotacoes`), sem camada de conversão;
+  - nomes de APIs de bibliotecas e do navegador mantêm o nome original (ex.: `useState`,
+    `router.reload`, `localStorage`, `createGlobalStyle`).
 - **Exceção — métodos do framework e de pacotes**: métodos sobrescritos ou exigidos pelo
   framework (Laravel) ou por pacotes de terceiros mantêm o nome original (ex.: `casts`,
   `rules`, `messages`, `authorize`, `prepareForValidation`, `toArray`, `definition`,
@@ -82,30 +97,39 @@ Sync Impact Report
   (ex.: `app/Enums`, `app/Policies`, `app/Http/Requests`, `app/Http/Resources`) usam
   `PascalCase`, igual a `app/Http` e `app/Models`. As demais pastas continuam em inglês e
   `snake_case`.
+- **Exceção — pastas de componentes React**: a pasta de cada componente usa o nome do
+  componente, em inglês e `PascalCase` (Princípio III). As demais pastas do frontend (ex.:
+  `components`, `pages`, `hooks`, `utils`) continuam em inglês e `snake_case`. Arquivos de hooks
+  têm o nome do hook (ex.: `hooks/useCupom.js`). Arquivos de utilitários têm nome em inglês e
+  `snake_case` (ex.: `utils/money.js`, `utils/storage.js`, `utils/alerts.js`); as funções e
+  variáveis dentro deles seguem a regra do frontend (`snake_case` português, ex.:
+  `calcular_premio`).
 
-**Rationale**: um único padrão de nomes elimina a ambiguidade entre backend e frontend; o
+**Rationale**: um padrão de nomes por camada elimina a ambiguidade; o
 banco em português reflete o domínio do negócio, e as pastas em inglês seguem a convenção do
 ecossistema Laravel/React. As exceções existem porque o autoload PSR-4 liga a pasta ao
 namespace e o Laravel e os pacotes só reconhecem seus métodos pelo nome original; renomeá-los
 quebraria o funcionamento. Tabelas de pacotes seguem o padrão do pacote para manter
-compatibilidade com a sua documentação e com outros sistemas que usam o mesmo pacote.
+compatibilidade com a sua documentação e com outros sistemas que usam o mesmo pacote. No
+frontend, `snake_case` em português mantém o mesmo padrão e o vocabulário do negócio do backend;
+componentes em inglês `PascalCase` são exigência do React; as chaves da API ficam como chegam
+para existir um único contrato entre backend e frontend.
 
-### II. Idioma por Contexto
+### II. Idioma Português
 
-- **Backend (PHP/Laravel)**: specs, planos, tarefas e demais instruções DEVEM ser escritos em
-  **português**. Comentários no código DEVEM estar em **português**.
-- **Frontend (React/JavaScript)**: specs, planos, tarefas e demais instruções DEVEM ser
-  escritos em **inglês**. Comentários no código DEVEM estar em **português**.
-- Artefatos que abrangem backend e frontend DEVEM separar as partes por contexto, aplicando o
-  idioma correspondente a cada uma.
+- Specs, planos, tarefas e demais instruções DEVEM ser escritos em **português**, tanto no
+  backend (PHP/Laravel) quanto no frontend (React/JavaScript).
+- Comentários no código DEVEM estar em **português**, no backend e no frontend.
+- Artefatos que abrangem backend e frontend usam português em todas as partes.
+- Nomes no código, no banco e nas pastas continuam seguindo o Princípio I.
 
-**Rationale**: define de forma verificável o idioma de cada artefato e mantém os comentários
-de código em um único idioma para toda a equipe.
+**Rationale**: um único idioma em todos os artefatos facilita a leitura e a revisão pelo
+responsável e pela equipe, sem precisar alternar de idioma entre backend e frontend.
 
 ### III. Estrutura de Componentes React
 
 - Cada componente React DEVE ter sua própria pasta, nomeada exatamente com o nome do
-  componente (ex.: `components/user_roles/`).
+  componente, em inglês e `PascalCase` (ex.: `components/OddButton/`).
 - A pasta do componente DEVE conter os arquivos:
   - `index.jsx`: lógica e marcação do componente;
   - `styles.jsx`: estilos do componente.
@@ -183,6 +207,56 @@ projeto.
 evita perder regras de negócio de que os usuários dependem e permite corrigir, de forma
 consciente, os problemas que ele tinha, em vez de repeti-los ou descartá-los sem decisão.
 
+### VIII. Fidelidade Visual ao Sistema Antigo
+
+- O frontend novo DEVE ser visualmente idêntico ao do sistema antigo
+  (`wssports.bet/resources/js`): layout, cores, tipografia (Roboto), ícones (Material Icons),
+  imagens, espaçamentos, tamanhos, textos e rótulos, animações e comportamento responsivo
+  (mesmos breakpoints).
+- **Tema** significa apenas as cores, e o sistema de temas do sistema antigo DEVE ser mantido:
+  - cor principal (`temas`), com as 6 opções existentes (vermelho `#c40808`, amarelo `#d0af01`,
+    verde `#008000`, azul `#006eb1`, laranja `#fe6a00`, rosa `#b91552`), e a cor escura
+    derivada de cada uma (`letter`);
+  - cor de fundo (`cor_fundo`), preto `#000000` ou branco `#FFFFFF`.
+- **Áreas**: os antigos modos de layout `SITE`, `APP` e `CASINO` não são tema; são áreas com
+  rota própria:
+  - `/`: site de apostas (antigo `SITE`);
+  - `/app`: sistema com layout de aplicativo (antigo `APP`);
+  - `/cassino`: estrutura do cassino (antigo `CASINO`).
+  A área é definida pela URL e NÃO DEVE ser guardada no aparelho (`localStorage`). Essa troca
+  de mecanismo foi aprovada pelo responsável e não conta como diferença visual. Cada área tem
+  spec própria e reutiliza os componentes compartilhados (ex.: odd, card de jogo, cupom).
+- A estrutura do código e as tecnologias PODEM ser novas: o sistema antigo é referência de
+  visual e de comportamento, não de estrutura (Princípio VII). Melhorias de código, desempenho
+  ou acessibilidade são permitidas desde que não mudem o que o usuário vê.
+- Toda diferença visual em relação ao sistema antigo DEVE ser apresentada ao responsável e
+  aprovada antes de entrar na spec, no plano ou no código, e a decisão DEVE ficar registrada na
+  spec (Clarifications) ou no `research.md`.
+- Toda spec de frontend DEVE listar as telas e os componentes do sistema antigo usados como
+  referência visual.
+
+**Rationale**: os usuários já operam o sistema atual no dia a dia (vendedores, gerentes e
+apostadores); manter o visual idêntico permite trocar o sistema sem retreinamento e sem
+estranhamento, enquanto a reescrita corrige o código por trás da tela.
+
+### IX. Dados Fake Provisórios
+
+- Quando o frontend precisar de dados que o backend novo ainda não fornece, DEVEM ser usados
+  dados fake até que uma nova spec os substitua por dados reais.
+- Os dados fake DEVEM:
+  - ficar isolados em um local único e identificável, definido no plano da feature;
+  - ter o mesmo formato (nomes de chaves e tipos) que os dados reais terão, para que a troca
+    não exija mudar os componentes;
+  - nunca ser misturados nem gravados no banco junto com dados reais;
+  - nunca ser usados em operações com dinheiro real (registrar aposta, saldo, pagamento).
+- A spec e o `research.md` da feature DEVEM listar cada dado fake usado e qual spec ou recurso
+  do backend o substituirá.
+- A spec que trouxer o dado real DEVE remover o fake correspondente na mesma entrega.
+
+**Rationale**: o frontend pode avançar sem esperar todo o backend, mas fakes espalhados ou com
+formato diferente viram dívida invisível; isolá-los e listá-los garante que cada um seja
+trocado de forma controlada e que nenhum dado inventado chegue a operações reais.
+
 ## Stack e Restrições Técnicas
 
 - Backend: PHP ^8.2 com Laravel ^12.
@@ -202,16 +276,26 @@ consciente, os problemas que ele tinha, em vez de repeti-los ou descartá-los se
   **100 registros por página**. Pedidos de tamanho de página acima de 100 NÃO DEVEM ser
   atendidos acima desse limite. O tamanho padrão de cada listagem é definido na spec ou no plano
   da feature, respeitando esse máximo.
+- Atualização e cache do frontend: o servidor é a fonte da versão e das configurações.
+  - Ao publicar uma versão nova, os usuários DEVEM passar a usá-la automaticamente na próxima
+    interação ou ao voltar para a aba, sem limpar cache, sem reinstalar o PWA e sem número de
+    versão mantido à mão.
+  - O HTML NÃO DEVE ser servido do cache quando houver conexão; só arquivos estáticos com hash
+    no nome PODEM ficar em cache.
+  - Configurações (tema, banners, textos) DEVEM vir do servidor a cada carga, para que mudar uma
+    configuração não exija publicar uma versão.
 
 **Rationale**: timestamps padronizados garantem rastreabilidade de quando cada registro foi
 criado e alterado, e o soft delete preserva o histórico e permite recuperar dados excluídos,
 essencial em um sistema de apostas. A paginação limitada mantém o tempo de resposta e o consumo
-de memória previsíveis mesmo com grandes volumes de dados.
+de memória previsíveis mesmo com grandes volumes de dados. A regra de atualização evita usuários
+presos em versões antigas, problema do sistema antigo, que dependia de versão manual no service
+worker e de limpar o cache.
 
 ## Fluxo de Desenvolvimento
 
 - Toda spec, plano e lista de tarefas DEVE passar pelo Constitution Check, verificando os
-  Princípios I a VII antes da implementação.
+  Princípios I a IX antes da implementação.
 - Tarefas geradas DEVEM declarar explicitamente os arquivos que serão alterados, para que o
   escopo de edição (Princípio IV) seja verificável.
 - Antes de concluir cada tarefa, DEVE ser executada a revisão de legibilidade do código
@@ -251,4 +335,4 @@ de memória previsíveis mesmo com grandes volumes de dados.
 - A conformidade DEVE ser verificada em todo plano (Constitution Check), em toda lista de
   tarefas e em toda revisão de código.
 
-**Version**: 1.18.0 | **Ratified**: 2026-09-25 | **Last Amended**: 2026-10-08
+**Version**: 3.2.0 | **Ratified**: 2026-09-25 | **Last Amended**: 2026-10-09
