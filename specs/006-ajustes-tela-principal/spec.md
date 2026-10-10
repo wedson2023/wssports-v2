@@ -17,7 +17,8 @@ aposta de quem está vendo."
 
 > Esta spec amplia a tela principal da spec 005 (área `/`). A referência de comportamento é o
 > sistema antigo (Princípio VII): `screens/main` (menu, tabela, impressão, link `?code=`),
-> `screens/main/components/specials`, `screens/rules` e as tabelas `modalidades`,
+> `modals/table` (escolha dos campeonatos da tabela), `screens/main/components/specials`,
+> `screens/rules` e as tabelas `modalidades`,
 > `modalidades_especiais`, `popups`, `slides`, `notificacaos` e `creditos_bonuses`, além do envio
 > da logo em `ConfigController`. Ela substitui, na spec 005, o FR-011 (Especiais sem ação), o
 > FR-014 (Impressão e Largura fora do menu), a parte do FR-017 e do FR-062 que mostrava o texto
@@ -76,6 +77,15 @@ aposta de quem está vendo."
   regras editadas pelo administrador; abaixo, as regras de bônus das promoções; abaixo, as regras
   de apostas (cotações de cada mercado). Todos os blocos usam o visual de "Regras de apostas" do
   sistema antigo (título do bloco e cabeçalho de cada item com ícone e linha na cor do tema).
+
+### Session 2026-10-10 (aprovação do relatório de análise)
+
+- Q: A página de regras usa o fundo preto e a seção branca fixos do antigo ou as cores do tema? →
+  A: As cores do tema (modos claro e escuro da spec 005), com os cabeçalhos dos itens iguais ao
+  antigo (diferença visual aprovada).
+- Q: Quem edita o texto das regras e a logo? → A: Admin e Supervisor (permissão
+  `configuracoes.editar`), como os demais recursos do site.
+- Q: O bloco "Limites de aposta" continua na página de regras? → A: Sim, como último bloco.
 
 ## User Scenarios & Testing *(mandatory)*
 

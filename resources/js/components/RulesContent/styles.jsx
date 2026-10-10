@@ -1,9 +1,8 @@
 import styled from 'styled-components';
 import { Link } from '@inertiajs/react';
-import { mobile } from '../../theme/tokens';
 
-// regulamento redesenhado com o responsável: barra com "Voltar", leitura em largura confortável,
-// regras numeradas e atalho para tirar dúvidas
+// regulamento: barra com "Voltar" e atalho para tirar dúvidas (spec 005) e blocos de regras no
+// visual de "Regras de apostas" do sistema antigo (spec 006)
 export const Page = styled.div`
     height: 100vh;
     height: 100dvh;
@@ -50,7 +49,8 @@ export const TopTitle = styled.h1`
     font-weight: 500;
 `;
 
-export const Hero = styled.div`
+// logo da banca no topo, como no sistema antigo (200px no antigo; tamanho da spec 005)
+export const LogoArea = styled.div`
     max-width: 760px;
     margin: 0 auto;
     padding: 28px 16px 20px;
@@ -59,71 +59,42 @@ export const Hero = styled.div`
 
 export const Logo = styled.img`
     width: 96px;
-    margin-bottom: 12px;
 `;
 
-export const Title = styled.h2`
-    font-size: 24px;
-    font-weight: 500;
-
-    ${mobile} {
-        font-size: 20px;
-    }
-`;
-
-export const Subtitle = styled.p`
-    margin-top: 6px;
-    font-size: 14px;
-    color: ${({ theme }) => theme.texto_secundario};
-`;
-
-export const Card = styled.section`
-    max-width: 760px;
-    margin: 0 auto 24px;
-    padding: 8px 24px;
-    background: #fff;
-    border-radius: 12px;
-    color: #333;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
-
-    ${mobile} {
-        margin: 0 12px 20px;
-        padding: 4px 16px;
-    }
-`;
-
-export const RuleList = styled.ol`
+// regras da banca escritas pelo administrador: cada parágrafo em um cartão com destaque na cor do
+// tema à esquerda e ícone, no lugar do "- " no começo da linha
+export const BankRules = styled.ul`
     list-style: none;
-`;
-
-export const Rule = styled.li`
     display: flex;
-    gap: 14px;
-    padding: 16px 0;
-    border-bottom: 1px solid #eee;
-
-    &:last-child {
-        border-bottom: none;
-    }
+    flex-direction: column;
+    gap: 10px;
+    margin: 8px 0;
+    padding: 0;
 `;
 
-export const RuleNumber = styled.span`
-    flex: none;
+export const BankRule = styled.li`
     display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 28px;
-    height: 28px;
-    border-radius: 50%;
-    background: ${({ theme }) => theme.principal};
-    color: #fff;
-    font-size: 13px;
-    font-weight: 500;
-`;
-
-export const RuleText = styled.p`
-    font-size: 15px;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 12px 14px;
+    background: #f6f7f9;
+    border-left: 3px solid ${({ theme }) => theme.principal};
+    border-radius: 8px;
+    font-size: 0.9em;
     line-height: 1.6;
+    color: #333;
+
+    i {
+        flex-shrink: 0;
+        margin-top: 2px;
+        font-size: 18px;
+        color: ${({ theme }) => theme.principal};
+    }
+
+    span {
+        white-space: pre-line;
+        overflow-wrap: anywhere;
+    }
 `;
 
 export const Help = styled.div`

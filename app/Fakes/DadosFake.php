@@ -27,9 +27,10 @@ class DadosFake
     private const TAMANHOS_ICONES = [32, 64, 96, 128, 168, 192, 256, 512];
 
     /**
-     * FAKE — tema de cores e logo. Substituído pela spec de configurações visuais.
+     * FAKE — cores do tema. Substituído pela spec de configurações visuais (a logo já é real:
+     * Configuracoes::url_logo, spec 006).
      *
-     * @return array{temas: string, letter: string, cor_fundo: string, logo: string}
+     * @return array{temas: string, letter: string, cor_fundo: string}
      */
     public static function tema(): array
     {
@@ -39,7 +40,6 @@ class DadosFake
             'temas' => $temas,
             'letter' => self::CORES_DERIVADAS[$temas],
             'cor_fundo' => '#000000',
-            'logo' => '/fakes/logo.png',
         ];
     }
 
@@ -72,35 +72,6 @@ class DadosFake
         return [
             'acumuladao' => true,
             'cassino' => true,
-        ];
-    }
-
-    /**
-     * FAKE — banners do carrossel. Substituídos pela spec de banners.
-     *
-     * @return list<array{imagem: string, link: string|null}>
-     */
-    public static function banners(): array
-    {
-        return [
-            ['imagem' => '/fakes/banners/1.jpg', 'link' => null],
-        ];
-    }
-
-    /**
-     * FAKE — texto das regras, em parágrafos de texto simples. Substituído pela spec de regras.
-     *
-     * @return list<string>
-     */
-    public static function regras(): array
-    {
-        return [
-            'As apostas são aceitas somente para maiores de 18 anos.',
-            'O apostador é responsável por conferir os palpites antes de finalizar a aposta. Após a confirmação, a aposta não pode ser alterada pelo apostador.',
-            'O código gerado pelo site deve ser validado por um vendedor dentro do prazo de validade; códigos vencidos são descartados.',
-            'Jogos adiados, cancelados ou interrompidos têm o palpite cancelado e a cotação considerada como 1,00.',
-            'O prêmio é limitado ao valor máximo definido pela banca, mesmo que a multiplicação das cotações resulte em valor maior.',
-            'Em caso de erro evidente de cotação, a banca pode cancelar o palpite afetado.',
         ];
     }
 

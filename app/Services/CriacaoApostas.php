@@ -15,6 +15,7 @@ use App\Models\Apostas;
 use App\Models\ApostasPalpites;
 use App\Models\Clientes;
 use App\Models\Configuracoes;
+use App\Models\EspeciaisOpcoes;
 use App\Models\UsuariosConfiguracoes;
 use App\Support\Apostador;
 use App\Support\CodigoAposta;
@@ -169,9 +170,18 @@ class CriacaoApostas
             ->get()
             ->keyBy('id');
 
-        $ids_confrontos = array_map(fn (array $pedido) => isset($pedido['confrontos_ao_vivo_id'])
-            ? (int) ($jogos_ao_vivo[$pedido['confrontos_ao_vivo_id']]->confrontos_id ?? 0)
-            : (int) $pedido['confrontos_id'], $pedidos);
+        $ids_confrontos = array_map(fn (array $pedido) => match (true) {
+            isset($pedido['especiais_opcoes_id']) => 0,
+            isset($pedido['confrontos_ao_vivo_id']) => (int) ($jogos_ao_vivo[$pedido['confrontos_ao_vivo_id']]->confrontos_id ?? 0),
+            default => (int) $pedido['confrontos_id'],
+        }, $pedidos);
+
+        // opções especiais pedidas, com a categoria (removidas também, para dizer o motivo)
+        $opcoes_especiais = EspeciaisOpcoes::withTrashed()
+            ->with('especial')
+            ->whereIn('id', array_filter(array_column($pedidos, 'especiais_opcoes_id')))
+            ->get()
+            ->keyBy('id');
 
         $confrontos = DB::table('confrontos as co')
             ->join('campeonatos as ca', 'ca.id', '=', 'co.campeonatos_id')
@@ -200,6 +210,12 @@ class CriacaoApostas
         $palpites = [];
 
         foreach ($pedidos as $indice => $pedido) {
+            if (isset($pedido['especiais_opcoes_id'])) {
+                $palpites[] = $this->palpite_especial($indice, $pedido, $opcoes_especiais[(int) $pedido['especiais_opcoes_id']] ?? null);
+
+                continue;
+            }
+
             $id_ao_vivo = isset($pedido['confrontos_ao_vivo_id']) ? (int) $pedido['confrontos_ao_vivo_id'] : null;
             $ao_vivo = $id_ao_vivo !== null ? ($jogos_ao_vivo[$id_ao_vivo] ?? null) : null;
             $confronto = $confrontos[$ids_confrontos[$indice]] ?? null;
@@ -220,6 +236,8 @@ class CriacaoApostas
                 'confrontos_id' => $confronto?->id !== null ? (int) $confronto->id : (int) ($pedido['confrontos_id'] ?? 0),
                 'confrontos_ao_vivo_id' => $id_ao_vivo,
                 'campeonatos_id' => $confronto !== null ? (int) $confronto->campeonatos_id : null,
+                'especiais_id' => null,
+                'especiais_opcoes_id' => null,
                 'esporte' => $ao_vivo->esporte ?? $confronto->esporte ?? '',
                 'codigo_cotacao' => $codigo,
                 'confrontos_jogadores_id' => $id_jogador,
@@ -232,11 +250,52 @@ class CriacaoApostas
                 'confronto' => $confronto,
                 'ao_vivo' => $ao_vivo,
                 'jogador' => $jogador,
+                'especial' => null,
+                'opcao_especial' => null,
                 'motivo' => $nao_encontrado ? 'O confronto informado não foi encontrado.' : null,
             ];
         }
 
         return $palpites;
+    }
+
+    /**
+     * Palpite numa opção especial: a cotação é a fixa da opção, sem porcentagens nem teto (spec
+     * 006, FR-016). Opção que não aceita mais palpite fica com cotação 0 (indisponível); o motivo
+     * vem das regras da aposta.
+     *
+     * @param  array<string, mixed>  $pedido
+     * @return array<string, mixed>
+     */
+    private function palpite_especial(int $indice, array $pedido, ?EspeciaisOpcoes $opcao): array
+    {
+        $especial = $opcao?->especial;
+        $disponivel = $opcao !== null && ! $opcao->trashed() && $opcao->ativo && $especial !== null && ! $especial->trashed() && $especial->aceita_palpites();
+        $cotacao = $opcao !== null ? (string) $opcao->cotacao : '0';
+
+        return [
+            'indice' => $indice,
+            'confrontos_id' => null,
+            'confrontos_ao_vivo_id' => null,
+            'campeonatos_id' => null,
+            'especiais_id' => $especial?->id,
+            'especiais_opcoes_id' => (int) $pedido['especiais_opcoes_id'],
+            'esporte' => 'ESPECIAL',
+            'codigo_cotacao' => CodigosCotacao::ESPECIAL,
+            'confrontos_jogadores_id' => null,
+            'jogador_tipo' => null,
+            'cotacao_vista' => bcadd((string) $pedido['cotacao_vista'], '0', 2),
+            'cotacao_original' => bcadd($cotacao, '0', 2),
+            'cotacao_atual' => $disponivel ? bcadd($cotacao, '0', 2) : '0.00',
+            'travado' => false,
+            'em_andamento' => false,
+            'confronto' => null,
+            'ao_vivo' => null,
+            'jogador' => null,
+            'especial' => $especial,
+            'opcao_especial' => $opcao,
+            'motivo' => $opcao === null ? 'A opção especial informada não foi encontrada.' : null,
+        ];
     }
 
     /**
@@ -273,7 +332,8 @@ class CriacaoApostas
      */
     public function garantir_limite_por_confronto(array $palpites, string $valor, ?int $ignorar_apostas_id = null): void
     {
-        $pre_jogo = array_filter($palpites, fn (array $palpite) => $palpite['confrontos_ao_vivo_id'] === null);
+        // palpite especial não tem confronto nem limite por categoria
+        $pre_jogo = array_filter($palpites, fn (array $palpite) => $palpite['confrontos_ao_vivo_id'] === null && $palpite['confrontos_id'] !== null);
         $ao_vivo = array_filter($palpites, fn (array $palpite) => $palpite['confrontos_ao_vivo_id'] !== null);
 
         $this->conferir_limite_da_tabela('confrontos', 'confrontos_id', array_column($pre_jogo, 'confrontos_id'), $palpites, $valor, $ignorar_apostas_id);
@@ -293,6 +353,8 @@ class CriacaoApostas
                 'confrontos_id' => $palpite['confrontos_id'],
                 'confrontos_ao_vivo_id' => $palpite['confrontos_ao_vivo_id'],
                 'campeonatos_id' => $palpite['campeonatos_id'],
+                'especiais_id' => $palpite['especiais_id'] ?? null,
+                'especiais_opcoes_id' => $palpite['especiais_opcoes_id'] ?? null,
                 'esporte' => $palpite['esporte'],
                 'codigo_cotacao' => $palpite['codigo_cotacao'],
                 'confrontos_jogadores_id' => $palpite['confrontos_jogadores_id'],
@@ -567,7 +629,7 @@ class CriacaoApostas
     {
         $codigos = array_values(array_unique(array_filter(
             array_column($pedidos, 'codigo_cotacao'),
-            fn (string $codigo) => $codigo !== CodigosCotacao::JOGADOR,
+            fn (string $codigo) => $codigo !== CodigosCotacao::JOGADOR && $codigo !== CodigosCotacao::ESPECIAL,
         )));
 
         $itens_pre_jogo = $confrontos->map(fn (object $confronto) => (object) [

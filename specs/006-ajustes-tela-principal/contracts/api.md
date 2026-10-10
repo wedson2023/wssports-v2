@@ -87,8 +87,8 @@ repetir não duplica. `204`. Aviso inexistente ou inativo → `404 {"message": "
 ## 4. `GET /api/tabela-jogos` (vendedor)
 
 Permissão `apostas.criar`. Query: `dia` (`hoje` | `amanha`, padrão `hoje`), `esporte` (padrão
-`FUTEBOL`), `campeonatos[]` (ids; quando vem, lista os jogos desses campeonatos no período do
-vendedor e ignora `dia`), `pagina`, `por_pagina` (padrão e máximo 100).
+`FUTEBOL`), `campeonatos[]` (ids; opcional, filtra esses campeonatos dentro do `dia` pedido,
+como no `ModalTable` do antigo), `pagina`, `por_pagina` (padrão e máximo 100).
 
 ```json
 {

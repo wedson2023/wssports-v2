@@ -87,6 +87,12 @@ Usado em `POST /publico/apostas`, `POST /area-cliente/apostas`, `POST /apostas` 
 
 Campos fora desta lista são ignorados (prêmio, esporte, horários etc. nunca são lidos, FR-005).
 
+> **Spec 006 (Especiais)**: o palpite pode ser também numa opção especial, no lugar do confronto:
+> `{ "especiais_opcoes_id": 31, "codigo_cotacao": "especial", "cotacao_vista": "3.50" }`. Regras,
+> mensagens, comprovante e simulação do palpite especial em
+> [../../006-ajustes-tela-principal/contracts/api.md](../../006-ajustes-tela-principal/contracts/api.md)
+> (seção 6).
+
 ## Respostas da criação e da validação
 
 **201 — aposta Ativa** (pré-jogo) ou **201 — Pendente** (visitante): `{"data": <Comprovante>}`.

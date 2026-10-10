@@ -80,7 +80,7 @@ Sistema antigo: `wssports.bet` (somente leitura).
 | Popup com visual do antigo | Aviso redesenhado com UX (cartão/folha) | 2026-10-10 |
 | Bônus com valores padrão ativos? (antigo criava pelo painel) | Uma promoção padrão de cada categoria, **inativa** | 2026-10-10 |
 | Regras: texto livre do gerente (HTML) + bônus + mercados | Texto único do administrador (texto simples, um parágrafo por linha) + bônus + mercados + limites de aposta de quem vê | 2026-10-10 |
-| Página de regras da spec 005 (cartão com regras numeradas) | Blocos no visual de "Regras de apostas" do antigo, com as cores pelos tokens do tema (claro/escuro) | 2026-10-10 |
+| Página de regras da spec 005 (cartão com regras numeradas) | Blocos no visual de "Regras de apostas" do antigo, com as cores pelos tokens do tema (claro/escuro) | 2026-10-10 (aprovação do relatório de análise) |
 | Banners em `slides`, nome `md5(time())`, último não pode ser apagado | Tabela `banners` com ordem e ativo; nome pelo hash do conteúdo; sem banner ativo o carrossel some | 2026-10-10 / melhoria |
 | Logo num endereço fixo (preso no cache) | Logo na configuração, arquivo com hash do conteúdo no nome | 2026-10-10 |
 | Vencedor do especial em texto | Opção vencedora por id (`especiais_opcoes_id`) | melhoria (Princípio VII) |
@@ -143,8 +143,8 @@ Sistema antigo: `wssports.bet` (somente leitura).
 
 - **Rota**: `GET /api/tabela-jogos` (`auth:api`, `garantir_acesso`, permissão `apostas.criar`, que
   só o vendedor usa). Query: `dia` (`hoje` | `amanha`), `esporte` (padrão `FUTEBOL`; ao vivo → o
-  frontend manda `FUTEBOL`), `campeonatos[]` (opcional; quando vem, ignora `dia` e usa o período do
-  vendedor), `pagina`, `por_pagina` (padrão e máximo 100).
+  frontend manda `FUTEBOL`), `campeonatos[]` (opcional; filtra os campeonatos dentro do `dia` pedido, como o
+  `ModalTable` do antigo, com "IMPR. DE HOJE" e "IMPR. DE AMANHÃ"), `pagina`, `por_pagina` (padrão e máximo 100).
 - **Dados**: reaproveita `ListagemConfrontos::pre_jogo` com o `Publico` do vendedor (mesmas regras de
   visibilidade da lista, FR-011, e mesmas cotações ajustadas pelo `CalculoCotacoes`), pedindo só os
   14 códigos da tabela: odd1, odd2, odd3, odd4, odd116, odd10, odd135, odd15, odd17, odd16, odd7,
@@ -174,7 +174,7 @@ Sistema antigo: `wssports.bet` (somente leitura).
 ## R-10. Especiais na aposta
 
 - **Pedido**: o palpite especial vem com `codigo_cotacao = "especial"` e `especiais_opcoes_id`
-  (sem `confrontos_id`). `CodigosCotacao` ganha a constante `ESPECIAL` e o `e_regra` a aceita;
+  (sem `confrontos_id`). `CodigosCotacao` ganha a constante `ESPECIAL` e o método `e_aposta` (o `e_regra` não muda, para "especial" não entrar nas regras de porcentagem);
   `ApostasRequest` passa a exigir um entre `confrontos_id`, `confrontos_ao_vivo_id` e
   `especiais_opcoes_id`.
 - **Gravação**: `apostas_palpites` ganha `especiais_id` e `especiais_opcoes_id` (nulos) e
@@ -292,8 +292,9 @@ Sistema antigo: `wssports.bet` (somente leitura).
     caixa alta, bordas esquerda e inferior de 2px na cor do tema) seguido do conteúdo; linhas
     "**RÓTULO:** texto" em 0,9em.
 
-  As cores de fundo e de texto vêm dos tokens do tema (modos claro e escuro da spec 005), no lugar
-  do fundo preto e da seção branca fixos do antigo; a borda e o ícone usam `theme.principal`.
+  O fundo da página segue os tokens do tema (modos claro e escuro da spec 005), no lugar do fundo
+  preto fixo do antigo; cada bloco é uma seção branca com texto escuro nos dois modos, como a seção
+  do antigo e o cartão de leitura aprovado na spec 005; a borda e o ícone usam `theme.principal`.
 - **Componentes de conteúdo**: `BonusRules` (um `RuleItem` por promoção, texto montado como no
   antigo, trechos omitidos quando o campo é nulo, valores pelo `utils/money.js`), `MarketRules` (um
   `RuleItem` por mercado de `market_rules.js`) e `BetLimits` (um `RuleItem` "Limites de aposta"
@@ -383,9 +384,12 @@ jogos; palpite especial no corpo de exemplo).
 
 Constante nova `Funcao::PERMISSOES_SITE` = `avisos.gerenciar`, `banners.gerenciar` e
 `configuracoes.editar` (logo e texto das regras), usadas só por Admin e Supervisor (`pode_usar`,
-como as de especiais). Criadas pelos seeders `AvisosSeeder`, `BannersSeeder` e
-`PapeisPermissoesSeeder` (para `configuracoes.editar`) e entregues aos usuários existentes da
-função, no padrão do `ConfrontosSeeder`.
+como as de especiais; Supervisor incluído por decisão de 2026-10-10). Como hoje, o
+`PapeisPermissoesSeeder` cria **todas** as permissões (a factory e o cadastro de usuários dão as
+`permissoes_padrao()` na hora e precisam delas). A entrega aos usuários que já existiam segue o
+padrão do `ConfrontosSeeder`, uma vez por recurso: `especiais.*` pelo `EspeciaisSeeder`,
+`avisos.gerenciar` pelo `AvisosSeeder`, `banners.gerenciar` pelo `BannersSeeder` e
+`configuracoes.editar` pelo próprio `PapeisPermissoesSeeder` (não há seeder de configurações).
 
 ## R-22. Texto das regras da banca
 

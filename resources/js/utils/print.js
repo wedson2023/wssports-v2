@@ -17,10 +17,11 @@ const linha = (rotulo, valor, estilo = 'font-size:0.7em; margin:0; padding:0;') 
 const linha_palpite = (rotulo, valor) =>
     `<span><strong>${escapar(rotulo)}</strong><time style="float:right; font-size:0.8em;"><strong>${escapar(valor)}</strong></time></span><br>`;
 
+// palpite especial: "Vencedor: categoria" no lugar dos times e sem campeonato (spec 006, FR-019)
 const palpite_html = (palpite) => [
     '<li style="border-bottom:solid thin #000; padding:3px 0; font-size:0.85em;"><p style="font-size:0.9em; margin:0;">',
-    `<strong style="text-transform:uppercase; margin-bottom:3px; font-size:0.9em; text-align:center; display:block;">${escapar(`${palpite.time_casa} x ${palpite.time_fora}`)}</strong>`,
-    linha_palpite('Campeonato', palpite.campeonato),
+    `<strong style="text-transform:uppercase; margin-bottom:3px; font-size:0.9em; text-align:center; display:block;">${escapar(palpite.esporte === 'ESPECIAL' ? `Vencedor: ${palpite.time_fora}` : `${palpite.time_casa} x ${palpite.time_fora}`)}</strong>`,
+    palpite.esporte === 'ESPECIAL' ? '' : linha_palpite('Campeonato', palpite.campeonato),
     linha_palpite('Horário', formatar_data_hora(palpite.data_inicio)),
     linha_palpite('Palpite', palpite.jogador ? `${palpite.jogador} (${palpite.jogador_tipo})` : palpite.mercado),
     linha_palpite('Cotação', Number(palpite.cotacao).toFixed(2)),
@@ -56,8 +57,8 @@ const comprovante_html = (comprovante) => {
     ].join('');
 };
 
-// imprime o comprovante num quadro invisível (sem abrir aba nova nem esbarrar no bloqueio de pop-up)
-export const imprimir_bilhete = (comprovante) => {
+// imprime o HTML num quadro invisível (sem abrir aba nova nem esbarrar no bloqueio de pop-up)
+const imprimir_html = (titulo, corpo) => {
     const quadro = document.createElement('iframe');
     quadro.setAttribute('aria-hidden', 'true');
     quadro.style.cssText = 'position:fixed; width:0; height:0; border:0; right:0; bottom:0;';
@@ -65,7 +66,7 @@ export const imprimir_bilhete = (comprovante) => {
 
     const documento = quadro.contentWindow.document;
     documento.open();
-    documento.write(`<!doctype html><html><head><meta charset="utf-8"><title>${escapar(comprovante.codigo.toUpperCase())}</title></head><body style="margin:0;">${comprovante_html(comprovante)}</body></html>`);
+    documento.write(`<!doctype html><html><head><meta charset="utf-8"><title>${escapar(titulo)}</title></head><body style="margin:0;">${corpo}</body></html>`);
     documento.close();
 
     quadro.contentWindow.focus();
@@ -73,3 +74,42 @@ export const imprimir_bilhete = (comprovante) => {
 
     setTimeout(() => quadro.remove(), tempo_remocao_ms);
 };
+
+export const imprimir_bilhete = (comprovante) => imprimir_html(comprovante.codigo.toUpperCase(), comprovante_html(comprovante));
+
+// colunas da tabela no navegador, em duas linhas por jogo, como o table_html do sistema antigo
+const colunas_tabela = [
+    [['CASA', 'odd1'], ['EMP', 'odd2'], ['FORA', 'odd3'], ['AMB', 'odd4'], ['+2.5', 'odd116'], ['DPC', 'odd10'], ['CGF', 'odd135']],
+    [['GMC', 'odd15'], ['GMF', 'odd17'], ['2GMC', 'odd16'], ['N.A', 'odd7'], ['-2.5', 'odd123'], ['DPF', 'odd13'], ['FGC', 'odd139']],
+];
+
+// as três primeiras cotações (Casa, Empate e Fora) têm borda
+const com_borda = ['odd1', 'odd2', 'odd3'];
+
+const celula_titulo = (titulo) => `<th width="6.5%" align="center"><span style="font-size:0.6em; padding:3px 0; display:block;">${titulo}</span></th>`;
+
+const celula_cotacao = (codigo, cotacoes) => {
+    const estilo = com_borda.includes(codigo)
+        ? 'padding:3px 0; border: solid thin #000; color: #000; font-size:0.6em; display:block;'
+        : 'font-size:0.6em; padding:3px 0; display:block;';
+
+    return `<td width="6.5%" align="center"><span style="${estilo}">${escapar(Number(cotacoes[codigo] ?? 1).toFixed(2))}</span></td>`;
+};
+
+const tabela_html = (tabela) => [
+    '<div style="margin-left: 3px; box-sizing: border-box; font-family:Arial; width: 93%;">',
+    `<p style="text-transform:uppercase; text-align:center; font-size:0.6em; padding:3px; display:block;"><strong>${escapar(tabela.nome_sistema.toUpperCase())}</strong> - ATUALIZADA: ${escapar(formatar_data_hora(tabela.atualizada_em))}</p>`,
+    '<table style="width:100%; border: none;">',
+    tabela.campeonatos.map((campeonato) => [
+        `<tr><td colspan="8"><strong style="font-size:0.6em; text-align: center; letter-spacing:2px; font-weight: bold; background: #000; color: #fff; padding:3px; display:block;">${escapar(campeonato.nome)}</strong></td></tr>`,
+        colunas_tabela.map((linha_colunas) => `<tr>${linha_colunas.map(([titulo]) => celula_titulo(titulo)).join('')}</tr>`).join(''),
+        campeonato.confrontos.map((confronto) => [
+            `<tr><td colspan="8" align="left"><div style="font-size:0.6em; text-transform:uppercase; font-family:Arial; padding:3px; display:block; border-bottom:solid thin #000;"><strong>${escapar(`${formatar_data_hora(confronto.data_inicio)} - ${confronto.time_casa} x ${confronto.time_fora}`)}</strong></div></td></tr>`,
+            colunas_tabela.map((linha_colunas) => `<tr>${linha_colunas.map(([, codigo]) => celula_cotacao(codigo, confronto.cotacoes)).join('')}</tr>`).join(''),
+        ].join('')).join(''),
+    ].join('')).join(''),
+    '</table></div>',
+].join('');
+
+// tabela de jogos do vendedor pela impressão do navegador (spec 006, FR-008)
+export const imprimir_tabela = (tabela) => imprimir_html(`Tabela - ${tabela.nome_sistema}`, tabela_html(tabela));

@@ -26,6 +26,9 @@ class ListagemConfrontos
     public function __construct(private CalculoCotacoes $calculo, private RegrasExibicao $regras) {}
 
     /**
+     * Filtros opcionais da tabela do vendedor (spec 006, R-08): `campeonatos` (lista de ids, além
+     * do dia pedido) e `codigos_cotacao` (códigos calculados no lugar dos 4 da listagem).
+     *
      * @param  array<string, mixed>  $filtros
      * @return array<string, mixed>
      */
@@ -36,7 +39,11 @@ class ListagemConfrontos
 
         // jogos visíveis ao público (período, travamento, ao vivo e não permitidos) dentro do dia pedido
         $consulta = $this->regras->consulta_pre_jogo($publico)
-            ->whereBetween('co.data_inicio', [$inicio, $fim]);
+            ->whereBetween('co.data_inicio', [$inicio, $fim])
+            ->when(
+                filled($filtros['campeonatos'] ?? null),
+                fn (Builder $filtrada) => $filtrada->whereIn('co.campeonatos_id', array_map('intval', $filtros['campeonatos']))
+            );
 
         $this->filtros_comuns($consulta, $publico, $filtros);
 
@@ -53,7 +60,12 @@ class ListagemConfrontos
             ->orderBy('co.time_casa')
             ->paginate($filtros['por_pagina'] ?? self::POR_PAGINA_PADRAO, ['*'], 'pagina', $filtros['pagina'] ?? 1);
 
-        $cotacoes = $this->calculo->ajustar($publico, CalculoCotacoes::PRE_JOGO, $this->decodificar($pagina->getCollection()));
+        $cotacoes = $this->calculo->ajustar(
+            $publico,
+            CalculoCotacoes::PRE_JOGO,
+            $this->decodificar($pagina->getCollection()),
+            $filtros['codigos_cotacao'] ?? CalculoCotacoes::CODIGOS_LISTAGEM,
+        );
 
         $agora = now();
 

@@ -54,7 +54,7 @@ php artisan serve
 7. iPhone (Safari) em PADRÃO: mensagem de aparelho sem Bluetooth sugerindo o modo APP.
 8. Tabela → "Jogos de Hoje" e "Jogos de Amanhã": a tabela sai com as cotações do vendedor (compare 3
    jogos com a lista, SC-003), cabeçalho repetido a cada 5 campeonatos. "Jogos por Campeonatos":
-   marque 2 campeonatos e imprima só eles. Dia sem jogos: "Nenhum jogo encontrado.".
+   marque 2 campeonatos e use "Impr. de hoje" e "Impr. de amanhã": saem só eles, no dia escolhido. Dia sem jogos: "Nenhum jogo encontrado.".
 9. No computador, Tabela e Imprimir abrem a impressão do navegador (tabela com 14 colunas).
 
 ## 4. Especiais (US3)

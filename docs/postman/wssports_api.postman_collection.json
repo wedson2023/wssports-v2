@@ -89,6 +89,31 @@
             "key": "confronto_ao_vivo_id",
             "value": "1",
             "type": "string"
+        },
+        {
+            "key": "especial_id",
+            "value": "1",
+            "type": "string"
+        },
+        {
+            "key": "opcao_id",
+            "value": "1",
+            "type": "string"
+        },
+        {
+            "key": "aviso_id",
+            "value": "1",
+            "type": "string"
+        },
+        {
+            "key": "aparelho",
+            "value": "0f8fad5b-d9cb-469f-a165-70867728950e",
+            "type": "string"
+        },
+        {
+            "key": "banner_id",
+            "value": "1",
+            "type": "string"
         }
     ],
     "item": [
@@ -3566,8 +3591,1006 @@
                             "raw": "{\n    \"limite_valor_apostado\": \"5000.00\"\n}"
                         }
                     }
+                },
+                {
+                    "name": "Tabela de jogos do vendedor",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/tabela-jogos?dia=hoje&esporte=FUTEBOL&pagina=1",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "tabela-jogos"
+                            ],
+                            "query": [
+                                {
+                                    "key": "dia",
+                                    "value": "hoje"
+                                },
+                                {
+                                    "key": "esporte",
+                                    "value": "FUTEBOL"
+                                },
+                                {
+                                    "key": "pagina",
+                                    "value": "1"
+                                }
+                            ]
+                        },
+                        "description": "apostas.criar (só Vendedor). Jogos que o vendedor vê na lista, com as cotações dele nas 14 colunas da tabela (odd1, odd2, odd3, odd4, odd116, odd10, odd135, odd15, odd17, odd16, odd7, odd123, odd13, odd139); cotação ausente ou bloqueada = \"1.00\". Filtros: dia (hoje | amanha), esporte (padrão FUTEBOL), campeonatos[] (ids; filtra esses campeonatos dentro do dia), pagina, por_pagina (máx. 100). 422 esporte não permitido."
+                    }
+                },
+                {
+                    "name": "Aposta do vendedor com especial",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/apostas",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "apostas"
+                            ]
+                        },
+                        "description": "apostas.criar (só Vendedor). Palpite especial: só especiais_opcoes_id, codigo_cotacao \"especial\" e a cotação fixa da opção (sem porcentagens nem teto); vale também em publico/apostas, area-cliente/apostas e na validação do código. Uma opção por categoria (422 \"Escolha só uma opção por categoria especial.\"); categoria fechada, com data limite passada ou opção inativa → 422 com o motivo; cotação diferente → 409.",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"chave_idempotencia\": \"{{$guid}}\",\n    \"nome\": \"João\",\n    \"valor\": \"10.00\",\n    \"aceitar_alteracoes\": \"Nenhuma\",\n    \"palpites\": [\n        {\n            \"especiais_opcoes_id\": \"{{opcao_id}}\",\n            \"codigo_cotacao\": \"especial\",\n            \"cotacao_vista\": \"3.50\"\n        },\n        {\n            \"confrontos_id\": \"{{confronto_id}}\",\n            \"codigo_cotacao\": \"odd1\",\n            \"cotacao_vista\": \"2.00\"\n        }\n    ]\n}"
+                        }
+                    }
                 }
             ]
+        },
+        {
+            "name": "Especiais",
+            "item": [
+                {
+                    "name": "Listar especiais (público)",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/publico/especiais?busca=&pagina=1",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "publico",
+                                "especiais"
+                            ],
+                            "query": [
+                                {
+                                    "key": "busca",
+                                    "value": ""
+                                },
+                                {
+                                    "key": "pagina",
+                                    "value": "1"
+                                }
+                            ]
+                        },
+                        "description": "Sem login (aceita token de cliente ou do painel). Categorias ativas, aguardando, com data limite futura e ao menos uma opção ativa, no formato da listagem de jogos: tipo \"especial\", campeonatos (categoria com as opções e cotações) e paises (país \"Especiais\" com as categorias). Filtros: busca (nome da categoria), especial (id), pagina, por_pagina (padrão 50, máx. 100). Sem outros esportes liberados para quem vê, lista vazia.",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    }
+                },
+                {
+                    "name": "Listar categorias especiais",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/especiais?situacao=&busca=&por_pagina=20",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "especiais"
+                            ],
+                            "query": [
+                                {
+                                    "key": "situacao",
+                                    "value": ""
+                                },
+                                {
+                                    "key": "busca",
+                                    "value": ""
+                                },
+                                {
+                                    "key": "por_pagina",
+                                    "value": "20"
+                                }
+                            ]
+                        },
+                        "description": "especiais.listar (Admin e Supervisor). Filtros: situacao (Aguardando | Encerrado | Cancelado), busca, por_pagina (máx. 100)."
+                    }
+                },
+                {
+                    "name": "Consultar categoria especial",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/especiais/{{especial_id}}",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "especiais",
+                                "{{especial_id}}"
+                            ]
+                        },
+                        "description": "especiais.listar. Categoria com as opções, a vencedora e a quantidade de palpites em apostas ativas."
+                    }
+                },
+                {
+                    "name": "Cadastrar categoria especial",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/especiais",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "especiais"
+                            ]
+                        },
+                        "description": "especiais.gerenciar. data_limite sem fuso = horário de Brasília (-03:00). No mínimo 2 opções, com nomes diferentes e cotação ≥ 1.01. 422 nome repetido.",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"nome\": \"Campeão Brasileiro 2026\",\n    \"data_limite\": \"2026-12-01 18:00\",\n    \"ativo\": true,\n    \"opcoes\": [\n        {\n            \"nome\": \"Flamengo\",\n            \"cotacao\": \"3.50\"\n        },\n        {\n            \"nome\": \"Palmeiras\",\n            \"cotacao\": \"4.00\"\n        },\n        {\n            \"nome\": \"Botafogo\",\n            \"cotacao\": \"6.00\"\n        }\n    ]\n}"
+                        }
+                    }
+                },
+                {
+                    "name": "Alterar categoria especial",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/especiais/{{especial_id}}",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "especiais",
+                                "{{especial_id}}"
+                            ]
+                        },
+                        "description": "especiais.gerenciar. Só com a categoria Aguardando (422 \"A categoria já foi encerrada ou cancelada.\"). As opções são alteradas pelas rotas de opções.",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"nome\": \"Campeão Brasileiro 2026\",\n    \"data_limite\": \"2026-12-01 18:00\",\n    \"ativo\": true\n}"
+                        }
+                    }
+                },
+                {
+                    "name": "Excluir categoria especial",
+                    "request": {
+                        "method": "DELETE",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/especiais/{{especial_id}}",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "especiais",
+                                "{{especial_id}}"
+                            ]
+                        },
+                        "description": "especiais.gerenciar. Exclusão lógica; recusada (422) com palpites em apostas ativas: cancele a categoria em vez de remover."
+                    }
+                },
+                {
+                    "name": "Cadastrar opção especial",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/especiais/{{especial_id}}/opcoes",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "especiais",
+                                "{{especial_id}}",
+                                "opcoes"
+                            ]
+                        },
+                        "description": "especiais.gerenciar. Nome único na categoria; cotação ≥ 1.01. Só com a categoria Aguardando.",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"nome\": \"Corinthians\",\n    \"cotacao\": \"8.00\",\n    \"ativo\": true\n}"
+                        }
+                    }
+                },
+                {
+                    "name": "Alterar opção especial",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/especiais/{{especial_id}}/opcoes/{{opcao_id}}",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "especiais",
+                                "{{especial_id}}",
+                                "opcoes",
+                                "{{opcao_id}}"
+                            ]
+                        },
+                        "description": "especiais.gerenciar. A nova cotação vale para os próximos palpites; os gravados mantêm a deles.",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"nome\": \"Corinthians\",\n    \"cotacao\": \"7.50\",\n    \"ativo\": true\n}"
+                        }
+                    }
+                },
+                {
+                    "name": "Excluir opção especial",
+                    "request": {
+                        "method": "DELETE",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/especiais/{{especial_id}}/opcoes/{{opcao_id}}",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "especiais",
+                                "{{especial_id}}",
+                                "opcoes",
+                                "{{opcao_id}}"
+                            ]
+                        },
+                        "description": "especiais.gerenciar. Exclusão lógica; com palpite em aposta ativa → 422 \"Desative a opção em vez de remover.\""
+                    }
+                },
+                {
+                    "name": "Encerrar categoria especial",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/especiais/{{especial_id}}/encerrar",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "especiais",
+                                "{{especial_id}}",
+                                "encerrar"
+                            ]
+                        },
+                        "description": "especiais.encerrar. Palpites na opção vencedora ficam Vencedor e os demais Perdedor; aposta com palpite perdido fica Perdedor, só com especiais vencedores fica Vencedor, com jogos sem resultado continua Aguardando. Sem movimentar saldo. Resposta com apostas_afetadas. 422 opção de outra categoria ou categoria já encerrada/cancelada.",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"especiais_opcoes_id\": \"{{opcao_id}}\"\n}"
+                        }
+                    }
+                },
+                {
+                    "name": "Cancelar categoria especial",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/especiais/{{especial_id}}/cancelar",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "especiais",
+                                "{{especial_id}}",
+                                "cancelar"
+                            ]
+                        },
+                        "description": "especiais.encerrar. Palpites da categoria ficam Cancelados (cotação 1,00), com a cotação total e o prêmio recalculados e o registro no histórico; aposta sem palpite ativo fica Vencedor com prêmio igual ao valor. Resposta com apostas_afetadas."
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Configurações do site",
+            "item": [
+                {
+                    "name": "Consultar texto das regras",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/configuracoes/regras",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "configuracoes",
+                                "regras"
+                            ]
+                        },
+                        "description": "configuracoes.editar. Texto das regras da banca (um parágrafo por linha), mostrado no topo da página de regras."
+                    }
+                },
+                {
+                    "name": "Alterar texto das regras",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/configuracoes/regras",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "configuracoes",
+                                "regras"
+                            ]
+                        },
+                        "description": "configuracoes.editar. Texto simples (sem HTML), até 10.000 caracteres, um parágrafo por linha. Vazio esconde o bloco da banca na página de regras.",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"regras\": \"Prazo de pagamento até 2 dias úteis.\\nNão pagará jogos já realizados ou que já estejam rolando e, por falha, continuem no sistema, por erro de hora, cotação ou por jogo antecipado.\\nTodos os jogos são definidos ao final dos 90 minutos de jogo, incluindo acréscimos definidos pelos árbitros. Não valerá prorrogação nem disputa de pênaltis.\"\n}"
+                        }
+                    }
+                },
+                {
+                    "name": "Enviar logo",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/configuracoes/logo",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "configuracoes",
+                                "logo"
+                            ]
+                        },
+                        "description": "configuracoes.editar. multipart/form-data: logo (png, jpg ou webp, até 1 MB, sem redimensionar). O arquivo é salvo com o hash do conteúdo no nome: trocar a logo muda o endereço (o navegador não mostra a antiga do cache) e a anterior é apagada. Resposta {\"data\": {\"logo\": \"/storage/logos/{hash}.png\"}}. Sem logo enviada, vale /images/logo_padrao.png.",
+                        "body": {
+                            "mode": "formdata",
+                            "formdata": [
+                                {
+                                    "key": "logo",
+                                    "type": "file",
+                                    "src": []
+                                }
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Listar banners",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/banners?ativo=&por_pagina=20",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "banners"
+                            ],
+                            "query": [
+                                {
+                                    "key": "ativo",
+                                    "value": ""
+                                },
+                                {
+                                    "key": "por_pagina",
+                                    "value": "20"
+                                }
+                            ]
+                        },
+                        "description": "banners.gerenciar (Admin e Supervisor). Paginada (máx. 100), por ordem e id."
+                    }
+                },
+                {
+                    "name": "Consultar banner",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/banners/{{banner_id}}",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "banners",
+                                "{{banner_id}}"
+                            ]
+                        },
+                        "description": "banners.gerenciar."
+                    }
+                },
+                {
+                    "name": "Cadastrar banner",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/banners",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "banners"
+                            ]
+                        },
+                        "description": "banners.gerenciar. multipart/form-data: imagem obrigatória (jpg, png ou webp, até 4 MB; ajustada para 1280x405 em JPEG e salva com o hash do conteúdo no nome), link? (http/https), ordem? (0 a 999; menor primeiro), ativo?.",
+                        "body": {
+                            "mode": "formdata",
+                            "formdata": [
+                                {
+                                    "key": "imagem",
+                                    "type": "file",
+                                    "src": []
+                                },
+                                {
+                                    "key": "link",
+                                    "value": "https://wssports.com.br/promocao",
+                                    "type": "text"
+                                },
+                                {
+                                    "key": "ordem",
+                                    "value": "0",
+                                    "type": "text"
+                                },
+                                {
+                                    "key": "ativo",
+                                    "value": "1",
+                                    "type": "text"
+                                }
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Alterar banner",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/banners/{{banner_id}}",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "banners",
+                                "{{banner_id}}"
+                            ]
+                        },
+                        "description": "banners.gerenciar. POST com _method=PUT para enviar arquivo. Mesmos campos, imagem opcional; trocar a imagem apaga a anterior (se nenhum outro banner a usa).",
+                        "body": {
+                            "mode": "formdata",
+                            "formdata": [
+                                {
+                                    "key": "_method",
+                                    "value": "PUT",
+                                    "type": "text"
+                                },
+                                {
+                                    "key": "imagem",
+                                    "type": "file",
+                                    "src": [],
+                                    "disabled": true
+                                },
+                                {
+                                    "key": "link",
+                                    "value": "https://wssports.com.br/promocao",
+                                    "type": "text"
+                                },
+                                {
+                                    "key": "ordem",
+                                    "value": "0",
+                                    "type": "text"
+                                },
+                                {
+                                    "key": "ativo",
+                                    "value": "1",
+                                    "type": "text"
+                                }
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Excluir banner",
+                    "request": {
+                        "method": "DELETE",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/banners/{{banner_id}}",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "banners",
+                                "{{banner_id}}"
+                            ]
+                        },
+                        "description": "banners.gerenciar. Exclusão lógica e remoção do arquivo. O último banner também pode ser removido: sem banner ativo, o carrossel some. 204."
+                    }
+                }
+            ],
+            "description": "Logo e texto das regras da banca (configuracoes.editar: Admin e Supervisor)."
+        },
+        {
+            "name": "Avisos",
+            "item": [
+                {
+                    "name": "Aviso atual (público)",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/publico/avisos/atual?aparelho={{aparelho}}",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "publico",
+                                "avisos",
+                                "atual"
+                            ],
+                            "query": [
+                                {
+                                    "key": "aparelho",
+                                    "value": "{{aparelho}}"
+                                }
+                            ]
+                        },
+                        "description": "Sem login (com token de cliente, também esconde os lidos pelo cliente). Um aviso ativo, no período, com imagem e ainda não lido pelo aparelho, sorteado entre os elegíveis; {\"data\": null} quando não há. Limite de 30/min.",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    }
+                },
+                {
+                    "name": "Marcar aviso como lido (público)",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/publico/avisos/{{aviso_id}}/leituras",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "publico",
+                                "avisos",
+                                "{{aviso_id}}",
+                                "leituras"
+                            ]
+                        },
+                        "description": "Sem login (com token de cliente, grava também o cliente). Repetir não duplica. 204; aviso inexistente ou inativo → 404 \"Aviso não encontrado.\". Limite de 30/min.",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"aparelho\": \"{{aparelho}}\"\n}"
+                        },
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    }
+                },
+                {
+                    "name": "Listar avisos",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/avisos?por_pagina=20",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "avisos"
+                            ],
+                            "query": [
+                                {
+                                    "key": "por_pagina",
+                                    "value": "20"
+                                }
+                            ]
+                        },
+                        "description": "avisos.gerenciar. Paginada (máx. 100), com a quantidade de leituras."
+                    }
+                },
+                {
+                    "name": "Consultar aviso",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/avisos/{{aviso_id}}",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "avisos",
+                                "{{aviso_id}}"
+                            ]
+                        },
+                        "description": "avisos.gerenciar."
+                    }
+                },
+                {
+                    "name": "Cadastrar aviso",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/avisos",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "avisos"
+                            ]
+                        },
+                        "description": "avisos.gerenciar. multipart/form-data: imagem obrigatória (jpg, png ou webp, até 2 MB, sem redimensionar; o nome do arquivo é o hash do conteúdo), titulo?, link? (http/https), inicio_em?, fim_em? (≥ início; sem fuso = -03:00), ativo?.",
+                        "body": {
+                            "mode": "formdata",
+                            "formdata": [
+                                {
+                                    "key": "imagem",
+                                    "type": "file",
+                                    "src": []
+                                },
+                                {
+                                    "key": "titulo",
+                                    "value": "Promoção da semana",
+                                    "type": "text"
+                                },
+                                {
+                                    "key": "link",
+                                    "value": "https://wssports.com.br/promocao",
+                                    "type": "text"
+                                },
+                                {
+                                    "key": "inicio_em",
+                                    "value": "2026-10-10 00:00",
+                                    "type": "text"
+                                },
+                                {
+                                    "key": "fim_em",
+                                    "value": "2026-10-31 23:59",
+                                    "type": "text"
+                                },
+                                {
+                                    "key": "ativo",
+                                    "value": "1",
+                                    "type": "text"
+                                }
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Alterar aviso",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/avisos/{{aviso_id}}",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "avisos",
+                                "{{aviso_id}}"
+                            ]
+                        },
+                        "description": "avisos.gerenciar. POST com _method=PUT para enviar arquivo. Mesmos campos, imagem opcional; trocar a imagem apaga a anterior.",
+                        "body": {
+                            "mode": "formdata",
+                            "formdata": [
+                                {
+                                    "key": "_method",
+                                    "value": "PUT",
+                                    "type": "text"
+                                },
+                                {
+                                    "key": "imagem",
+                                    "type": "file",
+                                    "src": [],
+                                    "disabled": true
+                                },
+                                {
+                                    "key": "titulo",
+                                    "value": "Promoção da semana",
+                                    "type": "text"
+                                },
+                                {
+                                    "key": "link",
+                                    "value": "https://wssports.com.br/promocao",
+                                    "type": "text"
+                                },
+                                {
+                                    "key": "inicio_em",
+                                    "value": "2026-10-10 00:00",
+                                    "type": "text"
+                                },
+                                {
+                                    "key": "fim_em",
+                                    "value": "2026-10-31 23:59",
+                                    "type": "text"
+                                },
+                                {
+                                    "key": "ativo",
+                                    "value": "1",
+                                    "type": "text"
+                                }
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Excluir aviso",
+                    "request": {
+                        "method": "DELETE",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/avisos/{{aviso_id}}",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "avisos",
+                                "{{aviso_id}}"
+                            ]
+                        },
+                        "description": "avisos.gerenciar. Exclusão lógica e remoção do arquivo da imagem. 204."
+                    }
+                }
+            ],
+            "description": "Avisos da banca (antigo popup): imagem mostrada ao abrir o site, com \"Fechar\" e \"Lido\". Gerenciamento: avisos.gerenciar (Admin e Supervisor)."
         }
     ]
 }

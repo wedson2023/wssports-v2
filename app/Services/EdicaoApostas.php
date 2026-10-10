@@ -62,32 +62,53 @@ class EdicaoApostas
             abort_unless($palpite !== null, 404, 'Palpite não encontrado.');
 
             $this->marcar($aposta, $palpite, $acao, $autor);
-
-            $antes = [
-                'cotacao_total' => (string) $aposta->cotacao_total,
-                'premio' => (string) $aposta->premio,
-                'valor_acrescido' => (string) $aposta->valor_acrescido,
-            ];
-
-            $this->recalcular($aposta);
-
-            ApostasHistorico::create([
-                'apostas_id' => $aposta->id,
-                'apostas_palpites_id' => $palpite->id,
-                'acao' => $acao,
-                'cotacao_total_anterior' => $antes['cotacao_total'],
-                'cotacao_total_posterior' => $aposta->cotacao_total,
-                'premio_anterior' => $antes['premio'],
-                'premio_posterior' => $aposta->premio,
-                'valor_acrescido_anterior' => $antes['valor_acrescido'],
-                'valor_acrescido_posterior' => $aposta->valor_acrescido,
-                'usuarios_id' => $autor->id,
-                'ip' => $ip,
-                'user_agent' => $user_agent !== null ? mb_substr($user_agent, 0, self::TAMANHO_USER_AGENT) : null,
-            ]);
+            $this->recalcular_e_registrar($aposta, $palpite, $acao, $autor, $ip, $user_agent);
 
             return $aposta;
         });
+    }
+
+    /**
+     * Cancelamento feito pelo sistema ao cancelar uma categoria especial (spec 006, R-11): mesma
+     * regra do cancelamento pelo painel, mas pode cancelar o último palpite ativo (sem palpite
+     * ativo, a cotação total fica 1,00 e o prêmio igual ao valor, como no sistema antigo). Deve
+     * rodar dentro da transação de quem chama, com a aposta e o palpite já bloqueados.
+     */
+    public function cancelar_palpite_pelo_sistema(Apostas $aposta, ApostasPalpites $palpite, Usuarios $autor, string $ip, ?string $user_agent): Apostas
+    {
+        $palpite->fill(['situacao' => SituacaoPalpite::Cancelado, 'cancelado_em' => now(), 'cancelado_por' => $autor->id])->save();
+        $this->recalcular_e_registrar($aposta, $palpite, AcaoHistoricoAposta::CancelarPalpite, $autor, $ip, $user_agent);
+
+        return $aposta;
+    }
+
+    /**
+     * Recalcula a aposta e registra a edição no histórico, com os valores de antes e de depois.
+     */
+    private function recalcular_e_registrar(Apostas $aposta, ApostasPalpites $palpite, AcaoHistoricoAposta $acao, Usuarios $autor, string $ip, ?string $user_agent): void
+    {
+        $antes = [
+            'cotacao_total' => (string) $aposta->cotacao_total,
+            'premio' => (string) $aposta->premio,
+            'valor_acrescido' => (string) $aposta->valor_acrescido,
+        ];
+
+        $this->recalcular($aposta);
+
+        ApostasHistorico::create([
+            'apostas_id' => $aposta->id,
+            'apostas_palpites_id' => $palpite->id,
+            'acao' => $acao,
+            'cotacao_total_anterior' => $antes['cotacao_total'],
+            'cotacao_total_posterior' => $aposta->cotacao_total,
+            'premio_anterior' => $antes['premio'],
+            'premio_posterior' => $aposta->premio,
+            'valor_acrescido_anterior' => $antes['valor_acrescido'],
+            'valor_acrescido_posterior' => $aposta->valor_acrescido,
+            'usuarios_id' => $autor->id,
+            'ip' => $ip,
+            'user_agent' => $user_agent !== null ? mb_substr($user_agent, 0, self::TAMANHO_USER_AGENT) : null,
+        ]);
     }
 
     /**

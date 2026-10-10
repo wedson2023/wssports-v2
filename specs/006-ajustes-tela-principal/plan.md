@@ -98,7 +98,7 @@ aparelho: `localStorage` `wssports.impressao` e `wssports.aparelho`.
 | I. Siglas | `ip`, `link` como estão | ✅ Pass |
 | II. Idioma | Artefatos e comentários em português | ✅ Pass |
 | III. Componentes | Cada componente novo em pasta própria com `index.jsx` e `styles.jsx` | ✅ Pass |
-| IV. Escopo estrito | Arquivos existentes alterados listados abaixo, **aguardando confirmação do responsável** | ⏳ Confirmar |
+| IV. Escopo estrito | Arquivos existentes alterados listados abaixo, confirmados pelo responsável em 2026-10-10 | ✅ Pass |
 | V. Legibilidade | Revisão ao final de cada tarefa | ✅ Pass |
 | VI. Consistência | Especiais, avisos e banners no padrão de `clientes_promocoes`/`campeonatos` (apiResource, Request, Resource, permissões no `Funcao.php`, seeder por recurso idempotente); upload num único serviço (`ArmazenamentoImagens`) para os três; aposta especial pelos serviços da spec 004, sem caminho paralelo; tabela sobre a `ListagemConfrontos`; logo e regras na `configuracoes` existente | ✅ Pass |
 | VII. Sistema antigo | Arquivos e funcionamento no R-01/R-02; diferenças no R-03, aprovadas em Clarifications (aviso por aparelho, nome aviso, promoções inativas, regras em blocos com texto único, banners/logo com hash, apuração parcial) ou melhorias registradas | ✅ Pass |
@@ -111,7 +111,7 @@ aparelho: `localStorage` `wssports.impressao` e `wssports.aparelho`.
 | Sem testes | Nenhum arquivo, tarefa ou dependência de teste | ✅ Pass |
 | Postman | Coleção regenerada na mesma entrega (R-17) | ✅ Pass |
 
-**Resultado do gate**: aprovado, com a confirmação pendente da lista de arquivos existentes
+**Resultado do gate**: aprovado; lista de arquivos existentes confirmada pelo responsável em 2026-10-10
 (Princípio IV) abaixo. Reavaliado depois da Fase 1 (banners, logo, avisos e regras): sem violação
 nova.
 
@@ -128,7 +128,7 @@ nova.
 | `public/fakes/logo.png`, `public/fakes/banners/1.jpg` | Saem de `public/fakes` (viram `public/images/logo_padrao.png` e `database/seeders/files/banner_padrao.jpg`) | R-16 |
 | `composer.json` (e `composer.lock`, pelo `composer update --lock`) | `"ext-gd": "*"` em `require` | R-20 |
 | `app/Models/ApostasPalpites.php` | `fillable`, `casts` (`resultado`) e relações `especial`, `opcao_especial` | R-10 |
-| `app/Support/CodigosCotacao.php` | Constante `ESPECIAL` e `e_regra` | R-10 |
+| `app/Support/CodigosCotacao.php` | Constante `ESPECIAL` e método `e_aposta` | R-10 |
 | `app/Http/Requests/ApostasRequest.php` | Campo `palpites.*.especiais_opcoes_id` e regras/mensagens | R-10 |
 | `app/Services/CriacaoApostas.php` | `montar` com especiais; `garantir_limite_por_confronto` ignora especiais; `gravar_palpites` com as colunas novas | R-10 |
 | `app/Services/RegrasAposta.php` | Disponibilidade do especial e uma opção por categoria | R-10 |

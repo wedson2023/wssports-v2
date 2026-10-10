@@ -30,8 +30,9 @@ const nome_do_cliente = async (token) => {
     }
 };
 
-// props da tela que mudam com quem está logado (cotações, limites e saldo do cliente; apostador)
-const props_do_publico = ['listagem', 'configuracoes', 'saldo', 'apostador'];
+// props da tela que mudam com quem está logado (cotações, limites e saldo do cliente; apostador;
+// limites de aposta da página de regras)
+const props_do_publico = ['listagem', 'configuracoes', 'saldo', 'apostador', 'limites_aposta'];
 
 // sessão que muda a tela: cliente, ou usuário do painel enquanto não se sabe se é gestor
 const usa_token = (sessao) => sessao?.tipo === 'cliente' || (sessao?.tipo === 'usuario' && sessao.apostador !== 'visitante');

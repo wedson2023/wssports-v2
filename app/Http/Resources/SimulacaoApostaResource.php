@@ -4,6 +4,7 @@ namespace App\Http\Resources;
 
 use App\Models\Apostas;
 use App\Services\RegrasAposta;
+use App\Support\CodigosCotacao;
 use App\Support\FusoSistema;
 use App\Support\NomesCotacoes;
 use Illuminate\Http\Request;
@@ -36,7 +37,25 @@ class SimulacaoApostaResource extends JsonResource
             'premio' => $calculo['premio'],
             'valor_acrescido' => $calculo['valor_acrescido'],
             'total_a_pagar' => $calculo['total_a_pagar'],
-            'palpites' => array_map(fn (array $palpite) => [
+            'palpites' => array_map(fn (array $palpite) => $palpite['codigo_cotacao'] === CodigosCotacao::ESPECIAL ? [
+                // palpite especial: "Vencedor" e a categoria no lugar dos times (spec 006, FR-019)
+                'indice' => $palpite['indice'],
+                'confrontos_id' => null,
+                'especiais_id' => $palpite['especiais_id'],
+                'especiais_opcoes_id' => $palpite['especiais_opcoes_id'],
+                'codigo_cotacao' => $palpite['codigo_cotacao'],
+                'confrontos_jogadores_id' => null,
+                'mercado' => $palpite['opcao_especial']?->nome,
+                'jogador' => null,
+                'confronto' => RegrasAposta::nome_confronto($palpite),
+                'time_casa' => 'Vencedor',
+                'time_fora' => $palpite['especial']?->nome,
+                'data_inicio' => $palpite['especial']?->data_limite->copy()->setTimezone($fuso)->toIso8601String(),
+                'esporte' => 'ESPECIAL',
+                'cotacao' => $palpite['cotacao_atual'],
+                'disponivel' => $palpite['motivo'] === null,
+                'motivo' => $palpite['motivo'],
+            ] : [
                 'indice' => $palpite['indice'],
                 'confrontos_id' => $palpite['confrontos_id'],
                 'codigo_cotacao' => $palpite['codigo_cotacao'],

@@ -73,7 +73,7 @@ class ComprovanteApostaResource extends JsonResource
                 : $configuracoes->mensagem_bilhete,
             'assinatura' => $aposta->assinatura,
             'palpites' => $aposta->palpites()
-                ->with(['confronto', 'campeonato', 'jogador'])
+                ->with(['confronto', 'campeonato', 'jogador', 'especial', 'opcao_especial'])
                 ->orderBy('id')
                 ->get()
                 ->map(fn (ApostasPalpites $palpite) => $this->palpite($palpite, $fuso))
@@ -131,6 +131,10 @@ class ComprovanteApostaResource extends JsonResource
      */
     private function palpite(ApostasPalpites $palpite, CarbonTimeZone $fuso): array
     {
+        if ($palpite->e_especial()) {
+            return $this->palpite_especial($palpite, $fuso);
+        }
+
         $ao_vivo = $palpite->dados_ao_vivo_envio;
 
         return [
@@ -149,6 +153,35 @@ class ComprovanteApostaResource extends JsonResource
             'placar_casa' => $ao_vivo['placar_casa'] ?? null,
             'placar_fora' => $ao_vivo['placar_fora'] ?? null,
             'minuto' => $ao_vivo['minuto'] ?? null,
+        ];
+    }
+
+    /**
+     * Palpite especial como no sistema antigo: "Vencedor" e a categoria no lugar dos times, a opção
+     * como mercado e a data limite como horário (spec 006, FR-019).
+     *
+     * @return array<string, mixed>
+     */
+    private function palpite_especial(ApostasPalpites $palpite, CarbonTimeZone $fuso): array
+    {
+        return [
+            'id' => $palpite->id,
+            'situacao' => $palpite->situacao->value,
+            'resultado' => $palpite->resultado->value,
+            'campeonato' => $palpite->especial?->nome,
+            'time_casa' => 'Vencedor',
+            'time_fora' => $palpite->especial?->nome,
+            'data_inicio' => $this->data($palpite->especial?->data_limite, $fuso),
+            'esporte' => $palpite->esporte,
+            'codigo_cotacao' => $palpite->codigo_cotacao,
+            'especiais_opcoes_id' => $palpite->especiais_opcoes_id,
+            'mercado' => $palpite->opcao_especial?->nome,
+            'jogador' => null,
+            'jogador_tipo' => null,
+            'cotacao' => (string) $palpite->cotacao_final,
+            'placar_casa' => null,
+            'placar_fora' => null,
+            'minuto' => null,
         ];
     }
 

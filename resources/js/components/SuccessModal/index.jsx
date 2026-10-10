@@ -17,8 +17,9 @@ const tempo_copiado_ms = 2000;
 
 // confirmação da aposta: código do visitante, para apresentar a um vendedor (FR-041); aposta do
 // cliente (saldo) ou do vendedor (bilhete cadastrado, com Imprimir e Enviar como no sistema antigo).
-// comprovante.apostador diz quem apostou
-export default function SuccessModal({ comprovante, ao_fechar }) {
+// comprovante.apostador diz quem apostou. ao_imprimir vem da tela (impressão do vendedor: navegador,
+// Bluetooth ou aplicativo, spec 006); sem ela, imprime pelo navegador
+export default function SuccessModal({ comprovante, ao_fechar, ao_imprimir = imprimir_bilhete }) {
     const e_mobile = useTelaMobile();
     const [copiado, definir_copiado] = useState(false);
     const visivel = Boolean(comprovante);
@@ -144,7 +145,7 @@ export default function SuccessModal({ comprovante, ao_fechar }) {
                     )}
                     {do_vendedor && (
                         <>
-                            <ActionButton type="button" $tipo="link" onClick={() => imprimir_bilhete(dados)}>
+                            <ActionButton type="button" $tipo="link" onClick={() => ao_imprimir(dados)}>
                                 <i className="material-icons">print</i>
                                 Imprimir
                             </ActionButton>

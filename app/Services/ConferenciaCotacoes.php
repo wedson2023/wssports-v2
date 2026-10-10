@@ -24,7 +24,11 @@ class ConferenciaCotacoes
             if (bccomp($palpite['cotacao_atual'], '0', 2) <= 0) {
                 $indisponiveis[] = [
                     ...$this->identificacao($palpite),
-                    'motivo' => $palpite['travado'] ? 'Jogo travado no momento.' : 'Cotação indisponível.',
+                    'motivo' => match (true) {
+                        $palpite['travado'] => 'Jogo travado no momento.',
+                        ($palpite['especiais_opcoes_id'] ?? null) !== null => 'Opção especial indisponível.',
+                        default => 'Cotação indisponível.',
+                    },
                 ];
             }
         }
@@ -64,8 +68,10 @@ class ConferenciaCotacoes
      */
     private function identificacao(array $palpite): array
     {
-        return $palpite['confrontos_ao_vivo_id'] !== null
-            ? ['indice' => $palpite['indice'], 'confrontos_ao_vivo_id' => $palpite['confrontos_ao_vivo_id']]
-            : ['indice' => $palpite['indice'], 'confrontos_id' => $palpite['confrontos_id']];
+        return match (true) {
+            ($palpite['especiais_opcoes_id'] ?? null) !== null => ['indice' => $palpite['indice'], 'especiais_opcoes_id' => $palpite['especiais_opcoes_id']],
+            $palpite['confrontos_ao_vivo_id'] !== null => ['indice' => $palpite['indice'], 'confrontos_ao_vivo_id' => $palpite['confrontos_ao_vivo_id']],
+            default => ['indice' => $palpite['indice'], 'confrontos_id' => $palpite['confrontos_id']],
+        };
     }
 }
