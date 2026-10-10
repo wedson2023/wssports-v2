@@ -95,7 +95,7 @@ para todo cliente novo:
 | valor_maximo_diario | 5000.00 |
 | valor_maximo_saque_diario / quantidade_maxima_saques_diaria | 5000.00 / 5 |
 | odd_minima / odd_maxima | 1.90 / 30.00 |
-| esportes_permitidos | `["FUTEBOL", "HOQUEI NO GELO", "BAISEBOL"]` |
+| esportes_permitidos | todos os esportes (padrão alterado na spec 005: FUTEBOL, BASQUETE, LUTAS, VÔLEI, TÊNIS, TÊNIS DE MESA, E-SPORTS, FUTEBOL AMERICANO, RUGBY, HÓQUEI NO GELO, HANDEBOL, BAISEBOL) |
 
 ## Tabela `clientes_meios_pagamento`
 

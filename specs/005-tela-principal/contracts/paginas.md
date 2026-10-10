@@ -71,9 +71,11 @@ Enviadas pelo `TratarRequisicoesInertia::share()`.
     "valor_minimo_aposta": "2.00",
     "valor_maximo_aposta": "1000.00",
     "quantidade_minima_opcoes": 1,
-    "quantidade_maxima_opcoes": 20
+    "quantidade_maxima_opcoes": 20,
+    "periodo_jogos": "Depois de amanhã"
   },
-  "banners": [ { "imagem": "/fakes/banners/1.png", "link": null } ]
+  "banners": [ { "imagem": "/fakes/banners/1.jpg", "link": null } ],
+  "aviso": null
 }
 ```
 
@@ -81,6 +83,10 @@ Enviadas pelo `TratarRequisicoesInertia::share()`.
   mesmo serviço com o público visitante. Cada recarga traz só a página pedida; a tela soma as
   páginas e junta o campeonato dividido entre duas páginas (research.md, R-13).
 - `banners`: fake (`DadosFake::banners()`).
+- `periodo_jogos`: período de jogos do visitante (`Hoje`, `Amanhã`, `Depois de amanhã`); define
+  quantas abas de data aparecem (0, 2 ou 3), como no sistema antigo.
+- `aviso`: texto ou nulo; com `tipo=ao_vivo` e o ao vivo indisponível, a página volta ao pré-jogo
+  e traz aqui o motivo (`"O ao vivo não está disponível."`), mostrado num alerta (T072).
 - `comissao_por_premio`: sempre `"0.00"` para o visitante; o "vendedor paga" mostra o mesmo valor
   do prêmio (FR-037a).
 
@@ -100,6 +106,16 @@ Enviadas pelo `TratarRequisicoesInertia::share()`.
 - Ao vivo indisponível (`ao_vivo_habilitado` falso ou ao vivo travado): a tela volta para
   `tipo=pre_jogo` e `esporte=FUTEBOL` e mostra a mensagem.
 - Versão diferente: 409 do Inertia → recarga completa automática (R-15).
+
+**Cliente logado**: com o cabeçalho `Authorization: Bearer <token do cliente>` (enviado pela tela
+em todas as requisições quando há sessão de cliente), `listagem` e `configuracoes` seguem as regras
+do cliente e a prop `saldo` (texto com 2 casas) traz o saldo dele; sem token, `saldo` é nulo. Token
+inválido: `listagem.token_recusado` verdadeiro e a tela encerra a sessão.
+
+**Vendedor logado**: com o token do vendedor, `listagem` e `configuracoes` seguem as regras dele
+(`comissao_por_premio` real). Token de gestor do painel é tratado como visitante. A prop `apostador`
+diz como o cupom aposta: `cliente`, `vendedor` ou `visitante` (gestor ou token recusado); é nula
+sem o cabeçalho `Authorization`. A tela usa essa prop para deixar de mandar o token do gestor.
 
 ## Página `Rules` (`GET /regras`)
 
@@ -141,3 +157,9 @@ Enviadas pelo `TratarRequisicoesInertia::share()`.
 | Detalhe do "+N" (ao vivo) | `GET /api/publico/confrontos-ao-vivo/{confronto_ao_vivo}` | spec 004 |
 | Código da aposta | `POST /api/publico/apostas` | spec 004 (201, 409, 422, 429) |
 | Bilhete pelo código | `GET /api/publico/apostas/{codigo}` | spec 004 (200, 404, 429) |
+| Entrar (usuário do painel) | `POST /api/auth/login`, `POST /api/auth/logout` | spec 001 |
+| Entrar (apostador) | `POST /api/area-cliente/auth/login`, `POST /api/area-cliente/auth/logout`, `GET /api/area-cliente/meus-dados` | spec 002 |
+| Criar conta (apostador) | `POST /api/area-cliente/cadastro` | spec 002 |
+| Aposta do cliente logado | `POST /api/area-cliente/apostas`, `GET /api/area-cliente/apostas/{codigo}/situacao` | spec 004 (201, 202, 409, 422) |
+| Aposta do vendedor logado | `POST /api/apostas`, `GET /api/apostas/{codigo}/situacao` | spec 004 (201, 202, 409, 422) |
+| Validar código (vendedor) | `GET /api/apostas/pendentes/{codigo}`, `POST /api/apostas/pendentes/{codigo}/validar` | spec 004 (200, 409, 422, 429) |

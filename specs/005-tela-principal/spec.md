@@ -103,6 +103,44 @@ Cassino, impressão, áreas `/app` e `/cassino` e as visões de usuários logado
   estiver em andamento, a checagem de versão e a atualização do ao vivo ficam pausadas; a
   checagem roda logo depois que o envio termina (FR-050a; research.md, R-15).
 
+### Session 2026-10-09 (ajustes do responsável depois da implementação)
+
+- Q: Os escudos dos times não aparecem. → A: O provedor envia o número do escudo (ou "escudo",
+  sem escudo próprio); a imagem vem de `https://api.oddbrasil.com/img/mini/m_{escudo}.png`, como no
+  sistema antigo.
+- Q: Tamanho dos alertas no mobile? → A: 80% da largura da tela, com fonte e ícone menores.
+- Q: Mensagem de erro com "(and 1 more error)"? → A: O apostador vê só a primeira mensagem de
+  validação, sem o texto técnico acrescentado pelo Laravel.
+- Q: "Criar Conta" no mobile? → A: Aparece também no mobile (antes só no desktop).
+- Q: Tela de regras? → A: Redesenhada com práticas de UX: barra com "Voltar", título e subtítulo,
+  regras numeradas em cartão de leitura confortável e atalho para dúvidas pelo WhatsApp (diferença
+  visual aprovada).
+- Q: Tela de "Enviar código / Enviar link"? → A: Redesenhada: confirmação "Aposta registrada!",
+  código em destaque com botão Copiar, resumo (valor, prêmio, validade), botões grandes com ícone
+  ("Compartilhar" no mobile), "Fazer outra aposta" e botão de fechar (diferença visual aprovada).
+- Q: Borda da última linha de campeonato no menu? → A: Sem borda na última linha de cada país.
+- Q: "Carregando jogos." na lista? → A: Trocado por um indicador animado na cor do tema.
+- Q: Login e cadastro entram nesta spec? → A: Sim. Um modal com as abas "Entrar" e "Criar conta".
+  Entrar aceita apostador (telefone + senha) e usuário do painel (login + senha) num campo só;
+  criar conta cadastra o apostador. Depois de entrar ou cadastrar, mostra a confirmação e continua
+  na mesma tela; o cabeçalho troca "Criar Conta / Entrar" por "Olá, nome" e "Sair". O login usa o
+  token JWT das rotas da API que já existem, guardado no aparelho. O "Finalizar" continua gerando
+  o código do visitante; apostar logado fica para a spec da área do cliente.
+- Q: O cliente logado aposta por esta tela? → A: Sim (corrige a resposta anterior). Logado como
+  cliente, a tela usa as cotações, os limites e o saldo do cliente, o "Finalizar" aposta com o
+  saldo (aposta Ativa, sem código para o vendedor) e o cabeçalho mostra o saldo. No ao vivo a
+  aposta fica "Em análise" durante o delay e a tela acompanha até o backend aceitar ou recusar.
+  Usuário do painel logado continua apostando como visitante nesta tela.
+- Q: O vendedor logado aposta por esta tela? → A: Sim, igual ao sistema antigo (corrige a resposta
+  anterior para o vendedor). Logado como vendedor, a tela usa as cotações e os limites dele e o
+  "Finalizar" aposta pelo painel (aposta Ativa, com a comissão dele); o sucesso mostra "Bilhete
+  cadastrado com sucesso!" com Imprimir (pelo navegador, no formato do comprovante do antigo) e
+  Enviar. Gestores (admin, supervisor, gerente) continuam apostando como visitante. Impressora
+  Bluetooth e pelo APP ficam para outra spec.
+- Q: E o código pendente pesquisado pelo vendedor? → A: Igual ao antigo: com vendedor logado, o
+  código Pendente não abre o bilhete; a simulação (cotações e regras do vendedor) vai para o cupom
+  e o "Finalizar" fica verde com "Validar". Sem login (ou código já validado), abre o bilhete.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Visitante vê os jogos do dia na tela principal (Priority: P1)
@@ -403,9 +441,9 @@ site.
 
 - **FR-007**: O cabeçalho DEVE mostrar, no desktop, o logo à esquerda e "Criar Conta" (preenchido
   na cor do tema) e "Entrar" (contornado na cor do tema) à direita; no mobile, o ícone de menu na
-  cor do tema à esquerda e "Entrar" à direita.
-- **FR-008**: "Criar Conta" e "Entrar" DEVEM aparecer iguais aos atuais e, nesta spec, não abrir
-  nada (login e cadastro ficam para a spec de login web).
+  cor do tema à esquerda e "Criar Conta" e "Entrar" à direita.
+- **FR-008**: "Criar Conta" e "Entrar" DEVEM abrir o modal de acesso, nas abas "Criar conta" e
+  "Entrar" (FR-057 a FR-059).
 - **FR-009**: A barra de esportes DEVE mostrar, nesta ordem, com ícone e rótulo: Cassino, Futebol,
   Ao vivo, Basquete, Lutas, Especiais, Vôlei, Tênis, Tênis de mesa, E-sports, Futebol americano,
   Rugby, Hoquei no gelo, Handebol, Baisebol; o esporte ativo fica na cor do tema (sublinhado no
@@ -555,6 +593,32 @@ site.
   visitas; "Limpar cache" volta ao modo configurado.
 - **FR-056**: A troca de modo DEVE acontecer na hora, sem recarregar a página e sem piscar o
   modo errado ao abrir.
+
+**Login e cadastro**
+
+- **FR-057**: "Entrar" DEVE aceitar, num campo só, o telefone do apostador (com DDD) ou o login do
+  usuário do painel, e a senha; um telefone é tentado primeiro como apostador e um login primeiro
+  como usuário do painel. Credenciais recusadas mostram a mensagem do backend.
+- **FR-058**: "Criar conta" DEVE cadastrar o apostador com nome, telefone, data de nascimento (18
+  anos ou mais), gênero e senha (com confirmação), e opcionalmente e-mail, CPF, código de afiliado
+  (preenchido pelo link `?user=`) e aceite de promoções; erros de validação aparecem em cada campo.
+  O cadastro já deixa o apostador conectado.
+- **FR-059**: Com sessão, o cabeçalho DEVE mostrar "Olá, nome" e "Sair" (com confirmação); para o
+  cliente, também o saldo. A sessão (token JWT) fica no aparelho até vencer ou até "Sair"/"Limpar
+  cache"; token recusado pelo servidor encerra a sessão com aviso.
+- **FR-059a**: Com sessão de cliente, a lista, o "+N" e o cupom DEVEM usar as cotações e os limites
+  do cliente, e o "Finalizar" DEVE apostar pela área do cliente com o saldo dele (nome da conta,
+  campo do nome bloqueado), mostrando "Aposta confirmada!" e atualizando o saldo. No ao vivo, a
+  aposta "Em análise" é acompanhada até ser aceita (confirmação) ou recusada (motivo do backend).
+- **FR-059b**: Com sessão de vendedor, a lista, o "+N" e o cupom DEVEM usar as cotações e os
+  limites do vendedor, e o "Finalizar" DEVE apostar pelo painel (`POST /api/apostas`), com o nome
+  do apostador digitado, mostrando "Bilhete cadastrado com sucesso!" com Imprimir (impressão do
+  navegador) e Enviar (WhatsApp/compartilhar). No ao vivo, o "Em análise" é acompanhado como no
+  cliente. Sessão de gestor do painel aposta como visitante.
+- **FR-059c**: Com sessão de vendedor, pesquisar um código Pendente DEVE carregar a simulação no
+  cupom (nome, valor e palpites disponíveis; os indisponíveis saem com o motivo) e trocar o
+  "Finalizar" por "Validar" (verde); validar mostra "Bilhete validado com sucesso!" com Imprimir e
+  Enviar. Cupom esvaziado ou "Limpar" sai da validação.
 
 **Dados reais**
 

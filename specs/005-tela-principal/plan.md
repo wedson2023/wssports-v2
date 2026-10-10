@@ -77,7 +77,7 @@ Decisões em [research.md](research.md) (R-12 a R-25).
 | Páginas Inertia | 2 (`Home`, `Rules`) |
 | Layout | 1 (`PublicLayout`, persistente) |
 | Componentes | 30 |
-| Hooks | 5 |
+| Hooks | 6 (inclui `useCampoValor`, criado na implementação) |
 | Rotas web | 4 (`/`, `/regras`, `/sw.js`, `/manifest.webmanifest`) |
 | Rotas da API | 0 novas (1 parâmetro novo, `campeonato`, R-25) |
 | Tabelas / migrations | 0 |
@@ -216,7 +216,8 @@ resources/
     │   ├── useModo.js                      # modo claro/escuro
     │   ├── useTelaMobile.js                # matchMedia 900px
     │   ├── useAtualizacaoVersao.js         # conferir versão ao voltar para a aba
-    │   └── useVariacaoCotacoes.js          # cotação anterior × atual (piscar)
+    │   ├── useVariacaoCotacoes.js          # cotação anterior × atual (piscar)
+    │   └── useCampoValor.js                # texto do campo valor ↔ centavos (cupom e barra de resumo)
     ├── theme/
     │   └── tokens.js                       # cores do tema e paletas dos dois modos, breakpoint
     └── utils/
@@ -224,7 +225,9 @@ resources/
         ├── storage.js                # localStorage com try/catch
         ├── alerts.js                      # sweetalert2 com os textos do sistema antigo
         ├── api.js                          # axios para a API pública
-        └── dates.js                        # horário e nome do dia (Intl)
+        ├── dates.js                        # horário e nome do dia (Intl)
+        ├── market_groups.js                # abas e categorias do "+N" (mapa do sistema antigo)
+        └── share.js                        # compartilhar pelo aparelho ou WhatsApp
 ```
 
 Cada pasta de componente, página e layout tem `index.jsx` e `styles.jsx` (Princípio III).

@@ -472,7 +472,8 @@ a cor principal e a derivada do tema ficam iguais.
 | `texto_jogo` | times e horário no card | `#000` | `#000000` |
 
 Botões na cor do tema (odds, valor rápido, Finalizar, Criar Conta) mantêm o texto `#fff` nos dois
-modos. Os ajustes que o responsável pedir entram aqui antes da implementação (Princípio VIII).
+modos. Na implementação entrou o token `fundo_lista` (`#fff` nos dois modos), para as linhas
+brancas da lista de jogos que se alternam com `superficie_jogo`. Os ajustes que o responsável pedir entram aqui antes da implementação (Princípio VIII).
 
 ## R-20. Linha da cotação e "vendedor paga" (decidido)
 

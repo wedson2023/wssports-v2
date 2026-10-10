@@ -82,6 +82,7 @@ não encontrado.". Total: **1 rota pública** e **37 do painel**; **2 removidas*
 | `busca` | texto até 100 (time da casa ou de fora) | |
 | `esporte` | texto (como o provedor: `FUTEBOL`, `BASQUETE`…) | `FUTEBOL` |
 | `somente_favoritos` | booleano | `false` |
+| `campeonato` | id do campeonato; filtra só os jogos da página, os `paises` continuam com todos os campeonatos (spec 005, R-25) | |
 | `fuso_horario` | `±HH:MM` entre `-12:00` e `+14:00` | `-03:00` |
 | `pagina` / `por_pagina` | inteiro / 1–100 | 1 / 50 |
 

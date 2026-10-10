@@ -40,7 +40,7 @@ class ListagemConfrontos
 
         $this->filtros_comuns($consulta, $publico, $filtros);
 
-        $pagina = (clone $consulta)
+        $pagina = $this->so_do_campeonato(clone $consulta, $filtros, 'co')
             ->select([
                 'co.id', 'co.id as confrontos_id', 'co.campeonatos_id', 'co.time_casa', 'co.escudo_casa', 'co.time_fora',
                 'co.escudo_fora', 'co.esporte', 'co.data_inicio', 'co.cotacoes', 'co.quantidade_cotacoes',
@@ -80,7 +80,7 @@ class ListagemConfrontos
 
         $this->filtros_comuns($consulta, $publico, $filtros, 'av');
 
-        $pagina = (clone $consulta)
+        $pagina = $this->so_do_campeonato(clone $consulta, $filtros, 'av')
             ->select([
                 'av.id', 'av.confrontos_id', 'av.campeonatos_id', 'av.time_casa', 'av.escudo_casa', 'av.time_fora',
                 'av.escudo_fora', 'av.esporte', 'av.data_inicio', 'av.cotacoes', 'av.quantidade_cotacoes', 'av.placar_casa',
@@ -170,6 +170,20 @@ class ListagemConfrontos
             $consulta->where(fn (Builder $busca) => $busca->where("{$tabela}.time_casa", 'like', $termo)
                 ->orWhere("{$tabela}.time_fora", 'like', $termo));
         }
+    }
+
+    /**
+     * Filtro opcional por campeonato (spec 005, R-25). Vale só para os jogos da página: os países
+     * do menu continuam com todos os campeonatos do filtro.
+     *
+     * @param  array<string, mixed>  $filtros
+     */
+    private function so_do_campeonato(Builder $consulta, array $filtros, string $tabela): Builder
+    {
+        return $consulta->when(
+            filled($filtros['campeonato'] ?? null),
+            fn (Builder $filtrada) => $filtrada->where("{$tabela}.campeonatos_id", (int) $filtros['campeonato'])
+        );
     }
 
     /**

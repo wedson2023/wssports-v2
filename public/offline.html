@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+    <meta name="robots" content="noindex">
+    <title>Sem conexão</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        html, body {
+            height: 100%;
+            background-color: #000;
+            color: #fff;
+            font: 14px Roboto, Arial, sans-serif;
+        }
+
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+            padding: 25px;
+            text-align: center;
+        }
+
+        h1 { font-size: 18px; font-weight: 500; }
+
+        p { color: #ccc; max-width: 320px; }
+
+        button {
+            margin-top: 10px;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 0.3em;
+            background-color: #c40808;
+            color: #fff;
+            font-size: 14px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <!-- página exibida pelo service worker quando não há conexão; sem dados de jogos ou cotações -->
+    <h1>Sem conexão</h1>
+    <p>Não foi possível conectar. Verifique sua internet e tente novamente.</p>
+    <button type="button" onclick="location.reload()">Tentar novamente</button>
+</body>
+</html>
