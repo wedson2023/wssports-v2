@@ -1,10 +1,15 @@
 import { usePage } from '@inertiajs/react';
-import {
-    BackLink, Card, Help, Hero, Logo, Page, Rule, RuleList, RuleNumber, RuleText, Subtitle, Title, TopBar, TopTitle,
-} from './styles';
 
-// regulamento da banca: regras numeradas em texto simples (FR-017)
-export default function RulesContent({ regras }) {
+import BetLimits from '../BetLimits';
+import BonusRules from '../BonusRules';
+import MarketRules from '../MarketRules';
+import RulesBlock from '../RulesBlock';
+import { BackLink, BankRule, BankRules, Help, Logo, LogoArea, Page, TopBar, TopTitle } from './styles';
+
+// regulamento da banca em blocos, como no sistema antigo (spec 006, FR-021a): regras da banca,
+// regras de bônus, regras de apostas e limites de aposta; barra com "Voltar" e atalho do WhatsApp
+// aprovados na spec 005
+export default function RulesContent({ regras, regras_bonus = [], limites_aposta = null }) {
     const { tema, contatos, nome_sistema } = usePage().props;
 
     const falar_no_whatsapp = () => {
@@ -21,22 +26,27 @@ export default function RulesContent({ regras }) {
                 <TopTitle>Regulamento</TopTitle>
             </TopBar>
 
-            <Hero>
+            <LogoArea>
                 <Logo src={tema.logo} alt={nome_sistema} />
-                <Title>Regras e termos de uso</Title>
-                <Subtitle>Leia com atenção antes de fazer sua aposta.</Subtitle>
-            </Hero>
+            </LogoArea>
 
-            <Card>
-                <RuleList>
-                    {regras.map((regra, indice) => (
-                        <Rule key={regra}>
-                            <RuleNumber aria-hidden="true">{indice + 1}</RuleNumber>
-                            <RuleText>{regra}</RuleText>
-                        </Rule>
-                    ))}
-                </RuleList>
-            </Card>
+            {/* texto do administrador: cada linha é um parágrafo, sempre como texto (sem HTML) */}
+            {regras.length > 0 && (
+                <RulesBlock>
+                    <BankRules>
+                        {regras.map((paragrafo, indice) => (
+                            <BankRule key={`${indice}-${paragrafo}`}>
+                                <i className="material-icons" aria-hidden="true">check_circle</i>
+                                <span>{paragrafo}</span>
+                            </BankRule>
+                        ))}
+                    </BankRules>
+                </RulesBlock>
+            )}
+
+            <BonusRules promocoes={regras_bonus} />
+            <MarketRules />
+            <BetLimits limites={limites_aposta} />
 
             {contatos.whatsapp && (
                 <Help>

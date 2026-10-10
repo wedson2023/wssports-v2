@@ -2,11 +2,12 @@
 
 namespace App\Http\Controllers;
 
-use App\Fakes\DadosFake;
 use App\Http\Requests\PaginaInicialRequest;
+use App\Models\Banners;
 use App\Models\Configuracoes;
 use App\Services\IdentificacaoPublico;
 use App\Services\ListagemConfrontos;
+use App\Services\ListagemEspeciais;
 use App\Services\Publico;
 use App\Services\RegrasExibicao;
 use Inertia\Inertia;
@@ -15,13 +16,13 @@ use Symfony\Component\HttpKernel\Exception\HttpException;
 
 /**
  * Tela principal do site (área "/"): jogos pelo mesmo serviço da listagem pública, configurações
- * reais e dados fake (contracts/paginas.md). Com o token de um cliente (sessão do site), cotações,
+ * e banners reais (contracts/paginas.md). Com o token de um cliente (sessão do site), cotações,
  * limites e saldo são os do cliente; com o de um vendedor, as cotações e os limites dele (aposta
  * como no painel, igual ao sistema antigo); sem token, os do visitante.
  */
 class PaginaInicialController extends Controller
 {
-    public function index(PaginaInicialRequest $request, ListagemConfrontos $listagem, RegrasExibicao $regras, IdentificacaoPublico $identificacao): Response
+    public function index(PaginaInicialRequest $request, ListagemConfrontos $listagem, RegrasExibicao $regras, IdentificacaoPublico $identificacao, ListagemEspeciais $especiais): Response
     {
         $publico = $this->publico($request, $identificacao);
         $filtros = $request->filtros();
@@ -37,6 +38,11 @@ class PaginaInicialController extends Controller
             }
         }
 
+        // Especiais: a lista de categorias no lugar dos jogos, no mesmo formato (spec 006, R-12)
+        if (mb_strtoupper($filtros['esporte'] ?? '') === 'ESPECIAL' && ($filtros['tipo'] ?? 'pre_jogo') !== 'ao_vivo') {
+            $listagem_jogos = $especiais->listar($publico, [...$filtros, 'especial' => $filtros['campeonato'] ?? null]);
+        }
+
         $listagem_jogos ??= $listagem->pre_jogo($publico, $filtros);
 
         return Inertia::render('Home', [
@@ -49,7 +55,7 @@ class PaginaInicialController extends Controller
             ],
             'listagem' => $listagem_jogos,
             'configuracoes' => $this->configuracoes($publico, $regras),
-            'banners' => DadosFake::banners(),
+            'banners' => Banners::ativos(),
             'aviso' => $aviso,
             'saldo' => $publico->e_cliente() ? (string) $publico->cliente->saldo : null,
             'apostador' => $this->apostador($request, $publico),

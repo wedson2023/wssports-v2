@@ -9,6 +9,8 @@ use App\Http\Controllers\AreaClienteMeiosPagamentoController;
 use App\Http\Controllers\AreaClienteMeusDadosController;
 use App\Http\Controllers\AreaClienteRecuperacaoSenhaController;
 use App\Http\Controllers\AutenticacaoController;
+use App\Http\Controllers\AvisosController;
+use App\Http\Controllers\BannersController;
 use App\Http\Controllers\CampeonatosController;
 use App\Http\Controllers\CampeonatosNaoPermitidosController;
 use App\Http\Controllers\CancelamentoApostasController;
@@ -17,20 +19,28 @@ use App\Http\Controllers\ClientesController;
 use App\Http\Controllers\ClientesMeiosPagamentoController;
 use App\Http\Controllers\ClientesPromocoesController;
 use App\Http\Controllers\ClientesTransacoesController;
+use App\Http\Controllers\ConfiguracoesLogoController;
+use App\Http\Controllers\ConfiguracoesRegrasController;
 use App\Http\Controllers\ConfrontosAoVivoController;
 use App\Http\Controllers\ConfrontosAoVivoNaoPermitidosController;
 use App\Http\Controllers\ConfrontosController;
 use App\Http\Controllers\ConfrontosLimitesController;
 use App\Http\Controllers\ConfrontosNaoPermitidosController;
 use App\Http\Controllers\ConfrontosTetoCotacoesController;
+use App\Http\Controllers\EncerramentoEspeciaisController;
+use App\Http\Controllers\EspeciaisController;
+use App\Http\Controllers\EspeciaisOpcoesController;
 use App\Http\Controllers\PermissoesUsuariosController;
 use App\Http\Controllers\PorcentagensCampeonatosController;
 use App\Http\Controllers\PorcentagensClientesController;
 use App\Http\Controllers\PorcentagensConfrontosController;
 use App\Http\Controllers\PorcentagensVendedoresController;
 use App\Http\Controllers\PublicoApostasController;
+use App\Http\Controllers\PublicoAvisosController;
 use App\Http\Controllers\PublicoConfrontosController;
 use App\Http\Controllers\PublicoConfrontosDetalheController;
+use App\Http\Controllers\PublicoEspeciaisController;
+use App\Http\Controllers\TabelaJogosController;
 use App\Http\Controllers\UsuariosConfiguracoesController;
 use App\Http\Controllers\UsuariosController;
 use App\Http\Controllers\ValidacaoApostasController;
@@ -220,4 +230,47 @@ Route::middleware(['auth:api', 'garantir_acesso'])->group(function () {
         ->whereNumber('palpite');
     Route::post('apostas/{codigo}/palpites/{palpite}/restaurar', [ApostasPalpitesController::class, 'restaurar'])
         ->whereNumber('palpite');
+
+    // tabela de jogos impressa pelo vendedor, com as cotações dele
+    Route::get('tabela-jogos', [TabelaJogosController::class, 'index']);
+});
+
+// aviso da banca no site (sem login; aceita token de cliente): o aviso a mostrar e o "Lido"
+Route::get('publico/avisos/atual', [PublicoAvisosController::class, 'atual'])->middleware('throttle:30,1');
+Route::post('publico/avisos/{aviso}/leituras', [PublicoAvisosController::class, 'ler'])
+    ->middleware('throttle:30,1')
+    ->missing(fn () => abort(404, 'Aviso não encontrado.'));
+
+// recursos do site no painel: texto das regras da banca, logo, avisos e banners
+Route::middleware(['auth:api', 'garantir_acesso'])->group(function () {
+    Route::get('configuracoes/regras', [ConfiguracoesRegrasController::class, 'show']);
+    Route::put('configuracoes/regras', [ConfiguracoesRegrasController::class, 'update']);
+    Route::post('configuracoes/logo', [ConfiguracoesLogoController::class, 'update']);
+
+    Route::apiResource('banners', BannersController::class)
+        ->missing(fn () => abort(404, 'Banner não encontrado.'));
+
+    Route::apiResource('avisos', AvisosController::class)
+        ->parameters(['avisos' => 'aviso'])
+        ->missing(fn () => abort(404, 'Aviso não encontrado.'));
+});
+
+// especiais (aposta de vencedor com cotação fixa): lista pública sem login
+Route::get('publico/especiais', [PublicoEspeciaisController::class, 'index']);
+
+// especiais no painel: categorias, opções, encerramento e cancelamento
+Route::middleware(['auth:api', 'garantir_acesso'])->group(function () {
+    $especial_nao_encontrado = fn () => abort(404, 'Categoria especial não encontrada.');
+
+    Route::post('especiais/{especial}/encerrar', [EncerramentoEspeciaisController::class, 'encerrar'])
+        ->missing($especial_nao_encontrado);
+    Route::post('especiais/{especial}/cancelar', [EncerramentoEspeciaisController::class, 'cancelar'])
+        ->missing($especial_nao_encontrado);
+    Route::apiResource('especiais', EspeciaisController::class)
+        ->parameters(['especiais' => 'especial'])
+        ->missing($especial_nao_encontrado);
+    Route::apiResource('especiais.opcoes', EspeciaisOpcoesController::class)
+        ->except(['index', 'show'])
+        ->parameters(['especiais' => 'especial', 'opcoes' => 'opcao'])
+        ->missing(fn () => abort(404, 'Categoria ou opção não encontrada.'));
 });

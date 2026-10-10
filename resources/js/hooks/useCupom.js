@@ -16,14 +16,16 @@ const maximo_nome = 100;
 
 const cupom_vazio = { versao_formato, nome: '', valor_centavos: 0, palpites: [] };
 
+// no especial, confronto_id é a categoria: um palpite por categoria, como um por jogo (spec 006)
 const mesmo_jogo = (palpite, tipo, confronto_id) => palpite.tipo === tipo && palpite.confronto_id === confronto_id;
 
 const palpite_valido = (palpite) =>
     palpite !== null && typeof palpite === 'object'
-    && ['pre_jogo', 'ao_vivo'].includes(palpite.tipo)
+    && ['pre_jogo', 'ao_vivo', 'especial'].includes(palpite.tipo)
     && Number.isInteger(palpite.confronto_id)
     && typeof palpite.codigo_cotacao === 'string'
-    && typeof palpite.cotacao === 'string';
+    && typeof palpite.cotacao === 'string'
+    && (palpite.tipo !== 'especial' || Number.isInteger(palpite.opcao_id));
 
 // cupom salvo inválido (formato antigo, corrompido) → cupom vazio, sem erro (FR-039)
 const ler_cupom_salvo = () => {
@@ -46,7 +48,9 @@ export const cupom_reducer = (cupom, acao) => {
             const atual = cupom.palpites.find((item) => mesmo_jogo(item, palpite.tipo, palpite.confronto_id));
 
             if (atual) {
-                const mesma_cotacao = atual.codigo_cotacao === palpite.codigo_cotacao && atual.jogador_id === palpite.jogador_id;
+                const mesma_cotacao = atual.codigo_cotacao === palpite.codigo_cotacao
+                    && atual.jogador_id === palpite.jogador_id
+                    && atual.opcao_id === palpite.opcao_id;
 
                 return {
                     ...cupom,
@@ -92,12 +96,15 @@ const montar_envio = (cupom, nome) => ({
     nome,
     valor: centavos_para_texto(cupom.valor_centavos),
     aceitar_alteracoes: 'Nenhuma',
-    palpites: cupom.palpites.map((palpite) => ({
-        [palpite.tipo === 'ao_vivo' ? 'confrontos_ao_vivo_id' : 'confrontos_id']: palpite.confronto_id,
-        codigo_cotacao: palpite.codigo_cotacao,
-        ...(palpite.codigo_cotacao === 'jogador' ? { confrontos_jogadores_id: palpite.jogador_id } : {}),
-        cotacao_vista: palpite.cotacao,
-    })),
+    palpites: cupom.palpites.map((palpite) => (palpite.tipo === 'especial'
+        // palpite especial: só a opção escolhida, sem confronto
+        ? { especiais_opcoes_id: palpite.opcao_id, codigo_cotacao: 'especial', cotacao_vista: palpite.cotacao }
+        : {
+            [palpite.tipo === 'ao_vivo' ? 'confrontos_ao_vivo_id' : 'confrontos_id']: palpite.confronto_id,
+            codigo_cotacao: palpite.codigo_cotacao,
+            ...(palpite.codigo_cotacao === 'jogador' ? { confrontos_jogadores_id: palpite.jogador_id } : {}),
+            cotacao_vista: palpite.cotacao,
+        })),
 });
 
 // intervalo entre as consultas da aposta "Em análise" (delay do ao vivo)

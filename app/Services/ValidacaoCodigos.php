@@ -165,28 +165,46 @@ class ValidacaoCodigos
      */
     private function pedidos(Apostas $aposta): array
     {
-        return $aposta->palpites()->orderBy('id')->get()->map(fn (ApostasPalpites $palpite) => [
-            'confrontos_id' => $palpite->confrontos_id,
-            'codigo_cotacao' => $palpite->codigo_cotacao,
-            'confrontos_jogadores_id' => $palpite->confrontos_jogadores_id,
-            'cotacao_vista' => (string) $palpite->cotacao_final,
-        ])->all();
+        return $aposta->palpites()->orderBy('id')->get()->map(fn (ApostasPalpites $palpite) => $palpite->e_especial()
+            ? [
+                'especiais_opcoes_id' => $palpite->especiais_opcoes_id,
+                'codigo_cotacao' => $palpite->codigo_cotacao,
+                'cotacao_vista' => (string) $palpite->cotacao_final,
+            ]
+            : [
+                'confrontos_id' => $palpite->confrontos_id,
+                'codigo_cotacao' => $palpite->codigo_cotacao,
+                'confrontos_jogadores_id' => $palpite->confrontos_jogadores_id,
+                'cotacao_vista' => (string) $palpite->cotacao_final,
+            ])->all();
     }
 
     /**
-     * Troca os palpites do visitante pelos validados. O palpite de um confronto que continua na
-     * aposta é atualizado (o índice único por aposta e confronto vale também para os excluídos);
-     * os demais são excluídos logicamente e os novos, criados.
+     * Chave do palpite na aposta: o confronto ou, no especial, a categoria (os dois têm índice
+     * único por aposta, que vale também para os excluídos).
+     *
+     * @param  array<string, mixed>|ApostasPalpites  $palpite
+     */
+    private static function chave(array|ApostasPalpites $palpite): string
+    {
+        return $palpite['especiais_id'] !== null ? "especial:{$palpite['especiais_id']}" : "confronto:{$palpite['confrontos_id']}";
+    }
+
+    /**
+     * Troca os palpites do visitante pelos validados. O palpite de um confronto (ou de uma categoria
+     * especial) que continua na aposta é atualizado; os demais são excluídos logicamente e os novos,
+     * criados.
      *
      * @param  list<array<string, mixed>>  $palpites
      */
     private function substituir_palpites(Apostas $aposta, array $palpites): void
     {
-        $existentes = ApostasPalpites::withTrashed()->where('apostas_id', $aposta->id)->get()->keyBy('confrontos_id');
+        $existentes = ApostasPalpites::withTrashed()->where('apostas_id', $aposta->id)->get()->keyBy(fn (ApostasPalpites $palpite) => self::chave($palpite));
         $novos = [];
+        $mantidos = [];
 
         foreach ($palpites as $palpite) {
-            $existente = $existentes[$palpite['confrontos_id']] ?? null;
+            $existente = $existentes[self::chave($palpite)] ?? null;
 
             if ($existente === null) {
                 $novos[] = $palpite;
@@ -197,6 +215,7 @@ class ValidacaoCodigos
             $existente->restore();
             $existente->fill([
                 'campeonatos_id' => $palpite['campeonatos_id'],
+                'especiais_opcoes_id' => $palpite['especiais_opcoes_id'],
                 'esporte' => $palpite['esporte'],
                 'codigo_cotacao' => $palpite['codigo_cotacao'],
                 'confrontos_jogadores_id' => $palpite['confrontos_jogadores_id'],
@@ -206,11 +225,11 @@ class ValidacaoCodigos
                 'cotacao_final' => $palpite['cotacao_atual'],
                 'situacao' => SituacaoPalpite::Ativo,
             ])->save();
+
+            $mantidos[] = $existente->id;
         }
 
-        $mantidos = array_column($palpites, 'confrontos_id');
-
-        ApostasPalpites::where('apostas_id', $aposta->id)->whereNotIn('confrontos_id', $mantidos)->delete();
+        ApostasPalpites::where('apostas_id', $aposta->id)->whereNotIn('id', $mantidos)->delete();
 
         $this->criacao->gravar_palpites($aposta, $novos);
     }

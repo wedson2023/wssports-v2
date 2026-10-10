@@ -46,8 +46,20 @@ class ApostasRequest extends FormRequest
             'aceitar_alteracoes' => ['nullable', Rule::enum(AceitarAlteracoes::class)],
             'palpites' => ['required', 'array', 'min:1', 'max:'.self::MAXIMO_PALPITES],
             'palpites.*' => ['required', 'array'],
-            'palpites.*.confrontos_id' => ['nullable', 'integer', 'required_without:palpites.*.confrontos_ao_vivo_id', 'prohibits:palpites.*.confrontos_ao_vivo_id'],
+            'palpites.*.confrontos_id' => [
+                'nullable',
+                'integer',
+                'required_without_all:palpites.*.confrontos_ao_vivo_id,palpites.*.especiais_opcoes_id',
+                'prohibits:palpites.*.confrontos_ao_vivo_id',
+            ],
             'palpites.*.confrontos_ao_vivo_id' => ['nullable', 'integer'],
+            // palpite especial: só a opção escolhida, sem confronto (spec 006)
+            'palpites.*.especiais_opcoes_id' => [
+                'nullable',
+                'integer',
+                'required_if:palpites.*.codigo_cotacao,'.CodigosCotacao::ESPECIAL,
+                'prohibits:palpites.*.confrontos_id,palpites.*.confrontos_ao_vivo_id',
+            ],
             'palpites.*.codigo_cotacao' => ['required', 'string', $this->codigo_valido()],
             'palpites.*.confrontos_jogadores_id' => ['nullable', 'integer', 'required_if:palpites.*.codigo_cotacao,'.CodigosCotacao::JOGADOR],
             'palpites.*.cotacao_vista' => ['required', 'numeric', 'min:1', 'regex:'.self::DUAS_CASAS],
@@ -78,9 +90,12 @@ class ApostasRequest extends FormRequest
             'palpites.*.required' => 'Palpite inválido.',
             'palpites.*.array' => 'Palpite inválido.',
             'palpites.*.confrontos_id.integer' => 'O confronto do palpite deve ser um número inteiro.',
-            'palpites.*.confrontos_id.required_without' => 'Informe o confronto do pré-jogo ou do ao vivo em cada palpite.',
+            'palpites.*.confrontos_id.required_without_all' => 'Informe o confronto do pré-jogo, do ao vivo ou a opção especial em cada palpite.',
             'palpites.*.confrontos_id.prohibits' => 'Informe só um confronto por palpite: do pré-jogo ou do ao vivo.',
             'palpites.*.confrontos_ao_vivo_id.integer' => 'O jogo do ao vivo do palpite deve ser um número inteiro.',
+            'palpites.*.especiais_opcoes_id.integer' => 'A opção especial do palpite deve ser um número inteiro.',
+            'palpites.*.especiais_opcoes_id.required_if' => 'Informe a opção especial no palpite especial.',
+            'palpites.*.especiais_opcoes_id.prohibits' => 'O palpite especial não tem confronto.',
             'palpites.*.codigo_cotacao.required' => 'Informe o código da cotação em cada palpite.',
             'palpites.*.codigo_cotacao.string' => 'O código da cotação deve ser um texto.',
             'palpites.*.confrontos_jogadores_id.integer' => 'O jogador do palpite deve ser um número inteiro.',
@@ -113,13 +128,22 @@ class ApostasRequest extends FormRequest
     }
 
     /**
-     * Só os códigos da lista fechada (odd1 a odd323 e jogador), nunca usados em SQL (FR-006).
+     * Só os códigos da lista fechada (odd1 a odd323, jogador e especial), nunca usados em SQL
+     * (FR-006). A opção especial só vai com o código especial.
      */
     private function codigo_valido(): Closure
     {
         return function (string $atributo, mixed $valor, Closure $falha) {
-            if (! is_string($valor) || ! CodigosCotacao::e_regra($valor)) {
+            if (! is_string($valor) || ! CodigosCotacao::e_aposta($valor)) {
                 $falha('Código de cotação inválido.');
+
+                return;
+            }
+
+            $tem_opcao = filled($this->input(str_replace('codigo_cotacao', 'especiais_opcoes_id', $atributo)));
+
+            if ($tem_opcao !== ($valor === CodigosCotacao::ESPECIAL)) {
+                $falha('O palpite especial usa o código "especial" com a opção escolhida.');
             }
         };
     }

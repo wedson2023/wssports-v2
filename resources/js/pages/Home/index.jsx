@@ -10,27 +10,32 @@ import Footer from '../../components/Footer';
 import Header from '../../components/Header';
 import MatchDetailsModal from '../../components/MatchDetailsModal';
 import MatchList from '../../components/MatchList';
+import NoticeModal from '../../components/NoticeModal';
 import SearchBar from '../../components/SearchBar';
 import SideMenu from '../../components/SideMenu';
+import SpecialList from '../../components/SpecialList';
 import SportsBar, { esportes } from '../../components/SportsBar';
 import SuccessModal from '../../components/SuccessModal';
+import TableModal from '../../components/TableModal';
 import ThemeToggle from '../../components/ThemeToggle';
 import TicketModal from '../../components/TicketModal';
 import WhatsAppButton from '../../components/WhatsAppButton';
 import useCupom from '../../hooks/useCupom';
+import useImpressao from '../../hooks/useImpressao';
 import { ModoContext } from '../../hooks/useModo';
 import useSessao from '../../hooks/useSessao';
 import useVariacaoCotacoes from '../../hooks/useVariacaoCotacoes';
 import api from '../../utils/api';
 import { alerta_atencao, alerta_erro, alerta_sucesso, confirmar } from '../../utils/alerts';
 import { para_centavos } from '../../utils/money';
+import { chave_aparelho, gravar_texto, ler_texto } from '../../utils/storage';
 import { Content } from './styles';
 
 // atualização do ao vivo (FR-033)
 const intervalo_ao_vivo_ms = 7000;
 
-// esportes sem ação nesta spec (FR-011)
-const esportes_sem_acao = ['CASSINO', 'ESPECIAL'];
+// esportes sem ação (Cassino fica para a spec própria; Especiais ganhou ação na spec 006)
+const esportes_sem_acao = ['CASSINO'];
 
 // colunas do cabeçalho com o botão dia/noite antes de Criar Conta / Entrar (FR-053)
 const colunas_cabecalho = { desktop: '40px 100px 100px', mobile: '40px 100px 100px' };
@@ -55,6 +60,18 @@ const juntar_paginas = (atuais, novos) => {
     return juntos;
 };
 
+// identificador do aparelho para o "Lido" dos avisos: gerado na primeira vez e guardado no navegador
+const aparelho_atual = () => {
+    const salvo = ler_texto(chave_aparelho);
+
+    if (salvo) return salvo;
+
+    const novo = crypto.randomUUID();
+    gravar_texto(chave_aparelho, novo);
+
+    return novo;
+};
+
 // filtros da URL sem os valores padrão nem vazios
 const consulta_da_url = ({ tipo, esporte, dia, busca, campeonato }) => Object.fromEntries(Object.entries({
     tipo: tipo === 'ao_vivo' ? tipo : null,
@@ -70,6 +87,9 @@ export default function Home({ filtros, listagem, configuracoes, banners, aviso,
     const { modo, alternar_modo } = useContext(ModoContext);
     const { cupom, enviando, alternar_palpite, enviar_cupom, carregar_validacao } = useCupom();
     const { sessao, sair, expirar, definir_apostador } = useSessao();
+    const { impressao, alternar_modo: alternar_modo_impressao, alternar_largura, imprimir_bilhete, imprimir_tabela } = useImpressao();
+    const vendedor = sessao?.tipo === 'usuario' && sessao.apostador === 'vendedor';
+    const [tabela_campeonatos_aberta, definir_tabela_campeonatos_aberta] = useState(false);
 
     const [campeonatos, definir_campeonatos] = useState(listagem.campeonatos);
     const [carregando, definir_carregando] = useState(false);
@@ -81,6 +101,10 @@ export default function Home({ filtros, listagem, configuracoes, banners, aviso,
     // link de indicação (?user=código) abre o cadastro com o código de afiliado, como no antigo
     const [codigo_indicacao] = useState(() => new URLSearchParams(window.location.search).get('user') ?? '');
     const [aba_acesso, definir_aba_acesso] = useState(() => (codigo_indicacao ? 'cadastrar' : null));
+    // link do bilhete (?code=CÓDIGO): lido uma vez ao abrir a tela (FR-001)
+    const [codigo_do_link] = useState(() => new URLSearchParams(window.location.search).get('code'));
+    const abriu_com_codigo = Boolean(codigo_do_link);
+    const codigo_do_link_usado = useRef(false);
 
     const lista = useRef(null);
     const pedindo_pagina = useRef(false);
@@ -211,6 +235,23 @@ export default function Home({ filtros, listagem, configuracoes, banners, aviso,
         data_inicio: confronto.data_inicio,
     });
 
+    // Especiais (spec 006, FR-015): a categoria faz o papel do jogo no cupom (um palpite por categoria)
+    const opcao_selecionada = (especial) => cupom.palpites
+        .find((palpite) => palpite.tipo === 'especial' && palpite.confronto_id === especial.id)?.opcao_id ?? null;
+
+    const escolher_especial = (especial, opcao) => alternar_palpite({
+        tipo: 'especial',
+        confronto_id: especial.id,
+        codigo_cotacao: 'especial',
+        opcao_id: opcao.id,
+        mercado: opcao.nome,
+        cotacao: Number(opcao.cotacao).toFixed(2),
+        time_casa: 'Vencedor',
+        time_fora: especial.nome,
+        campeonato: especial.nome,
+        data_inicio: especial.data_limite,
+    });
+
     const abrir_detalhes = (confronto) => definir_jogo_detalhe({ tipo: listagem.tipo, confronto_id: confronto.id });
     const fechar_detalhes = useCallback(() => definir_jogo_detalhe(null), []);
     const fechar_acesso = useCallback(() => definir_aba_acesso(null), []);
@@ -249,7 +290,18 @@ export default function Home({ filtros, listagem, configuracoes, banners, aviso,
         carregar_validacao(simulacao.codigo, {
             nome: simulacao.nome ?? '',
             valor_centavos: para_centavos(simulacao.valor),
-            palpites: disponiveis.map((palpite) => ({
+            palpites: disponiveis.map((palpite) => (palpite.codigo_cotacao === 'especial' ? {
+                tipo: 'especial',
+                confronto_id: palpite.especiais_id,
+                codigo_cotacao: 'especial',
+                opcao_id: palpite.especiais_opcoes_id,
+                mercado: palpite.mercado,
+                cotacao: Number(palpite.cotacao).toFixed(2),
+                time_casa: palpite.time_casa,
+                time_fora: palpite.time_fora,
+                campeonato: palpite.time_fora,
+                data_inicio: palpite.data_inicio,
+            } : {
                 tipo: 'pre_jogo',
                 confronto_id: palpite.confrontos_id,
                 codigo_cotacao: palpite.codigo_cotacao,
@@ -286,6 +338,64 @@ export default function Home({ filtros, listagem, configuracoes, banners, aviso,
         }
     };
 
+    // link do bilhete: espera saber quem está na sessão (o usuário do painel só sabe se é vendedor
+    // depois da prop apostador), busca o código uma vez e tira o ?code= da barra de endereço, para
+    // recarregar a página não repetir a ação (FR-001 a FR-004)
+    const sessao_conhecida = sessao?.tipo !== 'usuario' || Boolean(sessao.apostador);
+
+    useEffect(() => {
+        if (!codigo_do_link || !sessao_conhecida || codigo_do_link_usado.current) return;
+
+        codigo_do_link_usado.current = true;
+        buscar_codigo(codigo_do_link);
+
+        const url = new URL(window.location.href);
+        url.searchParams.delete('code');
+        window.history.replaceState(window.history.state, '', `${url.pathname}${url.search}${url.hash}`);
+    }, [codigo_do_link, sessao_conhecida]);
+
+    // aviso da banca (spec 006, FR-028 a FR-032): pedido depois que a lista carregou, para não
+    // atrasá-la, e mostrado só quando a imagem já carregou; nunca quando a tela abriu pelo link de
+    // um bilhete. Não confundir com a prop "aviso" (mensagem de atenção da listagem)
+    const [aviso_banca, definir_aviso_banca] = useState(null);
+
+    useEffect(() => {
+        if (abriu_com_codigo) return undefined;
+
+        let cancelado = false;
+
+        const mostrar_aviso = async () => {
+            try {
+                const { data } = await api.get('/publico/avisos/atual', { params: { aparelho: aparelho_atual() } });
+
+                if (!data.data || cancelado) return;
+
+                const imagem = new Image();
+                imagem.onload = () => { if (!cancelado) definir_aviso_banca(data.data); };
+                imagem.src = data.data.imagem;
+            } catch {
+                // sem aviso nesta abertura: a tela segue normal
+            }
+        };
+
+        mostrar_aviso();
+
+        return () => { cancelado = true; };
+    }, [abriu_com_codigo]);
+
+    const fechar_aviso_banca = useCallback(() => definir_aviso_banca(null), []);
+
+    const ler_aviso_banca = async () => {
+        if (!(await confirmar('Realizando essa ação esse aviso não irá aparecer mais para você, confirma?', tema.temas))) return;
+
+        try {
+            await api.post(`/publico/avisos/${aviso_banca.id}/leituras`, { aparelho: aparelho_atual() });
+            definir_aviso_banca(null);
+        } catch (erro) {
+            alerta_erro(erro);
+        }
+    };
+
     // código da aposta do visitante (FR-041 a FR-043), aposta do cliente ou do vendedor
     const finalizar = async () => {
         const recebido = await enviar_cupom(cupom, tema.temas, sessao, expirar);
@@ -299,6 +409,16 @@ export default function Home({ filtros, listagem, configuracoes, banners, aviso,
             if (sessao?.tipo === 'cliente') router.reload({ only: ['saldo'] });
         }
     };
+
+    // tabela de jogos do vendedor no esporte atual (o ao vivo usa o futebol), como no sistema antigo
+    const esporte_da_tabela = ao_vivo ? 'FUTEBOL' : filtros.esporte;
+
+    const escolher_tabela = (opcao) => {
+        if (opcao === 'campeonatos') definir_tabela_campeonatos_aberta(true);
+        else imprimir_tabela({ dia: opcao, esporte: esporte_da_tabela });
+    };
+
+    const fechar_tabela_campeonatos = useCallback(() => definir_tabela_campeonatos_aberta(false), []);
 
     const ultima_pagina_carregada = listagem.meta.pagina_atual >= listagem.meta.ultima_pagina;
 
@@ -324,38 +444,75 @@ export default function Home({ filtros, listagem, configuracoes, banners, aviso,
                     ao_fechar={() => definir_menu_aberto(false)}
                     ao_escolher_campeonato={(campeonato) => aplicar_filtros({ campeonato: campeonato.id })}
                     ao_abrir_ao_vivo={!barra_visivel && configuracoes.ao_vivo_habilitado ? abrir_ao_vivo : null}
+                    vendedor={vendedor}
+                    impressao={impressao}
+                    ao_alternar_modo={alternar_modo_impressao}
+                    ao_alternar_largura={alternar_largura}
+                    ao_escolher_tabela={escolher_tabela}
                 />
-                <MatchList
-                    ref={lista}
-                    carregando={carregando}
-                    tem_mais={!ultima_pagina_carregada}
-                    topo={(
-                        <>
-                            <BannerCarousel banners={banners} />
-                            <SearchBar ao_buscar_time={buscar_time} ao_limpar_busca={limpar_busca} ao_buscar_codigo={buscar_codigo} />
-                            <DateTabs periodo={configuracoes.periodo_jogos} ao_escolher={(dia) => aplicar_filtros({ dia, busca: null, campeonato: null })} />
-                        </>
-                    )}
-                    rodape={ultima_pagina_carregada ? <Footer /> : null}
-                    campeonatos={campeonatos}
-                    ao_vivo={ao_vivo}
-                    selecao_do_jogo={selecao_do_jogo}
-                    variacoes={variacoes}
-                    ao_escolher={escolher_cotacao}
-                    ao_abrir_detalhes={abrir_detalhes}
-                    ao_chegar_perto_do_fim={carregar_proxima_pagina}
-                />
+                {listagem.tipo === 'especial' ? (
+                    // Especiais: categorias com as opções, sem abas de data, como no sistema antigo
+                    <SpecialList
+                        ref={lista}
+                        carregando={carregando}
+                        tem_mais={!ultima_pagina_carregada}
+                        topo={(
+                            <>
+                                <BannerCarousel banners={banners} />
+                                <SearchBar ao_buscar_time={buscar_time} ao_limpar_busca={limpar_busca} ao_buscar_codigo={buscar_codigo} />
+                            </>
+                        )}
+                        rodape={ultima_pagina_carregada ? <Footer /> : null}
+                        especiais={campeonatos}
+                        opcao_selecionada={opcao_selecionada}
+                        ao_escolher={escolher_especial}
+                        ao_chegar_perto_do_fim={carregar_proxima_pagina}
+                    />
+                ) : (
+                    <MatchList
+                        ref={lista}
+                        carregando={carregando}
+                        tem_mais={!ultima_pagina_carregada}
+                        topo={(
+                            <>
+                                <BannerCarousel banners={banners} />
+                                <SearchBar ao_buscar_time={buscar_time} ao_limpar_busca={limpar_busca} ao_buscar_codigo={buscar_codigo} />
+                                <DateTabs periodo={configuracoes.periodo_jogos} ao_escolher={(dia) => aplicar_filtros({ dia, busca: null, campeonato: null })} />
+                            </>
+                        )}
+                        rodape={ultima_pagina_carregada ? <Footer /> : null}
+                        campeonatos={campeonatos}
+                        ao_vivo={ao_vivo}
+                        selecao_do_jogo={selecao_do_jogo}
+                        variacoes={variacoes}
+                        ao_escolher={escolher_cotacao}
+                        ao_abrir_detalhes={abrir_detalhes}
+                        ao_chegar_perto_do_fim={carregar_proxima_pagina}
+                    />
+                )}
                 <BetSlip
                     aberto={cupom_aberto}
                     ao_fechar={() => definir_cupom_aberto(false)}
                     ao_finalizar={finalizar}
-                    ao_abrir_detalhes={(palpite) => definir_jogo_detalhe({ tipo: palpite.tipo, confronto_id: palpite.confronto_id })}
+                    // o especial não tem detalhes de jogo
+                    ao_abrir_detalhes={(palpite) => {
+                        if (palpite.tipo !== 'especial') definir_jogo_detalhe({ tipo: palpite.tipo, confronto_id: palpite.confronto_id });
+                    }}
                 />
             </Content>
             <WhatsAppButton />
             <MatchDetailsModal jogo={jogo_detalhe} ao_fechar={fechar_detalhes} />
-            <SuccessModal comprovante={comprovante} ao_fechar={() => definir_comprovante(null)} />
+            <SuccessModal comprovante={comprovante} ao_fechar={() => definir_comprovante(null)} ao_imprimir={imprimir_bilhete} />
+            {vendedor && (
+                <TableModal
+                    aberto={tabela_campeonatos_aberta}
+                    paises={listagem.paises}
+                    ao_fechar={fechar_tabela_campeonatos}
+                    ao_imprimir={(dia, campeonatos_marcados) => imprimir_tabela({ dia, esporte: esporte_da_tabela, campeonatos: campeonatos_marcados })}
+                />
+            )}
             <TicketModal comprovante={bilhete} ao_fechar={() => definir_bilhete(null)} />
+            <NoticeModal aviso={aviso_banca} ao_fechar={fechar_aviso_banca} ao_ler={ler_aviso_banca} />
             <AuthModal aba={aba_acesso} codigo_afiliado={codigo_indicacao} ao_trocar_aba={definir_aba_acesso} ao_fechar={fechar_acesso} />
         </>
     );

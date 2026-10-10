@@ -118,6 +118,26 @@ enum Funcao: string
     ];
 
     /**
+     * Permissões de especiais: listar, gerenciar (categorias e opções) e encerrar/cancelar.
+     * Só Admin e Supervisor.
+     */
+    public const PERMISSOES_ESPECIAIS = [
+        'especiais.listar',
+        'especiais.gerenciar',
+        'especiais.encerrar',
+    ];
+
+    /**
+     * Permissões dos recursos do site: avisos, banners e configurações (logo e texto das regras).
+     * Só Admin e Supervisor.
+     */
+    public const PERMISSOES_SITE = [
+        'avisos.gerenciar',
+        'banners.gerenciar',
+        'configuracoes.editar',
+    ];
+
+    /**
      * Nível hierárquico: 1 é o topo (Admin) e 4 a base (Vendedor).
      */
     public function nivel(): int
@@ -173,12 +193,14 @@ enum Funcao: string
 
         $permissoes_clientes = array_filter(self::PERMISSOES_CLIENTES, fn (string $permissao) => $this->pode_usar($permissao));
         $permissoes_confrontos = array_filter(self::PERMISSOES_CONFRONTOS, fn (string $permissao) => $this->pode_usar($permissao));
+        $permissoes_site = array_filter([...self::PERMISSOES_ESPECIAIS, ...self::PERMISSOES_SITE], fn (string $permissao) => $this->pode_usar($permissao));
 
         return [
             ...self::PERMISSOES_GESTAO,
             ...array_values($permissoes_clientes),
             ...array_values($permissoes_confrontos),
             ...$permissoes_apostas,
+            ...array_values($permissoes_site),
         ];
     }
 
@@ -196,9 +218,14 @@ enum Funcao: string
      * confrontos; Gerente não usa as permissões de clientes restritas (excluir, restaurar e
      * estorno) e, das de confrontos, só as de PERMISSOES_CONFRONTOS_GERENTE. Nas apostas, criar e
      * validar código são só do Vendedor; cancelar, de todos; o resto, de Gerente para cima.
+     * Especiais e recursos do site são só de Admin e Supervisor.
      */
     public function pode_usar(string $permissao): bool
     {
+        if (in_array($permissao, [...self::PERMISSOES_ESPECIAIS, ...self::PERMISSOES_SITE], true)) {
+            return $this === self::Admin || $this === self::Supervisor;
+        }
+
         if (in_array($permissao, self::PERMISSOES_APOSTAS, true)) {
             return match (true) {
                 $permissao === 'apostas.cancelar' => true,

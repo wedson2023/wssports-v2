@@ -29,7 +29,8 @@ class TratarRequisicoesInertia extends Middleware
             ...parent::share($request),
             'versao' => $this->version($request),
             'nome_sistema' => Configuracoes::atual()->nome_sistema,
-            'tema' => DadosFake::tema(),
+            // cores ainda fake; a logo vem da configuração (spec 006)
+            'tema' => [...DadosFake::tema(), 'logo' => Configuracoes::atual()->url_logo()],
             'contatos' => DadosFake::contatos(),
             'indicadores' => DadosFake::indicadores(),
         ];

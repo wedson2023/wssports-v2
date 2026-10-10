@@ -2,13 +2,15 @@
 
 namespace App\Models;
 
+use App\Enums\ResultadoAposta;
 use App\Enums\SituacaoPalpite;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 /**
- * Palpite de uma aposta: um confronto, um código de cotação e as cotações vista, original e final.
+ * Palpite de uma aposta: um confronto (ou uma opção de categoria especial), um código de cotação e
+ * as cotações vista, original e final.
  */
 class ApostasPalpites extends Model
 {
@@ -30,6 +32,7 @@ class ApostasPalpites extends Model
     {
         return [
             'situacao' => SituacaoPalpite::class,
+            'resultado' => ResultadoAposta::class,
             'cotacao_vista' => 'decimal:2',
             'cotacao_original' => 'decimal:2',
             'cotacao_final' => 'decimal:2',
@@ -65,8 +68,26 @@ class ApostasPalpites extends Model
         return $this->belongsTo(ConfrontosJogadores::class, 'confrontos_jogadores_id')->withTrashed();
     }
 
+    public function especial(): BelongsTo
+    {
+        return $this->belongsTo(Especiais::class, 'especiais_id')->withTrashed();
+    }
+
+    public function opcao_especial(): BelongsTo
+    {
+        return $this->belongsTo(EspeciaisOpcoes::class, 'especiais_opcoes_id')->withTrashed();
+    }
+
     public function e_ao_vivo(): bool
     {
         return $this->confrontos_ao_vivo_id !== null;
+    }
+
+    /**
+     * Palpite numa categoria especial (sem confronto).
+     */
+    public function e_especial(): bool
+    {
+        return $this->especiais_id !== null;
     }
 }

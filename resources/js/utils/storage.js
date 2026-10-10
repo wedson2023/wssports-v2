@@ -4,6 +4,10 @@
 export const chave_cupom = 'wssports.cupom';
 export const chave_modo = 'wssports.modo';
 export const chave_sessao = 'wssports.sessao';
+// preferências de impressão do vendedor: { modo: 'PADRÃO' | 'APP', largura: 58 | 80 }
+export const chave_impressao = 'wssports.impressao';
+// identificador do aparelho, usado no "Lido" dos avisos da banca
+export const chave_aparelho = 'wssports.aparelho';
 
 export const ler_texto = (chave) => {
     try {
@@ -44,9 +48,12 @@ export const remover = (chave) => {
     }
 };
 
-// "Limpar cache" (FR-016): apaga o cupom, o modo escolhido e a sessão de login
+// "Limpar cache" (FR-016): apaga o cupom, o modo escolhido, a sessão de login, as preferências de
+// impressão e o aparelho (um novo é gerado; os avisos lidos só por ele voltam)
 export const limpar_dados_locais = () => {
     remover(chave_cupom);
     remover(chave_modo);
     remover(chave_sessao);
+    remover(chave_impressao);
+    remover(chave_aparelho);
 };

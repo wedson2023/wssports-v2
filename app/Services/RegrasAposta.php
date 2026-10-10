@@ -49,10 +49,17 @@ class RegrasAposta
             throw new RegraApostaException('Escolha os jogos antes de concluir a aposta.');
         }
 
-        $confrontos = array_column($palpites, 'confrontos_id');
+        $confrontos = array_values(array_filter(array_column($palpites, 'confrontos_id'), fn (?int $id) => $id !== null));
 
         if (count($confrontos) !== count(array_unique($confrontos))) {
             throw new RegraApostaException('Não é possível cadastrar jogos repetidos na aposta.');
+        }
+
+        // um palpite por categoria especial (spec 006, FR-015)
+        $especiais = array_values(array_filter(array_column($palpites, 'especiais_id'), fn (?int $id) => $id !== null));
+
+        if (count($especiais) !== count(array_unique($especiais))) {
+            throw new RegraApostaException('Escolha só uma opção por categoria especial.');
         }
 
         $this->conferir_ao_vivo($apostador, $palpites);
@@ -127,6 +134,10 @@ class RegrasAposta
      */
     public static function nome_confronto(array $palpite): string
     {
+        if (($palpite['especial'] ?? null) !== null) {
+            return mb_strtoupper("Vencedor: {$palpite['especial']->nome}");
+        }
+
         $jogo = $palpite['ao_vivo'] ?? $palpite['confronto'];
 
         return $jogo === null ? 'informado' : mb_strtoupper("{$jogo->time_casa} x {$jogo->time_fora}");
@@ -185,6 +196,10 @@ class RegrasAposta
     {
         if ($palpite['motivo'] !== null) {
             return $palpite['motivo'];
+        }
+
+        if ($palpite['codigo_cotacao'] === CodigosCotacao::ESPECIAL) {
+            return $this->motivo_especial($apostador, $palpite);
         }
 
         $nome = self::nome_confronto($palpite);
@@ -247,6 +262,32 @@ class RegrasAposta
         if (! $this->exibicao->esporte_permitido($apostador->publico, $palpite['esporte'])
             || ! in_array($palpite['confrontos_ao_vivo_id'], $visiveis_ao_vivo, true)) {
             return "O confronto {$nome} não está disponível para apostas, retire-o para concluir.";
+        }
+
+        return null;
+    }
+
+    /**
+     * Especial: só com outros esportes liberados (como na barra de esportes), categoria ativa,
+     * aguardando e antes da data limite, e opção ativa (spec 006, FR-017).
+     *
+     * @param  array<string, mixed>  $palpite
+     */
+    private function motivo_especial(Apostador $apostador, array $palpite): ?string
+    {
+        $especial = $palpite['especial'];
+        $opcao = $palpite['opcao_especial'];
+
+        if (! ($this->exibicao->configuracao($apostador->publico)?->apostar_outros_esportes ?? true)) {
+            return 'Apostas em especiais não estão disponíveis.';
+        }
+
+        if ($especial === null || $especial->trashed() || ! $especial->aceita_palpites()) {
+            return 'A categoria especial '.($especial?->nome ?? 'informada').' não aceita mais palpites.';
+        }
+
+        if ($opcao->trashed() || ! $opcao->ativo) {
+            return "A opção {$opcao->nome} não está disponível.";
         }
 
         return null;

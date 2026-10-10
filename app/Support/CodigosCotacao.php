@@ -10,6 +10,11 @@ class CodigosCotacao
 {
     public const JOGADOR = 'jogador';
 
+    /**
+     * Código do palpite numa categoria especial (cotação fixa da opção; não entra nas regras).
+     */
+    public const ESPECIAL = 'especial';
+
     public const QUANTIDADE = 323;
 
     /**
@@ -45,5 +50,13 @@ class CodigosCotacao
     public static function e_regra(string $codigo): bool
     {
         return $codigo === self::JOGADOR || self::e_cotacao($codigo);
+    }
+
+    /**
+     * Códigos aceitos num palpite de aposta: os das regras e o do especial.
+     */
+    public static function e_aposta(string $codigo): bool
+    {
+        return $codigo === self::ESPECIAL || self::e_regra($codigo);
     }
 }
