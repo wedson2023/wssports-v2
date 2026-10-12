@@ -109,6 +109,14 @@ do escopo."
 - Q: O que o depósito exige do cadastro? → A: CPF e e-mail. Sem eles, o cliente informa antes de
   depositar.
 - Q: O que o saque exige do cadastro? → A: Todos os campos de Meus dados preenchidos.
+- Q: O cliente pode alterar todos os campos de Meus dados? → A: Não, como no antigo. CPF, e-mail e
+  data de nascimento o cliente preenche uma única vez; depois, só o admin (ou supervisor) altera.
+  Telefone (login) só pelo painel. Nome, gênero, senha e chave Pix o cliente altera.
+- Q: Como calcular o valor liberado do bônus, se o saldo de bônus é guardado por carteira? → A:
+  O bônus que cumpriu o rollover libera o saldo da carteira da modalidade quando não houver outro
+  bônus pendente nela (senão, "Cumpra o rollover dos outros bônus desta modalidade"); converter
+  passa até o valor máximo de conversão e zera a carteira; excluir ou expirar tira o menor entre o
+  saldo da carteira e o valor do bônus.
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -612,9 +620,11 @@ contagem e o bônus pago ao indicador.
 
 **Meus dados**
 
-- **FR-041**: Meus dados DEVE permitir editar nome, e-mail, CPF, data de nascimento, gênero,
-  telefone, nova senha (opcional) e a chave Pix de saque (tipo, chave com máscara conforme o tipo
-  e nome do titular); o login aparece só para leitura.
+- **FR-041**: Meus dados DEVE permitir ao cliente editar nome, gênero, nova senha (opcional) e a
+  chave Pix de saque (tipo, chave com máscara conforme o tipo e nome do titular); CPF, e-mail e
+  data de nascimento o cliente informa uma única vez, quando estão vazios, e depois só o painel
+  (admin ou supervisor) altera, com o aviso "Para alterar, fale com o atendimento."; telefone
+  (login) aparece só para leitura e só o painel altera.
 - **FR-042**: Meus dados DEVE validar: idade mínima de 18 anos, CPF válido e não usado por outro
   cliente, e-mail não usado por outro cliente, senha com no mínimo 6 caracteres com letras e
   números, e chave Pix do tipo e-mail como e-mail válido.
