@@ -12,7 +12,7 @@ fluxo de dinheiro pelo Mercado Pago:
 - **Vínculo**: o admin escolhe "Mercado Pago" em "Gateway de pagamentos" e autoriza por OAuth na
   aplicação do programador; tokens criptografados em `gateways_pagamento`, renovados por comando.
 - **Depósito**: Pix (QR Code em base64 do próprio Mercado Pago), cartão parcelado (campos seguros
-  do MercadoPago.js) e NuPay quando a conta tiver; `application_fee` com o percentual de
+  do MercadoPago.js); `application_fee` com o percentual de
   `configuracoes` (3%); confirmação por webhook assinado, fila e conferência a cada minuto;
   aprovação credita depósito, cashback (somado ao rollover), bônus de depósito (com afiliado e
   rollover primeiro depósito) e valida indicações; estorno deixa o saldo negativo.
@@ -98,7 +98,7 @@ OAuth e os meios da conta. No navegador: `sessionStorage` `wssports.acesso_assis
 | VI. Consistência | Saldo só pelo `SaldoClientes`; rollover pelo `RolloverClientes`; padrão de recursos (Request, Resource, permissões no `Funcao.php`); fila como `EstornarPromocao`; comandos agendados como os de apostas; modais sobre um `ModalCard` comum | ✅ Pass |
 | VII. Sistema antigo | Arquivos e funcionamento em R-01/R-02; diferenças em R-03 aprovadas na spec e R-21/R-22 aprovadas em 2026-10-12 | ✅ Pass |
 | VIII. Fidelidade visual | Tela igual a `screens/credits`; modais com visual novo aprovado (Clarifications) | ✅ Pass |
-| IX. Dados fake | Nenhum dado fake | ✅ Pass |
+| IX. Dados fake | Nenhum fake novo; o item Atendimento usa o fake existente `contatos.whatsapp` (spec 005), fora de operações com dinheiro | ✅ Pass |
 | Stack: dependências | Nenhum pacote novo; script do MercadoPago.js justificado (R-08) | ✅ Pass |
 | Timestamps e soft delete | Todas as tabelas novas com `timestamps()` + `softDeletes()` | ✅ Pass |
 | Referências a tabelas inexistentes | `clientes_promocoes.codigo_afiliado` sem FK (tabela de afiliados não existe), registrado na spec e no data-model | ✅ Pass |
@@ -136,6 +136,7 @@ violação nova.
 | `config/services.php` | Bloco `mercado_pago` lendo o `.env` | R-06 |
 | `.env.example` | Variáveis `MERCADO_PAGO_*` vazias | R-06 |
 | `docs/postman/wssports_api.postman_collection.json` | Regenerada | Constituição |
+| `specs/002-clientes/spec.md`, `specs/004-apostas/spec.md` | Notas "Alterado pela spec 007" nos trechos afetados (FR-074, Meus dados, promoções; FR-047) | Constituição (artefatos coerentes), análise I1 |
 | `resources/js/components/Header/index.jsx` e `styles.jsx` | "Olá, nome" vira link para `/minha-conta` | R-19 |
 | `resources/js/components/AuthModal/index.jsx` | `codigo_indicacao` oculto; volta para `voltar` depois do login | contracts/paginas §2 |
 | `resources/js/pages/Home/index.jsx` | Lê `?entrar`, `?voltar` e `?indicacao` | contracts/paginas §2 |
@@ -184,7 +185,7 @@ app/
 ├── Services/
 │   ├── ClienteMercadoPago.php          # chamadas HTTP (pagamentos, OAuth, meios, payouts) e assinatura
 │   ├── VinculoMercadoPago.php          # autorização, retorno, renovação, desvínculo
-│   ├── CriacaoDepositos.php            # validações e criação (Pix, cartão, NuPay)
+│   ├── CriacaoDepositos.php            # validações e criação (Pix e cartão)
 │   ├── ProcessamentoDepositos.php      # aprovar, recusar, expirar, estornar (idempotente)
 │   ├── EscolhaPromocoes.php            # promoção de depósito (afiliado, primeiro/qualquer)
 │   ├── SolicitacaoSaques.php           # validações e débito
@@ -193,6 +194,8 @@ app/
 │   ├── Indicacoes.php                  # validar, pagar grupos, desfazer
 │   ├── AcessoAssistido.php             # código, token, autor, encerramento
 │   └── MensagensMercadoPago.php        # status_detail → mensagem em português
+├── Exceptions/
+│   └── GatewayIndisponivelException.php  # conta do Mercado Pago não vinculada ou vencida
 ├── Jobs/
 │   ├── ProcessarPagamentoMercadoPago.php
 │   └── PagarSaqueMercadoPago.php

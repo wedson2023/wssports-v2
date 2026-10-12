@@ -71,7 +71,7 @@ de promoções (`clientes-promocoes`) e de cadastro (`area-cliente/cadastro`) mu
       "bonus_cassino": { "valor": "0.00", "anterior": "0.00", "meta": "0.00" }
     },
     "cadastro": { "falta_para_depositar": [], "falta_para_sacar": ["pix"] },
-    "menu": { "indicacao": { "vigente": true, "quantidade": 5, "valor": "20.00" }, "atendimento_whatsapp": "5581999999999" },
+    "menu": { "indicacao": { "vigente": true, "quantidade": 5, "valor": "20.00" } },
     "acesso_assistido": null
   }
 }
@@ -152,7 +152,7 @@ no cartão; `parcelas` 1..`parcelas_maximas`. Cadastro sem CPF/e-mail: `422` com
 ```json
 { "data": { "codigo": "0b5c...", "meio": "Pix", "valor": "50.00", "situacao": "Pendente",
   "pix": { "copia_cola": "000201...", "qr_code_base64": "iVBORw0...", "expira_em": "2026-10-12T10:30:00-03:00" },
-  "link_pagamento": null, "mensagem": null } }
+  "mensagem": null } }
 ```
 
 Cartão aprovado: `situacao = "Aprovado"`; em análise: `"Em análise"`; recusado: `422` com a
@@ -196,8 +196,8 @@ Nome do indicado: primeiro nome + inicial do sobrenome; sem telefone, e-mail, CP
   `Processando` (envio automático); saque não pendente → `422`.
 - `POST /api/saques/{saque}/recusar` `{ "motivo": "Chave Pix inválida" }` (obrigatório, até 255).
 - `GET/PUT /api/configuracoes/pagamentos`: campos da `configuracoes` do data-model, **sem**
-  `percentual_comissao_gateway` (ignorado se enviado). `meios_deposito` ⊆ Pix, Cartão de crédito,
-  NuPay; `parcelas_maximas` 1..12; `deposito_minimo` ≤ `deposito_maximo`.
+  `percentual_comissao_gateway` (ignorado se enviado). `meios_deposito` ⊆ Pix, Cartão de crédito;
+  `parcelas_maximas` 1..12; `deposito_minimo` ≤ `deposito_maximo`.
 - `GET /api/configuracoes/gateway` → `{"gateway": "Mercado Pago", "situacao": "Vinculado", "vinculado_em": "...", "expira_em": "...", "falha_renovacao": null}` (sem tokens).
 - `POST /api/configuracoes/gateway/mercado-pago/autorizar` → `{"url": "https://auth.mercadopago.com.br/authorization?..."}`; sem credenciais no ambiente → `422 "Credenciais da aplicação não configuradas no servidor."`.
 - `DELETE /api/configuracoes/gateway` → `204` (situação `Desvinculado`, tokens apagados).

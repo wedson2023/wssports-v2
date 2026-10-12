@@ -41,8 +41,8 @@ do escopo."
   Princípio VIII** (fidelidade visual) só para os modais desta tela. (Atualizado na sessão de
   2026-10-12: antes, a tela também teria visual novo.)
 - Q: Qual a rota do painel do cliente? → A: `/minha-conta`, diferente da antiga `/creditos`.
-- Q: Quais meios de depósito? → A: Pix, cartão de crédito e, se disponível na conta do Mercado
-  Pago, NuPay.
+- Q: Quais meios de depósito? → A: Pix e cartão de crédito. (Atualizado na sessão de 2026-10-12:
+  o NuPay saiu desta spec; ver abaixo.)
 - Q: Cada gerente tem a própria conta do Mercado Pago, como no antigo? → A: Não. O sistema não
   trabalha com múltiplos admins: há uma única conta do Mercado Pago vinculada por sistema (por
   banca), feita pelo admin.
@@ -117,6 +117,15 @@ do escopo."
   bônus pendente nela (senão, "Cumpra o rollover dos outros bônus desta modalidade"); converter
   passa até o valor máximo de conversão e zera a carteira; excluir ou expirar tira o menor entre o
   saldo da carteira e o valor do bônus.
+
+### Session 2026-10-12 (análise de consistência)
+
+- Q: O NuPay é um meio do Mercado Pago? → A: Não. O NuPay é do Nubank: o cliente escolhe NuPay, é
+  levado ao aplicativo do Nubank, paga lá e volta (como no iFood), e só vale para quem tem conta no
+  Nubank. Exige integração direta com o NuPay for Business, com contrato e credenciais próprios, e
+  a comissão da conta master (que é do Mercado Pago) não se aplica a ele. **Sai desta spec** e fica
+  para uma spec própria, junto com a avaliação do Pix por Open Finance (pagamento com
+  redirecionamento para o banco do cliente, que vale para vários bancos).
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -426,7 +435,6 @@ contagem e o bônus pago ao indicador.
 
 - **Conta do Mercado Pago sem a chave Pix cadastrada**: o Pix não fica disponível; os demais meios
   continuam.
-- **NuPay indisponível na conta**: a opção não aparece no depósito.
 - **Cliente fecha a tela antes de pagar o Pix**: o pagamento continua valendo; ao ser aprovado,
   o saldo é creditado pela confirmação do Mercado Pago, sem depender da tela aberta.
 - **Confirmação do Mercado Pago com assinatura inválida**: é ignorada e registrada; nada é
@@ -547,8 +555,7 @@ contagem e o bônus pago ao indicador.
 
 - **FR-019**: O modal de depósito DEVE ter as etapas: valor (com atalhos de valores rápidos),
   aceite de bônus ("Aceito receber bônus", com o aviso de que aceita os termos do rollover) e
-  escolha do meio entre os habilitados nas configurações: Pix, Cartão de crédito e NuPay (este só
-  se disponível na conta do Mercado Pago).
+  escolha do meio entre os habilitados nas configurações: Pix e Cartão de crédito.
 - **FR-020**: O depósito DEVE exigir cliente ativo, depósitos habilitados, conta do Mercado Pago
   vinculada, CPF e e-mail cadastrados (faltando algum, mostrar o aviso com o que falta, abrir Meus
   dados e, depois de salvar, retomar o depósito) e valor entre o mínimo e o máximo configurados.
@@ -688,7 +695,7 @@ contagem e o bônus pago ao indicador.
 
 ### Key Entities
 
-- **Depósito**: pedido de entrada de dinheiro de um cliente: valor, meio (Pix, cartão, NuPay),
+- **Depósito**: pedido de entrada de dinheiro de um cliente: valor, meio (Pix ou cartão),
   parcelas e total pago (no cartão), aceite de bônus, situação (pendente, aprovado, recusado,
   expirado, estornado), identificador do pagamento no Mercado Pago, comissão da conta master,
   data do pagamento, prazo (no Pix), autor (cliente ou usuário do painel no acesso assistido).
@@ -743,8 +750,12 @@ contagem e o bônus pago ao indicador.
 - **Spec 002 (FR-074)**: a expiração do saldo promocional, que a spec 002 deixou de fora, passa a
   ser definida por esta spec; a expiração de cashback continua fora (o cashback entra no saldo
   real, com o valor somado ao rollover do depósito).
-- **NuPay**: depende de o Mercado Pago oferecer o meio na conta da banca; se não oferecer, a opção
-  não aparece e uma integração direta com a NuPay fica para outra spec.
+- **NuPay e Pix por Open Finance**: fora desta spec (NuPay é do Nubank, com integração própria);
+  ficam para uma spec própria.
+- **Afiliado sem chave estrangeira**: `clientes_promocoes.codigo_afiliado` é criada como texto,
+  sem chave estrangeira, porque a tabela de afiliados ainda não existe; a spec que criar os
+  afiliados DEVE ajustar o tipo e a chave estrangeira dessa coluna (constituição, referências a
+  tabelas inexistentes).
 - **Saque automático**: depende da liberação da API de saques (Payouts) pelo Mercado Pago na conta
   da banca e de saldo nessa conta.
 - **Comissão**: o Mercado Pago desconta a taxa dele antes; a comissão da conta master sai do que
@@ -762,4 +773,4 @@ contagem e o bônus pago ao indicador.
 - **Dinheiro**: valores calculados sem ponto flutuante.
 - **Fora do escopo**: notificações, cassino (saldo, filtro e detalhes de sessão), PrimePag,
   Sellflux e transferência bancária no saque.
-- **Dados fake**: nenhum; todos os dados da tela vêm do backend.
+- **Dados fake**: nenhum novo; o item Atendimento usa o WhatsApp de contato da banca, que ainda é o fake `contatos` da spec 005 até a spec que o substituir.

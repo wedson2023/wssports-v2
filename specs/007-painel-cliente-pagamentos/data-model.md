@@ -13,7 +13,7 @@ UTC; "dia" do cliente em `America/Sao_Paulo`.
 | `id` | bigint | PK |
 | `codigo` | char(36) | UUID; único; `external_reference` e chave de idempotência no Mercado Pago |
 | `clientes_id` | bigint | FK `clientes` |
-| `meio` | varchar(30) | enum `MeioDeposito`: `Pix`, `Cartão de crédito`, `NuPay` |
+| `meio` | varchar(30) | enum `MeioDeposito`: `Pix`, `Cartão de crédito` |
 | `valor` | decimal(15,2) | valor creditado no saldo (sem juros) |
 | `parcelas` | unsignedTinyInteger nulo | só cartão |
 | `valor_total_pago` | decimal(15,2) nulo | total cobrado do cliente com juros (cartão) |
@@ -25,7 +25,6 @@ UTC; "dia" do cliente em `America/Sao_Paulo`.
 | `status_detalhe` | varchar(80) nulo | `status_detail` do Mercado Pago (motivo da recusa) |
 | `pix_copia_cola` | text nulo | só Pix |
 | `pix_qr_code` | mediumText nulo | imagem base64 (só Pix) |
-| `link_pagamento` | varchar(500) nulo | NuPay |
 | `expira_em` | timestamp nulo | prazo do Pix |
 | `pago_em` | timestamp nulo | `date_approved` |
 | `valor_estornado` | decimal(15,2) | padrão 0 |
@@ -209,7 +208,7 @@ do FR-035.
 
 | Enum | Casos (valor) |
 |---|---|
-| `MeioDeposito` (novo) | `Pix`, `CartaoCredito` (`Cartão de crédito`), `NuPay` |
+| `MeioDeposito` (novo) | `Pix`, `CartaoCredito` (`Cartão de crédito`) |
 | `SituacaoDeposito` (novo) | `Pendente`, `EmAnalise` (`Em análise`), `Aprovado`, `Recusado`, `Expirado`, `Cancelado`, `Estornado` |
 | `SituacaoSaque` (novo) | `Pendente`, `Processando`, `Pago`, `Recusado` |
 | `ModoSaque` (novo) | `Manual`, `Automático` |

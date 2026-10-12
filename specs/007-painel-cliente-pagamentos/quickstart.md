@@ -82,9 +82,7 @@ Sem testes automatizados (constituição): cada seção é um roteiro manual lig
 11. Estornar o depósito de cartão no Mercado Pago com o cliente sem saldo → saldo negativo em
     vermelho, "Estorno de depósito" no extrato; tentar apostar e sacar → recusado; novo depósito
     cobre o negativo primeiro.
-12. NuPay: só aparece se `GET /v1/payment_methods` da conta tiver `nupay` e o meio estiver
-    habilitado; pagar pelo link e conferir o crédito.
-13. Desvincular o gateway → depósito mostra "Depósitos indisponíveis no momento. Tente mais tarde."
+12. Desvincular o gateway → depósito mostra "Depósitos indisponíveis no momento. Tente mais tarde."
 
 ## 5. Saques (US3)
 

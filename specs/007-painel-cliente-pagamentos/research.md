@@ -56,7 +56,7 @@ Sistema antigo: `wssports.bet` (somente leitura).
 ## R-03. Diferenças em relação ao antigo
 
 Aprovadas na spec (Clarifications): rota `/minha-conta`; modais com visual novo (tela igual);
-Pix, cartão parcelado e NuPay; uma conta do Mercado Pago por sistema; comissão em `configuracoes`
+Pix e cartão parcelado (NuPay fora, R-09); uma conta do Mercado Pago por sistema; comissão em `configuracoes`
 (padrão 3%); saque manual ou automático com limite; fim do limite fixo do cliente 1027; acesso
 assistido com depósito e saque; indicação válida só com primeiro depósito e bônus recorrente;
 estorno deixa o saldo negativo; expiração do bônus; cashback somado ao rollover inclusive com
@@ -73,8 +73,8 @@ cálculo do valor liberado do bônus por carteira (R-22).
 ## R-04. API do Mercado Pago usada
 
 - **Decisão**: API de pagamentos `POST /v1/payments` (Checkout Transparente/Checkout API) para
-  Pix, cartão e NuPay; `GET /v1/payments/{id}` para conferir; `GET /v1/payment_methods` para saber
-  os meios da conta; `POST /oauth/token` para vínculo e renovação.
+  Pix e cartão; `GET /v1/payments/{id}` para conferir; `POST /oauth/token` para vínculo e
+  renovação.
 - **Motivo**: é a API documentada com `application_fee` (marketplace) e a mesma que o antigo já
   usava em produção; um único cliente HTTP (`Http` do Laravel) atende tudo, sem SDK PHP.
 - **Alternativas**: API de Orders (`/v1/orders`), recomendada pelo Mercado Pago para integrações
@@ -143,16 +143,18 @@ cálculo do valor liberado do bônus por carteira (R-22).
 - **Alternativa**: Card Payment Brick (formulário pronto) — rejeitado por impor o visual dele no
   modal.
 
-## R-09. NuPay
+## R-09. NuPay — fora desta spec (decisão de 2026-10-12)
 
-- Ao abrir o depósito, o backend consulta `GET /v1/payment_methods` (cache de 1 h) e só oferece
-  NuPay se a conta tiver um meio com id `nupay` ativo e o meio estiver habilitado em
-  `configuracoes.meios_deposito`.
-- Pagamento: `POST /v1/payments` com `payment_method_id = nupay`; a resposta traz o link de
-  pagamento (`point_of_interaction.transaction_data.ticket_url`), aberto em nova aba; confirmação
-  pelo webhook como os demais.
-- Não há documentação pública confirmada do NuPay no Mercado Pago (pesquisa de 2026-10-11): a
-  validação é manual no quickstart; sem o meio na conta, a opção não aparece (spec).
+- O NuPay é um meio de pagamento do Nubank, não do Mercado Pago: o cliente escolhe NuPay, é
+  redirecionado ao aplicativo do Nubank, paga e volta (fluxo usado no iFood). Só serve a quem tem
+  conta no Nubank e exige integração direta com o NuPay for Business (contrato, credenciais e
+  notificações próprios); a comissão da conta master, que é do Mercado Pago (`application_fee`),
+  não se aplica a ele.
+- O pagamento com redirecionamento para **qualquer** banco é o Pix por Open Finance (iniciação de
+  pagamento); a documentação do Checkout API do Mercado Pago não traz esse meio (pesquisa de
+  2026-10-12).
+- **Decisão**: a 007 fica com Pix e cartão; NuPay e Pix por Open Finance vão para uma spec
+  própria, que avaliará o provedor, a comissão e o fluxo de retorno.
 
 ## R-10. Webhook, fila e conferência
 
