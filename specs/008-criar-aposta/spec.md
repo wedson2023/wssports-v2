@@ -272,7 +272,7 @@ desconto 15%), cancelar o palpite de 1,50: com "Recalcular", conferir bloco 3,21
   - `liquidacao_criar_aposta` (Recalcular, padrão; ou Anular bloco): só nas configurações gerais,
     escolhida pelo admin, valendo para todas as apostas.
 - **FR-014**: As alterações DEVEM ser coerentes: desconto entre 0 e 100 com até 2 casas; mínimo
-  ≥ 2; mínimo ≤ máximo; liquidação entre os valores do enum. As configurações do vendedor seguem o
+  e máximo entre 2 e 20; mínimo ≤ máximo; liquidação entre os valores do enum. As configurações do vendedor seguem o
   fluxo de consulta e alteração por hierarquia da spec 003; as gerais, o fluxo das configurações
   gerais existentes, com a permissão do admin.
 - **FR-015**: A aposta DEVE gravar o desconto e a regra de liquidação usados na confirmação, que não
