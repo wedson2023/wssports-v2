@@ -60,6 +60,11 @@ do mesmo mercado). Toda coluna nova deve ter comentário (constituição 3.3.0).
 - Q: Além do mesmo mercado, devem ser proibidas combinações redundantes entre mercados diferentes
   (ex.: Vencedor × Dupla chance)? → A: Sim, por uma lista fixa de pares de mercados, com a mesma
   mensagem dos mercados repetidos.
+- Q: (análise de consistência) Quais ajustes foram feitos antes da implementação? → A: com "Anular
+  bloco", a trava do último palpite ativo não vale para o palpite do bloco; o mesmo jogador não
+  entra duas vezes no bloco em nenhum tipo; a regra de montar o bloco vale também na listagem; o
+  desconto fica gravado na aposta (o bloco guarda a cotação vista); as configurações são editadas
+  pela API; a simulação do código marca o bloco fora das regras do vendedor.
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -116,7 +121,8 @@ o comprovante com o bloco.
 
 ### User Story 2 - Admin configura o Criar Aposta (Priority: P1)
 
-O admin define, nas configurações gerais: o desconto do Criar Aposta, o mínimo e o máximo de
+O admin define, nas configurações gerais (pela API; não há tela de configurações no frontend): o
+desconto do Criar Aposta, o mínimo e o máximo de
 palpites por bloco e a regra de liquidação quando um palpite do bloco é cancelado ou anulado. Os
 usuários do painel com acesso às configurações de vendedores (hierarquia, spec 003) definem também
 o desconto e o mínimo e máximo de palpites de cada vendedor.
@@ -183,14 +189,15 @@ desconto 15%), cancelar o palpite de 1,50: com "Recalcular", conferir bloco 3,21
   bloco vale no mínimo 1,00, como as demais cotações do sistema; a odd mínima da aposta continua
   valendo sobre a cotação total.
 - Palpite em jogador dentro do bloco: permitido quando o público pode apostar em jogadores e o
-  jogador é do mesmo jogo; dois palpites do mesmo jogador no mesmo mercado não podem ser
-  combinados.
+  jogador é do mesmo jogo; o mesmo jogador não pode entrar duas vezes no bloco, em nenhum tipo
+  (ex.: "marca a qualquer momento" e "marca primeiro" são redundantes).
 - Desconto alterado entre o momento em que o apostador viu o bloco e o envio: tratado como mudança
   de cotação do bloco, pela preferência aceitar alterações.
 - Bloco que, com "Recalcular", fica só com um palpite: o desconto deixa de valer (não há mais
   correlação).
-- Cancelar o último palpite ativo da aposta continua proibido (para isso, cancela-se a aposta); com
-  "Anular bloco" o bloco inteiro vale 1,00 e conta como ativo.
+- Cancelar o último palpite ativo da aposta continua proibido (para isso, cancela-se a aposta),
+  exceto no palpite de um bloco com "Anular bloco": a aposta continua Ativa com o bloco Anulado
+  (valendo 1,00), mesmo sem nenhum palpite ativo (FR-019).
 - Aposta do visitante (gerar código) com bloco: o código guarda o bloco; na validação pelo vendedor,
   o bloco é recalculado com o desconto e os limites do vendedor que valida, e o vendedor confirma se
   a cotação mudou (regra atual de validação).
@@ -220,7 +227,7 @@ desconto 15%), cancelar o palpite de 1,50: com "Recalcular", conferir bloco 3,21
   e "O Criar Aposta aceita no máximo N palpites".
 - **FR-005**: O bloco NÃO DEVE ter dois palpites do mesmo mercado do jogo (mesmo grupo de mercado
   exibido no detalhe do jogo, ex.: Resultado final, Total de gols, Ambas marcam; para jogadores,
-  o mesmo jogador no mesmo mercado), o que impede combinações contraditórias e redundantes ("Não é
+  o mesmo jogador em qualquer tipo), o que impede combinações contraditórias e redundantes ("Não é
   possível combinar dois palpites do mesmo mercado no Criar Aposta").
 - **FR-005a**: O bloco também NÃO DEVE combinar mercados diferentes em que um já contém o resultado
   do outro, por uma lista fixa de pares (mesma mensagem do FR-005). No mínimo, do tempo
@@ -304,7 +311,8 @@ desconto 15%), cancelar o palpite de 1,50: com "Recalcular", conferir bloco 3,21
 - **FR-023**: No detalhe do jogo, o apostador DEVE poder escolher vários palpites do mesmo jogo; o
   cupom DEVE agrupar os palpites do mesmo jogo em um bloco Criar Aposta, mostrando os palpites, a
   cotação de cada um e a cotação do bloco com o desconto já aplicado, e DEVE permitir remover um
-  palpite do bloco.
+  palpite do bloco. A mesma regra vale para as cotações da listagem de jogos (escolher um mercado
+  diferente de um jogo que já está no cupom soma ao bloco; o mesmo mercado troca o palpite).
 - **FR-024**: O cupom DEVE impedir, com aviso, passar do máximo de palpites do bloco e combinar dois
   palpites do mesmo mercado, antes do envio. O servidor confere tudo de novo.
 - **FR-025**: O comprovante (tela, impressão e consulta pelo código) DEVE mostrar o bloco com seus
@@ -320,8 +328,8 @@ desconto 15%), cancelar o palpite de 1,50: com "Recalcular", conferir bloco 3,21
 
 ### Key Entities
 
-- **Bloco Criar Aposta**: grupo de palpites de um mesmo jogo dentro de uma aposta. Jogo, cotação do
-  bloco, desconto usado e situação (Ativo, Anulado). Pertence a uma aposta; tem 2 ou mais palpites.
+- **Bloco Criar Aposta**: grupo de palpites de um mesmo jogo dentro de uma aposta. Jogo, cotação
+  vista, cotação do bloco e situação (Ativo, Anulado); o desconto usado fica gravado na aposta. Pertence a uma aposta; tem 2 ou mais palpites.
 - **Palpite da aposta** (`apostas_palpites`): passa a poder pertencer a um bloco; sem bloco,
   continua no máximo um por jogo.
 - **Aposta** (`apostas`): passa a gravar o desconto do Criar Aposta e a regra de liquidação usados
