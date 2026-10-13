@@ -74,6 +74,17 @@ class ClientesPromocoesRequest extends FormRequest
             'data_inicio' => ['required', 'date'],
             'data_fim' => ['nullable', 'date', 'after_or_equal:data_inicio'],
             'ativa' => ['sometimes', 'boolean'],
+            // campos da tela "Cadastrar bônus" do antigo (spec 007, FR-018e); sem dias, vale o padrão 30
+            'dias_cumprir' => ['sometimes', 'integer', 'min:1', 'max:3650'],
+            'rollover_primeiro_deposito' => [
+                'sometimes',
+                'boolean',
+                Rule::when($categoria !== CategoriaPromocao::PrimeiroDepósito, ['declined']),
+            ],
+            'codigo_afiliado' => ['nullable', 'string', 'max:50'],
+            'quantidade_indicacoes' => $categoria === CategoriaPromocao::Indicação
+                ? ['required', 'integer', 'min:1']
+                : ['prohibited'],
         ];
     }
 
@@ -101,6 +112,16 @@ class ClientesPromocoesRequest extends FormRequest
             '*.min' => 'O campo :attribute deve ser pelo menos 1,00.',
             'data_fim.after_or_equal' => 'A data de fim deve ser igual ou posterior à data de início.',
             'ativa.boolean' => 'O campo ativa deve ser verdadeiro ou falso.',
+            'dias_cumprir.integer' => 'Os dias para cumprir o bônus devem ser um número inteiro.',
+            'dias_cumprir.min' => 'Informe os dias para cumprir o bônus (pelo menos 1).',
+            'dias_cumprir.max' => 'Os dias para cumprir o bônus devem ser no máximo 3650.',
+            'rollover_primeiro_deposito.boolean' => 'O rollover no primeiro depósito deve ser verdadeiro ou falso.',
+            'rollover_primeiro_deposito.declined' => 'O rollover no primeiro depósito só vale para promoções de primeiro depósito.',
+            'codigo_afiliado.max' => 'O código de afiliado deve ter no máximo 50 caracteres.',
+            'quantidade_indicacoes.required' => 'Informe a quantidade de indicações exigida.',
+            'quantidade_indicacoes.integer' => 'A quantidade de indicações deve ser um número inteiro.',
+            'quantidade_indicacoes.min' => 'A quantidade de indicações deve ser pelo menos 1.',
+            'quantidade_indicacoes.prohibited' => 'A quantidade de indicações só vale para promoções de indicação.',
         ];
     }
 }

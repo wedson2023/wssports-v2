@@ -27,6 +27,7 @@ class PapeisPermissoesSeeder extends Seeder
             ...Funcao::PERMISSOES_APOSTAS,
             ...Funcao::PERMISSOES_ESPECIAIS,
             ...Funcao::PERMISSOES_SITE,
+            ...Funcao::PERMISSOES_PAGAMENTOS,
         ];
 
         foreach ($permissoes as $permissao) {
@@ -45,6 +46,15 @@ class PapeisPermissoesSeeder extends Seeder
             if ($usuario->funcao()?->pode_usar('configuracoes.editar')) {
                 $usuario->givePermissionTo('configuracoes.editar');
             }
+
+            // permissões de pagamentos (spec 007), conforme a função
+            foreach (Funcao::PERMISSOES_PAGAMENTOS as $permissao) {
+                if ($usuario->funcao()?->pode_usar($permissao)) {
+                    $usuario->givePermissionTo($permissao);
+                }
+            }
         });
+
+        app(PermissionRegistrar::class)->forgetCachedPermissions();
     }
 }

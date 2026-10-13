@@ -31,6 +31,9 @@ class SaldoClientes
     }
 
     /**
+     * Só o estorno de depósito e o cancelamento de bônus de indicação usam permitir_negativo: o
+     * dinheiro já foi gasto e o saldo pode ficar negativo (spec 007, R-12).
+     *
      * @throws SaldoInsuficienteException quando o valor é maior que o saldo da carteira
      */
     public function debitar(
@@ -41,8 +44,9 @@ class SaldoClientes
         ?Usuarios $autor = null,
         ?int $referencia_id = null,
         ?string $observacao = null,
+        bool $permitir_negativo = false,
     ): ClientesTransacoes {
-        return $this->movimentar($cliente, $carteira, TipoTransacao::Débito, $valor, $origem, $autor, $referencia_id, $observacao);
+        return $this->movimentar($cliente, $carteira, TipoTransacao::Débito, $valor, $origem, $autor, $referencia_id, $observacao, $permitir_negativo);
     }
 
     private function movimentar(
@@ -54,6 +58,7 @@ class SaldoClientes
         ?Usuarios $autor,
         ?int $referencia_id,
         ?string $observacao,
+        bool $permitir_negativo = false,
     ): ClientesTransacoes {
         $valor_centavos = self::para_centavos($valor);
 
@@ -61,7 +66,7 @@ class SaldoClientes
             throw new InvalidArgumentException('O valor da movimentação deve ser maior que zero.');
         }
 
-        return DB::transaction(function () use ($cliente, $carteira, $tipo, $valor_centavos, $origem, $autor, $referencia_id, $observacao) {
+        return DB::transaction(function () use ($cliente, $carteira, $tipo, $valor_centavos, $origem, $autor, $referencia_id, $observacao, $permitir_negativo) {
             // o bloqueio da linha do cliente serializa movimentações simultâneas no mesmo cliente,
             // garantindo que o saldo anterior de uma seja o posterior da outra
             $cliente_bloqueado = Clientes::withTrashed()->lockForUpdate()->findOrFail($cliente->id);
@@ -69,7 +74,7 @@ class SaldoClientes
 
             $anterior = self::para_centavos((string) $cliente_bloqueado->getRawOriginal($coluna));
 
-            if ($tipo === TipoTransacao::Débito && $valor_centavos > $anterior) {
+            if ($tipo === TipoTransacao::Débito && ! $permitir_negativo && $valor_centavos > $anterior) {
                 throw new SaldoInsuficienteException;
             }
 

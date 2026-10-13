@@ -602,6 +602,9 @@ transações de estorno.
 - **FR-029**: O cliente autenticado DEVE poder alterar somente nome, gênero, e-mail (respeitando
   FR-006a) e `aceita_promocao`; DDI, telefone, CPF e data de nascimento só DEVEM ser alterados pelo
   painel.
+  > Alterado pela spec 007 (FR-041, research R-21): CPF, e-mail e data de nascimento o cliente
+  > informa uma única vez, quando estão vazios; preenchidos, só o painel altera. DDI e telefone
+  > continuam só pelo painel.
 - **FR-030**: O cliente autenticado DEVE poder trocar a senha informando a senha atual e a nova
   duas vezes, seguindo FR-010. Após a troca, todos os tokens emitidos antes dela, inclusive o
   atual, DEVEM deixar de ser aceitos, e o cliente precisa entrar de novo.
@@ -773,6 +776,9 @@ transações de estorno.
   Percentual), valor, rollover, regras de uso (FR-067), data de início, data de fim (opcional),
   indicação de ativa, dados do estorno (FR-078) e as datas `created_at`, `updated_at` e
   `deleted_at`.
+  > Alterado pela spec 007 (FR-018e): a promoção ganha `dias_cumprir` (padrão 30),
+  > `rollover_primeiro_deposito` (só Primeiro depósito), `codigo_afiliado` (sem chave estrangeira)
+  > e `quantidade_indicacoes` (só Indicação, padrão 5).
 - **FR-065**: No tipo de ganho Fixo, o valor é a quantia em reais creditada; no Percentual, o valor
   é o percentual (maior que 0 e até 100) aplicado sobre o depósito. O tipo Percentual só DEVE ser
   aceito nas categorias de depósito (Primeiro depósito e Qualquer depósito); Primeiro cadastro e
@@ -805,6 +811,8 @@ transações de estorno.
 - **FR-073**: Uma promoção que já foi aplicada a algum cliente NÃO DEVE ter valor, tipo de ganho,
   categoria ou modalidade alterados; os demais campos podem ser editados.
 - **FR-074**: Regras de expiração do saldo promocional e cashback NÃO fazem parte desta spec.
+  > Alterado pela spec 007 (FR-018a a FR-018d): o bônus passa a expirar quando o rollover não é
+  > cumprido nos dias da promoção; o cashback entra no saldo real, somado ao rollover do depósito.
 - **FR-075**: No cadastro de um cliente com `aceita_promocao` marcado, para cada promoção de
   Primeiro cadastro vigente, o sistema DEVE creditar o valor dela no saldo promocional da
   modalidade (Esportes → `saldo_promocao_esportes`, Cassino → `saldo_promocao_cassino`) por uma

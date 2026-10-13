@@ -28,6 +28,10 @@ return Application::configure(basePath: dirname(__DIR__))
 
         // a API não redireciona visitantes não autenticados (responde 401); não há tela de login
         $middleware->redirectGuestsTo(fn (Request $request) => $request->is('api/*') ? null : '/');
+
+        // atrás de proxy (ngrok, Cloudflare, balanceador): respeita o https e o host repassados,
+        // para os endereços gerados (assets, retorno e avisos do Mercado Pago) saírem em https
+        $middleware->trustProxies(at: '*');
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         // rotas da API sempre respondem erros em JSON, mesmo sem o cabeçalho Accept

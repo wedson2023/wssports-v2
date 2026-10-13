@@ -3,6 +3,7 @@ import { usePage } from '@inertiajs/react';
 
 import Backdrop from '../Backdrop';
 import PanelHeader from '../PanelHeader';
+import useAdministrador from '../../hooks/useAdministrador';
 import useTelaMobile from '../../hooks/useTelaMobile';
 import { confirmar } from '../../utils/alerts';
 import { limpar_dados_locais } from '../../utils/storage';
@@ -49,6 +50,7 @@ export default function SideMenu({
 }) {
     const { indicadores, tema } = usePage().props;
     const e_mobile = useTelaMobile();
+    const administrador = useAdministrador();
     // "Tabela" troca pelas três opções ao ser tocada, como no sistema antigo
     const [tabela_aberta, definir_tabela_aberta] = useState(false);
 
@@ -101,6 +103,13 @@ export default function SideMenu({
                     <Icon>cleaning_services</Icon>
                     <ItemTitle>Limpar cache</ItemTitle>
                 </Item>
+                {/* só o Admin: tela do vínculo do Mercado Pago */}
+                {administrador && (
+                    <ItemLink href="/painel">
+                        <Icon>admin_panel_settings</Icon>
+                        <ItemTitle>Painel</ItemTitle>
+                    </ItemLink>
+                )}
                 <ItemLink href="/regras">
                     <Icon>receipt</Icon>
                     <ItemTitle>Regras</ItemTitle>

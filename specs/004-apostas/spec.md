@@ -819,6 +819,9 @@ e conferir que as cotações de jogador somem da listagem e são recusadas na ap
   registro de rollover do tipo Bônus com o rollover e as regras de uso da promoção, quando o
   rollover for maior que zero. O rollover de depósito é de 1 vez e será criado pela spec de
   depósitos.
+  > Alterado pela spec 007 (FR-030, FR-018f): o rollover de depósito é criado na aprovação do
+  > depósito, com o número de vezes configurável (padrão 1) e o cashback somado; com "rollover
+  > primeiro depósito" na promoção, passa a vezes da promoção × depósito.
 - **FR-048**: Cada aposta confirmada do cliente DEVE somar o valor apostado aos rollovers
   pendentes: paga com saldo real → rollovers de Depósito; paga com Promoção esportes → rollovers de
   Bônus de esportes. A soma vai para o registro pendente mais antigo; o que passar do exigido vai

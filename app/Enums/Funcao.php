@@ -138,6 +138,16 @@ enum Funcao: string
     ];
 
     /**
+     * Permissões de pagamentos (spec 007): acessar a conta de um cliente e gerenciar saques (Admin
+     * e Supervisor) e vincular a conta do gateway de pagamento (só Admin).
+     */
+    public const PERMISSOES_PAGAMENTOS = [
+        'clientes.acessar_conta',
+        'saques.gerenciar',
+        'gateway_pagamento.vincular',
+    ];
+
+    /**
      * Nível hierárquico: 1 é o topo (Admin) e 4 a base (Vendedor).
      */
     public function nivel(): int
@@ -194,6 +204,7 @@ enum Funcao: string
         $permissoes_clientes = array_filter(self::PERMISSOES_CLIENTES, fn (string $permissao) => $this->pode_usar($permissao));
         $permissoes_confrontos = array_filter(self::PERMISSOES_CONFRONTOS, fn (string $permissao) => $this->pode_usar($permissao));
         $permissoes_site = array_filter([...self::PERMISSOES_ESPECIAIS, ...self::PERMISSOES_SITE], fn (string $permissao) => $this->pode_usar($permissao));
+        $permissoes_pagamentos = array_filter(self::PERMISSOES_PAGAMENTOS, fn (string $permissao) => $this->pode_usar($permissao));
 
         return [
             ...self::PERMISSOES_GESTAO,
@@ -201,6 +212,7 @@ enum Funcao: string
             ...array_values($permissoes_confrontos),
             ...$permissoes_apostas,
             ...array_values($permissoes_site),
+            ...array_values($permissoes_pagamentos),
         ];
     }
 
@@ -218,11 +230,17 @@ enum Funcao: string
      * confrontos; Gerente não usa as permissões de clientes restritas (excluir, restaurar e
      * estorno) e, das de confrontos, só as de PERMISSOES_CONFRONTOS_GERENTE. Nas apostas, criar e
      * validar código são só do Vendedor; cancelar, de todos; o resto, de Gerente para cima.
-     * Especiais e recursos do site são só de Admin e Supervisor.
+     * Especiais, recursos do site e pagamentos são só de Admin e Supervisor (vincular o gateway, só
+     * Admin).
      */
     public function pode_usar(string $permissao): bool
     {
-        if (in_array($permissao, [...self::PERMISSOES_ESPECIAIS, ...self::PERMISSOES_SITE], true)) {
+        // vincular o gateway mexe no dinheiro de toda a banca: só o Admin
+        if ($permissao === 'gateway_pagamento.vincular') {
+            return $this === self::Admin;
+        }
+
+        if (in_array($permissao, [...self::PERMISSOES_ESPECIAIS, ...self::PERMISSOES_SITE, ...self::PERMISSOES_PAGAMENTOS], true)) {
             return $this === self::Admin || $this === self::Supervisor;
         }
 

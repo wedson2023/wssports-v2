@@ -18,7 +18,7 @@ use Illuminate\Validation\ValidationException;
  */
 class CadastroClientes
 {
-    public function __construct(private SaldoClientes $saldo, private RolloverClientes $rollover) {}
+    public function __construct(private SaldoClientes $saldo, private RolloverClientes $rollover, private Indicacoes $indicacoes) {}
 
     /**
      * @param  array<string, mixed>  $dados  dados validados do cadastro
@@ -29,7 +29,11 @@ class CadastroClientes
 
         try {
             $cliente = DB::transaction(function () use ($dados, $aceita_promocao) {
-                $cliente = Clientes::create([...Arr::except($dados, 'aceita_promocao'), 'ativo' => true]);
+                $cliente = Clientes::create([...Arr::except($dados, ['aceita_promocao', 'codigo_indicacao']), 'ativo' => true]);
+
+                // código do link de indicação do novo cliente e quem o indicou (spec 007, US9)
+                $cliente->forceFill(['codigo_indicacao' => Clientes::gerar_codigo_indicacao()])->save();
+                $this->indicacoes->registrar($cliente, $dados['codigo_indicacao'] ?? null);
 
                 // sem tabela padrão: os demais valores vêm do padrão das colunas
                 $cliente->configuracoes()->create(['aceita_promocao' => $aceita_promocao]);
@@ -55,8 +59,10 @@ class CadastroClientes
 
     private function aplicar_promocoes_de_cadastro(Clientes $cliente): void
     {
+        // promoção com afiliado só vale para os clientes dele (spec 007, FR-018g)
         $promocoes = ClientesPromocoes::vigentes()
             ->where('categoria', CategoriaPromocao::PrimeiroCadastro)
+            ->paraAfiliado($cliente->codigo_afiliado)
             ->get();
 
         foreach ($promocoes as $promocao) {

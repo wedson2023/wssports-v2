@@ -23,7 +23,6 @@ export const Card = styled.div`
     display: flex;
     flex-direction: column;
     padding: 20px;
-    border-radius: 16px;
     background: ${({ theme }) => theme.superficie_titulo};
     color: ${({ theme }) => theme.texto_principal};
     box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
@@ -38,7 +37,6 @@ export const Card = styled.div`
         max-height: 85vh;
         max-height: 85dvh;
         padding: 12px 16px calc(16px + env(safe-area-inset-bottom));
-        border-radius: 16px 16px 0 0;
         animation: ${entrar_folha} 200ms ease-out;
     }
 

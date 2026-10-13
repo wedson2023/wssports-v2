@@ -100,7 +100,20 @@ export default function Home({ filtros, listagem, configuracoes, banners, aviso,
     const [bilhete, definir_bilhete] = useState(null);
     // link de indicação (?user=código) abre o cadastro com o código de afiliado, como no antigo
     const [codigo_indicacao] = useState(() => new URLSearchParams(window.location.search).get('user') ?? '');
-    const [aba_acesso, definir_aba_acesso] = useState(() => (codigo_indicacao ? 'cadastrar' : null));
+    // ?entrar=1&voltar=/minha-conta (spec 007): abre o login e, depois de entrar como cliente,
+    // volta para a página que pediu; só caminhos internos
+    const [voltar_depois_do_login] = useState(() => {
+        const voltar = new URLSearchParams(window.location.search).get('voltar') ?? '';
+
+        return voltar.startsWith('/') && !voltar.startsWith('//') ? voltar : null;
+    });
+    // link de indicação de outro cliente (?indicacao=CÓDIGO, spec 007): abre o cadastro com o código
+    const [indicacao_cliente] = useState(() => new URLSearchParams(window.location.search).get('indicacao') ?? '');
+    const [aba_acesso, definir_aba_acesso] = useState(() => {
+        if (new URLSearchParams(window.location.search).get('entrar')) return 'entrar';
+
+        return codigo_indicacao || indicacao_cliente ? 'cadastrar' : null;
+    });
     // link do bilhete (?code=CÓDIGO): lido uma vez ao abrir a tela (FR-001)
     const [codigo_do_link] = useState(() => new URLSearchParams(window.location.search).get('code'));
     const abriu_com_codigo = Boolean(codigo_do_link);
@@ -354,6 +367,22 @@ export default function Home({ filtros, listagem, configuracoes, banners, aviso,
         window.history.replaceState(window.history.state, '', `${url.pathname}${url.search}${url.hash}`);
     }, [codigo_do_link, sessao_conhecida]);
 
+    // tira ?entrar e ?voltar da barra de endereço depois de lidos (spec 007), para recarregar a
+    // página não reabrir o login
+    useEffect(() => {
+        const url = new URL(window.location.href);
+
+        if (!url.searchParams.has('entrar') && !url.searchParams.has('voltar')) return;
+
+        url.searchParams.delete('entrar');
+        url.searchParams.delete('voltar');
+        window.history.replaceState(window.history.state, '', `${url.pathname}${url.search}${url.hash}`);
+    }, []);
+
+    const depois_do_login = (nova_sessao) => {
+        if (voltar_depois_do_login && nova_sessao?.tipo === 'cliente') router.visit(voltar_depois_do_login);
+    };
+
     // aviso da banca (spec 006, FR-028 a FR-032): pedido depois que a lista carregou, para não
     // atrasá-la, e mostrado só quando a imagem já carregou; nunca quando a tela abriu pelo link de
     // um bilhete. Não confundir com a prop "aviso" (mensagem de atenção da listagem)
@@ -513,7 +542,14 @@ export default function Home({ filtros, listagem, configuracoes, banners, aviso,
             )}
             <TicketModal comprovante={bilhete} ao_fechar={() => definir_bilhete(null)} />
             <NoticeModal aviso={aviso_banca} ao_fechar={fechar_aviso_banca} ao_ler={ler_aviso_banca} />
-            <AuthModal aba={aba_acesso} codigo_afiliado={codigo_indicacao} ao_trocar_aba={definir_aba_acesso} ao_fechar={fechar_acesso} />
+            <AuthModal
+                aba={aba_acesso}
+                codigo_afiliado={codigo_indicacao}
+                codigo_indicacao={indicacao_cliente}
+                ao_trocar_aba={definir_aba_acesso}
+                ao_fechar={fechar_acesso}
+                ao_entrar_com_sucesso={depois_do_login}
+            />
         </>
     );
 }

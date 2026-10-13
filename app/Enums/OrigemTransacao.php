@@ -12,4 +12,13 @@ enum OrigemTransacao: string
     case Aposta = 'Aposta';
     case Prêmio = 'Prêmio';
     case Estorno = 'Estorno';
+    // pagamentos do painel do cliente (spec 007)
+    case Depósito = 'Depósito';
+    case Cashback = 'Cashback';
+    case Saque = 'Saque';
+    case DevoluçãoSaque = 'Devolução de saque';
+    case EstornoDepósito = 'Estorno de depósito';
+    case ConversãoBônus = 'Conversão de bônus';
+    case BônusExpirado = 'Bônus expirado';
+    case BônusExcluído = 'Bônus excluído';
 }

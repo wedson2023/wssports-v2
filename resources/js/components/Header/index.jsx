@@ -1,4 +1,4 @@
-import { usePage } from '@inertiajs/react';
+import { Link, usePage } from '@inertiajs/react';
 
 import { formatar_real, para_centavos } from '../../utils/money';
 import { Balance, EnterButton, Greeting, Logo, MenuIcon, Nav, RegisterButton } from './styles';
@@ -21,7 +21,13 @@ export default function Header({ ao_abrir_menu, extra = null, colunas = colunas_
             {extra}
             {sessao ? (
                 <>
-                    <Greeting title={sessao.nome ?? ''}>
+                    {/* o apostador vai para a tela de créditos ao tocar na saudação, como no antigo (spec 007) */}
+                    <Greeting
+                        as={sessao.tipo === 'cliente' ? Link : 'span'}
+                        href={sessao.tipo === 'cliente' ? '/minha-conta' : undefined}
+                        $link={sessao.tipo === 'cliente'}
+                        title={sessao.tipo === 'cliente' ? 'Minha conta' : (sessao.nome ?? '')}
+                    >
                         Olá{sessao.nome ? `, ${primeiro_nome(sessao.nome)}` : ''}
                         {saldo !== null && <Balance>R$ {formatar_real(para_centavos(saldo))}</Balance>}
                     </Greeting>

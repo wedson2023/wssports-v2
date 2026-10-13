@@ -77,6 +77,12 @@ export const Greeting = styled.span`
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+    text-decoration: none;
+    cursor: ${({ $link }) => ($link ? 'pointer' : 'default')};
+
+    &:hover {
+        opacity: ${({ $link }) => ($link ? 0.8 : 1)};
+    }
 `;
 
 export const Balance = styled.strong`

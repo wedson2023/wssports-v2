@@ -54,6 +54,8 @@ class StoreClientesRequest extends FormRequest
             'data_nascimento' => ['required', 'date', 'before_or_equal:'.now()->subYears(18)->toDateString()],
             'genero' => ['required', Rule::enum(Genero::class)],
             'codigo_afiliado' => ['nullable', 'string', 'max:50'],
+            // link de indicação de outro cliente (spec 007); código inexistente é ignorado
+            'codigo_indicacao' => ['nullable', 'string', 'size:8'],
             'aceita_promocao' => ['boolean'],
         ];
     }
@@ -63,7 +65,10 @@ class StoreClientesRequest extends FormRequest
      */
     public function messages(): array
     {
-        return $this->mensagens_dados_cliente();
+        return [
+            ...$this->mensagens_dados_cliente(),
+            'codigo_indicacao.size' => 'O código de indicação deve ter 8 caracteres.',
+        ];
     }
 
     /**

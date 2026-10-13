@@ -14,7 +14,6 @@ export const Container = styled.div`
     overflow-y: auto;
     padding: 28px 24px 20px;
     background: #fff;
-    border-radius: 12px;
     box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
     color: #333;
     text-align: center;

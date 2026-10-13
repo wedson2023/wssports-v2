@@ -4,6 +4,7 @@ import axios from 'axios';
 
 import api from '../utils/api';
 import { atualizar_sessao, criar_sessao, encerrar_sessao, ler_sessao } from '../utils/session';
+import { gravar_acesso_assistido, ler_acesso_assistido, remover_acesso_assistido } from '../utils/storage';
 
 // sessão de login do site (apostador ou usuário do painel), entregue pelo PublicLayout
 export const SessaoContext = createContext(null);
@@ -39,8 +40,11 @@ const usa_token = (sessao) => sessao?.tipo === 'cliente' || (sessao?.tipo === 'u
 
 // com sessão de cliente ou de vendedor, o token vai em todas as requisições (Inertia e API), para
 // a tela usar as cotações e os limites dele e o cupom apostar como ele; gestor aposta como visitante
+// na tela de créditos, o acesso assistido pelo painel (spec 007) tem prioridade sobre a sessão
+// salva no aparelho, que fica intacta
 const aplicar_token = (sessao) => {
-    const valor = usa_token(sessao) ? `Bearer ${sessao.token}` : null;
+    const assistido = window.location.pathname === '/minha-conta' ? ler_acesso_assistido() : null;
+    const valor = assistido ? `Bearer ${assistido.token}` : (usa_token(sessao) ? `Bearer ${sessao.token}` : null);
 
     [axios.defaults.headers.common, api.defaults.headers.common].forEach((cabecalhos) => {
         if (valor) cabecalhos.Authorization = valor;
@@ -145,7 +149,41 @@ export const useEstadoSessao = () => {
         definir_sessao(null);
     }, []);
 
-    return useMemo(() => ({ sessao, entrar, cadastrar, sair, expirar, definir_apostador }), [sessao, entrar, cadastrar, sair, expirar, definir_apostador]);
+    // acesso assistido pelo painel (spec 007, US7): vale só nesta aba e só na tela de créditos
+    const [acesso_assistido, definir_acesso_assistido] = useState(ler_acesso_assistido);
+    const sessao_atual = useRef(sessao);
+    sessao_atual.current = sessao;
+
+    // ao trocar de página, o token volta a ser o da sessão do aparelho fora da tela de créditos
+    useEffect(() => router.on('navigate', () => aplicar_token(sessao_atual.current)), []);
+
+    const iniciar_acesso_assistido = useCallback(async (codigo) => {
+        const { data } = await api.post('/area-cliente/acesso-assistido', { codigo });
+        const acesso = { token: data.token, nome: data.cliente.nome, usuario: data.usuario, vence_em: Date.now() + data.expira_em * 1000 };
+
+        gravar_acesso_assistido(acesso);
+        definir_acesso_assistido(acesso);
+        aplicar_token(sessao_atual.current);
+
+        return acesso;
+    }, []);
+
+    const encerrar_acesso_assistido = useCallback(async () => {
+        try {
+            await api.post('/area-cliente/acesso-assistido/encerrar');
+        } catch {
+            // já encerrado ou vencido: segue limpando
+        }
+
+        remover_acesso_assistido();
+        definir_acesso_assistido(null);
+        aplicar_token(sessao_atual.current);
+    }, []);
+
+    return useMemo(
+        () => ({ sessao, entrar, cadastrar, sair, expirar, definir_apostador, acesso_assistido, iniciar_acesso_assistido, encerrar_acesso_assistido }),
+        [sessao, entrar, cadastrar, sair, expirar, definir_apostador, acesso_assistido, iniciar_acesso_assistido, encerrar_acesso_assistido],
+    );
 };
 
 // sessão para os componentes

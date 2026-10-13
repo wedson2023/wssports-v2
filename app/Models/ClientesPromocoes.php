@@ -29,6 +29,8 @@ class ClientesPromocoes extends Model
     protected $attributes = [
         'ativa' => true,
         'rollover' => 0,
+        'dias_cumprir' => 30,
+        'rollover_primeiro_deposito' => false,
     ];
 
     /**
@@ -53,6 +55,10 @@ class ClientesPromocoes extends Model
         'data_inicio',
         'data_fim',
         'ativa',
+        'dias_cumprir',
+        'rollover_primeiro_deposito',
+        'codigo_afiliado',
+        'quantidade_indicacoes',
     ];
 
     /**
@@ -81,6 +87,9 @@ class ClientesPromocoes extends Model
             'estorno_total_clientes' => 'integer',
             'estorno_clientes_processados' => 'integer',
             'estorno_valor_total' => 'decimal:2',
+            'dias_cumprir' => 'integer',
+            'rollover_primeiro_deposito' => 'boolean',
+            'quantidade_indicacoes' => 'integer',
         ];
     }
 
@@ -98,6 +107,19 @@ class ClientesPromocoes extends Model
             ->whereNull('estorno_situacao')
             ->where('data_inicio', '<=', now())
             ->where(fn (Builder $fim) => $fim->whereNull('data_fim')->orWhere('data_fim', '>=', now()));
+    }
+
+    /**
+     * Promoções que valem para o afiliado informado: as sem afiliado e as dele; sem afiliado, só
+     * as sem afiliado (spec 007, FR-018g).
+     */
+    public function scopeParaAfiliado(Builder $consulta, ?string $codigo_afiliado): Builder
+    {
+        if ($codigo_afiliado === null || $codigo_afiliado === '') {
+            return $consulta->whereNull('codigo_afiliado');
+        }
+
+        return $consulta->where(fn (Builder $afiliado) => $afiliado->whereNull('codigo_afiliado')->orWhere('codigo_afiliado', $codigo_afiliado));
     }
 
     public function vigente(): bool

@@ -25,6 +25,8 @@ class ClientesPromocoesSeeder extends Seeder
             'odd_minima_aposta_simples' => '1.50',
             'odd_minima_aposta_multipla' => '1.30',
             'ativa' => false,
+            // dias para cumprir o rollover do bônus (spec 007, FR-018h)
+            'dias_cumprir' => 30,
         ];
 
         $promocoes = [
@@ -67,6 +69,8 @@ class ClientesPromocoesSeeder extends Seeder
                 'rollover' => 10,
                 'valor_maximo_deposito' => null,
                 'valor_maximo_conversao' => '100.00',
+                // indicações válidas (com primeiro depósito) para cada bônus (spec 007)
+                'quantidade_indicacoes' => 5,
             ],
         ];
 
