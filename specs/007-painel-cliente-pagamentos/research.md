@@ -214,10 +214,18 @@ Ordem em `ProcessamentoDepositos::aprovar` (depósito bloqueado):
 - **Modo manual**: fila no painel; "Pagar" marca `Pago` (baixa manual), "Recusar" marca
   `Recusado` com motivo e devolve (`OrigemTransacao::DevolucaoSaque`).
 - **Modo automático**: até `saque_automatico_maximo`, job `PagarSaqueMercadoPago` chama a API de
-  Payouts `POST /v1/transaction-intents/process` (Pix para a chave principal, `X-Idempotency-Key`
-  = código do saque, `X-Signature` com `MERCADO_PAGO_PAYOUTS_CHAVE_PRIVADA` em produção,
-  `notification_url` do webhook). Confirmação pelo webhook ou consulta → `Pago`; falha → volta
-  à fila manual com `motivo_falha` (sem devolver). Acima do limite, fila manual; ao aprovar no
+  Payouts. **Conferido na documentação oficial em 2026-10-12** (substitui o
+  `/v1/transaction-intents/process` antigo): `POST /v1/payouts` com `X-Idempotency-Key` (código do
+  saque), `X-enforce-signature` (`true` em produção) e `X-signature` (corpo assinado com a chave
+  privada do integrador, em base64; em teste, `X-test-token: true` sem assinatura). Corpo:
+  `external_reference` (até 50, sem caracteres especiais), `config.notification_url`,
+  `transactions[] = { type: "pix", pix: { type: CPF|CNPJ|EMAIL|PHONE|PIX_CODE, chave },
+  amount: { currency: "BRL", value }, external_reference }`. Resposta `202` com `id` e `status`
+  (`created`, `pending`, `completed`); situação de cada transação em
+  `GET /v1/payouts/{id}/transactions` (`pending`, `in_process`, `success`, `canceled`, `error`).
+  A documentação não nomeia o tipo da notificação: o webhook procura o saque pelo `data.id`
+  (`saques.pagamento_id`) e consulta a situação. `success` → `Pago`; `canceled`/`error` → volta à
+  fila manual com `motivo_falha` (sem devolver). Acima do limite, fila manual; ao aprovar no
   painel, o painel escolhe "Pagar pelo Mercado Pago" ou "Dar baixa manual".
 - **Risco**: a API de Payouts precisa ser liberada pelo Mercado Pago na conta da banca; sem a
   liberação, o modo automático falha e tudo cai na fila manual (spec, Assumptions).

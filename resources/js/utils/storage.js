@@ -48,6 +48,36 @@ export const remover = (chave) => {
     }
 };
 
+// acesso assistido pelo painel (spec 007): { token, nome, usuario, vence_em } só nesta aba
+// (sessionStorage), sem tocar na sessão do cliente salva no aparelho
+export const chave_acesso_assistido = 'wssports.acesso_assistido';
+
+export const ler_acesso_assistido = () => {
+    try {
+        const acesso = JSON.parse(window.sessionStorage.getItem(chave_acesso_assistido) ?? 'null');
+
+        return acesso?.token && acesso.vence_em > Date.now() ? acesso : null;
+    } catch {
+        return null;
+    }
+};
+
+export const gravar_acesso_assistido = (acesso) => {
+    try {
+        window.sessionStorage.setItem(chave_acesso_assistido, JSON.stringify(acesso));
+    } catch {
+        // sem acesso ao armazenamento: o acesso vale só enquanto a tela estiver aberta
+    }
+};
+
+export const remover_acesso_assistido = () => {
+    try {
+        window.sessionStorage.removeItem(chave_acesso_assistido);
+    } catch {
+        // sem acesso ao armazenamento: nada a remover
+    }
+};
+
 // "Limpar cache" (FR-016): apaga o cupom, o modo escolhido, a sessão de login, as preferências de
 // impressão e o aparelho (um novo é gerado; os avisos lidos só por ele voltam)
 export const limpar_dados_locais = () => {

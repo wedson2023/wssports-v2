@@ -34,7 +34,9 @@ const erros_por_campo = (erro) => Object.fromEntries(
 );
 
 // entrar (apostador ou painel) e criar conta de apostador (spec 005, ajustes do responsável)
-export default function AuthModal({ aba, codigo_afiliado = '', ao_trocar_aba, ao_fechar }) {
+// ao_entrar_com_sucesso recebe a sessão nova (a Home usa para voltar à página que pediu o login)
+// codigo_indicacao: link de indicação de outro cliente (?indicacao=, spec 007), enviado sem campo visível
+export default function AuthModal({ aba, codigo_afiliado = '', codigo_indicacao = '', ao_trocar_aba, ao_fechar, ao_entrar_com_sucesso = null }) {
     const { tema, nome_sistema } = usePage().props;
     const { entrar, cadastrar } = useSessao();
     const visivel = Boolean(aba);
@@ -81,10 +83,11 @@ export default function AuthModal({ aba, codigo_afiliado = '', ao_trocar_aba, ao
         definir_enviando(true);
 
         try {
-            await entrar(login.identificacao, login.senha);
+            const nova = await entrar(login.identificacao, login.senha);
             definir_login({ identificacao: '', senha: '' });
             ao_fechar();
             alerta_sucesso('Login realizado com sucesso!');
+            ao_entrar_com_sucesso?.(nova);
         } catch (erro) {
             alerta_erro(erro);
         } finally {
@@ -109,6 +112,7 @@ export default function AuthModal({ aba, codigo_afiliado = '', ao_trocar_aba, ao
                 cpf: cadastro.cpf.replace(/\D/g, '') || null,
                 email: cadastro.email.trim() || null,
                 codigo_afiliado: cadastro.codigo_afiliado.trim() || null,
+                codigo_indicacao: codigo_indicacao || null,
             });
             definir_cadastro({ ...cadastro_vazio });
             ao_fechar();
@@ -191,6 +195,7 @@ export default function AuthModal({ aba, codigo_afiliado = '', ao_trocar_aba, ao
 
                     {aba_exibida === 'cadastrar' && (
                         <Form onSubmit={enviar_cadastro} noValidate>
+                            {codigo_indicacao && <Hint>Você foi indicado por um amigo.</Hint>}
                             {campo('nome', 'Nome completo', { autoComplete: 'name', placeholder: 'Nome e sobrenome', required: true })}
                             <Row>
                                 {campo('telefone', 'Telefone (WhatsApp)', { type: 'tel', inputMode: 'numeric', autoComplete: 'tel-national', placeholder: '(11) 99999-9999', required: true }, 'Você usa o telefone para entrar.')}

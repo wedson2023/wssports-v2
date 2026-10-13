@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Enums\Genero;
 use Database\Factories\ClientesFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -107,5 +108,37 @@ class Clientes extends Authenticatable implements JWTSubject
     public function invalidar_tokens(): void
     {
         $this->forceFill(['tokens_validos_desde' => now()])->save();
+    }
+
+    /**
+     * Quem indicou este cliente (codigo_indicacao e indicado_por ficam fora do fillable: só o
+     * cadastro os grava).
+     */
+    public function indicador(): BelongsTo
+    {
+        return $this->belongsTo(self::class, 'indicado_por');
+    }
+
+    public function rollovers(): HasMany
+    {
+        return $this->hasMany(ClientesRollovers::class, 'clientes_id');
+    }
+
+    /**
+     * Código de indicação único de 8 caracteres, sem letras e números que se confundem (0, O, 1, I).
+     */
+    public static function gerar_codigo_indicacao(): string
+    {
+        $alfabeto = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+
+        do {
+            $codigo = '';
+
+            for ($posicao = 0; $posicao < 8; $posicao++) {
+                $codigo .= $alfabeto[random_int(0, strlen($alfabeto) - 1)];
+            }
+        } while (static::withTrashed()->where('codigo_indicacao', $codigo)->exists());
+
+        return $codigo;
     }
 }

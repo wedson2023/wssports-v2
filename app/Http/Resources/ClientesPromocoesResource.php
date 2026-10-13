@@ -30,6 +30,10 @@ class ClientesPromocoesResource extends JsonResource
             'data_inicio' => $this->data_inicio,
             'data_fim' => $this->data_fim,
             'ativa' => $this->ativa,
+            'dias_cumprir' => $this->dias_cumprir,
+            'rollover_primeiro_deposito' => $this->rollover_primeiro_deposito,
+            'codigo_afiliado' => $this->codigo_afiliado,
+            'quantidade_indicacoes' => $this->quantidade_indicacoes,
             'vigente' => $this->vigente(),
             'aplicada' => $this->aplicada(),
             'estorno' => [

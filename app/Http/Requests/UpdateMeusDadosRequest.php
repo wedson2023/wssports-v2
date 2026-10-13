@@ -29,15 +29,21 @@ class UpdateMeusDadosRequest extends FormRequest
      */
     public function rules(): array
     {
+        $cliente = $this->user('clientes');
+
+        // CPF, e-mail e data de nascimento: o cliente preenche uma única vez; depois, só o painel
+        // altera, como no antigo (spec 007, research R-21). Telefone é o login: só o painel.
         return [
             'nome' => ['sometimes', 'required', 'string', 'max:150'],
             'genero' => ['sometimes', 'required', Rule::enum(Genero::class)],
-            'email' => ['sometimes', ...$this->regras_email($this->user('clientes')->id)],
+            'email' => $cliente->email ? ['prohibited'] : ['sometimes', ...$this->regras_email($cliente->id)],
+            'cpf' => $cliente->cpf ? ['prohibited'] : ['sometimes', ...$this->regras_cpf($cliente->id)],
+            'data_nascimento' => $cliente->data_nascimento
+                ? ['prohibited']
+                : ['sometimes', 'date', 'before_or_equal:'.now()->subYears(18)->toDateString()],
             'aceita_promocao' => ['sometimes', 'boolean'],
             'ddi' => ['prohibited'],
             'telefone' => ['prohibited'],
-            'cpf' => ['prohibited'],
-            'data_nascimento' => ['prohibited'],
         ];
     }
 
@@ -53,6 +59,7 @@ class UpdateMeusDadosRequest extends FormRequest
             'ddi.prohibited' => $mensagem_atendimento,
             'telefone.prohibited' => $mensagem_atendimento,
             'cpf.prohibited' => $mensagem_atendimento,
+            'email.prohibited' => $mensagem_atendimento,
             'data_nascimento.prohibited' => $mensagem_atendimento,
         ];
     }

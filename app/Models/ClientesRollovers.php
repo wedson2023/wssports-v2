@@ -42,6 +42,10 @@ class ClientesRollovers extends Model
             'odd_minima_aposta_multipla' => 'decimal:2',
             'cumprido_em' => 'datetime',
             'cancelado_em' => 'datetime',
+            'expira_em' => 'datetime',
+            'expirado_em' => 'datetime',
+            'excluido_em' => 'datetime',
+            'convertido_em' => 'datetime',
         ];
     }
 
@@ -50,11 +54,31 @@ class ClientesRollovers extends Model
         return $this->belongsTo(Clientes::class, 'clientes_id');
     }
 
+    public function promocao(): BelongsTo
+    {
+        return $this->belongsTo(ClientesPromocoes::class, 'clientes_promocoes_id')->withTrashed();
+    }
+
     /**
-     * Rollovers ainda não cumpridos nem cancelados, do mais antigo para o mais novo.
+     * Rollovers ainda não cumpridos, cancelados, expirados nem excluídos, do mais antigo para o
+     * mais novo (bônus expirado ou excluído não recebe mais apostas).
      */
     public function scopePendentes(Builder $consulta): Builder
     {
-        return $consulta->whereNull('cumprido_em')->whereNull('cancelado_em')->orderBy('id');
+        return $consulta->whereNull('cumprido_em')
+            ->whereNull('cancelado_em')
+            ->whereNull('expirado_em')
+            ->whereNull('excluido_em')
+            ->orderBy('id');
+    }
+
+    /**
+     * Quanto ainda falta apostar.
+     */
+    public function restante(): string
+    {
+        $restante = bcsub((string) $this->valor_exigido, (string) $this->valor_apostado, 2);
+
+        return bccomp($restante, '0', 2) > 0 ? $restante : '0.00';
     }
 }

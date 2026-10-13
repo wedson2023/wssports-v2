@@ -145,7 +145,7 @@ gateway vinculado ou com depósitos desligados. `falta_no_cadastro` ∈ `cpf`, `
 
 Validação: `valor` entre mínimo e máximo, duas casas; `meio` habilitado; `cartao.*` obrigatórios
 no cartão; `parcelas` 1..`parcelas_maximas`. Cadastro sem CPF/e-mail: `422` com
-`errors.cadastro = ["cpf", "email"]` e message "Informe seu CPF e e-mail para depositar."
+`faltando = ["cpf", "email"]` (e `errors.cadastro` com a mensagem) e message "Informe seu CPF e e-mail para depositar."
 
 `201`:
 
@@ -166,7 +166,7 @@ Só o dono (ou o acesso assistido dele); senão `404`. `{ "data": { "codigo", "s
 
 `{ "valor": "100.00" }` → `201 {"data": {"codigo", "valor", "situacao": "Pendente"}, "message": "Saque solicitado com sucesso. O valor estará disponível em até 24 horas."}`.
 Recusas `422` com as mensagens do FR-035; cadastro incompleto:
-`errors.cadastro = ["email", "pix", ...]` e message "Complete seus dados para sacar.".
+`faltando = ["email", "cpf", "pix"]` (e `errors.cadastro` com a mensagem) e message "Complete seus dados para sacar.".
 
 ## 8. `GET /api/area-cliente/indicacoes`
 

@@ -114,6 +114,26 @@
             "key": "banner_id",
             "value": "1",
             "type": "string"
+        },
+        {
+            "key": "deposito_codigo",
+            "value": "",
+            "type": "string"
+        },
+        {
+            "key": "saque_id",
+            "value": "1",
+            "type": "string"
+        },
+        {
+            "key": "rollover_id",
+            "value": "1",
+            "type": "string"
+        },
+        {
+            "key": "codigo_acesso",
+            "value": "",
+            "type": "string"
         }
     ],
     "item": [
@@ -593,13 +613,13 @@
                                 "cadastro"
                             ]
                         },
-                        "description": "Cadastro público. 201 com cliente e token; 422 validação/duplicidade; 429 mais de 5 por minuto do mesmo IP.",
+                        "description": "Cadastro público. 201 com cliente e token; 422 validação/duplicidade; 429 mais de 5 por minuto do mesmo IP. Spec 007: codigo_indicacao (8 caracteres) do link de indicação de outro cliente; inexistente é ignorado.",
                         "auth": {
                             "type": "noauth"
                         },
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \"nome\": \"Maria Souza\",\n    \"ddi\": \"55\",\n    \"telefone\": \"(11) 98888-7777\",\n    \"email\": \"maria@mail.com\",\n    \"password\": \"senha1234\",\n    \"password_confirmation\": \"senha1234\",\n    \"cpf\": \"529.982.247-25\",\n    \"data_nascimento\": \"1990-05-10\",\n    \"genero\": \"Feminino\",\n    \"codigo_afiliado\": null,\n    \"aceita_promocao\": true\n}"
+                            "raw": "{\n    \"nome\": \"Maria Souza\",\n    \"ddi\": \"55\",\n    \"telefone\": \"(11) 98888-7777\",\n    \"email\": \"maria@mail.com\",\n    \"password\": \"senha1234\",\n    \"password_confirmation\": \"senha1234\",\n    \"cpf\": \"529.982.247-25\",\n    \"data_nascimento\": \"1990-05-10\",\n    \"genero\": \"Feminino\",\n    \"codigo_afiliado\": null,\n    \"aceita_promocao\": true,\n    \"codigo_indicacao\": null\n}"
                         }
                     },
                     "event": [
@@ -1650,10 +1670,10 @@
                                 "clientes-promocoes"
                             ]
                         },
-                        "description": "clientes_promocoes.gerenciar. Mesma categoria e modalidade não podem ter períodos sobrepostos.",
+                        "description": "clientes_promocoes.gerenciar. Mesma categoria e modalidade não podem ter períodos sobrepostos. Spec 007: dias_cumprir (padrão 30), rollover_primeiro_deposito (só Primeiro depósito), codigo_afiliado e quantidade_indicacoes (obrigatório em Indicação, proibido nas demais).",
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \"nome\": \"Bônus de boas-vindas\",\n    \"descricao\": \"R$ 20 para apostar em esportes\",\n    \"modalidade\": \"Esportes\",\n    \"categoria\": \"Primeiro cadastro\",\n    \"tipo_ganho\": \"Fixo\",\n    \"valor\": \"20.00\",\n    \"rollover\": 5,\n    \"valor_minimo_aposta\": \"2.00\",\n    \"valor_maximo_aposta\": \"100.00\",\n    \"valor_maximo_deposito\": null,\n    \"valor_maximo_conversao\": \"200.00\",\n    \"odd_minima_aposta_simples\": \"1.50\",\n    \"odd_minima_aposta_multipla\": \"1.30\",\n    \"data_inicio\": \"2026-10-01 00:00:00\",\n    \"data_fim\": null,\n    \"ativa\": true\n}"
+                            "raw": "{\n    \"nome\": \"Bônus de boas-vindas\",\n    \"descricao\": \"R$ 20 para apostar em esportes\",\n    \"modalidade\": \"Esportes\",\n    \"categoria\": \"Primeiro cadastro\",\n    \"tipo_ganho\": \"Fixo\",\n    \"valor\": \"20.00\",\n    \"rollover\": 5,\n    \"valor_minimo_aposta\": \"2.00\",\n    \"valor_maximo_aposta\": \"100.00\",\n    \"valor_maximo_deposito\": null,\n    \"valor_maximo_conversao\": \"200.00\",\n    \"odd_minima_aposta_simples\": \"1.50\",\n    \"odd_minima_aposta_multipla\": \"1.30\",\n    \"data_inicio\": \"2026-10-01 00:00:00\",\n    \"data_fim\": null,\n    \"ativa\": true,\n    \"dias_cumprir\": 30,\n    \"rollover_primeiro_deposito\": false,\n    \"codigo_afiliado\": null\n}"
                         }
                     }
                 },
@@ -1681,10 +1701,10 @@
                                 "{{promocao_id}}"
                             ]
                         },
-                        "description": "clientes_promocoes.gerenciar. Promoção aplicada não muda valor, tipo de ganho, categoria e modalidade.",
+                        "description": "clientes_promocoes.gerenciar. Promoção aplicada não muda valor, tipo de ganho, categoria e modalidade. Spec 007: dias_cumprir (padrão 30), rollover_primeiro_deposito (só Primeiro depósito), codigo_afiliado e quantidade_indicacoes (obrigatório em Indicação, proibido nas demais).",
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \"nome\": \"Bônus de boas-vindas 2\"\n}"
+                            "raw": "{\n    \"nome\": \"Bônus de boas-vindas 2\",\n    \"dias_cumprir\": 30,\n    \"rollover_primeiro_deposito\": false,\n    \"codigo_afiliado\": null\n}"
                         }
                     }
                 },
@@ -4591,6 +4611,762 @@
                 }
             ],
             "description": "Avisos da banca (antigo popup): imagem mostrada ao abrir o site, com \"Fechar\" e \"Lido\". Gerenciamento: avisos.gerenciar (Admin e Supervisor)."
+        },
+        {
+            "name": "Minha conta (área do cliente)",
+            "description": "Tela de créditos do cliente (spec 007): saldos, extrato, bônus, depósitos, saques, indicações e acesso assistido. Usa o token_cliente.",
+            "item": [
+                {
+                    "name": "Minha conta",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/area-cliente/minha-conta",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "area-cliente",
+                                "minha-conta"
+                            ]
+                        },
+                        "description": "Saldos (valor, anterior, meta de rollover), pendências de cadastro para depositar/sacar, item de indicação do menu e acesso assistido. 403 \"Pagamento pendente ou conta desativada.\" com o cliente desativado."
+                    }
+                },
+                {
+                    "name": "Extrato",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/area-cliente/minha-conta/extrato?operacao=palpites&situacao=Aguardando&pagina=1&por_pagina=30",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "area-cliente",
+                                "minha-conta",
+                                "extrato"
+                            ],
+                            "query": [
+                                {
+                                    "key": "operacao",
+                                    "value": "palpites"
+                                },
+                                {
+                                    "key": "situacao",
+                                    "value": "Aguardando"
+                                },
+                                {
+                                    "key": "pagina",
+                                    "value": "1"
+                                },
+                                {
+                                    "key": "por_pagina",
+                                    "value": "30"
+                                }
+                            ]
+                        },
+                        "description": "Movimentações da mais recente para a mais antiga. operacao: palpites, depositos, saques, bonus, cashback, estornos; situacao (só com palpites): Aguardando, Vencedor, Perdedor; por_pagina até 100 (padrão 30)."
+                    }
+                },
+                {
+                    "name": "Iniciar acesso assistido",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/area-cliente/acesso-assistido",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "area-cliente",
+                                "acesso-assistido"
+                            ]
+                        },
+                        "description": "Troca o código de uso único (gerado pelo painel, 2 minutos) por um token do cliente com o autor nas claims. 422 \"Acesso expirado. Gere um novo pelo painel.\" Salva o token em token_cliente.",
+                        "auth": {
+                            "type": "noauth"
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"codigo\": \"{{codigo_acesso}}\"\n}"
+                        }
+                    },
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "// o acesso assistido passa a ser o token do cliente nas demais rotas",
+                                    "if (pm.response.code === 200) {",
+                                    "    pm.collectionVariables.set('token_cliente', pm.response.json().token);",
+                                    "}"
+                                ]
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "Encerrar acesso assistido",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/area-cliente/acesso-assistido/encerrar",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "area-cliente",
+                                "acesso-assistido",
+                                "encerrar"
+                            ]
+                        },
+                        "description": "204; registra o fim do acesso e invalida o token."
+                    }
+                },
+                {
+                    "name": "Converter bônus",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/area-cliente/bonus/{{rollover_id}}/converter",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "area-cliente",
+                                "bonus",
+                                "{{rollover_id}}",
+                                "converter"
+                            ]
+                        },
+                        "description": "Passa o valor liberado (até o máximo de conversão da promoção) para o saldo. 422: sem valor liberado, outro bônus pendente na modalidade, expirado ou já convertido. 404 bônus de outro cliente."
+                    }
+                },
+                {
+                    "name": "Excluir bônus",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/area-cliente/bonus/{{rollover_id}}/excluir",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "area-cliente",
+                                "bonus",
+                                "{{rollover_id}}",
+                                "excluir"
+                            ]
+                        },
+                        "description": "Zera o rollover e tira o saldo restante do bônus. 422: com valor liberado, expirado, cumprido ou já excluído."
+                    }
+                },
+                {
+                    "name": "Opções de depósito",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/area-cliente/depositos/opcoes",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "area-cliente",
+                                "depositos",
+                                "opcoes"
+                            ]
+                        },
+                        "description": "disponivel (false sem conta do Mercado Pago vinculada ou com depósitos desligados, com o motivo), mínimo, máximo, valores rápidos, meios, parcelas máximas, public_key (cartão), aceita_bonus e falta_no_cadastro (cpf, email)."
+                    }
+                },
+                {
+                    "name": "Depositar via Pix",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/area-cliente/depositos",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "area-cliente",
+                                "depositos"
+                            ]
+                        },
+                        "description": "201 com codigo e pix (copia_cola, qr_code_base64, expira_em). 422 \"Informe seu CPF e e-mail para depositar.\" com faltando: [cpf, email]; limites de valor; depósitos indisponíveis.",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"valor\": \"50.00\",\n    \"meio\": \"Pix\",\n    \"aceita_bonus\": true\n}"
+                        }
+                    },
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "// guarda o código para consultar a situação",
+                                    "if (pm.response.code === 201) {",
+                                    "    pm.collectionVariables.set('deposito_codigo', pm.response.json().data.codigo);",
+                                    "}"
+                                ]
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "Depositar com cartão",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/area-cliente/depositos",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "area-cliente",
+                                "depositos"
+                            ]
+                        },
+                        "description": "O token vem do MercadoPago.js no navegador (o número do cartão nunca passa pelo servidor). 201 Aprovado ou Em análise; 422 com a mensagem da recusa.",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"valor\": \"300.00\",\n    \"meio\": \"Cartão de crédito\",\n    \"aceita_bonus\": false,\n    \"cartao\": {\n        \"token\": \"TOKEN_DO_MERCADOPAGO_JS\",\n        \"parcelas\": 3,\n        \"payment_method_id\": \"visa\",\n        \"issuer_id\": \"25\"\n    }\n}"
+                        }
+                    }
+                },
+                {
+                    "name": "Situação do depósito",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/area-cliente/depositos/{{deposito_codigo}}",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "area-cliente",
+                                "depositos",
+                                "{{deposito_codigo}}"
+                            ]
+                        },
+                        "description": "Só o dono do depósito; 404 para outro cliente."
+                    }
+                },
+                {
+                    "name": "Minhas indicações",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/area-cliente/indicacoes?pagina=1&por_pagina=30",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "area-cliente",
+                                "indicacoes"
+                            ],
+                            "query": [
+                                {
+                                    "key": "pagina",
+                                    "value": "1"
+                                },
+                                {
+                                    "key": "por_pagina",
+                                    "value": "30"
+                                }
+                            ]
+                        },
+                        "description": "Indicados (primeiro nome + inicial, data do cadastro, Depositou ou Pendente de depósito) e o resumo: válidas, meta, faltam para o próximo bônus, bônus recebidos, valor e link de indicação."
+                    }
+                },
+                {
+                    "name": "Solicitar saque",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/area-cliente/saques",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "area-cliente",
+                                "saques"
+                            ]
+                        },
+                        "description": "201 \"Saque solicitado com sucesso...\" e o saldo debitado na hora. 422: saques indisponíveis, saque bloqueado, saldo negativo ou insuficiente, mínimo, limites do dia, rollover do depósito; cadastro incompleto com faltando: [email, cpf, pix].",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"valor\": \"100.00\"\n}"
+                        }
+                    }
+                }
+            ],
+            "auth": {
+                "type": "bearer",
+                "bearer": [
+                    {
+                        "key": "token",
+                        "value": "{{token_cliente}}",
+                        "type": "string"
+                    }
+                ]
+            }
+        },
+        {
+            "name": "Webhooks",
+            "description": "Avisos do Mercado Pago (spec 007). Sem login; a assinatura x-signature é conferida com MERCADO_PAGO_WEBHOOK_SECRET.",
+            "item": [
+                {
+                    "name": "Aviso do Mercado Pago",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/webhooks/mercado-pago",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "webhooks",
+                                "mercado-pago"
+                            ]
+                        },
+                        "description": "Sempre 200 {\"recebido\": true}. Com assinatura inválida o aviso é gravado como Ignorado; com assinatura válida, o pagamento é consultado na fila.",
+                        "auth": {
+                            "type": "noauth"
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"type\": \"payment\",\n    \"data\": {\n        \"id\": \"123456789\"\n    }\n}"
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Pagamentos (painel)",
+            "description": "Gateway de pagamentos (vínculo do Mercado Pago, só Admin), configurações de pagamento (configuracoes.editar), fila de saques (saques.gerenciar) e acesso assistido (clientes.acessar_conta). Spec 007.",
+            "item": [
+                {
+                    "name": "Situação do gateway",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/configuracoes/gateway",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "configuracoes",
+                                "gateway"
+                            ]
+                        },
+                        "description": "Gateway, situação (Vinculado, Falha na renovação, Desvinculado), datas e falha da renovação. Nunca devolve tokens."
+                    }
+                },
+                {
+                    "name": "Autorizar Mercado Pago",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/configuracoes/gateway/mercado-pago/autorizar",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "configuracoes",
+                                "gateway",
+                                "mercado-pago",
+                                "autorizar"
+                            ]
+                        },
+                        "description": "Devolve a url de autorização do Mercado Pago (abrir em nova aba). O retorno vai para /mercado-pago/retorno. 422 sem credenciais da aplicação no servidor."
+                    }
+                },
+                {
+                    "name": "Desvincular gateway",
+                    "request": {
+                        "method": "DELETE",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/configuracoes/gateway",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "configuracoes",
+                                "gateway"
+                            ]
+                        },
+                        "description": "204; apaga os tokens e deixa os depósitos indisponíveis."
+                    }
+                },
+                {
+                    "name": "Configurações de pagamento",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/configuracoes/pagamentos",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "configuracoes",
+                                "pagamentos"
+                            ]
+                        },
+                        "description": "Limites de depósito e saque, rollover de depósito, cashback, modo de saque, meios, parcelas e tempos. Sem o percentual de comissão."
+                    }
+                },
+                {
+                    "name": "Editar configurações de pagamento",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/configuracoes/pagamentos",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "configuracoes",
+                                "pagamentos"
+                            ]
+                        },
+                        "description": "Todos os campos são opcionais. percentual_comissao_gateway é ignorado (só no banco).",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"depositos_habilitados\": true,\n    \"saques_habilitados\": true,\n    \"deposito_minimo\": \"1.00\",\n    \"deposito_maximo\": \"50000.00\",\n    \"saque_minimo\": \"10.00\",\n    \"rollover_deposito\": true,\n    \"rollover_deposito_vezes\": 1,\n    \"cashback_percentual\": \"0.00\",\n    \"modo_saque\": \"Manual\",\n    \"saque_automatico_maximo\": \"1000.00\",\n    \"meios_deposito\": [\n        \"Pix\",\n        \"Cartão de crédito\"\n    ],\n    \"parcelas_maximas\": 12,\n    \"minutos_expiracao_pix\": 30,\n    \"minutos_acesso_assistido\": 60\n}"
+                        }
+                    }
+                },
+                {
+                    "name": "Acessar conta do cliente",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/clientes/{{cliente_id}}/acesso-assistido",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "clientes",
+                                "{{cliente_id}}",
+                                "acesso-assistido"
+                            ]
+                        },
+                        "description": "Admin e supervisor (clientes.acessar_conta). 201 com a url /minha-conta?acesso=CÓDIGO (uso único, 2 minutos). 404 cliente excluído."
+                    },
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "// guarda o código para testar a troca pelo token",
+                                    "if (pm.response.code === 201) {",
+                                    "    pm.collectionVariables.set('codigo_acesso', new URL(pm.response.json().url).searchParams.get('acesso'));",
+                                    "}"
+                                ]
+                            }
+                        }
+                    ]
+                },
+                {
+                    "name": "Fila de saques",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/saques?situacao=Pendente&pagina=1&por_pagina=30",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "saques"
+                            ],
+                            "query": [
+                                {
+                                    "key": "situacao",
+                                    "value": "Pendente"
+                                },
+                                {
+                                    "key": "pagina",
+                                    "value": "1"
+                                },
+                                {
+                                    "key": "por_pagina",
+                                    "value": "30"
+                                }
+                            ]
+                        },
+                        "description": "Saques com cliente, chave Pix, modo, situação e motivos. Pendentes do mais antigo para o mais novo; por_pagina até 100."
+                    }
+                },
+                {
+                    "name": "Pagar saque",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/saques/{{saque_id}}/pagar",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "saques",
+                                "{{saque_id}}",
+                                "pagar"
+                            ]
+                        },
+                        "description": "forma manual: baixa (Pago). forma mercado_pago: envia o Pix pelo Mercado Pago (Processando); a falha volta para a fila com motivo_falha. 422 se já foi decidido.",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"forma\": \"manual\"\n}"
+                        }
+                    }
+                },
+                {
+                    "name": "Recusar saque",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/saques/{{saque_id}}/recusar",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "saques",
+                                "{{saque_id}}",
+                                "recusar"
+                            ]
+                        },
+                        "description": "Recusa com o motivo que o cliente vê e devolve o valor ao saldo (Devolução de saque).",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"motivo\": \"Chave Pix inválida\"\n}"
+                        }
+                    }
+                }
+            ]
         }
     ]
 }

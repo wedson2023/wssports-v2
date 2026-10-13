@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use App\Enums\MeioDeposito;
+use App\Enums\ModoSaque;
 use App\Services\ArmazenamentoImagens;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -53,6 +55,23 @@ class Configuracoes extends Model
         'mensagem_bilhete',
         'logo',
         'regras',
+        // pagamentos (spec 007); percentual_comissao_gateway fica de fora: só alterada direto no
+        // banco (FR-028)
+        'gateway_pagamento',
+        'depositos_habilitados',
+        'saques_habilitados',
+        'deposito_minimo',
+        'deposito_maximo',
+        'saque_minimo',
+        'rollover_deposito',
+        'rollover_deposito_vezes',
+        'cashback_percentual',
+        'modo_saque',
+        'saque_automatico_maximo',
+        'meios_deposito',
+        'parcelas_maximas',
+        'minutos_expiracao_pix',
+        'minutos_acesso_assistido',
     ];
 
     /**
@@ -74,7 +93,32 @@ class Configuracoes extends Model
             'cotacao_maxima_ao_vivo' => 'decimal:2',
             'ao_vivo_travado' => 'boolean',
             'ao_vivo_travado_em' => 'datetime',
+            'percentual_comissao_gateway' => 'decimal:2',
+            'depositos_habilitados' => 'boolean',
+            'saques_habilitados' => 'boolean',
+            'deposito_minimo' => 'decimal:2',
+            'deposito_maximo' => 'decimal:2',
+            'saque_minimo' => 'decimal:2',
+            'rollover_deposito' => 'boolean',
+            'rollover_deposito_vezes' => 'integer',
+            'cashback_percentual' => 'decimal:2',
+            'modo_saque' => ModoSaque::class,
+            'saque_automatico_maximo' => 'decimal:2',
+            'meios_deposito' => 'array',
+            'parcelas_maximas' => 'integer',
+            'minutos_expiracao_pix' => 'integer',
+            'minutos_acesso_assistido' => 'integer',
         ];
+    }
+
+    /**
+     * Meios de depósito oferecidos ao cliente; sem configuração, Pix e cartão.
+     *
+     * @return list<string>
+     */
+    public function meios_habilitados(): array
+    {
+        return $this->meios_deposito ?? [MeioDeposito::Pix->value, MeioDeposito::CartãoCrédito->value];
     }
 
     public static function atual(): self

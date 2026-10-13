@@ -42,7 +42,54 @@ class RolloverClientes
             'valor_maximo_aposta' => $promocao->valor_maximo_aposta,
             'odd_minima_aposta_simples' => $promocao->odd_minima_aposta_simples,
             'odd_minima_aposta_multipla' => $promocao->odd_minima_aposta_multipla,
+            // prazo para cumprir; vencido, o bônus é retirado (spec 007, FR-018a)
+            'expira_em' => now()->addDays($promocao->dias_cumprir ?? 30),
         ]);
+    }
+
+    /**
+     * Rollover de um depósito (spec 007, R-11): exigido = valor × vezes + acréscimo (cashback);
+     * não cria nada quando o exigido é zero.
+     */
+    public function criar_deposito(Clientes $cliente, ClientesTransacoes $transacao, int $vezes, string $acrescimo = '0.00'): ?ClientesRollovers
+    {
+        $exigido = bcadd(bcmul((string) $transacao->valor, (string) $vezes, 2), $acrescimo, 2);
+
+        if (bccomp($exigido, '0', 2) <= 0) {
+            return null;
+        }
+
+        return ClientesRollovers::create([
+            'clientes_id' => $cliente->id,
+            'tipo' => TipoRollover::Depósito,
+            'carteira' => Carteira::Saldo,
+            'clientes_transacoes_id' => $transacao->id,
+            'valor_creditado' => $transacao->valor,
+            'vezes' => $vezes,
+            'valor_exigido' => $exigido,
+        ]);
+    }
+
+    /**
+     * Rollover que deixa de valer (estorno do depósito ou do bônus).
+     */
+    public function cancelar(ClientesRollovers $rollover): void
+    {
+        if ($rollover->cumprido_em === null && $rollover->cancelado_em === null) {
+            $rollover->forceFill(['cancelado_em' => now()])->save();
+        }
+    }
+
+    /**
+     * Quanto falta apostar nos rollovers de depósito pendentes do cliente (trava do saque).
+     */
+    public function restante_deposito(int $clientes_id): string
+    {
+        return ClientesRollovers::where('clientes_id', $clientes_id)
+            ->where('tipo', TipoRollover::Depósito)
+            ->pendentes()
+            ->get()
+            ->reduce(fn (string $total, ClientesRollovers $rollover) => bcadd($total, $rollover->restante(), 2), '0.00');
     }
 
     /**

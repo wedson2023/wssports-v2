@@ -1,13 +1,20 @@
 <?php
 
+use App\Http\Controllers\AcessosAssistidosController;
 use App\Http\Controllers\ApostasController;
 use App\Http\Controllers\ApostasPalpitesController;
+use App\Http\Controllers\AreaClienteAcessoAssistidoController;
 use App\Http\Controllers\AreaClienteApostasController;
 use App\Http\Controllers\AreaClienteAutenticacaoController;
+use App\Http\Controllers\AreaClienteBonusController;
 use App\Http\Controllers\AreaClienteCadastroController;
+use App\Http\Controllers\AreaClienteDepositosController;
+use App\Http\Controllers\AreaClienteIndicacoesController;
 use App\Http\Controllers\AreaClienteMeiosPagamentoController;
 use App\Http\Controllers\AreaClienteMeusDadosController;
+use App\Http\Controllers\AreaClienteMinhaContaController;
 use App\Http\Controllers\AreaClienteRecuperacaoSenhaController;
+use App\Http\Controllers\AreaClienteSaquesController;
 use App\Http\Controllers\AutenticacaoController;
 use App\Http\Controllers\AvisosController;
 use App\Http\Controllers\BannersController;
@@ -20,6 +27,7 @@ use App\Http\Controllers\ClientesMeiosPagamentoController;
 use App\Http\Controllers\ClientesPromocoesController;
 use App\Http\Controllers\ClientesTransacoesController;
 use App\Http\Controllers\ConfiguracoesLogoController;
+use App\Http\Controllers\ConfiguracoesPagamentosController;
 use App\Http\Controllers\ConfiguracoesRegrasController;
 use App\Http\Controllers\ConfrontosAoVivoController;
 use App\Http\Controllers\ConfrontosAoVivoNaoPermitidosController;
@@ -30,6 +38,7 @@ use App\Http\Controllers\ConfrontosTetoCotacoesController;
 use App\Http\Controllers\EncerramentoEspeciaisController;
 use App\Http\Controllers\EspeciaisController;
 use App\Http\Controllers\EspeciaisOpcoesController;
+use App\Http\Controllers\GatewayPagamentoController;
 use App\Http\Controllers\PermissoesUsuariosController;
 use App\Http\Controllers\PorcentagensCampeonatosController;
 use App\Http\Controllers\PorcentagensClientesController;
@@ -40,11 +49,13 @@ use App\Http\Controllers\PublicoAvisosController;
 use App\Http\Controllers\PublicoConfrontosController;
 use App\Http\Controllers\PublicoConfrontosDetalheController;
 use App\Http\Controllers\PublicoEspeciaisController;
+use App\Http\Controllers\SaquesController;
 use App\Http\Controllers\TabelaJogosController;
 use App\Http\Controllers\UsuariosConfiguracoesController;
 use App\Http\Controllers\UsuariosController;
 use App\Http\Controllers\ValidacaoApostasController;
 use App\Http\Controllers\VisitantesConfiguracoesController;
+use App\Http\Controllers\WebhooksMercadoPagoController;
 use App\Http\Middleware\GarantirAcessoCliente;
 use Illuminate\Support\Facades\Route;
 
@@ -81,6 +92,8 @@ Route::prefix('area-cliente')->group(function () {
     Route::post('auth/login', [AreaClienteAutenticacaoController::class, 'login']);
     Route::post('auth/recuperar-senha', [AreaClienteRecuperacaoSenhaController::class, 'solicitar']);
     Route::post('auth/redefinir-senha', [AreaClienteRecuperacaoSenhaController::class, 'redefinir']);
+    // acesso assistido (spec 007): troca o código gerado pelo painel por um token do cliente
+    Route::post('acesso-assistido', [AreaClienteAcessoAssistidoController::class, 'iniciar'])->middleware('throttle:10,1');
 
     // rotas autenticadas: exigem token de cliente, cliente ativo e token posterior à data de corte
     Route::middleware(['auth:clientes', GarantirAcessoCliente::class])->group(function () {
@@ -91,6 +104,25 @@ Route::prefix('area-cliente')->group(function () {
         Route::patch('meus-dados', [AreaClienteMeusDadosController::class, 'update']);
         Route::put('meus-dados/senha', [AreaClienteMeusDadosController::class, 'alterar_senha']);
         Route::get('meus-dados/extrato', [AreaClienteMeusDadosController::class, 'extrato']);
+
+        Route::post('acesso-assistido/encerrar', [AreaClienteAcessoAssistidoController::class, 'encerrar']);
+
+        // tela de créditos (spec 007): saldos e extrato
+        Route::get('minha-conta', [AreaClienteMinhaContaController::class, 'show']);
+        Route::get('minha-conta/extrato', [AreaClienteMinhaContaController::class, 'extrato']);
+        Route::post('bonus/{rollover}/converter', [AreaClienteBonusController::class, 'converter'])->whereNumber('rollover');
+        Route::post('bonus/{rollover}/excluir', [AreaClienteBonusController::class, 'excluir'])->whereNumber('rollover');
+
+        // depósitos pelo Mercado Pago (spec 007)
+        Route::get('depositos/opcoes', [AreaClienteDepositosController::class, 'opcoes']);
+        Route::post('depositos', [AreaClienteDepositosController::class, 'store'])->middleware('throttle:10,1');
+        Route::get('depositos/{codigo}', [AreaClienteDepositosController::class, 'show']);
+
+        // saque via Pix (spec 007)
+        Route::post('saques', [AreaClienteSaquesController::class, 'store'])->middleware('throttle:10,1');
+
+        // minhas indicações (spec 007)
+        Route::get('indicacoes', [AreaClienteIndicacoesController::class, 'index']);
 
         Route::apiResource('meios-pagamento', AreaClienteMeiosPagamentoController::class)
             ->parameters(['meios-pagamento' => 'meio_pagamento'])
@@ -273,4 +305,25 @@ Route::middleware(['auth:api', 'garantir_acesso'])->group(function () {
         ->except(['index', 'show'])
         ->parameters(['especiais' => 'especial', 'opcoes' => 'opcao'])
         ->missing(fn () => abort(404, 'Categoria ou opção não encontrada.'));
+});
+
+// avisos do Mercado Pago (spec 007): públicos, conferidos pela assinatura e processados na fila
+Route::post('webhooks/mercado-pago', [WebhooksMercadoPagoController::class, 'store'])->middleware('throttle:120,1');
+
+// pagamentos no painel (spec 007): gateway, configurações de pagamento, saques e acesso assistido
+Route::middleware(['auth:api', 'garantir_acesso'])->group(function () {
+    Route::get('configuracoes/gateway', [GatewayPagamentoController::class, 'show']);
+    Route::post('configuracoes/gateway/mercado-pago/autorizar', [GatewayPagamentoController::class, 'autorizar']);
+    Route::delete('configuracoes/gateway', [GatewayPagamentoController::class, 'destroy']);
+
+    Route::get('configuracoes/pagamentos', [ConfiguracoesPagamentosController::class, 'show']);
+    Route::put('configuracoes/pagamentos', [ConfiguracoesPagamentosController::class, 'update']);
+
+    Route::post('clientes/{cliente}/acesso-assistido', [AcessosAssistidosController::class, 'store'])
+        ->missing(fn () => abort(404, 'Cliente não encontrado.'));
+
+    $saque_nao_encontrado = fn () => abort(404, 'Saque não encontrado.');
+    Route::get('saques', [SaquesController::class, 'index']);
+    Route::post('saques/{saque}/pagar', [SaquesController::class, 'pagar'])->missing($saque_nao_encontrado);
+    Route::post('saques/{saque}/recusar', [SaquesController::class, 'recusar'])->missing($saque_nao_encontrado);
 });

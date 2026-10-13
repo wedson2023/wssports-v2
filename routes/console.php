@@ -28,3 +28,12 @@ Schedule::command('confrontos_ao_vivo:conferir')->everyMinute()->runInBackground
 // apostas: expira os códigos de visitante vencidos e recusa as análises do ao vivo presas
 Schedule::command('apostas:expirar_pendentes')->everyMinute()->withoutOverlapping(2);
 Schedule::command('apostas:recusar_analises_presas')->everyMinute()->withoutOverlapping(2);
+
+// pagamentos (spec 007): renova o token da conta do Mercado Pago perto de vencer
+Schedule::command('mercado_pago:renovar_token')->dailyAt('03:00')->withoutOverlapping(10);
+
+// depósitos: expira os Pix vencidos e confere no Mercado Pago os pendentes (cobre aviso perdido)
+Schedule::command('depositos:conferir')->everyMinute()->withoutOverlapping(2);
+
+// bônus: retira os vencidos que não cumpriram o rollover (antigo BonusCommand)
+Schedule::command('bonus:expirar')->everyTenMinutes()->withoutOverlapping(5);

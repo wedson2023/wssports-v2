@@ -83,8 +83,8 @@ UTC; "dia" do cliente em `America/Sao_Paulo`.
 | `id` | bigint | PK |
 | `gateway` | varchar(30) | `Mercado Pago` |
 | `situacao` | varchar(20) | enum `SituacaoGateway`: `Vinculado`, `Falha na renovação`, `Desvinculado` |
-| `access_token` | text | cast `encrypted` |
-| `refresh_token` | text | cast `encrypted` |
+| `access_token` | text nulo | cast `encrypted`; apagado ao desvincular |
+| `refresh_token` | text nulo | cast `encrypted`; apagado ao desvincular |
 | `conta_id` | varchar(40) | `user_id` da conta vinculada |
 | `expira_em` | timestamp | validade do access token |
 | `vinculado_em` | timestamp | |
@@ -208,12 +208,12 @@ do FR-035.
 
 | Enum | Casos (valor) |
 |---|---|
-| `MeioDeposito` (novo) | `Pix`, `CartaoCredito` (`Cartão de crédito`) |
-| `SituacaoDeposito` (novo) | `Pendente`, `EmAnalise` (`Em análise`), `Aprovado`, `Recusado`, `Expirado`, `Cancelado`, `Estornado` |
+| `MeioDeposito` (novo) | `Pix`, `CartãoCrédito` (`Cartão de crédito`) |
+| `SituacaoDeposito` (novo) | `Pendente`, `EmAnálise` (`Em análise`), `Aprovado`, `Recusado`, `Expirado`, `Cancelado`, `Estornado` |
 | `SituacaoSaque` (novo) | `Pendente`, `Processando`, `Pago`, `Recusado` |
-| `ModoSaque` (novo) | `Manual`, `Automático` |
-| `SituacaoGateway` (novo) | `Vinculado`, `FalhaRenovacao` (`Falha na renovação`), `Desvinculado` |
-| `OrigemTransacao` (existente) | + `Depósito`, `Cashback`, `Saque`, `DevolucaoSaque` (`Devolução de saque`), `EstornoDeposito` (`Estorno de depósito`), `ConversaoBonus` (`Conversão de bônus`), `BonusExpirado` (`Bônus expirado`), `BonusExcluido` (`Bônus excluído`) |
+| `ModoSaque` (novo) | `Manual`, `Automático` (casos com acento, como os enums existentes) |
+| `SituacaoGateway` (novo) | `Vinculado`, `FalhaRenovação` (`Falha na renovação`), `Desvinculado` |
+| `OrigemTransacao` (existente) | + `Depósito`, `Cashback`, `Saque`, `DevoluçãoSaque` (`Devolução de saque`), `EstornoDepósito` (`Estorno de depósito`), `ConversãoBônus` (`Conversão de bônus`), `BônusExpirado` (`Bônus expirado`), `BônusExcluído` (`Bônus excluído`) |
 
 ## 10. Permissões (`Funcao.php`)
 

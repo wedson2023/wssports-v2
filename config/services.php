@@ -53,4 +53,20 @@ return [
         'tempo_limite_conferencia' => 10,
     ],
 
+    // Mercado Pago: credenciais da aplicação do programador (conta master), a mesma em todas as
+    // instalações; cada banca vincula a própria conta a ela pelo painel (OAuth) e a comissão vai
+    // para a conta master
+    'mercado_pago' => [
+        'client_id' => env('MERCADO_PAGO_CLIENT_ID'),
+        'client_secret' => env('MERCADO_PAGO_CLIENT_SECRET'),
+        // chave pública da aplicação: usada no navegador para capturar o cartão
+        'public_key' => env('MERCADO_PAGO_PUBLIC_KEY'),
+        // assinatura secreta das notificações (webhooks) da aplicação
+        'webhook_secret' => env('MERCADO_PAGO_WEBHOOK_SECRET'),
+        // chave privada (PEM) que assina os pedidos de saque automático (Payouts) em produção
+        'payouts_chave_privada' => env('MERCADO_PAGO_PAYOUTS_CHAVE_PRIVADA'),
+        'url_api' => 'https://api.mercadopago.com',
+        'url_autorizacao' => 'https://auth.mercadopago.com.br/authorization',
+    ],
+
 ];

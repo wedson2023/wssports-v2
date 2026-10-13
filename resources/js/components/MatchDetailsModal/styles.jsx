@@ -1,7 +1,7 @@
 import styled from 'styled-components';
 import { mobile } from '../../theme/tokens';
 
-// modal com os mercados de um jogo: cartão branco com cantos arredondados e sombra, abas em
+// modal com os mercados de um jogo: cartão branco com cantos retos e sombra, abas em
 // pílula, categorias com destaque na cor do tema e linhas com o botão de cotação arredondado
 export const Container = styled.div`
     width: min(560px, calc(100vw - 32px));
@@ -14,7 +14,6 @@ export const Container = styled.div`
     top: 50%;
     left: 50%;
     transform: translate(-50%, ${({ $visivel }) => ($visivel ? '-50%' : 'calc(-50% + 24px)')});
-    border-radius: 16px;
     overflow: hidden;
     box-shadow: 0 20px 50px rgba(0, 0, 0, 0.35);
     transition: opacity 0.25s ease, transform 0.25s ease, visibility 0.25s;
@@ -50,8 +49,8 @@ export const Header = styled.header`
     justify-content: space-between;
     align-items: center;
     gap: 12px;
-    min-height: 56px;
-    padding: 10px 12px 10px 20px;
+    min-height: 44px;
+    padding: 8px 8px 8px 16px;
     background: #1c1c1c;
     border-bottom: 3px solid ${({ theme }) => theme.principal};
 `;
@@ -62,22 +61,24 @@ export const Icon = styled.i.attrs(() => ({ className: 'material-icons' }))`
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 36px;
-    height: 36px;
+    width: 28px;
+    height: 28px;
     border-radius: 50%;
-    color: #fff;
-    font-size: 22px;
+    color: rgba(255, 255, 255, 0.6);
+    font-size: 18px;
     cursor: pointer;
-    transition: background 0.15s;
+    transition: background 0.15s, color 0.15s;
 
+    /* fechar discreto: só clareia no hover, sem a cor do tema */
     &:hover {
-        background: ${({ theme }) => theme.principal};
+        background: rgba(255, 255, 255, 0.1);
+        color: #fff;
     }
 `;
 
 export const TextMatch = styled.span`
     color: #fff;
-    font-size: 16px;
+    font-size: 14px;
     font-weight: 500;
     overflow: hidden;
     white-space: nowrap;
