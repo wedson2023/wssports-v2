@@ -72,6 +72,12 @@ comando manual para reapurar um jogo."
   palpites que o sistema já cancelou? → A: Continuam cancelados. O resultado é guardado e
   registrado, e a restauração fica a critério manual, pela edição da aposta.
 
+### Session 2026-10-14 (plano)
+
+- Q: Três mercados têm regra diferente do nome no sistema antigo (`odd114` "Mais de 3 gols - 2º
+  tempo" paga só com exatamente 3 gols; `odd245`/`odd247` "Casa par"/"Fora par" não contam 0 gol
+  como par). Manter ou corrigir? → A: Manter como no sistema antigo.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Resultado do jogo decide palpites e apostas (Priority: P1)
