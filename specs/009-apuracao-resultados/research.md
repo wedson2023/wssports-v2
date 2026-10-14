@@ -229,9 +229,34 @@ futuro é só mudar o parâmetro desses códigos na tabela.
   /api/configuracoes/apuracao` no padrão de `configuracoes/criar-aposta` (controller + request +
   resource, permissão `configuracoes.editar`). Sem tela nesta spec, como na 008.
 
+### R-18 — Resultado de jogo manual (`PUT /api/confrontos/{confronto}/resultado`)
+
+- **Decisão**: rota no grupo de gestão de confrontos (spec 003), controller
+  `ConfrontosResultadosController` + request + resource, permissão nova `confrontos.lancar_resultado`
+  em `Funcao::PERMISSOES_CONFRONTOS` (fora de `PERMISSOES_CONFRONTOS_GERENTE`, logo só Admin e
+  Supervisor) e seeder `ApuracaoSeeder` no padrão do `ApostasSeeder` (cria a permissão e a dá aos
+  usuários existentes conforme a função). Só jogo `manual`; o corpo usa os nomes do sistema e a
+  gravação reusa o mesmo método de `ImportacaoResultados` (assinatura, gols, situação `Encerrado`,
+  registro e apuração), com origem `Lançamento manual`.
+- **Motivo**: decisão do responsável na análise; reusar a gravação garante a mesma regra da carga
+  automática (FR-045 a FR-047).
+- **Alternativas**: tela no painel — fica para spec futura, como as outras configurações.
+
+### R-19 — Proteção da situação na carga de confrontos
+
+- **Decisão**: em `ImportacaoConfrontos`, a coluna `situacao` sai da lista simples de atualização
+  do `upsert` e entra como expressão: mantém o valor atual quando ele é `Cancelado`, `Adiado` ou
+  `Encerrado` (`IF(situacao IN (...), situacao, VALUES(situacao))`, com os valores vindos de
+  `SituacaoConfronto`). As demais colunas continuam iguais.
+- **Motivo**: decisão do responsável na análise (FR-044): a carga de confrontos regrava a situação
+  a cada 5 min e poderia reabrir para apostas um jogo cancelado.
+- **Alternativas**: tirar `situacao` da atualização — impediria a carga de confrontos de mudar a
+  situação de Aguardando para Bloqueado e vice-versa.
+
 ### R-17 — Desempenho
 
 - **Decisão**: só jogos com assinatura diferente são apurados; as apostas do jogo vêm de
   `apostas_palpites` pelo índice da chave estrangeira `confrontos_id` (já existe), em lotes de 500
   ids; os resultados e gols dos jogos da aposta são carregados uma vez
   por aposta (`whereIn`), sem consulta por palpite (corrige o defeito 4).
+- **Verificação**: cenário de massa grande no quickstart (32), com o tempo do resumo dos comandos.

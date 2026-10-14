@@ -8,6 +8,7 @@ Sem testes automatizados (constituição). Os cenários seguem a [spec](spec.md)
 
 ```bash
 php artisan migrate
+php artisan db:seed --class=ApuracaoSeeder
 ```
 
 - **Provedor simulado**: no mesmo mock server do Postman da spec 003, criar as rotas
@@ -60,3 +61,8 @@ php artisan migrate
 | 29 | `somente_cassino` ligado | Cargas não executadas | FR-005 |
 | 30 | Encerrar uma categoria especial numa aposta especial + jogo já `Vencedor` | Aposta decidida e paga pela mesma regra | FR-011, R-09 |
 | 31 | `GET`/`PUT /api/configuracoes/apuracao` sem permissão; com valor 2000 | 403; 422 com a mensagem do contrato | contrato |
+| 32 | Desempenho: massa com 1.000 apostas `Ativa` num jogo e o mock de resultados com milhares de jogos sem mudança; rodar a carga duas vezes (a 1ª com o placar novo do jogo) | 1ª execução: apuração do jogo < 60 s no resumo; 2ª execução: < 30 s e 0 apostas apuradas. Anotar os tempos nas notas do tasks.md | plan (Performance Goals), SC-007 |
+| 33 | Jogo `Cancelado` (cenário 19) e o mock de confrontos mandando o mesmo jogo como `Aguardando`; rodar `confrontos:importar` | Jogo continua `Cancelado`; não aparece na listagem pública; outro jogo `Aguardando` → `Bloqueado` continua mudando normalmente | US4-7, FR-044 |
+| 34 | Jogo manual com aposta em "Casa"; `PUT /api/confrontos/{id}/resultado` com 2 x 0 (Admin) | 200; jogo `Encerrado`; aposta `Vencedor`; registro com origem "Lançamento manual" | US7-1, FR-045 |
+| 35 | Repetir o 34 com o mesmo corpo; depois corrigir para 0 x 1 | 1º: `apostas_apuradas: 0`, nada muda; 2º: aposta `Perdedor` e estorno se já paga | US7-2, FR-047 |
+| 36 | `PUT` do resultado num jogo do provedor; com gols de tempo incompletos; usuário Gerente | 422 "O resultado de jogos do provedor vem da carga automática."; 422 da mensagem de tempos; 403 | US7-3, US7-4, FR-046 |

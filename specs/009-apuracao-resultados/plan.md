@@ -30,6 +30,13 @@ sistema os palpites das apostas ainda sem resultado. Sem palpite restante, a apo
 
 **Registro**: toda operação grava uma linha em `operacoes_apuracao`.
 
+**Jogo manual**: o administrador lança o resultado pela rota `PUT confrontos/{confronto}/resultado`
+(permissão nova `confrontos.lancar_resultado`). A rota grava pelo mesmo método da carga
+automática.
+
+**Grade**: a carga de confrontos deixa de voltar para Aguardando um jogo Cancelado, Adiado ou
+Encerrado.
+
 **Configurações**: duas colunas em `configuracoes`, com rota `configuracoes/apuracao`.
 
 Decisões em [research.md](research.md).
@@ -73,8 +80,9 @@ Decisões em [research.md](research.md).
 | Enums | 3 novos, 2 alterados |
 | Serviços | 6 novos (`ImportacaoResultados`, `CancelamentoConfrontos`, `ApuracaoApostas`, `LiquidacaoApostas`, `RegistroApuracao`, avaliação em `Support`) |
 | Comandos | 4 novos |
-| Rotas | 2 novas (`GET`/`PUT /api/configuracoes/apuracao`) |
-| Permissões | nenhuma nova (`configuracoes.editar`) |
+| Rotas | 3 novas (`GET`/`PUT /api/configuracoes/apuracao`, `PUT /api/confrontos/{confronto}/resultado`) |
+| Permissões | 1 nova (`confrontos.lancar_resultado`, Admin e Supervisor); `configuracoes.editar` já existe |
+| Seeders | 1 novo (`ApuracaoSeeder`) |
 | Frontend | nenhum arquivo |
 
 ## Constitution Check
@@ -90,7 +98,7 @@ Decisões em [research.md](research.md).
 | I. Rotas em kebab-case | `/api/configuracoes/apuracao` | ✅ Pass |
 | II. Idioma | Artefatos, comentários, logs e mensagens em português | ✅ Pass |
 | III. Componentes React | Sem frontend | ✅ N/A |
-| IV. Escopo estrito | Arquivos existentes listados abaixo; **aguardam confirmação do responsável** | ⏳ Confirmar |
+| IV. Escopo estrito | Arquivos existentes listados abaixo, confirmados pelo responsável em 2026-10-14 (incluídos `ImportacaoConfrontos`, `Funcao` e `DatabaseSeeder` pelas decisões da análise) | ✅ Pass (confirmado) |
 | V. Legibilidade | Revisão ao final de cada tarefa | ✅ Pass |
 | VI. Consistência | Cargas com `ExecutarCargaPreJogo` + `ProvedorCotacoes` + `ValidacaoCargaProvedor` (spec 003); configuração no padrão de `configuracoes/criar-aposta`; saldo só por `SaldoClientes`; regras de mercado em `app/Support` como `MercadosCotacao` | ✅ Pass |
 | VII. Sistema antigo | Consultado e listado no research; diferenças aprovadas na spec (Clarifications). Divergências de nome × regra (`odd114`, `odd245`/`odd247`) mantidas como no antigo por decisão do responsável (2026-10-14) | ✅ Pass |
@@ -104,8 +112,11 @@ Decisões em [research.md](research.md).
 | Postman | Coleção regenerada com as 2 rotas | ✅ Pass |
 | Novas dependências | Nenhuma | ✅ Pass |
 
-**Resultado do gate**: aprovado, condicionado à confirmação da lista de arquivos existentes
-(Princípio IV).
+**Resultado do gate**: aprovado.
+
+**Confirmações do responsável (2026-10-14)**: lista de arquivos existentes; reavaliação do
+"empate anula aposta"; cancelamento só de apostas `Aguardando`; proteção da situação na carga de
+confrontos (R-19); rota do resultado de jogo manual (R-18); medição de desempenho no quickstart.
 
 ### Arquivos existentes que serão alterados (Princípio IV)
 
@@ -122,8 +133,11 @@ Decisões em [research.md](research.md).
 | `app/Models/ApostasPalpites.php` | cast de `motivo_cancelamento` | data-model |
 | `app/Models/Confrontos.php` | relações `resultado()` e `gols()` | data-model |
 | `app/Models/Configuracoes.php` | `fillable` e casts das 2 colunas | R-16 |
+| `app/Services/ImportacaoConfrontos.php` | `situacao` no `upsert` preserva `Cancelado`, `Adiado` e `Encerrado` | R-19, FR-044 |
+| `app/Enums/Funcao.php` | `confrontos.lancar_resultado` em `PERMISSOES_CONFRONTOS` | R-18, FR-046 |
+| `database/seeders/DatabaseSeeder.php` | chama `ApuracaoSeeder` depois do `ApostasSeeder` | R-18 |
 | `routes/console.php` | agenda dos 3 comandos | R-14 |
-| `routes/api.php` | 2 rotas e `use` do controller | contrato |
+| `routes/api.php` | 3 rotas e `use` dos 2 controllers | contrato |
 | `docs/postman/wssports_api.postman_collection.json` | regenerada | constituição |
 
 **Specs anteriores (artefatos coerentes com o código)**
@@ -134,7 +148,7 @@ Decisões em [research.md](research.md).
 | `specs/006-ajustes-tela-principal/spec.md` | Nota em FR-018: a decisão e o pagamento das apostas com especial passam pela apuração da spec 009 |
 
 **Nenhum outro arquivo existente muda**: `SaldoClientes`, `CalculoPremio`, `CalculoBlocos`,
-`RolloverClientes`, `ImportacaoConfrontos`, `ExecutarCargaPreJogo`, `CancelamentoApostas`,
+`RolloverClientes`, `ExecutarCargaPreJogo`, `CancelamentoApostas`,
 `ComprovanteApostaResource` e o frontend.
 
 **Impacto no banco local**: `php artisan migrate` (3 tabelas novas, colunas com padrão em
@@ -149,7 +163,7 @@ nomes em português e `snake_case`; tabelas novas com timestamps, soft delete e 
 as colunas; enums com valores em português; rota em kebab-case; comandos no padrão
 `recurso:acao`; nenhuma tarefa de teste nem dependência nova.
 
-**Status: aprovado** (pendente só a confirmação da lista de arquivos).
+**Status: aprovado.**
 
 ## Project Structure
 
@@ -183,12 +197,16 @@ app/
 │   ├── MotivoCancelamentoPalpite.php                    # NOVO
 │   ├── OrigemApuracao.php                               # NOVO
 │   ├── TipoOperacaoApuracao.php                         # NOVO
+│   ├── Funcao.php                                       # ALTERADO  permissão nova
 │   ├── OrigemTransacao.php                              # ALTERADO
 │   └── ResultadoAposta.php                              # ALTERADO
 ├── Http/
 │   ├── Controllers/ConfiguracoesApuracaoController.php  # NOVO
+│   ├── Controllers/ConfrontosResultadosController.php   # NOVO  R-18
 │   ├── Requests/ConfiguracoesApuracaoRequest.php        # NOVO
-│   └── Resources/ConfiguracoesApuracaoResource.php      # NOVO
+│   ├── Requests/ConfrontosResultadosRequest.php         # NOVO  R-18
+│   ├── Resources/ConfiguracoesApuracaoResource.php      # NOVO
+│   └── Resources/ConfrontosResultadosResource.php       # NOVO  R-18
 ├── Models/
 │   ├── ConfrontosResultados.php                         # NOVO
 │   ├── ConfrontosGols.php                               # NOVO
@@ -202,6 +220,7 @@ app/
 │   ├── RegistroApuracao.php                             # NOVO  R-13
 │   ├── EdicaoApostas.php                                # ALTERADO
 │   ├── EncerramentoEspeciais.php                        # ALTERADO
+│   ├── ImportacaoConfrontos.php                         # ALTERADO  R-19
 │   ├── ProvedorCotacoes.php                             # ALTERADO
 │   └── ValidacaoCargaProvedor.php                       # ALTERADO
 └── Support/
@@ -216,6 +235,10 @@ database/migrations/
 ├── 2026_10_14_000005_add_motivo_cancelamento_apostas_palpites_table.php
 ├── 2026_10_14_000006_alterar_autor_apostas_historico_table.php
 └── 2026_10_14_000007_add_apuracao_configuracoes_table.php
+
+database/seeders/
+├── ApuracaoSeeder.php                                    # NOVO  permissão confrontos.lancar_resultado
+└── DatabaseSeeder.php                                    # ALTERADO
 
 config/services.php                                       # ALTERADO
 routes/console.php, routes/api.php                         # ALTERADOS
@@ -233,3 +256,4 @@ fino + serviço + validação + `ExecutarCargaPreJogo`), 007 (saldo só por `Sal
 |---|---|---|
 | `apostas_historico.usuarios_id` e `ip` passam a aceitar nulo (spec 004) | A apuração roda no agendador, sem usuário (R-08) | Um usuário "sistema" falso em `usuarios` apareceria em listagens, permissões e hierarquia |
 | `cancelar_palpite_pelo_sistema` muda de assinatura (spec 006) | Precisa de autor nulo, motivo e regra do bloco | Um segundo método de cancelamento duplicaria o recálculo e o histórico |
+| `ImportacaoConfrontos` (spec 003) passa a preservar situações finais | A carga reabriria para apostas um jogo cancelado (FR-044) | Tirar `situacao` da atualização impediria Aguardando ↔ Bloqueado |

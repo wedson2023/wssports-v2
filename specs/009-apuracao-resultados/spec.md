@@ -78,6 +78,24 @@ comando manual para reapurar um jogo."
   tempo" paga só com exatamente 3 gols; `odd245`/`odd247` "Casa par"/"Fora par" não contam 0 gol
   como par). Manter ou corrigir? → A: Manter como no sistema antigo.
 
+### Session 2026-10-14 (análise)
+
+- Q: Os arquivos existentes listados no plano podem ser alterados (Princípio IV)? → A: Sim, todos.
+- Q: Palpite devolvido por "empate anula aposta" é reavaliado se o placar for corrigido? → A: Sim.
+  Só os palpites que o próprio sistema devolveu por empate são reavaliados e restaurados; os
+  cancelados pelo painel, por categoria especial ou por jogo cancelado continuam fora (FR-013).
+- Q: Quando um jogo é cancelado, quais apostas têm o palpite cancelado automaticamente? → A: Só
+  apostas Ativas com resultado ainda Aguardando (FR-032).
+- Q: A carga de confrontos pode voltar para Aguardando um jogo já Cancelado, Adiado ou Encerrado?
+  → A: Não. A carga de confrontos passa a preservar essas situações, para a grade não aceitar
+  apostas em jogo cancelado (FR-044). Diferença em relação ao sistema antigo aprovada pelo
+  responsável (Princípio VII).
+- Q: Como os jogos cadastrados à mão recebem resultado? → A: Por uma rota da API (sem tela nesta
+  spec) em que o administrador lança o resultado do jogo manual; depois a apuração roda normalmente
+  (US7, FR-045 a FR-047).
+- Q: As metas de desempenho do plano são verificadas? → A: Sim, num cenário com massa grande no
+  quickstart, anotando o tempo do resumo dos comandos.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Resultado do jogo decide palpites e apostas (Priority: P1)
@@ -180,7 +198,7 @@ movimentações preservado.
 
 O provedor informa que um jogo foi cancelado ou adiado. O jogo muda de situação. Com a
 configuração "remover jogo cancelado automaticamente" ligada, os palpites desse jogo nas apostas
-ativas ainda não liquidadas são cancelados pelo sistema (valem 1,00), o prêmio é recalculado e a
+ativas ainda sem resultado (Aguardando) são cancelados pelo sistema (valem 1,00), o prêmio é recalculado e a
 aposta é reapurada com os palpites restantes. Se não sobrar palpite, o valor apostado é devolvido.
 
 **Why this priority**: jogos cancelados são menos frequentes que resultados, mas deixam apostas
@@ -206,6 +224,8 @@ deles e conferir que o palpite foi cancelado, o prêmio recalculado e a aposta r
    bloco inteiro.
 6. **Given** uma aposta paga em que o outro palpite pertencia ao jogo cancelado, **When** a carga
    roda, **Then** a aposta não é mexida (já liquidada).
+7. **Given** um jogo marcado Cancelado, **When** a carga de confrontos recebe o jogo como
+   Aguardando, **Then** ele continua Cancelado e não aparece para apostas.
 
 ---
 
@@ -250,13 +270,37 @@ muda; alterar o resultado gravado e rodar de novo, conferindo a reapuração.
 2. **Given** um código de jogo inexistente, **When** o comando roda, **Then** uma mensagem clara
    informa que o jogo não foi encontrado.
 
+---
+
+### User Story 7 - Administrador lança o resultado de um jogo manual (Priority: P3)
+
+O administrador cadastrou um jogo à mão (sem provedor). Quando o jogo termina, ele informa pela
+API o placar final e, se quiser, os gols de cada tempo, os escanteios e os autores dos gols. O jogo
+fica Encerrado e as apostas dele são apuradas e pagas como as dos jogos do provedor.
+
+**Why this priority**: jogos manuais são exceção; sem isso, as apostas neles ficariam Aguardando
+para sempre.
+
+**Independent Test**: com uma aposta num jogo manual, lançar o placar pela rota e conferir o
+resultado da aposta e o registro com origem "Lançamento manual".
+
+**Acceptance Scenarios**:
+
+1. **Given** um jogo manual com aposta em "Casa", **When** o administrador lança 2 x 0, **Then** o
+   jogo fica Encerrado, a aposta fica Vencedor e o registro tem origem "Lançamento manual".
+2. **Given** o resultado já lançado, **When** o administrador corrige para 0 x 1, **Then** as
+   apostas são reapuradas, com estorno quando já pagas.
+3. **Given** um jogo do provedor, **When** alguém tenta lançar o resultado, **Then** a rota
+   recusa com "O resultado de jogos do provedor vem da carga automática.".
+4. **Given** um usuário sem a permissão, **When** tenta lançar o resultado, **Then** recebe 403.
+
 ### Edge Cases
 
 - Provedor fora do ar ou carga inválida: a execução é registrada no log e nada é alterado; a
   próxima execução tenta de novo.
 - Jogo recebido que não existe no sistema (codigo_externo desconhecido): é ignorado.
-- Jogo cadastrado à mão (sem codigo_externo): não recebe resultado do provedor; só a reapuração
-  manual o atinge.
+- Jogo cadastrado à mão (sem codigo_externo): não recebe resultado do provedor; o resultado é
+  lançado pelo administrador (US7).
 - Falha ao apurar ou pagar uma aposta: a transação daquela aposta é desfeita, o erro é registrado
   e as demais apostas seguem normalmente.
 - Duas execuções ao mesmo tempo: a segunda não começa enquanto a primeira não termina, e a trava
@@ -266,11 +310,14 @@ muda; alterar o resultado gravado e rodar de novo, conferindo a reapuração.
 - Aposta Cancelada, Recusada ou Expirada: nunca é apurada nem paga.
 - Palpite já cancelado por edição: fica fora da apuração (vale 1,00), como já acontece na edição.
 - Jogo cancelado depois de já ter resultado apurado e pago: as apostas já liquidadas não são
-  mexidas; o cancelamento só atinge apostas ainda não liquidadas.
+  mexidas; o cancelamento só atinge apostas com resultado ainda Aguardando.
 - Jogo cancelado que depois volta com resultado (o provedor desfaz o cancelamento): o resultado é
   guardado e registrado, os palpites cancelados pelo sistema continuam cancelados e a restauração
   fica a critério manual, pela edição da aposta.
-- Placar com um só lado preenchido ou valores negativos: a carga do jogo é rejeitada e registrada.
+- Placar com um só lado preenchido ou valores negativos: o item do jogo é ignorado na carga, com o
+  motivo no log.
+- Jogo Cancelado que o provedor ainda manda na rota de confrontos como Aguardando: continua
+  Cancelado na grade e não aceita apostas novas (FR-044).
 - Sistema configurado como "somente cassino": as cargas de resultados e de cancelados não rodam.
 - Prêmio maior que o prêmio máximo após recálculo: vale o limite gravado na aposta.
 - Estorno de aposta paga com Promoção esportes cujo bônus já foi convertido, expirado ou excluído:
@@ -317,7 +364,10 @@ muda; alterar o resultado gravado e rodar de novo, conferindo a reapuração.
   apuração dos jogos não altera esse resultado.
 - **FR-012**: Palpites do ao vivo DEVEM ser apurados pelo resultado do jogo da grade a que estão
   ligados.
-- **FR-013**: Palpites cancelados (por edição ou pelo sistema) DEVEM ficar fora da apuração.
+- **FR-013**: Palpites cancelados DEVEM ficar fora da apuração (valem 1,00), exceto os que o
+  próprio sistema devolveu por "empate anula aposta": esses são reavaliados quando o resultado do
+  jogo muda e, se deixarem de ser empate, são restaurados com o novo resultado. Os cancelados pelo
+  painel, por categoria especial ou por jogo cancelado nunca são restaurados pelo sistema.
 
 **Apuração das apostas**
 
@@ -332,14 +382,16 @@ muda; alterar o resultado gravado e rodar de novo, conferindo a reapuração.
   gravada na aposta: Recalcular (o bloco segue com os palpites restantes e o desconto gravado) ou
   Anular bloco (o bloco inteiro vale 1,00). O bloco só é Vencedor se todos os seus palpites
   ativos forem Vencedor.
-- **FR-018**: A aposta DEVE guardar quando foi decidida, para a janela de segurança do pagamento.
+- **FR-018**: A aposta DEVE guardar quando foi apurada (última mudança de resultado ou de valor a
+  pagar), base da janela de segurança do pagamento.
 - **FR-019**: Ao ser reapurada, uma aposta já decidida DEVE poder mudar de resultado, inclusive
   voltar a Aguardando.
 
 **Pagamento dos prêmios**
 
 - **FR-020**: Aposta de cliente decidida como Vencedor DEVE ter o prêmio (prêmio + valor
-  acrescido) creditado depois da janela de segurança configurável, contada a partir da decisão.
+  acrescido) creditado depois da janela de segurança configurável, contada a partir da apuração
+  (FR-018).
 - **FR-021**: O crédito DEVE ir para a carteira usada no pagamento da aposta: Saldo para apostas
   pagas com Saldo, Promoção esportes para apostas pagas com Promoção esportes. Na carteira de
   promoção, o valor fica sujeito às regras de rollover já existentes do cliente.
@@ -370,9 +422,9 @@ muda; alterar o resultado gravado e rodar de novo, conferindo a reapuração.
   atualizar a situação de cada jogo (Cancelado ou Adiado). Adiado e Cancelado DEVEM ter o mesmo
   tratamento, sem esperar a remarcação do jogo adiado.
 - **FR-031**: DEVE existir a configuração geral "remover jogo cancelado automaticamente",
-  editável no painel pelas configurações gerais, ligada por padrão.
+  editável pela rota de configurações da API (sem tela nesta spec), ligada por padrão.
 - **FR-032**: Com a configuração ligada, os palpites ativos dos jogos cancelados ou adiados, nas
-  apostas Ativas ainda não pagas nem decididas como Perdedor, DEVEM ser cancelados pelo sistema
+  apostas Ativas com resultado ainda Aguardando, DEVEM ser cancelados pelo sistema
   (valem 1,00), com recálculo do prêmio e registro no histórico de edição da aposta, pelo mesmo
   fluxo do cancelamento de palpite já existente.
 - **FR-033**: O cancelamento pelo sistema DEVE ser permitido mesmo quando for o último palpite
@@ -385,12 +437,13 @@ muda; alterar o resultado gravado e rodar de novo, conferindo a reapuração.
 
 **Registro de operações**
 
-- **FR-036**: Cada uma destas operações DEVE gerar um registro: resultado de jogo recebido ou
-  alterado; situação de jogo alterada (cancelado ou adiado); resultado de palpite alterado;
+- **FR-036**: Cada uma destas operações DEVE gerar um registro: resultado de jogo alterado
+  (recebido do provedor ou lançado à mão); situação de jogo alterada (cancelado ou adiado); resultado de palpite alterado;
   resultado de aposta alterado; palpite cancelado por jogo cancelado; prêmio pago; prêmio
   estornado; prêmio ajustado; valor apostado devolvido.
 - **FR-037**: Cada registro DEVE guardar: data e hora, tipo da operação, origem (carga de
-  resultados, carga de cancelados, pagamento, reprocessamento manual), jogo, aposta, palpite e
+  resultados, carga de cancelados, pagamento, reprocessamento manual, lançamento manual,
+  encerramento de especial), jogo, aposta, palpite e
   cliente quando houver, carteira, valores antes e depois (resultado, placar, prêmio ou saldo,
   conforme a operação) e o motivo.
 - **FR-038**: Os registros NÃO DEVEM ser alterados nem apagados pelo sistema.
@@ -407,6 +460,23 @@ muda; alterar o resultado gravado e rodar de novo, conferindo a reapuração.
 - **FR-043**: Os agendadores DEVEM seguir o padrão dos já existentes, em minutos escalonados para
   não coincidir com as outras cargas do pré-jogo.
 
+**Proteção da grade**
+
+- **FR-044**: A carga de confrontos NÃO DEVE voltar para Aguardando um jogo que já esteja
+  Cancelado, Adiado ou Encerrado; as demais informações do jogo continuam sendo atualizadas.
+
+**Resultado de jogo manual**
+
+- **FR-045**: O administrador DEVE poder lançar ou corrigir, por uma rota da API, o resultado de
+  um jogo cadastrado à mão: placar final (obrigatório), gols de cada tempo, escanteios e gols por
+  jogador (opcionais). Ao lançar, o jogo passa a Encerrado e as apostas dele são apuradas como na
+  carga automática, com origem "Lançamento manual" nos registros.
+- **FR-046**: A rota DEVE recusar jogos do provedor (não manuais), com a mensagem "O resultado de
+  jogos do provedor vem da carga automática.", e exigir uma permissão própria, dada por padrão só
+  a Admin e Supervisor.
+- **FR-047**: Lançar de novo o mesmo resultado NÃO DEVE mudar nada (mesma regra de assinatura da
+  carga automática).
+
 ### Key Entities
 
 - **Resultado do jogo**: placar final, placar de cada tempo e escanteios de cada time, ligados ao
@@ -414,9 +484,10 @@ muda; alterar o resultado gravado e rodar de novo, conferindo a reapuração.
 - **Gol do jogo**: autor (nome do jogador), minuto, ordem do gol no jogo e tempo de jogo; serve
   para os palpites de jogador.
 - **Palpite** (existente): ganha o resultado Devolvido além de Aguardando, Vencedor e Perdedor.
-- **Aposta** (existente): passa a guardar quando foi decidida e quanto já foi pago ao cliente.
+- **Aposta** (existente): passa a guardar quando foi apurada (última mudança de resultado ou de
+  valor a pagar, base da janela de pagamento) e quanto já foi pago ao cliente.
 - **Transação do cliente** (existente): créditos de prêmio e débitos de estorno ligados à aposta.
-- **Registro de apuração**: uma linha por operação (FR-036), com tipo, origem, referências (jogo,
+- **Operação da apuração**: uma linha por operação (FR-036), com tipo, origem, referências (jogo,
   aposta, palpite, cliente), carteira, valores antes e depois e motivo.
 - **Configurações gerais** (existente): ganham "remover jogo cancelado automaticamente" e a
   janela de segurança do pagamento (minutos).
@@ -446,10 +517,11 @@ muda; alterar o resultado gravado e rodar de novo, conferindo a reapuração.
 - O provedor já oferece as rotas "resultados" e "cancelados" usadas pelo sistema antigo, com os
   mesmos campos (placar, placar por tempo, escanteios, situação e eventos de gol); o formato exato
   é confirmado no plano.
-- O cancelamento automático de palpites atinge só apostas Ativas ainda não liquidadas, como no
+- O cancelamento automático de palpites atinge só apostas Ativas com resultado Aguardando, como no
   sistema antigo; apostas Pendentes e Em análise não são tocadas.
-- O cancelamento de palpite pelo sistema precisa de um autor; o plano define qual usuário (ou
-  marcação de sistema) fica registrado no histórico de edição da aposta.
+- O cancelamento e a restauração de palpite pelo sistema ficam no histórico de edição da aposta
+  sem autor (nulo = ação do sistema), como as transações de saldo feitas pelo sistema.
+- A tela para lançar o resultado de jogos manuais fica para uma spec futura; nesta entra só a rota.
 - O rollover conta o valor apostado no momento da aposta (regra existente); o resultado da aposta
   não altera o progresso do rollover.
 - A apuração não muda a comissão do vendedor além do que o recálculo de prêmio da edição de
@@ -458,5 +530,5 @@ muda; alterar o resultado gravado e rodar de novo, conferindo a reapuração.
   existente.
 - A tela de consulta dos registros, notificações ao cliente sobre prêmios e relatórios
   financeiros ficam para specs futuras.
-- Os registros de apuração seguem a regra de soft delete do projeto, mas o sistema nunca os
+- As operações da apuração seguem a regra de soft delete do projeto, mas o sistema nunca as
   exclui.

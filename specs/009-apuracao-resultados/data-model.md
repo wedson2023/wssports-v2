@@ -52,7 +52,7 @@ Registro de tudo o que a apuração faz. Só inserção.
 |---|---|---|
 | `id` | id | — |
 | `tipo` | string(30) | Operação: Resultado do jogo, Situação do jogo, Resultado do palpite, Resultado da aposta, Palpite cancelado, Palpite restaurado, Prêmio pago, Prêmio ajustado, Prêmio estornado, Valor devolvido |
-| `origem` | string(30) | O que disparou a operação: Carga de resultados, Carga de cancelados, Pagamento de prêmios, Reprocessamento manual, Encerramento de especial |
+| `origem` | string(30) | O que disparou a operação: Carga de resultados, Carga de cancelados, Pagamento de prêmios, Reprocessamento manual, Lançamento manual, Encerramento de especial |
 | `confrontos_id` | foreignId → `confrontos`, nulo | Jogo envolvido; nulo em operações só da aposta |
 | `apostas_id` | foreignId → `apostas`, nulo | Aposta envolvida; nulo em operações só do jogo |
 | `apostas_palpites_id` | foreignId → `apostas_palpites`, nulo | Palpite envolvido |
@@ -110,9 +110,20 @@ Registro de tudo o que a apuração faz. Só inserção.
 | `OrigemTransacao` | + `DevoluçãoAposta` (`'Devolução de aposta'`) | alterado |
 | `MotivoCancelamentoPalpite` | `JogoCancelado` (`'Jogo cancelado'`), `EmpateAnulaAposta` (`'Empate anula aposta'`) | novo |
 | `TipoOperacaoApuracao` | `ResultadoJogo`, `SituaçãoJogo`, `ResultadoPalpite`, `ResultadoAposta`, `PalpiteCancelado`, `PalpiteRestaurado`, `PrêmioPago`, `PrêmioAjustado`, `PrêmioEstornado`, `ValorDevolvido` (valores como na tabela 3) | novo |
-| `OrigemApuracao` | `CargaResultados`, `CargaCancelados`, `PagamentoPrêmios`, `ReprocessamentoManual`, `EncerramentoEspecial` (valores como na tabela 3) | novo |
+| `OrigemApuracao` | `CargaResultados`, `CargaCancelados`, `PagamentoPrêmios`, `ReprocessamentoManual`, `LançamentoManual`, `EncerramentoEspecial` (valores como na tabela 3) | novo |
 
-## 6. Estados
+## 6. Permissão
+
+| Permissão | Quem recebe por padrão |
+|---|---|
+| `confrontos.lancar_resultado` | Admin e Supervisor (em `PERMISSOES_CONFRONTOS`, fora da lista do Gerente) |
+
+## 7. Proteção da situação (`confrontos`, sem mudança de coluna)
+
+A carga de confrontos não troca `situacao` quando o valor atual é `Cancelado`, `Adiado` ou
+`Encerrado` (R-19).
+
+## 8. Estados
 
 ### Palpite de jogo
 
