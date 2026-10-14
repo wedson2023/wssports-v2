@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\LiquidacaoCriarAposta;
 use App\Enums\MeioDeposito;
 use App\Enums\ModoSaque;
 use App\Services\ArmazenamentoImagens;
@@ -72,6 +73,12 @@ class Configuracoes extends Model
         'parcelas_maximas',
         'minutos_expiracao_pix',
         'minutos_acesso_assistido',
+        // Criar Aposta (spec 008)
+        'criar_aposta_habilitado',
+        'desconto_criar_aposta',
+        'quantidade_minima_criar_aposta',
+        'quantidade_maxima_criar_aposta',
+        'liquidacao_criar_aposta',
     ];
 
     /**
@@ -108,6 +115,12 @@ class Configuracoes extends Model
             'parcelas_maximas' => 'integer',
             'minutos_expiracao_pix' => 'integer',
             'minutos_acesso_assistido' => 'integer',
+            // Criar Aposta (spec 008)
+            'criar_aposta_habilitado' => 'boolean',
+            'desconto_criar_aposta' => 'decimal:2',
+            'quantidade_minima_criar_aposta' => 'integer',
+            'quantidade_maxima_criar_aposta' => 'integer',
+            'liquidacao_criar_aposta' => LiquidacaoCriarAposta::class,
         ];
     }
 

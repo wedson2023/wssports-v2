@@ -669,7 +669,9 @@ e conferir que as cotações de jogador somem da listagem e são recusadas na ap
 - **FR-014**: Permissão: o apostador DEVE estar ativo ("Seu login está inativo") e com
   `realizar_aposta` liberado ("Você não tem permissão para realizar apostas").
 - **FR-015**: Palpites: DEVE haver pelo menos um ("Escolha os jogos antes de concluir a aposta") e
-  no máximo um por confronto ("Não é possível cadastrar jogos repetidos na aposta").
+  no máximo um por confronto ("Não é possível cadastrar jogos repetidos na aposta"). Exceção da
+  spec 008: palpites repetidos de um jogo do pré-jogo formam um bloco Criar Aposta, com regras
+  próprias ([../008-criar-aposta/spec.md](../008-criar-aposta/spec.md)).
 - **FR-016**: Confronto: DEVE existir, estar ativo ("O confronto CASA x FORA está inativo,
   retire-o para concluir"), ter esporte permitido e não estar entre os campeonatos, confrontos e
   ao vivo não permitidos do público (spec 003). Aposta em jogador só com `apostar_jogadores`
@@ -967,7 +969,8 @@ e conferir que as cotações de jogador somem da listagem e são recusadas na ap
 - **Palpite da aposta** (`apostas_palpites`): um palpite de uma aposta. Confronto do pré-jogo ou do
   ao vivo, esporte, código da cotação, jogador e tipo (quando houver), cotação vista, cotação
   original do provedor, cotação final, dados do ao vivo no envio e na decisão e situação (Ativo,
-  Cancelado), com quem e quando cancelou ou restaurou. No máximo um por confronto em cada aposta.
+  Cancelado), com quem e quando cancelou ou restaurou. No máximo um por confronto em cada aposta,
+  exceto no bloco Criar Aposta (spec 008).
 - **Histórico da aposta** (`apostas_historico`): cada edição de palpite (cancelar ou restaurar),
   com cotação total e prêmio antes e depois, autor, data, IP e user agent.
 - **Rollover do cliente** (`clientes_rollovers`): valor que o cliente precisa apostar por causa de

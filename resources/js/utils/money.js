@@ -44,7 +44,22 @@ export const cotacao_total = (cotacoes) => {
     return centavos_para_texto(Number(centesimos));
 };
 
-// prêmio estimado do cupom (o valor final é do backend):
+// cotação do bloco Criar Aposta (spec 008), espelhando app/Services/CalculoBlocos.php: produto das
+// cotações × (1 − desconto ÷ 100), truncado em 2 casas e nunca menor que 1,00; um palpite só vale
+// a própria cotação, sem desconto
+export const cotacao_bloco = (cotacoes, desconto) => {
+    if (cotacoes.length === 1) return centavos_para_texto(Number(cotacao_em_centesimos(cotacoes[0])));
+
+    const produto = cotacoes.reduce((acumulado, cotacao) => acumulado * cotacao_em_centesimos(cotacao), 1n);
+    // desconto em centésimos de ponto percentual: 15,00% → 1500n
+    const fator_desconto = 10000n - BigInt(para_centavos(desconto));
+    const centesimos = (produto * fator_desconto) / (100n ** BigInt(cotacoes.length - 1) * 10000n);
+
+    return centavos_para_texto(Number(centesimos < 100n ? 100n : centesimos));
+};
+
+// prêmio estimado do cupom (o valor final é do backend); as cotações são as das pernas da aposta,
+// com o bloco Criar Aposta como uma cotação só:
 // - prêmio = menor entre (valor × cotações, truncado), valor × multiplicador e prêmio máximo;
 // - acréscimo de ganho_multiplo_palpites% com 3 ou mais palpites, limitado ao prêmio máximo
 export const calcular_premio = ({ valor_centavos, cotacoes, multiplicador, premio_maximo, ganho_multiplo_palpites }) => {

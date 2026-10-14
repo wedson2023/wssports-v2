@@ -1,3 +1,4 @@
+import { bloco_apos_palpite } from './bet_builder';
 import { formatar_data_hora } from './dates';
 import { formatar_real, para_centavos } from './money';
 
@@ -29,6 +30,15 @@ const palpite_html = (palpite) => [
     '</p></li>',
 ].join('');
 
+// linha "Criar Aposta" com a cotação do bloco, depois do último palpite dele (spec 008)
+const palpite_com_bloco_html = (comprovante, palpite) => {
+    const bloco = bloco_apos_palpite(comprovante, palpite);
+
+    return palpite_html(palpite) + (bloco
+        ? `<li style="border-bottom:solid thin #000; padding:3px 0; font-size:0.85em;"><p style="font-size:0.9em; margin:0;">${linha_palpite('Criar Aposta', Number(bloco.cotacao).toFixed(2))}</p></li>`
+        : '');
+};
+
 // comprovante do bilhete como o print_ticket do sistema antigo (impressão pelo navegador)
 const comprovante_html = (comprovante) => {
     const vendedor_paga = para_centavos(comprovante.premio_liquido) !== para_centavos(comprovante.total_a_pagar);
@@ -41,10 +51,10 @@ const comprovante_html = (comprovante) => {
         linha('Vendedor', comprovante.vendedor),
         linha('Horário', formatar_data_hora(comprovante.criada_em), 'font-size:0.7em; margin:0;'),
         '<ul style="margin:5px 0; padding:0; list-style:none; border-top:solid thin #000;">',
-        comprovante.palpites.map(palpite_html).join(''),
+        comprovante.palpites.map((palpite) => palpite_com_bloco_html(comprovante, palpite)).join(''),
         '</ul>',
         linha('Valor', real(comprovante.valor), 'font-size:0.7em; margin:0;'),
-        linha('Qtde. Jogos', comprovante.palpites.length, 'font-size:0.7em; margin:0;'),
+        linha('Qtde. Jogos', comprovante.quantidade_jogos ?? comprovante.palpites.length, 'font-size:0.7em; margin:0;'),
         linha('Cotação Total', Number(comprovante.cotacao_total).toFixed(2), 'font-size:0.7em; margin:0;'),
         vendedor_paga
             ? linha('Prêmio', real(comprovante.total_a_pagar), 'font-size:0.7em; margin:0;')

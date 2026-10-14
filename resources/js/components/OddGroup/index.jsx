@@ -11,9 +11,10 @@ export const cotacoes_principais = [
 
 const codigos_principais = cotacoes_principais.map(({ codigo }) => codigo);
 
-// C, E, F, A e o "+N"; o "+N" fica na cor do tema quando o palpite é de outro mercado (FR-032)
-export default function OddGroup({ confronto, codigo_selecionado, variacoes = {}, ao_escolher, ao_abrir_detalhes }) {
-    const palpite_de_outro_mercado = Boolean(codigo_selecionado) && !codigos_principais.includes(codigo_selecionado);
+// C, E, F, A e o "+N"; o "+N" fica na cor do tema quando algum palpite do jogo é de outro mercado
+// (FR-032); no Criar Aposta o jogo pode ter vários palpites (spec 008)
+export default function OddGroup({ confronto, codigos_selecionados = [], variacoes = {}, ao_escolher, ao_abrir_detalhes }) {
+    const palpite_de_outro_mercado = codigos_selecionados.some((codigo) => !codigos_principais.includes(codigo));
 
     return (
         <Container>
@@ -23,7 +24,7 @@ export default function OddGroup({ confronto, codigo_selecionado, variacoes = {}
                     letra={letra}
                     titulo={titulo}
                     cotacao={confronto.cotacoes?.[codigo]}
-                    selecionado={codigo_selecionado === codigo}
+                    selecionado={codigos_selecionados.includes(codigo)}
                     variacao={variacoes[codigo] ?? null}
                     ao_clicar={() => ao_escolher({ codigo, mercado, cotacao: confronto.cotacoes[codigo] })}
                 />

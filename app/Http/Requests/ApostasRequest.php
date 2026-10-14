@@ -18,6 +18,8 @@ class ApostasRequest extends FormRequest
 
     private const MAXIMO_PALPITES = 50;
 
+    private const MAXIMO_BLOCOS = 25;
+
     private const DUAS_CASAS = '/^\d+(\.\d{1,2})?$/';
 
     public function authorize(): bool
@@ -63,6 +65,11 @@ class ApostasRequest extends FormRequest
             'palpites.*.codigo_cotacao' => ['required', 'string', $this->codigo_valido()],
             'palpites.*.confrontos_jogadores_id' => ['nullable', 'integer', 'required_if:palpites.*.codigo_cotacao,'.CodigosCotacao::JOGADOR],
             'palpites.*.cotacao_vista' => ['required', 'numeric', 'min:1', 'regex:'.self::DUAS_CASAS],
+            // Criar Aposta (spec 008): a cotação vista de cada jogo com palpites repetidos
+            'blocos' => ['nullable', 'array', 'max:'.self::MAXIMO_BLOCOS],
+            'blocos.*' => ['required', 'array'],
+            'blocos.*.confrontos_id' => ['required', 'integer', 'distinct'],
+            'blocos.*.cotacao_vista' => ['required', 'numeric', 'min:1', 'regex:'.self::DUAS_CASAS],
             'fuso_horario' => ['nullable', 'regex:/^[+-]\d{2}:[0-5]\d$/'],
         ];
     }
@@ -104,6 +111,17 @@ class ApostasRequest extends FormRequest
             'palpites.*.cotacao_vista.numeric' => 'A cotação vista deve ser um número.',
             'palpites.*.cotacao_vista.min' => 'A cotação vista deve ser maior ou igual a 1,00.',
             'palpites.*.cotacao_vista.regex' => 'A cotação vista deve ter até 2 casas decimais.',
+            'blocos.array' => 'Os blocos do Criar Aposta devem ser uma lista.',
+            'blocos.max' => 'A aposta pode ter no máximo '.self::MAXIMO_BLOCOS.' blocos do Criar Aposta.',
+            'blocos.*.required' => 'Bloco do Criar Aposta inválido.',
+            'blocos.*.array' => 'Bloco do Criar Aposta inválido.',
+            'blocos.*.confrontos_id.required' => 'Informe o confronto de cada bloco do Criar Aposta.',
+            'blocos.*.confrontos_id.integer' => 'O confronto do bloco do Criar Aposta deve ser um número inteiro.',
+            'blocos.*.confrontos_id.distinct' => 'Informe só um bloco do Criar Aposta por confronto.',
+            'blocos.*.cotacao_vista.required' => 'Informe a cotação vista de cada bloco do Criar Aposta.',
+            'blocos.*.cotacao_vista.numeric' => 'A cotação vista do bloco deve ser um número.',
+            'blocos.*.cotacao_vista.min' => 'A cotação vista do bloco deve ser maior ou igual a 1,00.',
+            'blocos.*.cotacao_vista.regex' => 'A cotação vista do bloco deve ter até 2 casas decimais.',
             'fuso_horario.regex' => 'O fuso horário deve estar no formato +HH:MM ou -HH:MM.',
         ];
     }
@@ -123,6 +141,10 @@ class ApostasRequest extends FormRequest
             ...$palpite,
             'cotacao_vista' => (string) $palpite['cotacao_vista'],
         ], $dados['palpites']));
+        $dados['blocos'] = array_values(array_map(fn (array $bloco) => [
+            'confrontos_id' => (int) $bloco['confrontos_id'],
+            'cotacao_vista' => (string) $bloco['cotacao_vista'],
+        ], $dados['blocos'] ?? []));
 
         return $dados;
     }

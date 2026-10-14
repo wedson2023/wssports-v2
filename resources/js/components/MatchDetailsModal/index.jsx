@@ -52,9 +52,13 @@ export default function MatchDetailsModal({ jogo, ao_fechar }) {
         return () => { ativo = false; };
     }, [jogo, ao_fechar]);
 
-    const palpite_do_jogo = jogo && cupom.palpites.find((palpite) => palpite.tipo === jogo.tipo && palpite.confronto_id === jogo.confronto_id);
+    // todos os palpites do jogo no cupom (no Criar Aposta, vários; spec 008)
+    const palpites_do_jogo = jogo ? cupom.palpites.filter((palpite) => palpite.tipo === jogo.tipo && palpite.confronto_id === jogo.confronto_id) : [];
+    const codigo_escolhido = (codigo_cotacao) => palpites_do_jogo.some((palpite) => palpite.codigo_cotacao === codigo_cotacao && !palpite.jogador_id);
+    const jogador_escolhido = (jogador_id) => palpites_do_jogo.some((palpite) => palpite.jogador_id === jogador_id);
 
-    const escolher = (codigo_cotacao, mercado, cotacao, jogador_id) => alternar_palpite({
+    // jogador_nome: o mesmo jogador não entra duas vezes no bloco, em nenhum tipo
+    const escolher = (codigo_cotacao, mercado, cotacao, jogador_id, jogador_nome) => alternar_palpite({
         tipo: jogo.tipo,
         confronto_id: jogo.confronto_id,
         codigo_cotacao,
@@ -64,7 +68,7 @@ export default function MatchDetailsModal({ jogo, ao_fechar }) {
         time_fora: detalhe.time_fora,
         campeonato: detalhe.campeonato,
         data_inicio: detalhe.data_inicio,
-        ...(jogador_id ? { jogador_id } : {}),
+        ...(jogador_id ? { jogador_id, jogador_nome } : {}),
     });
 
     const cotacoes = new Map((detalhe?.cotacoes ?? []).map((item) => [item.codigo_cotacao, item]));
@@ -111,7 +115,7 @@ export default function MatchDetailsModal({ jogo, ao_fechar }) {
                                             <OddButton
                                                 largo
                                                 cotacao={cotacao}
-                                                selecionado={palpite_do_jogo?.codigo_cotacao === codigo_cotacao}
+                                                selecionado={codigo_escolhido(codigo_cotacao)}
                                                 ao_clicar={() => escolher(codigo_cotacao, mercado, cotacao)}
                                             />
                                         </Item>
@@ -127,8 +131,8 @@ export default function MatchDetailsModal({ jogo, ao_fechar }) {
                                             <OddButton
                                                 largo
                                                 cotacao={jogador.cotacao}
-                                                selecionado={palpite_do_jogo?.jogador_id === jogador.confrontos_jogadores_id}
-                                                ao_clicar={() => escolher('jogador', `${jogador.nome} (${tipo})`, jogador.cotacao, jogador.confrontos_jogadores_id)}
+                                                selecionado={jogador_escolhido(jogador.confrontos_jogadores_id)}
+                                                ao_clicar={() => escolher('jogador', `${jogador.nome} (${tipo})`, jogador.cotacao, jogador.confrontos_jogadores_id, jogador.nome)}
                                             />
                                         </Item>
                                     ))}

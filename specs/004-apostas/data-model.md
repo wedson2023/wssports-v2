@@ -78,6 +78,11 @@ dos dois; `usuarios_id` é preenchido na validação. Transições em [research.
 **Índices**: único (`apostas_id`, `confrontos_id`) (FR-015); (`confrontos_id`);
 (`confrontos_ao_vivo_id`).
 
+> **Spec 008 (Criar Aposta)**: o único (`apostas_id`, `confrontos_id`) virou índice simples, e a
+> tabela ganhou `apostas_blocos_id` (FK `apostas_blocos`, nulo no palpite simples): os palpites de
+> um bloco repetem o confronto. Fora do bloco, a regra de um palpite por jogo continua nos serviços.
+> Ver [../008-criar-aposta/data-model.md](../008-criar-aposta/data-model.md).
+
 ### Tabela `apostas_historico`
 
 | Coluna | Tipo | Regras |

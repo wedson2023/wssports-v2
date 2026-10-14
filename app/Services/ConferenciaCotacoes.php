@@ -39,12 +39,16 @@ class ConferenciaCotacoes
     }
 
     /**
-     * Palpites cuja cotação atual difere da vista fora da preferência do apostador.
+     * Palpites cuja cotação atual difere da vista fora da preferência do apostador e, no Criar
+     * Aposta (spec 008, R-09), blocos cuja cotação calculada agora difere da vista (muda também
+     * quando o desconto muda).
      *
      * @param  list<array<string, mixed>>  $palpites
+     * @param  list<array<string, mixed>>  $pernas  pernas da aposta (CalculoBlocos::pernas)
+     * @param  list<array{confrontos_id: int, cotacao_vista: string}>  $blocos  blocos do pedido
      * @return list<array<string, mixed>>
      */
-    public function alteracoes(array $palpites, AceitarAlteracoes $preferencia): array
+    public function alteracoes(array $palpites, AceitarAlteracoes $preferencia, array $pernas = [], array $blocos = []): array
     {
         $alteracoes = [];
 
@@ -55,6 +59,21 @@ class ConferenciaCotacoes
                     'codigo_cotacao' => $palpite['codigo_cotacao'],
                     'cotacao_vista' => $palpite['cotacao_vista'],
                     'cotacao_atual' => $palpite['cotacao_atual'],
+                ];
+            }
+        }
+
+        $vistas = array_column($blocos, 'cotacao_vista', 'confrontos_id');
+
+        foreach (CalculoBlocos::blocos($pernas) as $bloco) {
+            $vista = bcadd($vistas[$bloco['confrontos_id']] ?? '0', '0', 2);
+
+            if (! $preferencia->aceita($vista, $bloco['cotacao'])) {
+                $alteracoes[] = [
+                    'bloco' => true,
+                    'confrontos_id' => $bloco['confrontos_id'],
+                    'cotacao_vista' => $vista,
+                    'cotacao_atual' => $bloco['cotacao'],
                 ];
             }
         }

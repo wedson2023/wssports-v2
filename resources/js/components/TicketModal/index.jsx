@@ -1,6 +1,9 @@
+import { Fragment } from 'react';
+
 import Backdrop from '../Backdrop';
 import useTelaMobile from '../../hooks/useTelaMobile';
 import useVoltarFecha from '../../hooks/useVoltarFecha';
+import { agrupar_palpites_comprovante } from '../../utils/bet_builder';
 import { formatar_data_hora } from '../../utils/dates';
 import { formatar_real, para_centavos } from '../../utils/money';
 import { compartilhar_texto } from '../../utils/share';
@@ -11,6 +14,54 @@ const real = (valor) => `R$ ${formatar_real(para_centavos(valor))}`;
 
 // situação exibida: o resultado quando já apurado, senão a situação da aposta
 const situacao_exibida = (comprovante) => (comprovante.resultado && comprovante.resultado !== 'Aguardando' ? comprovante.resultado : comprovante.situacao);
+
+const linha_palpite = (palpite) => (
+    <Hunch $cancelado={palpite.situacao === 'Cancelado'}>
+        <Teams>{palpite.time_casa} x {palpite.time_fora}</Teams>
+        <Row><Label>Horário:</Label><span>{formatar_data_hora(palpite.data_inicio)}</span></Row>
+        <Row><Label>Campeonato:</Label><span>{palpite.campeonato}</span></Row>
+        <Row><Label>Palpite:</Label><span>{texto_palpite(palpite)}</span></Row>
+        <Row><Label>Cotação:</Label><span>{Number(palpite.cotacao).toFixed(2)}</span></Row>
+        <Row><Label>Tipo:</Label><span>{palpite.esporte}</span></Row>
+        {palpite.placar_casa !== null && (
+            <Row><Label>Placar:</Label><span>{`${palpite.placar_casa ?? 0} x ${palpite.placar_fora ?? 0}`}</span></Row>
+        )}
+        <Row>
+            <Label>Situação:</Label>
+            <Status $situacao={palpite.situacao}>{palpite.situacao}</Status>
+        </Row>
+    </Hunch>
+);
+
+const texto_palpite = (palpite) => (palpite.jogador ? `${palpite.jogador} (${palpite.jogador_tipo})` : palpite.mercado);
+
+// bloco Criar Aposta (spec 008): jogo, horário, campeonato e tipo uma vez só; "Palpite: Criar
+// Aposta"; uma linha por palpite
+// (mercado e cotação), a cotação do bloco (rótulo "Cotação") e a situação do bloco
+const linha_bloco = (bloco, palpites) => {
+    const [primeiro] = palpites;
+
+    return (
+        <Hunch $cancelado={bloco.situacao === 'Anulado'}>
+            <Teams>{primeiro.time_casa} x {primeiro.time_fora}</Teams>
+            <Row><Label>Horário:</Label><span>{formatar_data_hora(primeiro.data_inicio)}</span></Row>
+            <Row><Label>Campeonato:</Label><span>{primeiro.campeonato}</span></Row>
+            <Row><Label>Palpite:</Label><span>Criar Aposta</span></Row>
+            {palpites.map((palpite) => (
+                <Row key={palpite.id}>
+                    <Label>{`${texto_palpite(palpite)}${palpite.situacao === 'Cancelado' ? ' (cancelado)' : ''}:`}</Label>
+                    <span>{Number(palpite.cotacao).toFixed(2)}</span>
+                </Row>
+            ))}
+            <Row><Label>Cotação:</Label><span>{Number(bloco.cotacao).toFixed(2)}</span></Row>
+            <Row><Label>Tipo:</Label><span>{primeiro.esporte}</span></Row>
+            <Row>
+                <Label>Situação:</Label>
+                <Status $situacao={bloco.situacao}>{bloco.situacao}</Status>
+            </Row>
+        </Hunch>
+    );
+};
 
 // comprovante do bilhete consultado pelo código (FR-044, data-model.md seção 4)
 export default function TicketModal({ comprovante, ao_fechar }) {
@@ -42,25 +93,13 @@ export default function TicketModal({ comprovante, ao_fechar }) {
                             <Status $situacao={situacao_exibida(comprovante)}>{situacao_exibida(comprovante)}</Status>
                         </Row>
                         <Hunches>
-                            {comprovante.palpites.map((palpite) => (
-                                <Hunch key={palpite.id} $cancelado={palpite.situacao === 'Cancelado'}>
-                                    <Teams>{palpite.time_casa} x {palpite.time_fora}</Teams>
-                                    <Row><Label>Horário:</Label><span>{formatar_data_hora(palpite.data_inicio)}</span></Row>
-                                    <Row><Label>Campeonato:</Label><span>{palpite.campeonato}</span></Row>
-                                    <Row><Label>Palpite:</Label><span>{palpite.jogador ? `${palpite.jogador} (${palpite.jogador_tipo})` : palpite.mercado}</span></Row>
-                                    <Row><Label>Cotação:</Label><span>{Number(palpite.cotacao).toFixed(2)}</span></Row>
-                                    <Row><Label>Tipo:</Label><span>{palpite.esporte}</span></Row>
-                                    {palpite.placar_casa !== null && (
-                                        <Row><Label>Placar:</Label><span>{`${palpite.placar_casa ?? 0} x ${palpite.placar_fora ?? 0}`}</span></Row>
-                                    )}
-                                    <Row>
-                                        <Label>Situação:</Label>
-                                        <Status $situacao={palpite.situacao}>{palpite.situacao}</Status>
-                                    </Row>
-                                </Hunch>
+                            {agrupar_palpites_comprovante(comprovante).map(({ bloco, palpites }) => (
+                                <Fragment key={palpites[0].id}>
+                                    {bloco ? linha_bloco(bloco, palpites) : linha_palpite(palpites[0])}
+                                </Fragment>
                             ))}
                         </Hunches>
-                        <Row><Label>Qtde. Jogos:</Label><span>{comprovante.palpites.length}</span></Row>
+                        <Row><Label>Qtde. Jogos:</Label><span>{comprovante.quantidade_jogos ?? comprovante.palpites.length}</span></Row>
                         <Row><Label>Cotação Total:</Label><span>{Number(comprovante.cotacao_total).toFixed(2)}</span></Row>
                         <Row><Label>Valor:</Label><span>{real(comprovante.valor)}</span></Row>
                         <Row><Label>Prêmio:</Label><span>{real(comprovante.premio)}</span></Row>

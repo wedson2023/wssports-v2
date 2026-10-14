@@ -42,6 +42,7 @@ class DecisaoAoVivo
         private CriacaoApostas $criacao,
         private RegrasAposta $regras,
         private ConferenciaCotacoes $conferencia,
+        private CalculoBlocos $blocos,
     ) {}
 
     public function decidir(int $apostas_id): void
@@ -114,9 +115,16 @@ class DecisaoAoVivo
 
         $finais = $this->cotacoes_finais($palpites, $aposta->aceitar_alteracoes);
         $valor = (string) $aposta->valor;
-        $calculo = $this->criacao->calcular($apostador, $valor, $finais);
+        // bloco Criar Aposta do pré-jogo na aposta mista: recalculado com as cotações finais e o
+        // desconto gravado na aposta, contando como um jogo (spec 008)
+        $pernas = $this->blocos->pernas(
+            array_map(fn (array $palpite, string $final) => [...$palpite, 'cotacao_final' => $final], $palpites, $finais),
+            (string) ($aposta->desconto_criar_aposta ?? '0'),
+            'cotacao_final',
+        );
+        $calculo = $this->criacao->calcular($apostador, $valor, CalculoBlocos::cotacoes($pernas));
 
-        $this->regras->conferir_limites($apostador, $valor, count($palpites), $calculo['cotacao_total']);
+        $this->regras->conferir_limites($apostador, $valor, count($pernas), $calculo['cotacao_total']);
 
         if ($apostador->e_cliente()) {
             $this->criacao->garantir_valor_diario($apostador, $valor, $aposta->id);
@@ -135,7 +143,11 @@ class DecisaoAoVivo
             'decidida_em' => now(),
         ]);
 
-        $this->criacao->confirmar($apostador, $aposta, count($palpites), true);
+        foreach (CalculoBlocos::blocos($pernas) as $bloco) {
+            $aposta->blocos()->where('confrontos_id', $bloco['confrontos_id'])->update(['cotacao' => $bloco['cotacao']]);
+        }
+
+        $this->criacao->confirmar($apostador, $aposta, count($pernas), true);
     }
 
     /**

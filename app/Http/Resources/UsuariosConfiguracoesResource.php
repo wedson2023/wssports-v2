@@ -27,6 +27,8 @@ class UsuariosConfiguracoesResource extends JsonResource
             // regras de aposta do vendedor (spec 004)
             ...$this->resource->only([
                 ...UsuariosConfiguracoes::CAMPOS_APOSTA,
+                // Criar Aposta do vendedor (spec 008)
+                ...UsuariosConfiguracoes::CAMPOS_CRIAR_APOSTA,
                 ...UsuariosConfiguracoes::COMISSOES_PRE_JOGO,
                 ...UsuariosConfiguracoes::COMISSOES_AO_VIVO,
             ]),

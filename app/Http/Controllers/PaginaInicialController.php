@@ -10,6 +10,7 @@ use App\Services\ListagemConfrontos;
 use App\Services\ListagemEspeciais;
 use App\Services\Publico;
 use App\Services\RegrasExibicao;
+use App\Support\MercadosCotacao;
 use Inertia\Inertia;
 use Inertia\Response;
 use Symfony\Component\HttpKernel\Exception\HttpException;
@@ -114,6 +115,27 @@ class PaginaInicialController extends Controller
             'valor_maximo_aposta' => (string) $configuracao->valor_maximo_aposta,
             'quantidade_minima_opcoes' => (int) $configuracao->quantidade_minima_opcoes,
             'quantidade_maxima_opcoes' => (int) $configuracao->quantidade_maxima_opcoes,
+            'criar_aposta' => $this->criar_aposta($publico, $configuracao),
+        ];
+    }
+
+    /**
+     * Criar Aposta de quem está vendo (spec 008): o vendedor usa a configuração dele; os demais, a
+     * geral. Grupos de mercado e pares redundantes vêm do backend, a fonte única da regra.
+     *
+     * @return array<string, mixed>
+     */
+    private function criar_aposta(Publico $publico, object $configuracao): array
+    {
+        $origem = $publico->e_vendedor() ? $configuracao : Configuracoes::atual();
+
+        return [
+            'habilitado' => (bool) $origem->criar_aposta_habilitado,
+            'desconto' => (string) $origem->desconto_criar_aposta,
+            'quantidade_minima' => (int) $origem->quantidade_minima_criar_aposta,
+            'quantidade_maxima' => (int) $origem->quantidade_maxima_criar_aposta,
+            'grupos' => MercadosCotacao::grupos(),
+            'pares_redundantes' => MercadosCotacao::PARES_REDUNDANTES,
         ];
     }
 }

@@ -1,15 +1,14 @@
 <!--
 Sync Impact Report
-- Version change: 3.1.0 → 3.2.0 (MINOR: orientação nova no Princípio I, só frontend)
-- Princípios modificados:
-  - I. Nomenclatura: arquivos de utilitários com nome em inglês e snake_case (`utils/money.js`);
-    props só de estilo nos styled-components com prefixo `$` + snake_case português
-    (`$selecionado`). Backend sem mudança
+- Version change: 3.2.0 → 3.3.0 (MINOR: regra nova em Stack e Restrições Técnicas)
+- Princípios modificados: nenhum
 - Princípios adicionados: nenhum
-- Seções alteradas: nenhuma
-- Impacto: os utilitários da spec 005 passam a `money.js`, `storage.js`, `alerts.js`,
-  `dates.js` e `api.js` (plan.md, research.md, data-model.md, tasks.md, quickstart.md) na mesma
-  entrega; o `.claude/CLAUDE.md` é alinhado
+- Seções alteradas:
+  - Stack e Restrições Técnicas: nova regra "Comentários de colunas" — toda coluna criada ou
+    alterada por migration do projeto DEVE ter `->comment()` em português explicando o uso
+    (dispensadas `id()`, `timestamps()`, `softDeletes()`, `rememberToken()` e tabelas de pacotes)
+- Impacto: nenhuma feature com plan.md em andamento; as colunas já existentes ficam sem
+  comentário até a spec que as documentar (intenção adiada para `/speckit-specify`)
 - Seções adicionadas: nenhuma
 - Seções removidas: nenhuma
 - TODOs pendentes: nenhum
@@ -268,6 +267,13 @@ trocado de forma controlada e que nenhum dado inventado chegue a operações rea
   `$table->softDeletes()`), e o model correspondente DEVE usar a trait `SoftDeletes`.
   Exclusões de registros DEVEM ser lógicas (soft delete); exclusão física só é permitida se
   justificada no plano da feature.
+- Comentários de colunas: toda coluna criada ou alterada por uma migration do projeto DEVE ter
+  um comentário no banco (na migration, `->comment('...')`), em português, explicando para que
+  serve a coluna (ex.: `->comment('Percentual de desconto aplicado na cotação do Criar Aposta')`).
+  Quando a coluna guardar valores fixos (enum) ou uma unidade (%, centavos, segundos), o
+  comentário DEVE citá-los. Ficam dispensadas as colunas geradas pelos atalhos do framework
+  (`id()`, `timestamps()`, `softDeletes()`, `rememberToken()`) e as tabelas de pacotes de
+  terceiros (Princípio I).
 - Referências a tabelas ainda inexistentes: colunas que dependem de uma tabela ainda não criada
   DEVEM ser criadas sem chave estrangeira (como `varchar` ou como id solto) e DEVEM ser ajustadas
   (tipo e chave estrangeira) na spec que criar a tabela de destino. A spec que cria essas colunas
@@ -287,7 +293,9 @@ trocado de forma controlada e que nenhum dado inventado chegue a operações rea
 
 **Rationale**: timestamps padronizados garantem rastreabilidade de quando cada registro foi
 criado e alterado, e o soft delete preserva o histórico e permite recuperar dados excluídos,
-essencial em um sistema de apostas. A paginação limitada mantém o tempo de resposta e o consumo
+essencial em um sistema de apostas. O comentário em cada coluna documenta o banco no próprio
+banco, para quem consulta direto pelo cliente SQL ou por relatórios, sem depender do código. A
+paginação limitada mantém o tempo de resposta e o consumo
 de memória previsíveis mesmo com grandes volumes de dados. A regra de atualização evita usuários
 presos em versões antigas, problema do sistema antigo, que dependia de versão manual no service
 worker e de limpar o cache.
@@ -335,4 +343,4 @@ worker e de limpar o cache.
 - A conformidade DEVE ser verificada em todo plano (Constitution Check), em toda lista de
   tarefas e em toda revisão de código.
 
-**Version**: 3.2.0 | **Ratified**: 2026-09-25 | **Last Amended**: 2026-10-09
+**Version**: 3.3.0 | **Ratified**: 2026-09-25 | **Last Amended**: 2026-10-13

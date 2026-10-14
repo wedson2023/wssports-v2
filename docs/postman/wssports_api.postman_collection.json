@@ -2992,7 +2992,7 @@
                             "mode": "raw",
                             "raw": "{\n    \"usuarios_id\": \"{{gerente_id}}\",\n    \"realizar_aposta\": true,\n    \"cancelar_aposta\": true,\n    \"tempo_cancelamento_aposta\": 5,\n    \"apostar_jogadores\": true,\n    \"periodo_jogos\": \"Depois de amanhã\",\n    \"data_travamento_sistema\": null,\n    \"mensagem_bilhete\": \"BOA SORTE!\",\n    \"delay_ao_vivo\": 15,\n    \"quantidade_minima_opcoes\": 1,\n    \"quantidade_maxima_opcoes\": 20,\n    \"valor_minimo_aposta\": \"2.00\",\n    \"valor_maximo_aposta\": \"1000.00\",\n    \"odd_minima\": \"1.00\",\n    \"premio_maximo\": \"5000.00\",\n    \"multiplicador\": 1000,\n    \"ganho_multiplo_palpites\": \"0.00\",\n    \"comissao_pre_jogo_1\": \"10.00\",\n    \"comissao_ao_vivo_1\": \"10.00\",\n    \"comissao_por_premio\": \"0.00\",\n    \"limite_simples\": \"5000.00\",\n    \"limite_duplo\": \"5000.00\",\n    \"limite_geral\": \"5000.00\"\n}"
                         },
-                        "description": "usuarios_configuracoes.editar. usuarios_id = alcance: Admin → supervisor, gerente ou vendedor; Supervisor → gerente ou vendedor; Gerente → vendedor. Só os campos enviados mudam. Spec 004: regras de aposta do vendedor (comissao_pre_jogo_1…12, comissao_ao_vivo_1…12, limites, delay, período, travamento etc.); data_travamento_sistema sem fuso vale -03:00."
+                        "description": "usuarios_configuracoes.editar. usuarios_id = alcance: Admin → supervisor, gerente ou vendedor; Supervisor → gerente ou vendedor; Gerente → vendedor. Só os campos enviados mudam. Spec 004: regras de aposta do vendedor (comissao_pre_jogo_1…12, comissao_ao_vivo_1…12, limites, delay, período, travamento etc.); data_travamento_sistema sem fuso vale -03:00. Criar Aposta (spec 008): criar_aposta_habilitado, desconto_criar_aposta (0 a 100), quantidade_minima_criar_aposta e quantidade_maxima_criar_aposta (2 a 20; mínimo ≤ máximo quando os dois são enviados)."
                     }
                 },
                 {
@@ -3155,7 +3155,7 @@
                                 "apostas"
                             ]
                         },
-                        "description": "Sem login. Só pré-jogo. 201 com a aposta Pendente e o código de 8 caracteres; 422 com jogo ao vivo ('Para apostar no ao vivo é preciso fazer login.'); 429 acima de 10/min por IP.",
+                        "description": "Sem login. Só pré-jogo. 201 com a aposta Pendente e o código de 8 caracteres; 422 com jogo ao vivo ('Para apostar no ao vivo é preciso fazer login.'); 429 acima de 10/min por IP. Criar Aposta (spec 008): dois ou mais palpites do mesmo confronto do pré-jogo formam um bloco, que conta como um jogo; informe em \"blocos\" a cotação vista de cada bloco ({confrontos_id, cotacao_vista}). Ver \"Aposta do vendedor com Criar Aposta\".",
                         "body": {
                             "mode": "raw",
                             "raw": "{\n    \"chave_idempotencia\": \"{{$guid}}\",\n    \"nome\": \"João\",\n    \"valor\": \"10.00\",\n    \"aceitar_alteracoes\": \"Nenhuma\",\n    \"palpites\": [\n        {\n            \"confrontos_id\": \"{{confronto_id}}\",\n            \"codigo_cotacao\": \"odd1\",\n            \"cotacao_vista\": \"2.00\"\n        }\n    ]\n}"
@@ -3255,7 +3255,7 @@
                                 "apostas"
                             ]
                         },
-                        "description": "Token do cliente. Paga com o saldo real ou, sem ele, com o bônus de esportes (nunca os dois). Respostas: 201 Ativa (comprovante); 202 Em análise (ao vivo, acompanhar em /situacao); 200 envio repetido com a mesma chave; 409 cotação alterada (reenviar com cotacao_vista = cotacao_atual); 422 regra ou palpites indisponíveis.",
+                        "description": "Token do cliente. Paga com o saldo real ou, sem ele, com o bônus de esportes (nunca os dois). Respostas: 201 Ativa (comprovante); 202 Em análise (ao vivo, acompanhar em /situacao); 200 envio repetido com a mesma chave; 409 cotação alterada (reenviar com cotacao_vista = cotacao_atual); 422 regra ou palpites indisponíveis. Criar Aposta (spec 008): dois ou mais palpites do mesmo confronto do pré-jogo formam um bloco, que conta como um jogo; informe em \"blocos\" a cotação vista de cada bloco ({confrontos_id, cotacao_vista}). Ver \"Aposta do vendedor com Criar Aposta\".",
                         "body": {
                             "mode": "raw",
                             "raw": "{\n    \"chave_idempotencia\": \"{{$guid}}\",\n    \"nome\": \"João\",\n    \"valor\": \"10.00\",\n    \"aceitar_alteracoes\": \"Nenhuma\",\n    \"palpites\": [\n        {\n            \"confrontos_id\": \"{{confronto_id}}\",\n            \"codigo_cotacao\": \"odd1\",\n            \"cotacao_vista\": \"2.00\"\n        }\n    ]\n}"
@@ -3334,10 +3334,40 @@
                                 "apostas"
                             ]
                         },
-                        "description": "apostas.criar (só Vendedor). Respostas: 201 Ativa (comprovante); 202 Em análise (ao vivo, acompanhar em /situacao); 200 envio repetido com a mesma chave; 409 cotação alterada (reenviar com cotacao_vista = cotacao_atual); 422 regra ou palpites indisponíveis.",
+                        "description": "apostas.criar (só Vendedor). Respostas: 201 Ativa (comprovante); 202 Em análise (ao vivo, acompanhar em /situacao); 200 envio repetido com a mesma chave; 409 cotação alterada (reenviar com cotacao_vista = cotacao_atual); 422 regra ou palpites indisponíveis. Criar Aposta (spec 008): dois ou mais palpites do mesmo confronto do pré-jogo formam um bloco, que conta como um jogo; informe em \"blocos\" a cotação vista de cada bloco ({confrontos_id, cotacao_vista}). Ver \"Aposta do vendedor com Criar Aposta\".",
                         "body": {
                             "mode": "raw",
                             "raw": "{\n    \"chave_idempotencia\": \"{{$guid}}\",\n    \"nome\": \"João\",\n    \"valor\": \"10.00\",\n    \"aceitar_alteracoes\": \"Nenhuma\",\n    \"palpites\": [\n        {\n            \"confrontos_id\": \"{{confronto_id}}\",\n            \"codigo_cotacao\": \"odd1\",\n            \"cotacao_vista\": \"2.00\"\n        }\n    ]\n}"
+                        }
+                    }
+                },
+                {
+                    "name": "Aposta do vendedor com Criar Aposta",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/apostas",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "apostas"
+                            ]
+                        },
+                        "description": "apostas.criar (Vendedor). Criar Aposta (spec 008): os três palpites do confronto 101 formam um bloco com cotação 1,80 × 2,10 × 1,50 × (1 − desconto ÷ 100), truncada em 2 casas (4,81 com desconto de 15%); o palpite do confronto 202 é uma perna simples. O bloco conta como um jogo (comissão, limites e acréscimo). Bloco sem item em \"blocos\", fora do mínimo/máximo, com dois palpites do mesmo mercado ou par redundante → 422; cotação do bloco diferente da vista → 409 com o item {\"bloco\": true}.",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"chave_idempotencia\": \"{{$guid}}\",\n    \"nome\": \"João\",\n    \"valor\": \"10.00\",\n    \"aceitar_alteracoes\": \"Nenhuma\",\n    \"palpites\": [\n        {\n            \"confrontos_id\": 101,\n            \"codigo_cotacao\": \"odd1\",\n            \"cotacao_vista\": \"1.80\"\n        },\n        {\n            \"confrontos_id\": 101,\n            \"codigo_cotacao\": \"odd116\",\n            \"cotacao_vista\": \"2.10\"\n        },\n        {\n            \"confrontos_id\": 101,\n            \"codigo_cotacao\": \"odd4\",\n            \"cotacao_vista\": \"1.50\"\n        },\n        {\n            \"confrontos_id\": 202,\n            \"codigo_cotacao\": \"odd2\",\n            \"cotacao_vista\": \"3.00\"\n        }\n    ],\n    \"blocos\": [\n        {\n            \"confrontos_id\": 101,\n            \"cotacao_vista\": \"4.81\"\n        }\n    ]\n}"
                         }
                     }
                 },
@@ -3453,7 +3483,7 @@
                                 "validar"
                             ]
                         },
-                        "description": "apostas.validar. Só pré-jogo; cotacao_vista = cotação da simulação. 200 Ativa com o mesmo código; 409 cotação mudou desde a simulação; 404 já validada.",
+                        "description": "apostas.validar. Só pré-jogo; cotacao_vista = cotação da simulação. 200 Ativa com o mesmo código; 409 cotação mudou desde a simulação; 404 já validada. Criar Aposta (spec 008): dois ou mais palpites do mesmo confronto do pré-jogo formam um bloco, que conta como um jogo; informe em \"blocos\" a cotação vista de cada bloco ({confrontos_id, cotacao_vista}). Ver \"Aposta do vendedor com Criar Aposta\".",
                         "body": {
                             "mode": "raw",
                             "raw": "{\n    \"chave_idempotencia\": \"{{$guid}}\",\n    \"nome\": \"João\",\n    \"valor\": \"10.00\",\n    \"aceitar_alteracoes\": \"Nenhuma\",\n    \"palpites\": [\n        {\n            \"confrontos_id\": \"{{confronto_id}}\",\n            \"codigo_cotacao\": \"odd1\",\n            \"cotacao_vista\": \"2.00\"\n        }\n    ]\n}"
@@ -4321,6 +4351,64 @@
                             ]
                         },
                         "description": "banners.gerenciar. Exclusão lógica e remoção do arquivo. O último banner também pode ser removido: sem banner ativo, o carrossel some. 204."
+                    }
+                },
+                {
+                    "name": "Consultar configurações do Criar Aposta",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/configuracoes/criar-aposta",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "configuracoes",
+                                "criar-aposta"
+                            ]
+                        },
+                        "description": "configuracoes.editar. Configurações gerais do Criar Aposta (spec 008): chave, desconto (%) sobre a cotação do bloco, mínimo e máximo de palpites por bloco (valem para clientes e visitantes) e a regra de liquidação (Recalcular ou Anular bloco), que vale para todo o sistema."
+                    }
+                },
+                {
+                    "name": "Alterar configurações do Criar Aposta",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/configuracoes/criar-aposta",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "configuracoes",
+                                "criar-aposta"
+                            ]
+                        },
+                        "description": "configuracoes.editar. Só os campos enviados mudam. desconto_criar_aposta de 0 a 100 (até 2 casas); quantidade_minima_criar_aposta e quantidade_maxima_criar_aposta de 2 a 20, com mínimo ≤ máximo (comparado com o valor atual quando só um é enviado); liquidacao_criar_aposta Recalcular ou Anular bloco. A aposta grava o desconto e a liquidação usados: mudar a configuração não altera apostas já feitas.",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"criar_aposta_habilitado\": true,\n    \"desconto_criar_aposta\": \"15.00\",\n    \"quantidade_minima_criar_aposta\": 2,\n    \"quantidade_maxima_criar_aposta\": 10,\n    \"liquidacao_criar_aposta\": \"Recalcular\"\n}"
+                        }
                     }
                 }
             ],

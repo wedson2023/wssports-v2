@@ -233,8 +233,10 @@ export default function Home({ filtros, listagem, configuracoes, banners, aviso,
         aplicar_filtros({ tipo: 'pre_jogo', esporte: chave, dia: 'hoje', busca: null, campeonato: null });
     };
 
+    // códigos escolhidos do jogo (no Criar Aposta, vários; spec 008)
     const selecao_do_jogo = (confronto) => cupom.palpites
-        .find((palpite) => palpite.tipo === listagem.tipo && palpite.confronto_id === confronto.id)?.codigo_cotacao ?? null;
+        .filter((palpite) => palpite.tipo === listagem.tipo && palpite.confronto_id === confronto.id)
+        .map((palpite) => palpite.codigo_cotacao);
 
     const escolher_cotacao = (confronto, campeonato, { codigo, mercado, cotacao }) => alternar_palpite({
         tipo: listagem.tipo,
@@ -318,7 +320,7 @@ export default function Home({ filtros, listagem, configuracoes, banners, aviso,
                 tipo: 'pre_jogo',
                 confronto_id: palpite.confrontos_id,
                 codigo_cotacao: palpite.codigo_cotacao,
-                ...(palpite.confrontos_jogadores_id ? { jogador_id: palpite.confrontos_jogadores_id } : {}),
+                ...(palpite.confrontos_jogadores_id ? { jogador_id: palpite.confrontos_jogadores_id, jogador_nome: palpite.jogador } : {}),
                 mercado: palpite.jogador ? `${palpite.jogador} (${palpite.mercado})` : palpite.mercado,
                 cotacao: Number(palpite.cotacao).toFixed(2),
                 time_casa: palpite.time_casa,

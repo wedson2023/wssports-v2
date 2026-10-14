@@ -93,6 +93,12 @@ Campos fora desta lista são ignorados (prêmio, esporte, horários etc. nunca s
 > [../../006-ajustes-tela-principal/contracts/api.md](../../006-ajustes-tela-principal/contracts/api.md)
 > (seção 6).
 
+> **Spec 008 (Criar Aposta)**: dois ou mais palpites do mesmo `confrontos_id` do pré-jogo formam
+> um bloco, que conta como um jogo; o corpo ganha `blocos` (`[{ "confrontos_id": 101,
+> "cotacao_vista": "4.81" }]`), o 409 ganha o item `{ "bloco": true, ... }` e o comprovante ganha
+> `quantidade_jogos`, `blocos` e `apostas_blocos_id` nos palpites. Detalhes em
+> [../../008-criar-aposta/contracts/api.md](../../008-criar-aposta/contracts/api.md).
+
 ## Respostas da criação e da validação
 
 **201 — aposta Ativa** (pré-jogo) ou **201 — Pendente** (visitante): `{"data": <Comprovante>}`.

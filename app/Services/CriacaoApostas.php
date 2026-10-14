@@ -4,14 +4,17 @@ namespace App\Services;
 
 use App\Enums\AceitarAlteracoes;
 use App\Enums\FormaPagamento;
+use App\Enums\LiquidacaoCriarAposta;
 use App\Enums\OrigemTransacao;
 use App\Enums\SituacaoAposta;
+use App\Enums\SituacaoBloco;
 use App\Enums\SituacaoPalpite;
 use App\Enums\TipoAposta;
 use App\Exceptions\CotacoesAlteradasException;
 use App\Exceptions\RegraApostaException;
 use App\Jobs\DecidirApostaAoVivo;
 use App\Models\Apostas;
+use App\Models\ApostasBlocos;
 use App\Models\ApostasPalpites;
 use App\Models\Clientes;
 use App\Models\Configuracoes;
@@ -45,6 +48,7 @@ class CriacaoApostas
         private EscolhaCarteira $carteira,
         private RolloverClientes $rollover,
         private SaldoClientes $saldo,
+        private CalculoBlocos $blocos,
     ) {}
 
     /**
@@ -101,11 +105,11 @@ class CriacaoApostas
     }
 
     /**
-     * Confere tudo sem gravar: apostador, palpites, cotações (indisponíveis e alteradas), prêmio e
-     * limites da aposta.
+     * Confere tudo sem gravar: apostador, palpites, blocos Criar Aposta, cotações (indisponíveis e
+     * alteradas), prêmio e limites da aposta. O bloco conta como um jogo (spec 008, FR-011).
      *
      * @param  array<string, mixed>  $dados
-     * @return array{palpites: list<array<string, mixed>>, calculo: array<string, string>, valor: string, aceitar: AceitarAlteracoes, ao_vivo: bool}
+     * @return array{palpites: list<array<string, mixed>>, pernas: list<array<string, mixed>>, blocos: list<array<string, mixed>>, calculo: array<string, string>, valor: string, aceitar: AceitarAlteracoes, ao_vivo: bool}
      *
      * @throws RegraApostaException|CotacoesAlteradasException
      */
@@ -114,28 +118,83 @@ class CriacaoApostas
         $this->regras->conferir_apostador($apostador);
 
         $palpites = $this->montar($apostador, $dados['palpites']);
+        $blocos = $dados['blocos'] ?? [];
 
         $this->regras->conferir_palpites($apostador, $palpites);
+        $this->regras->conferir_blocos($apostador, $palpites, $blocos);
         $this->conferencia->garantir_disponiveis($palpites);
 
         $valor = bcadd((string) $dados['valor'], '0', 2);
         $aceitar = AceitarAlteracoes::from($dados['aceitar_alteracoes'] ?? AceitarAlteracoes::Nenhuma->value);
-        $calculo = $this->calcular($apostador, $valor, array_column($palpites, 'cotacao_atual'));
-        $alteracoes = $this->conferencia->alteracoes($palpites, $aceitar);
+        $pernas = $this->blocos->pernas($palpites, $apostador->desconto_criar_aposta());
+        $calculo = $this->calcular($apostador, $valor, CalculoBlocos::cotacoes($pernas));
+        $alteracoes = $this->conferencia->alteracoes($palpites, $aceitar, $pernas, $blocos);
 
         if ($alteracoes !== []) {
             throw new CotacoesAlteradasException($alteracoes, $calculo);
         }
 
-        $this->regras->conferir_limites($apostador, $valor, count($palpites), $calculo['cotacao_total']);
+        $this->regras->conferir_limites($apostador, $valor, count($pernas), $calculo['cotacao_total']);
 
         return [
             'palpites' => $palpites,
+            'pernas' => $pernas,
+            'blocos' => $blocos,
             'calculo' => $calculo,
             'valor' => $valor,
             'aceitar' => $aceitar,
             'ao_vivo' => in_array(true, array_map(fn (array $palpite) => $palpite['confrontos_ao_vivo_id'] !== null, $palpites), true),
         ];
+    }
+
+    /**
+     * Desconto e liquidação do Criar Aposta gravados na aposta; nulos quando ela não tem bloco
+     * (spec 008, FR-015).
+     *
+     * @param  list<array<string, mixed>>  $pernas
+     * @return array{desconto_criar_aposta: string|null, liquidacao_criar_aposta: LiquidacaoCriarAposta|null}
+     */
+    public function valores_criar_aposta(Apostador $apostador, array $pernas): array
+    {
+        $tem_bloco = CalculoBlocos::blocos($pernas) !== [];
+
+        return [
+            'desconto_criar_aposta' => $tem_bloco ? $apostador->desconto_criar_aposta() : null,
+            'liquidacao_criar_aposta' => $tem_bloco ? $apostador->liquidacao_criar_aposta() : null,
+        ];
+    }
+
+    /**
+     * Grava os blocos Criar Aposta da aposta e devolve os palpites com o bloco de cada um. Na
+     * validação do código, o bloco do mesmo jogo já gravado pelo visitante é reaproveitado.
+     *
+     * @param  list<array<string, mixed>>  $palpites
+     * @param  list<array<string, mixed>>  $pernas
+     * @param  list<array{confrontos_id: int, cotacao_vista: string}>  $blocos  blocos do pedido
+     * @return list<array<string, mixed>>
+     */
+    public function gravar_blocos(Apostas $aposta, array $palpites, array $pernas, array $blocos): array
+    {
+        $vistas = array_column($blocos, 'cotacao_vista', 'confrontos_id');
+
+        foreach (CalculoBlocos::blocos($pernas) as $perna) {
+            $bloco = ApostasBlocos::withTrashed()->firstOrNew([
+                'apostas_id' => $aposta->id,
+                'confrontos_id' => $perna['confrontos_id'],
+            ]);
+            $bloco->fill([
+                'cotacao_vista' => bcadd($vistas[$perna['confrontos_id']] ?? $perna['cotacao'], '0', 2),
+                'cotacao' => $perna['cotacao'],
+                'situacao' => SituacaoBloco::Ativo,
+                'deleted_at' => null,
+            ])->save();
+
+            foreach ($perna['indices'] as $indice) {
+                $palpites[$indice]['apostas_blocos_id'] = $bloco->id;
+            }
+        }
+
+        return $palpites;
     }
 
     /**
@@ -332,12 +391,13 @@ class CriacaoApostas
      */
     public function garantir_limite_por_confronto(array $palpites, string $valor, ?int $ignorar_apostas_id = null): void
     {
-        // palpite especial não tem confronto nem limite por categoria
+        // palpite especial não tem confronto nem limite por categoria; o bloco Criar Aposta repete o
+        // jogo, que conta uma vez só (spec 008, FR-012)
         $pre_jogo = array_filter($palpites, fn (array $palpite) => $palpite['confrontos_ao_vivo_id'] === null && $palpite['confrontos_id'] !== null);
         $ao_vivo = array_filter($palpites, fn (array $palpite) => $palpite['confrontos_ao_vivo_id'] !== null);
 
-        $this->conferir_limite_da_tabela('confrontos', 'confrontos_id', array_column($pre_jogo, 'confrontos_id'), $palpites, $valor, $ignorar_apostas_id);
-        $this->conferir_limite_da_tabela('confrontos_ao_vivo', 'confrontos_ao_vivo_id', array_column($ao_vivo, 'confrontos_ao_vivo_id'), $palpites, $valor, $ignorar_apostas_id);
+        $this->conferir_limite_da_tabela('confrontos', 'confrontos_id', array_values(array_unique(array_column($pre_jogo, 'confrontos_id'))), $palpites, $valor, $ignorar_apostas_id);
+        $this->conferir_limite_da_tabela('confrontos_ao_vivo', 'confrontos_ao_vivo_id', array_values(array_unique(array_column($ao_vivo, 'confrontos_ao_vivo_id'))), $palpites, $valor, $ignorar_apostas_id);
     }
 
     /**
@@ -350,6 +410,7 @@ class CriacaoApostas
         foreach ($palpites as $palpite) {
             ApostasPalpites::create([
                 'apostas_id' => $aposta->id,
+                'apostas_blocos_id' => $palpite['apostas_blocos_id'] ?? null,
                 'confrontos_id' => $palpite['confrontos_id'],
                 'confrontos_ao_vivo_id' => $palpite['confrontos_ao_vivo_id'],
                 'campeonatos_id' => $palpite['campeonatos_id'],
@@ -441,6 +502,7 @@ class CriacaoApostas
     private function gravar(Apostador $apostador, array $dados, array $preparo, ?string $ip, ?string $user_agent): Apostas
     {
         $palpites = $preparo['palpites'];
+        $pernas = $preparo['pernas'];
         $ao_vivo = $preparo['ao_vivo'];
 
         // ordem de bloqueio (R-07): confrontos → vendedor ou cliente
@@ -462,6 +524,7 @@ class CriacaoApostas
             'multiplicador' => $apostador->multiplicador(),
             'premio_maximo' => $apostador->premio_maximo(),
             'ganho_multiplo_palpites' => $apostador->ganho_multiplo_palpites(),
+            ...$this->valores_criar_aposta($apostador, $pernas),
             'usuarios_id' => $apostador->usuario()?->id,
             'clientes_id' => $apostador->cliente_logado()?->id,
             'recebida_em' => now(),
@@ -473,7 +536,7 @@ class CriacaoApostas
             $aposta->situacao = SituacaoAposta::Pendente;
             $aposta->expira_em = now()->addHours((int) $apostador->configuracao->horas_validade_codigo);
             $aposta->save();
-            $this->gravar_palpites($aposta, $palpites);
+            $this->gravar_palpites_e_blocos($aposta, $preparo);
 
             return $aposta;
         }
@@ -487,17 +550,28 @@ class CriacaoApostas
             $this->garantir_uma_analise($apostador);
             $aposta->situacao = SituacaoAposta::EmAnálise;
             $aposta->save();
-            $this->gravar_palpites($aposta, $palpites);
+            $this->gravar_palpites_e_blocos($aposta, $preparo);
 
             return $aposta;
         }
 
         $aposta->situacao = SituacaoAposta::Ativa;
         $aposta->save();
-        $this->gravar_palpites($aposta, $palpites);
-        $this->confirmar($apostador, $aposta, count($palpites), false);
+        $this->gravar_palpites_e_blocos($aposta, $preparo);
+        // o bloco Criar Aposta conta como um jogo na comissão e nos limites (spec 008, FR-011)
+        $this->confirmar($apostador, $aposta, count($pernas), false);
 
         return $aposta;
+    }
+
+    /**
+     * Grava os blocos Criar Aposta e os palpites (cada um com o seu bloco) de uma aposta já salva.
+     *
+     * @param  array<string, mixed>  $preparo
+     */
+    private function gravar_palpites_e_blocos(Apostas $aposta, array $preparo): void
+    {
+        $this->gravar_palpites($aposta, $this->gravar_blocos($aposta, $preparo['palpites'], $preparo['pernas'], $preparo['blocos']));
     }
 
     /**
@@ -598,14 +672,15 @@ class CriacaoApostas
     }
 
     /**
-     * Soma das apostas Ativas e Em análise com cada jogo (pré-jogo ou ao vivo).
+     * Soma das apostas Ativas e Em análise com cada jogo (pré-jogo ou ao vivo). Cada aposta conta
+     * uma vez por jogo, mesmo com vários palpites dele num bloco Criar Aposta (spec 008, R-08).
      *
      * @param  list<int>  $ids
      * @return Collection<int, string>
      */
     public function valor_apostado(string $coluna, array $ids, ?int $ignorar_apostas_id = null): Collection
     {
-        return DB::table('apostas_palpites as ap')
+        $apostas_por_jogo = DB::table('apostas_palpites as ap')
             ->join('apostas as a', 'a.id', '=', 'ap.apostas_id')
             ->whereIn("ap.{$coluna}", $ids)
             ->when($coluna === 'confrontos_id', fn ($c) => $c->whereNull('ap.confrontos_ao_vivo_id'))
@@ -614,8 +689,13 @@ class CriacaoApostas
             ->whereNull('a.deleted_at')
             ->whereIn('a.situacao', [SituacaoAposta::Ativa->value, SituacaoAposta::EmAnálise->value])
             ->when($ignorar_apostas_id !== null, fn ($c) => $c->where('a.id', '!=', $ignorar_apostas_id))
-            ->groupBy("ap.{$coluna}")
-            ->selectRaw("ap.{$coluna} as jogo, SUM(a.valor) as total")
+            ->distinct()
+            ->select(["ap.{$coluna} as jogo", 'a.id as apostas_id', 'a.valor']);
+
+        return DB::query()
+            ->fromSub($apostas_por_jogo, 'jogos')
+            ->groupBy('jogo')
+            ->selectRaw('jogo, SUM(valor) as total')
             ->pluck('total', 'jogo');
     }
 

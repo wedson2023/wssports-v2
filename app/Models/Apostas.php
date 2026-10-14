@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Enums\AceitarAlteracoes;
 use App\Enums\FormaPagamento;
+use App\Enums\LiquidacaoCriarAposta;
 use App\Enums\ResultadoAposta;
 use App\Enums\SituacaoAposta;
 use App\Enums\SituacaoPalpite;
@@ -59,7 +60,17 @@ class Apostas extends Model
             'confirmada_em' => 'datetime',
             'expira_em' => 'datetime',
             'cancelada_em' => 'datetime',
+            'desconto_criar_aposta' => 'decimal:2',
+            'liquidacao_criar_aposta' => LiquidacaoCriarAposta::class,
         ];
+    }
+
+    /**
+     * Blocos Criar Aposta da aposta (spec 008).
+     */
+    public function blocos(): HasMany
+    {
+        return $this->hasMany(ApostasBlocos::class, 'apostas_id');
     }
 
     public function palpites(): HasMany
