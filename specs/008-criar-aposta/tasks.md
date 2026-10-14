@@ -112,7 +112,7 @@ configurações ajustadas direto no banco enquanto a US2 não existir).
 - [X] T033 [US1] ⚠️ Em resources/js/components/BetSlip/index.jsx e resources/js/components/BetSlipItem/index.jsx: o `BetSlip` usa `agrupar_pernas`; o `BetSlipItem` recebe a lista de palpites do jogo e mostra os times uma vez, uma linha `Bottom` por palpite (remover "x" à esquerda no lugar do "mais opções", mercado no meio e cotação à direita; ajuste pedido pelo responsável em 2026-10-13), e, no bloco, uma última linha com "Criar Aposta" e a cotação do bloco, só com os styled-components já existentes em `BetSlipItem/styles.jsx`
 - [X] T034 [P] [US1] ⚠️ Em resources/js/components/BetSlipSummary/index.jsx e resources/js/components/BetSlipActions/index.jsx: a contagem passa a ser a quantidade de pernas (`agrupar_pernas(cupom.palpites).length`)
 - [X] T035 [P] [US1] ⚠️ Em resources/js/components/TicketModal/index.jsx, resources/js/utils/print.js e resources/js/utils/thermal.js: palpites do bloco seguidos de uma linha "Criar Aposta" com a cotação do bloco (`comprovante.blocos`), no estilo das linhas atuais; "Qtde. jogos" usa `comprovante.quantidade_jogos`
-- [ ] T036 [US1] Validar manualmente os cenários 1 a 11 e 15 a 18 do [quickstart.md](quickstart.md) (configurações ajustadas no banco) e registrar o resultado
+- [X] T036 [US1] Validar manualmente os cenários 1 a 11 e 15 a 18 do [quickstart.md](quickstart.md) (configurações ajustadas no banco) e registrar o resultado
 
 **Checkpoint**: o Criar Aposta funciona de ponta a ponta para os três públicos.
 
@@ -209,9 +209,8 @@ arquivos de teste):
 - rotas `configuracoes/criar-aposta` (GET, PUT válido e os 422) e `PATCH usuarios-configuracoes`;
 - `npm run build` e `pint --test` sem erros.
 
-**Pendente (T036)**: a conferência visual no navegador (cupom, modal de mercados, listagem e
-impressão) não foi feita nesta execução; fica para a validação manual do responsável pelos cenários
-do [quickstart.md](quickstart.md).
+**T036**: a conferência visual no navegador (cupom, modal de mercados, listagem e impressão) foi
+feita pelo responsável em 2026-10-14.
 
 **Ajustes feitos durante a implementação** (registrados nos artefatos):
 
