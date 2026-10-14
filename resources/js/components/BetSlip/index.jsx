@@ -4,23 +4,26 @@ import BetSlipItem from '../BetSlipItem';
 import EmptyMessage from '../EmptyMessage';
 import PanelHeader from '../PanelHeader';
 import useCupom from '../../hooks/useCupom';
+import { cotacao_da_perna } from '../../utils/bet_builder';
 import { Container, List } from './styles';
 
-// coluna "Cupom" no desktop e painel sobre a tela no mobile (FR-035, FR-036)
+// coluna "Cupom" no desktop e painel sobre a tela no mobile (FR-035, FR-036); os palpites do mesmo
+// jogo do pré-jogo aparecem juntos, como um bloco Criar Aposta (spec 008)
 export default function BetSlip({ aberto, ao_fechar, ao_finalizar, ao_abrir_detalhes }) {
-    const { cupom, remover_palpite } = useCupom();
+    const { pernas, desconto_criar_aposta, remover_palpite } = useCupom();
 
     return (
         <Container $aberto={aberto}>
             <PanelHeader titulo="Cupom" ao_fechar={ao_fechar} />
             <List>
-                {cupom.palpites.length ? (
-                    cupom.palpites.map((palpite) => (
+                {pernas.length ? (
+                    pernas.map((perna) => (
                         <BetSlipItem
-                            key={`${palpite.tipo}-${palpite.confronto_id}`}
-                            palpite={palpite}
-                            ao_remover={() => remover_palpite(palpite.tipo, palpite.confronto_id)}
-                            ao_abrir_detalhes={() => ao_abrir_detalhes(palpite)}
+                            key={`${perna.tipo}-${perna.confronto_id}`}
+                            palpites={perna.palpites}
+                            cotacao_bloco={perna.bloco ? cotacao_da_perna(perna, desconto_criar_aposta) : null}
+                            ao_remover={remover_palpite}
+                            ao_abrir_detalhes={() => ao_abrir_detalhes(perna.palpites[0])}
                         />
                     ))
                 ) : (

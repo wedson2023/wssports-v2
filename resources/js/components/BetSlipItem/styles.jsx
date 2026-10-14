@@ -55,7 +55,7 @@ export const Odd = styled.strong`
 
 export const Icon = styled.i.attrs(() => ({ className: 'material-icons' }))`
     user-select: none;
-    color: ${({ theme }) => theme.texto_principal};
+    color: ${({ $destacado, theme }) => ($destacado ? theme.principal : theme.texto_principal)};
     font-size: ${({ $tamanho }) => $tamanho ?? '25px'};
     cursor: pointer;
 `;

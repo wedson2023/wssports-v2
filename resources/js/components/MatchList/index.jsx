@@ -50,7 +50,7 @@ export default function MatchList({
                                     key={confronto.id}
                                     confronto={confronto}
                                     ao_vivo={ao_vivo}
-                                    codigo_selecionado={selecao_do_jogo(confronto)}
+                                    codigos_selecionados={selecao_do_jogo(confronto)}
                                     variacoes={variacoes[confronto.id]}
                                     ao_escolher={(cotacao) => ao_escolher(confronto, campeonato, cotacao)}
                                     ao_abrir_detalhes={() => ao_abrir_detalhes(confronto)}

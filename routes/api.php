@@ -26,6 +26,7 @@ use App\Http\Controllers\ClientesController;
 use App\Http\Controllers\ClientesMeiosPagamentoController;
 use App\Http\Controllers\ClientesPromocoesController;
 use App\Http\Controllers\ClientesTransacoesController;
+use App\Http\Controllers\ConfiguracoesCriarApostaController;
 use App\Http\Controllers\ConfiguracoesLogoController;
 use App\Http\Controllers\ConfiguracoesPagamentosController;
 use App\Http\Controllers\ConfiguracoesRegrasController;
@@ -318,6 +319,10 @@ Route::middleware(['auth:api', 'garantir_acesso'])->group(function () {
 
     Route::get('configuracoes/pagamentos', [ConfiguracoesPagamentosController::class, 'show']);
     Route::put('configuracoes/pagamentos', [ConfiguracoesPagamentosController::class, 'update']);
+
+    // configurações gerais do Criar Aposta (spec 008)
+    Route::get('configuracoes/criar-aposta', [ConfiguracoesCriarApostaController::class, 'show']);
+    Route::put('configuracoes/criar-aposta', [ConfiguracoesCriarApostaController::class, 'update']);
 
     Route::post('clientes/{cliente}/acesso-assistido', [AcessosAssistidosController::class, 'store'])
         ->missing(fn () => abort(404, 'Cliente não encontrado.'));

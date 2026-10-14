@@ -5,7 +5,7 @@ import { CheckButton, CheckText, Container, Count, IconImage, Input, Label, Text
 
 // barra de resumo do mobile: valor, retorno possível e "Conferir", que abre o cupom (FR-036)
 export default function BetSlipSummary({ ao_conferir }) {
-    const { cupom, definir_valor, total_centavos } = useCupom();
+    const { cupom, pernas, definir_valor, total_centavos } = useCupom();
     const { texto, ao_mudar } = useCampoValor(cupom.valor_centavos, definir_valor);
 
     return (
@@ -20,7 +20,8 @@ export default function BetSlipSummary({ ao_conferir }) {
             </Label>
             <CheckButton type="button" onClick={ao_conferir} title="Clique para finalizar sua aposta.">
                 <CheckText>Conferir</CheckText>
-                <Count>{cupom.palpites.length}</Count>
+                {/* quantidade de jogos: o bloco Criar Aposta conta um (spec 008) */}
+                <Count>{pernas.length}</Count>
             </CheckButton>
         </Container>
     );

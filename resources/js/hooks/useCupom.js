@@ -2,7 +2,8 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useReducer,
 import { usePage } from '@inertiajs/react';
 
 import api from '../utils/api';
-import { alerta_erro, confirmar } from '../utils/alerts';
+import { alerta_atencao, alerta_erro, confirmar } from '../utils/alerts';
+import { agrupar_pernas, cotacao_da_perna, decidir_escolha, mesmo_palpite } from '../utils/bet_builder';
 import { calcular_premio, centavos_para_texto, formatar_real, para_centavos } from '../utils/money';
 import { chave_cupom, gravar_json, ler_json } from '../utils/storage';
 
@@ -15,9 +16,6 @@ const maximo_palpites = 50;
 const maximo_nome = 100;
 
 const cupom_vazio = { versao_formato, nome: '', valor_centavos: 0, palpites: [] };
-
-// no especial, confronto_id é a categoria: um palpite por categoria, como um por jogo (spec 006)
-const mesmo_jogo = (palpite, tipo, confronto_id) => palpite.tipo === tipo && palpite.confronto_id === confronto_id;
 
 const palpite_valido = (palpite) =>
     palpite !== null && typeof palpite === 'object'
@@ -42,40 +40,34 @@ const ler_cupom_salvo = () => {
 
 export const cupom_reducer = (cupom, acao) => {
     switch (acao.tipo) {
-        // um palpite por jogo: adiciona, troca de cotação ou remove a mesma (FR-034)
-        case 'alternar_palpite': {
-            const { palpite } = acao;
-            const atual = cupom.palpites.find((item) => mesmo_jogo(item, palpite.tipo, palpite.confronto_id));
+        // escolha já decidida pelas regras do Criar Aposta (decidir_escolha): remove a mesma cotação,
+        // troca a do mesmo jogo (ou do mesmo mercado no bloco) ou soma (FR-034; spec 008). No
+        // especial, confronto_id é a categoria: um palpite por categoria (spec 006)
+        case 'aplicar_escolha': {
+            const { palpite, decisao } = acao;
 
-            if (atual) {
-                const mesma_cotacao = atual.codigo_cotacao === palpite.codigo_cotacao
-                    && atual.jogador_id === palpite.jogador_id
-                    && atual.opcao_id === palpite.opcao_id;
+            if (decisao.acao === 'remover') return { ...cupom, palpites: cupom.palpites.filter((item) => !mesmo_palpite(item, decisao.alvo)) };
 
-                return {
-                    ...cupom,
-                    palpites: mesma_cotacao
-                        ? cupom.palpites.filter((item) => item !== atual)
-                        : cupom.palpites.map((item) => (item === atual ? palpite : item)),
-                };
-            }
+            if (decisao.acao === 'trocar') return { ...cupom, palpites: cupom.palpites.map((item) => (mesmo_palpite(item, decisao.alvo) ? palpite : item)) };
 
             if (cupom.palpites.length >= maximo_palpites) return cupom;
 
             return { ...cupom, palpites: [...cupom.palpites, palpite] };
         }
+        // um palpite (no bloco Criar Aposta, o jogo continua com os demais)
         case 'remover_palpite':
-            return { ...cupom, palpites: cupom.palpites.filter((item) => !mesmo_jogo(item, acao.tipo_jogo, acao.confronto_id)) };
+            return { ...cupom, palpites: cupom.palpites.filter((item) => !mesmo_palpite(item, acao.palpite)) };
         case 'definir_valor':
             return { ...cupom, valor_centavos: Math.max(0, Math.trunc(acao.valor_centavos)) };
         case 'definir_nome':
             return { ...cupom, nome: acao.nome.slice(0, maximo_nome) };
-        // cotações atuais devolvidas pelo backend no 409 (cotação alterada)
+        // cotações atuais devolvidas pelo backend no 409 (cotação alterada); a do bloco Criar Aposta
+        // não fica no cupom (é sempre calculada a partir dos palpites)
         case 'atualizar_cotacoes':
             return {
                 ...cupom,
                 palpites: cupom.palpites.map((item, indice) => {
-                    const alteracao = acao.alteracoes.find((alterada) => alterada.indice === indice);
+                    const alteracao = acao.alteracoes.find((alterada) => !alterada.bloco && alterada.indice === indice);
 
                     return alteracao ? { ...item, cotacao: alteracao.cotacao_atual } : item;
                 }),
@@ -90,8 +82,17 @@ export const cupom_reducer = (cupom, acao) => {
     }
 };
 
+// cotação vista de cada bloco Criar Aposta (spec 008): a calculada no cupom ou, depois de um 409, a
+// devolvida pelo backend
+const montar_blocos = (palpites, desconto, cotacoes_blocos) => agrupar_pernas(palpites)
+    .filter(({ bloco }) => bloco)
+    .map((perna) => ({
+        confrontos_id: perna.confronto_id,
+        cotacao_vista: cotacoes_blocos[perna.confronto_id] ?? cotacao_da_perna(perna, desconto),
+    }));
+
 // corpo do POST /api/publico/apostas (data-model.md seção 3)
-const montar_envio = (cupom, nome) => ({
+const montar_envio = (cupom, nome, desconto, cotacoes_blocos = {}) => ({
     chave_idempotencia: crypto.randomUUID(),
     nome,
     valor: centavos_para_texto(cupom.valor_centavos),
@@ -105,6 +106,7 @@ const montar_envio = (cupom, nome) => ({
             ...(palpite.codigo_cotacao === 'jogador' ? { confrontos_jogadores_id: palpite.jogador_id } : {}),
             cotacao_vista: palpite.cotacao,
         })),
+    blocos: montar_blocos(cupom.palpites, desconto, cotacoes_blocos),
 });
 
 // intervalo entre as consultas da aposta "Em análise" (delay do ao vivo)
@@ -143,6 +145,8 @@ export const useEstadoCupom = () => {
     // código pendente do visitante que o vendedor está validando (o "Finalizar" vira "Validar")
     const [codigo_validacao, definir_codigo_validacao] = useState(null);
     const enviando_agora = useRef(false);
+    // desconto do Criar Aposta do público, para a cotação vista dos blocos no envio (spec 008)
+    const desconto = usePage().props.configuracoes?.criar_aposta?.desconto ?? '0.00';
 
     // o cupom salvo é restaurado sem alterações (FR-039) e gravado a cada mudança
     useEffect(() => gravar_json(chave_cupom, cupom), [cupom]);
@@ -153,8 +157,8 @@ export const useEstadoCupom = () => {
     }, [cupom.palpites.length]);
 
     const acoes = useMemo(() => ({
-        alternar_palpite: (palpite) => despachar({ tipo: 'alternar_palpite', palpite }),
-        remover_palpite: (tipo_jogo, confronto_id) => despachar({ tipo: 'remover_palpite', tipo_jogo, confronto_id }),
+        aplicar_escolha: (palpite, decisao) => despachar({ tipo: 'aplicar_escolha', palpite, decisao }),
+        remover_palpite: (palpite) => despachar({ tipo: 'remover_palpite', palpite }),
         definir_valor: (valor_centavos) => despachar({ tipo: 'definir_valor', valor_centavos }),
         definir_nome: (nome) => despachar({ tipo: 'definir_nome', nome }),
         atualizar_cotacoes: (alteracoes) => despachar({ tipo: 'atualizar_cotacoes', alteracoes }),
@@ -188,10 +192,12 @@ export const useEstadoCupom = () => {
             const validando = e_vendedor && codigo_validacao !== null;
             const destino = validando ? `/apostas/pendentes/${encodeURIComponent(codigo_validacao)}/validar` : rota;
             const nome = (e_cliente ? sessao.nome || envio.nome : envio.nome) ?? '';
+            // cotações dos blocos Criar Aposta devolvidas no 409, usadas na confirmação
+            const cotacoes_blocos = {};
 
             for (;;) {
                 try {
-                    const { status, data } = await api.post(destino, montar_envio(envio, nome));
+                    const { status, data } = await api.post(destino, montar_envio(envio, nome, desconto, cotacoes_blocos));
                     const comprovante = status === 202 ? await aguardar_analise(rota, data.data.codigo, data.data.segundos_restantes) : data.data;
 
                     if (comprovante) acoes.limpar();
@@ -216,6 +222,9 @@ export const useEstadoCupom = () => {
                     const { message, alteracoes, total_a_pagar } = resposta.data;
                     acoes.atualizar_cotacoes(alteracoes);
                     envio = cupom_reducer(envio, { tipo: 'atualizar_cotacoes', alteracoes });
+                    alteracoes.filter(({ bloco }) => bloco).forEach(({ confrontos_id, cotacao_atual }) => {
+                        cotacoes_blocos[confrontos_id] = cotacao_atual;
+                    });
 
                     const novo_total = formatar_real(para_centavos(total_a_pagar));
 
@@ -226,7 +235,7 @@ export const useEstadoCupom = () => {
             enviando_agora.current = false;
             definir_enviando(false);
         }
-    }, [acoes, codigo_validacao]);
+    }, [acoes, codigo_validacao, desconto]);
 
     return useMemo(
         () => ({ cupom, enviando, codigo_validacao, ...acoes, enviar_cupom }),
@@ -234,19 +243,43 @@ export const useEstadoCupom = () => {
     );
 };
 
-// cupom para os componentes: estado, ações e totais estimados (FR-037, FR-037a)
+// cupom para os componentes: estado, ações e totais estimados (FR-037, FR-037a). Os totais usam as
+// pernas da aposta: o bloco Criar Aposta é uma cotação só, com o desconto (spec 008)
 export default function useCupom() {
     const contexto = useContext(CupomContext);
     const { configuracoes } = usePage().props;
+    const criar_aposta = configuracoes?.criar_aposta;
+    const { cupom, aplicar_escolha } = contexto;
+
+    const pernas = useMemo(() => agrupar_pernas(cupom.palpites), [cupom.palpites]);
 
     const totais = useMemo(() => calcular_premio({
-        valor_centavos: contexto.cupom.valor_centavos,
-        cotacoes: contexto.cupom.palpites.map(({ cotacao }) => cotacao),
+        valor_centavos: cupom.valor_centavos,
+        cotacoes: pernas.map((perna) => cotacao_da_perna(perna, criar_aposta?.desconto)),
         multiplicador: configuracoes?.multiplicador ?? 0,
         premio_maximo: configuracoes?.premio_maximo ?? '0.00',
         ganho_multiplo_palpites: configuracoes?.ganho_multiplo_palpites ?? '0.00',
-    }), [contexto.cupom, configuracoes]);
+    }), [cupom.valor_centavos, pernas, criar_aposta, configuracoes]);
+
+    // escolher uma cotação: remove, troca, soma ao bloco ou avisa por que não pode (R-12)
+    const alternar_palpite = useCallback((palpite) => {
+        const decisao = decidir_escolha(cupom.palpites, palpite, criar_aposta);
+
+        if (decisao.motivo) {
+            alerta_atencao(decisao.motivo);
+            return;
+        }
+
+        aplicar_escolha(palpite, decisao);
+    }, [cupom.palpites, criar_aposta, aplicar_escolha]);
 
     // "vendedor paga": mesmo valor do prêmio até existir a configuração vendedor_paga (FR-037a)
-    return { ...contexto, ...totais, vendedor_paga_centavos: totais.total_centavos };
+    return {
+        ...contexto,
+        ...totais,
+        pernas,
+        desconto_criar_aposta: criar_aposta?.desconto ?? '0.00',
+        alternar_palpite,
+        vendedor_paga_centavos: totais.total_centavos,
+    };
 }

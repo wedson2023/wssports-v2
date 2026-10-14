@@ -6,6 +6,7 @@ use App\Enums\SituacaoConfronto;
 use App\Exceptions\RegraApostaException;
 use App\Support\Apostador;
 use App\Support\CodigosCotacao;
+use App\Support\MercadosCotacao;
 use Illuminate\Support\Carbon;
 
 /**
@@ -49,11 +50,7 @@ class RegrasAposta
             throw new RegraApostaException('Escolha os jogos antes de concluir a aposta.');
         }
 
-        $confrontos = array_values(array_filter(array_column($palpites, 'confrontos_id'), fn (?int $id) => $id !== null));
-
-        if (count($confrontos) !== count(array_unique($confrontos))) {
-            throw new RegraApostaException('Não é possível cadastrar jogos repetidos na aposta.');
-        }
+        $this->conferir_repetidos($palpites);
 
         // um palpite por categoria especial (spec 006, FR-015)
         $especiais = array_values(array_filter(array_column($palpites, 'especiais_id'), fn (?int $id) => $id !== null));
@@ -69,6 +66,77 @@ class RegrasAposta
                 throw new RegraApostaException($motivo);
             }
         }
+    }
+
+    /**
+     * Blocos Criar Aposta (spec 008, FR-001 a FR-005a, FR-013): palpites repetidos de um jogo do
+     * pré-jogo formam um bloco, que precisa estar liberado, ter a cotação vista informada, ficar entre
+     * o mínimo e o máximo do público e não combinar palpites do mesmo mercado ou redundantes.
+     *
+     * @param  list<array<string, mixed>>  $palpites  palpites montados (CriacaoApostas::montar)
+     * @param  list<array{confrontos_id: int, cotacao_vista: string}>  $blocos  blocos do pedido
+     *
+     * @throws RegraApostaException
+     */
+    public function conferir_blocos(Apostador $apostador, array $palpites, array $blocos): void
+    {
+        $jogos = self::palpites_por_jogo_pre_jogo($palpites);
+        $repetidos = array_filter($jogos, fn (array $do_jogo) => count($do_jogo) > 1);
+        $informados = array_column($blocos, 'confrontos_id');
+
+        foreach ($informados as $confrontos_id) {
+            if (! isset($repetidos[$confrontos_id])) {
+                throw new RegraApostaException('O Criar Aposta precisa de palpites do mesmo jogo.');
+            }
+        }
+
+        if ($repetidos === []) {
+            return;
+        }
+
+        if (! $apostador->criar_aposta_habilitado()) {
+            throw new RegraApostaException('O Criar Aposta não está habilitado.');
+        }
+
+        $minimo = $apostador->quantidade_minima_criar_aposta();
+        $maximo = $apostador->quantidade_maxima_criar_aposta();
+
+        foreach ($repetidos as $confrontos_id => $do_jogo) {
+            $nome = self::nome_confronto($do_jogo[0]);
+
+            if (! in_array($confrontos_id, $informados, true)) {
+                throw new RegraApostaException("Informe a cotação do Criar Aposta do jogo {$nome}.");
+            }
+
+            if (count($do_jogo) < $minimo) {
+                throw new RegraApostaException("O Criar Aposta do jogo {$nome} precisa de pelo menos {$minimo} palpites.");
+            }
+
+            if (count($do_jogo) > $maximo) {
+                throw new RegraApostaException("O Criar Aposta aceita no máximo {$maximo} palpites.");
+            }
+
+            $this->conferir_combinacoes($do_jogo);
+        }
+    }
+
+    /**
+     * Palpites do pré-jogo agrupados pelo confronto (ao vivo e especial ficam de fora).
+     *
+     * @param  list<array<string, mixed>>  $palpites
+     * @return array<int, list<array<string, mixed>>>
+     */
+    public static function palpites_por_jogo_pre_jogo(array $palpites): array
+    {
+        $jogos = [];
+
+        foreach ($palpites as $palpite) {
+            if ($palpite['confrontos_ao_vivo_id'] === null && ($palpite['especiais_id'] ?? null) === null && $palpite['confrontos_id'] !== null) {
+                $jogos[$palpite['confrontos_id']][] = $palpite;
+            }
+        }
+
+        return $jogos;
     }
 
     /**
@@ -141,6 +209,58 @@ class RegrasAposta
         $jogo = $palpite['ao_vivo'] ?? $palpite['confronto'];
 
         return $jogo === null ? 'informado' : mb_strtoupper("{$jogo->time_casa} x {$jogo->time_fora}");
+    }
+
+    /**
+     * Jogo repetido na aposta: só no pré-jogo, onde os palpites formam um bloco Criar Aposta
+     * (conferido em conferir_blocos); no ao vivo o Criar Aposta não existe (spec 008, FR-016).
+     *
+     * @param  list<array<string, mixed>>  $palpites
+     *
+     * @throws RegraApostaException
+     */
+    private function conferir_repetidos(array $palpites): void
+    {
+        $por_confronto = [];
+
+        foreach ($palpites as $palpite) {
+            if ($palpite['confrontos_id'] !== null) {
+                $por_confronto[$palpite['confrontos_id']][] = $palpite['confrontos_ao_vivo_id'] !== null;
+            }
+        }
+
+        foreach ($por_confronto as $ao_vivo) {
+            if (count($ao_vivo) < 2 || ! in_array(true, $ao_vivo, true)) {
+                continue;
+            }
+
+            throw new RegraApostaException(in_array(false, $ao_vivo, true)
+                ? 'Não é possível cadastrar jogos repetidos na aposta.'
+                : 'O Criar Aposta não está disponível para jogos ao vivo.');
+        }
+    }
+
+    /**
+     * Dois palpites do mesmo grupo de mercado, ou de grupos redundantes, não entram no mesmo bloco.
+     *
+     * @param  list<array<string, mixed>>  $do_jogo
+     *
+     * @throws RegraApostaException
+     */
+    private function conferir_combinacoes(array $do_jogo): void
+    {
+        $grupos = array_map(
+            fn (array $palpite) => MercadosCotacao::grupo($palpite['codigo_cotacao'], $palpite['jogador']?->nome),
+            $do_jogo,
+        );
+
+        foreach ($grupos as $indice => $grupo) {
+            foreach (array_slice($grupos, $indice + 1) as $outro) {
+                if ($grupo === $outro || MercadosCotacao::redundantes($grupo, $outro)) {
+                    throw new RegraApostaException('Não é possível combinar dois palpites do mesmo mercado no Criar Aposta.');
+                }
+            }
+        }
     }
 
     /**

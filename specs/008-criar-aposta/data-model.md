@@ -63,8 +63,10 @@ Relação `blocos()` no model; casts `decimal:2` e `LiquidacaoCriarAposta`.
 | `quantidade_minima_criar_aposta` | unsignedTinyInteger | `2` | Quantidade mínima de palpites em um bloco Criar Aposta do vendedor |
 | `quantidade_maxima_criar_aposta` | unsignedTinyInteger | `10` | Quantidade máxima de palpites em um bloco Criar Aposta do vendedor |
 
-Os 4 campos entram em `UsuariosConfiguracoes::CAMPOS_APOSTA` (copiados do colega no vendedor
-novo, como os demais) e nos casts.
+Os 4 campos ficam na constante nova `UsuariosConfiguracoes::CAMPOS_CRIAR_APOSTA`, incluída em
+`CAMPOS` (copiados do colega no vendedor novo, como os demais), e nos casts. Não entram em
+`CAMPOS_APOSTA` porque as regras dessa lista vêm do concern `ConfiguracoesAposta`, que não é
+alterado; as regras próprias ficam no `UsuariosConfiguracoesRequest`.
 
 ## 3. Enums novos
 
@@ -82,6 +84,11 @@ novo, como os demais) e nos casts.
 | `quantidade_minima_criar_aposta` | inteiro, 2 a 20, ≤ máximo (o enviado ou o atual) | "O mínimo de palpites do Criar Aposta deve ser de 2 a 20 e não pode passar do máximo." |
 | `quantidade_maxima_criar_aposta` | inteiro, 2 a 20, ≥ mínimo (o enviado ou o atual) | "O máximo de palpites do Criar Aposta deve ser de 2 a 20 e não pode ser menor que o mínimo." |
 | `liquidacao_criar_aposta` (só geral) | enum | "A liquidação do Criar Aposta deve ser Recalcular ou Anular bloco." |
+
+Nas configurações do vendedor, o alvo pode ser um alcance com vários vendedores (spec 003): o
+mínimo ≤ máximo só é conferido quando os dois vêm no mesmo pedido, como já acontece com
+`quantidade_minima_opcoes`. Nas gerais (registro único), compara com o valor atual quando só um
+dos dois é enviado.
 
 ## 5. Pares redundantes (FR-005a)
 

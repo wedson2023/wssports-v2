@@ -9,7 +9,7 @@ import { ClearButton, ClearText, Count, FinishButton, FinishText, Icon, Row, Spi
 // código do visitante aberto pelo vendedor, o botão fica verde e vira "Validar" (sistema antigo)
 export default function BetSlipActions({ ao_finalizar }) {
     const { tema } = usePage().props;
-    const { cupom, enviando, codigo_validacao, limpar } = useCupom();
+    const { cupom, pernas, enviando, codigo_validacao, limpar } = useCupom();
     const validando = codigo_validacao !== null;
 
     const limpar_cupom = async () => {
@@ -39,7 +39,8 @@ export default function BetSlipActions({ ao_finalizar }) {
                 ) : (
                     <>
                         <FinishText>{validando ? 'Validar' : 'Finalizar'}</FinishText>
-                        <Count>{cupom.palpites.length}</Count>
+                        {/* quantidade de jogos: o bloco Criar Aposta conta um (spec 008) */}
+                        <Count>{pernas.length}</Count>
                     </>
                 )}
             </FinishButton>

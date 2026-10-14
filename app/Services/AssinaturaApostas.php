@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Apostas;
+use App\Models\ApostasBlocos;
 use App\Models\ApostasPalpites;
 
 /**
@@ -26,8 +27,20 @@ class AssinaturaApostas
      */
     private function canonico(Apostas $aposta): string
     {
+        // os blocos Criar Aposta (spec 008) só entram nas apostas que têm bloco: as demais continuam
+        // com o mesmo conteúdo assinado de antes
+        $blocos = $aposta->blocos()->orderBy('id')->get()
+            ->map(fn (ApostasBlocos $bloco) => [
+                'confrontos_id' => $bloco->confrontos_id,
+                'cotacao' => (string) $bloco->cotacao,
+                'id' => $bloco->id,
+                'situacao' => $bloco->situacao->value,
+            ])
+            ->all();
+
         $palpites = $aposta->palpites_ativos()->orderBy('id')->get()
             ->map(fn (ApostasPalpites $palpite) => [
+                ...($blocos !== [] ? ['apostas_blocos_id' => $palpite->apostas_blocos_id] : []),
                 'codigo_cotacao' => $palpite->codigo_cotacao,
                 'confrontos_id' => $palpite->confrontos_id,
                 'confrontos_jogadores_id' => $palpite->confrontos_jogadores_id,
@@ -37,6 +50,7 @@ class AssinaturaApostas
             ->all();
 
         $dados = [
+            ...($blocos !== [] ? ['blocos' => $blocos] : []),
             'codigo' => $aposta->codigo,
             'confirmada_em' => $aposta->confirmada_em?->utc()->toIso8601String(),
             'cotacao_total' => (string) $aposta->cotacao_total,

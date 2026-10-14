@@ -52,6 +52,16 @@ class UsuariosConfiguracoesRequest extends FormRequest
             'minuto_limite_ao_vivo' => ['sometimes', 'integer', 'between:1,130'],
             'cotacao_maxima_ao_vivo' => ['sometimes', 'numeric', 'min:1', 'regex:/^\d+(\.\d{1,2})?$/'],
             ...$this->regras_aposta($this->campos_aposta()),
+            // Criar Aposta do vendedor (spec 008)
+            'criar_aposta_habilitado' => ['sometimes', 'boolean'],
+            'desconto_criar_aposta' => ['sometimes', 'numeric', 'regex:/^\d+(\.\d{1,2})?$/', 'between:0,100'],
+            // o alvo pode ser um alcance com vários vendedores: mínimo ≤ máximo só com os dois no
+            // pedido, como em quantidade_minima_opcoes
+            'quantidade_minima_criar_aposta' => [
+                'sometimes', 'integer', 'between:2,20',
+                ...($this->has('quantidade_maxima_criar_aposta') ? ['lte:quantidade_maxima_criar_aposta'] : []),
+            ],
+            'quantidade_maxima_criar_aposta' => ['sometimes', 'integer', 'between:2,20'],
         ];
     }
 
@@ -77,6 +87,15 @@ class UsuariosConfiguracoesRequest extends FormRequest
             'cotacao_maxima_ao_vivo.min' => 'A cotação máxima do ao vivo deve ser maior ou igual a 1,00.',
             'cotacao_maxima_ao_vivo.regex' => 'A cotação máxima do ao vivo deve ter até 2 casas decimais.',
             ...$this->mensagens_aposta($this->campos_aposta()),
+            'criar_aposta_habilitado.boolean' => 'O campo criar_aposta_habilitado deve ser verdadeiro ou falso.',
+            'desconto_criar_aposta.numeric' => 'O desconto do Criar Aposta deve ser de 0 a 100%.',
+            'desconto_criar_aposta.regex' => 'O desconto do Criar Aposta deve ter até 2 casas decimais.',
+            'desconto_criar_aposta.between' => 'O desconto do Criar Aposta deve ser de 0 a 100%.',
+            'quantidade_minima_criar_aposta.integer' => 'O mínimo de palpites do Criar Aposta deve ser de 2 a 20 e não pode passar do máximo.',
+            'quantidade_minima_criar_aposta.between' => 'O mínimo de palpites do Criar Aposta deve ser de 2 a 20 e não pode passar do máximo.',
+            'quantidade_minima_criar_aposta.lte' => 'O mínimo de palpites do Criar Aposta deve ser de 2 a 20 e não pode passar do máximo.',
+            'quantidade_maxima_criar_aposta.integer' => 'O máximo de palpites do Criar Aposta deve ser de 2 a 20 e não pode ser menor que o mínimo.',
+            'quantidade_maxima_criar_aposta.between' => 'O máximo de palpites do Criar Aposta deve ser de 2 a 20 e não pode ser menor que o mínimo.',
         ];
     }
 

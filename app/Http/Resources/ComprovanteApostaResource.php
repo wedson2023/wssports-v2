@@ -5,6 +5,7 @@ namespace App\Http\Resources;
 use App\Enums\FormaPagamento;
 use App\Enums\SituacaoAposta;
 use App\Models\Apostas;
+use App\Models\ApostasBlocos;
 use App\Models\ApostasPalpites;
 use App\Models\Configuracoes;
 use App\Models\UsuariosConfiguracoes;
@@ -72,6 +73,18 @@ class ComprovanteApostaResource extends JsonResource
                 ? UsuariosConfiguracoes::where('usuarios_id', $aposta->usuarios_id)->value('mensagem_bilhete')
                 : $configuracoes->mensagem_bilhete,
             'assinatura' => $aposta->assinatura,
+            'quantidade_jogos' => $this->quantidade_jogos(),
+            // blocos Criar Aposta (spec 008); o desconto é dado interno e não aparece
+            'blocos' => $aposta->blocos()
+                ->orderBy('id')
+                ->get()
+                ->map(fn (ApostasBlocos $bloco) => [
+                    'id' => $bloco->id,
+                    'confrontos_id' => $bloco->confrontos_id,
+                    'cotacao' => (string) $bloco->cotacao,
+                    'situacao' => $bloco->situacao->value,
+                ])
+                ->all(),
             'palpites' => $aposta->palpites()
                 ->with(['confronto', 'campeonato', 'jogador', 'especial', 'opcao_especial'])
                 ->orderBy('id')
@@ -111,6 +124,18 @@ class ComprovanteApostaResource extends JsonResource
     }
 
     /**
+     * Quantidade de jogos da aposta ("Qtde. jogos"): cada palpite ativo fora de bloco e cada bloco
+     * Criar Aposta com palpite ativo contam um (spec 008, FR-011).
+     */
+    private function quantidade_jogos(): int
+    {
+        $ativos = $this->resource->palpites_ativos()->get(['apostas_blocos_id']);
+
+        return $ativos->whereNull('apostas_blocos_id')->count()
+            + $ativos->whereNotNull('apostas_blocos_id')->unique('apostas_blocos_id')->count();
+    }
+
+    /**
      * Total menos a comissão sobre o prêmio, só nas apostas pagas em dinheiro.
      */
     private function premio_liquido(string $total): string
@@ -139,6 +164,7 @@ class ComprovanteApostaResource extends JsonResource
 
         return [
             'id' => $palpite->id,
+            'apostas_blocos_id' => $palpite->apostas_blocos_id,
             'situacao' => $palpite->situacao->value,
             'campeonato' => $palpite->campeonato?->nome,
             'time_casa' => $palpite->confronto?->time_casa,
@@ -166,6 +192,7 @@ class ComprovanteApostaResource extends JsonResource
     {
         return [
             'id' => $palpite->id,
+            'apostas_blocos_id' => null,
             'situacao' => $palpite->situacao->value,
             'resultado' => $palpite->resultado->value,
             'campeonato' => $palpite->especial?->nome,

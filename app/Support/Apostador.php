@@ -3,6 +3,7 @@
 namespace App\Support;
 
 use App\Enums\Funcao;
+use App\Enums\LiquidacaoCriarAposta;
 use App\Models\Clientes;
 use App\Models\ClientesConfiguracoes;
 use App\Models\Configuracoes;
@@ -148,6 +149,41 @@ final readonly class Apostador
     }
 
     /**
+     * Criar Aposta liberado (spec 008): o vendedor usa a configuração dele; cliente e visitante, a
+     * geral (padrão de cotacao_maxima_ao_vivo).
+     */
+    public function criar_aposta_habilitado(): bool
+    {
+        return (bool) $this->configuracao_criar_aposta()->criar_aposta_habilitado;
+    }
+
+    /**
+     * Percentual de desconto sobre a cotação do bloco Criar Aposta.
+     */
+    public function desconto_criar_aposta(): string
+    {
+        return (string) $this->configuracao_criar_aposta()->desconto_criar_aposta;
+    }
+
+    public function quantidade_minima_criar_aposta(): int
+    {
+        return (int) $this->configuracao_criar_aposta()->quantidade_minima_criar_aposta;
+    }
+
+    public function quantidade_maxima_criar_aposta(): int
+    {
+        return (int) $this->configuracao_criar_aposta()->quantidade_maxima_criar_aposta;
+    }
+
+    /**
+     * Regra de liquidação do bloco: sempre a geral, a mesma em todo o sistema.
+     */
+    public function liquidacao_criar_aposta(): LiquidacaoCriarAposta
+    {
+        return Configuracoes::atual()->liquidacao_criar_aposta;
+    }
+
+    /**
      * Segundos de espera da aposta com ao vivo (o visitante não aposta no ao vivo).
      */
     public function delay_ao_vivo(): int
@@ -161,6 +197,14 @@ final readonly class Apostador
     public function mensagem_bilhete(): string
     {
         return $this->e_vendedor() ? (string) $this->configuracao->mensagem_bilhete : (string) Configuracoes::atual()->mensagem_bilhete;
+    }
+
+    /**
+     * Onde ficam as configurações do Criar Aposta do público.
+     */
+    private function configuracao_criar_aposta(): UsuariosConfiguracoes|Configuracoes
+    {
+        return $this->e_vendedor() ? $this->configuracao : Configuracoes::atual();
     }
 
     /**

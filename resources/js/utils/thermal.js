@@ -1,3 +1,4 @@
+import { bloco_apos_palpite } from './bet_builder';
 import { formatar_data_hora, formatar_dia_mes, formatar_hora } from './dates';
 import { formatar_real, para_centavos } from './money';
 
@@ -57,6 +58,15 @@ const texto_palpite = (palpite, colunas) => {
     return partes.join('');
 };
 
+// linha "Criar Aposta" com a cotação do bloco, depois do último palpite dele (spec 008)
+const texto_bloco = (comprovante, palpite, colunas) => {
+    const bloco = bloco_apos_palpite(comprovante, palpite);
+
+    return bloco
+        ? `${NEGRITO}${linha_rotulo_valor('Criar Aposta', Number(bloco.cotacao).toFixed(2), colunas)}${LINHA}${INICIAR}${tracejado(colunas)}${LINHA}${INICIAR}`
+        : '';
+};
+
 // bilhete cadastrado ou validado pelo vendedor
 export const texto_bilhete = (comprovante, largura) => {
     const colunas = colunas_da_largura(largura);
@@ -69,8 +79,8 @@ export const texto_bilhete = (comprovante, largura) => {
     texto += `${linha_rotulo_valor('Vendedor', comprovante.vendedor ?? '', colunas)}${LINHA}${INICIAR}`;
     texto += `${linha_rotulo_valor('Horario', formatar_data_hora(comprovante.criada_em), colunas)}${LINHA}${INICIAR}`;
     texto += `${tracejado(colunas)}${LINHA}${INICIAR}`;
-    texto += comprovante.palpites.map((palpite) => texto_palpite(palpite, colunas)).join('');
-    texto += `${linha_rotulo_valor('Qtde. jogos', String(comprovante.palpites.length), colunas)}${LINHA}${INICIAR}`;
+    texto += comprovante.palpites.map((palpite) => texto_palpite(palpite, colunas) + texto_bloco(comprovante, palpite, colunas)).join('');
+    texto += `${linha_rotulo_valor('Qtde. jogos', String(comprovante.quantidade_jogos ?? comprovante.palpites.length), colunas)}${LINHA}${INICIAR}`;
     texto += `${linha_rotulo_valor('Cotacao', Number(comprovante.cotacao_total).toFixed(2), colunas)}${LINHA}${INICIAR}`;
     texto += `${linha_rotulo_valor('Valor', real(comprovante.valor), colunas)}${LINHA}${INICIAR}`;
     texto += `${linha_rotulo_valor('Premio', real(comprovante.total_a_pagar), colunas)}${LINHA}${INICIAR}`;

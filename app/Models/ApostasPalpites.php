@@ -10,7 +10,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 /**
  * Palpite de uma aposta: um confronto (ou uma opção de categoria especial), um código de cotação e
- * as cotações vista, original e final.
+ * as cotações vista, original e final. Pode fazer parte de um bloco Criar Aposta (spec 008).
  */
 class ApostasPalpites extends Model
 {
@@ -46,6 +46,14 @@ class ApostasPalpites extends Model
     public function aposta(): BelongsTo
     {
         return $this->belongsTo(Apostas::class, 'apostas_id');
+    }
+
+    /**
+     * Bloco Criar Aposta do palpite; nulo no palpite simples.
+     */
+    public function bloco(): BelongsTo
+    {
+        return $this->belongsTo(ApostasBlocos::class, 'apostas_blocos_id');
     }
 
     public function confronto(): BelongsTo

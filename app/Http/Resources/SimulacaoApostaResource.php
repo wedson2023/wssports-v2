@@ -15,7 +15,7 @@ use Illuminate\Support\Carbon;
  * Simulação do código do visitante para o vendedor: palpites com as cotações dele, prêmio pelas
  * regras dele e o motivo dos palpites que ele não pode validar. Nada é gravado.
  *
- * @property array{aposta: Apostas, palpites: list<array<string, mixed>>, calculo: array<string, string>} $resource
+ * @property array{aposta: Apostas, palpites: list<array<string, mixed>>, blocos: list<array<string, mixed>>, calculo: array<string, string>} $resource
  */
 class SimulacaoApostaResource extends JsonResource
 {
@@ -37,6 +37,12 @@ class SimulacaoApostaResource extends JsonResource
             'premio' => $calculo['premio'],
             'valor_acrescido' => $calculo['valor_acrescido'],
             'total_a_pagar' => $calculo['total_a_pagar'],
+            // blocos Criar Aposta com o desconto do vendedor (spec 008); os palpites de cada bloco são
+            // os disponíveis do mesmo confronto
+            'blocos' => array_map(fn (array $bloco) => [
+                'confrontos_id' => $bloco['confrontos_id'],
+                'cotacao' => $bloco['cotacao'],
+            ], $this->resource['blocos']),
             'palpites' => array_map(fn (array $palpite) => $palpite['codigo_cotacao'] === CodigosCotacao::ESPECIAL ? [
                 // palpite especial: "Vencedor" e a categoria no lugar dos times (spec 006, FR-019)
                 'indice' => $palpite['indice'],

@@ -82,8 +82,10 @@ Campos novos:
 
 - `quantidade_jogos`: quantidade de pernas (palpites simples + blocos), usada em "Qtde. jogos".
 - `blocos`: lista vazia quando a aposta não tem Criar Aposta; o desconto **não** é exibido (FR-025).
-- A simulação do código (`GET /api/apostas/pendentes/{codigo}`) acrescenta `blocos` no mesmo
-  formato, já com o desconto do vendedor, e `apostas_blocos_id` nos palpites.
+- A simulação do código (`GET /api/apostas/pendentes/{codigo}`) acrescenta `blocos` como
+  `[{ "confrontos_id": 101, "cotacao": "4.81" }]`, já com o desconto do vendedor (ainda não gravados,
+  por isso sem `id`); os palpites de cada bloco são os disponíveis com o mesmo `confrontos_id`. Bloco
+  fora das regras do vendedor vem com os palpites `disponivel: false` e o motivo.
 
 ## Edição (`POST /api/apostas/{codigo}/palpites/{palpite}/cancelar` e `.../restaurar`)
 

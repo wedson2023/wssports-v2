@@ -22,10 +22,14 @@ class ValidacaoCodigos
 
     private const TAMANHO_USER_AGENT = 255;
 
-    public function __construct(private CriacaoApostas $criacao, private RegrasAposta $regras) {}
+    public function __construct(
+        private CriacaoApostas $criacao,
+        private RegrasAposta $regras,
+        private CalculoBlocos $blocos,
+    ) {}
 
     /**
-     * @return array{aposta: Apostas, palpites: list<array<string, mixed>>, calculo: array<string, string>}
+     * @return array{aposta: Apostas, palpites: list<array<string, mixed>>, blocos: list<array<string, mixed>>, calculo: array<string, string>}
      *
      * @throws RegraApostaException quando o código expirou
      */
@@ -42,13 +46,47 @@ class ValidacaoCodigos
                 ?? (bccomp($palpite['cotacao_atual'], '0', 2) <= 0 ? 'Cotação indisponível.' : null);
         }
 
-        $disponiveis = array_filter($palpites, fn (array $palpite) => $palpite['motivo'] === null);
+        $palpites = $this->marcar_blocos_fora_das_regras($apostador, $palpites);
+        $disponiveis = array_values(array_filter($palpites, fn (array $palpite) => $palpite['motivo'] === null));
+        // blocos Criar Aposta com o desconto do vendedor (spec 008)
+        $pernas = $this->blocos->pernas($disponiveis, $apostador->desconto_criar_aposta());
 
         return [
             'aposta' => $aposta,
             'palpites' => $palpites,
-            'calculo' => $this->criacao->calcular($apostador, (string) $aposta->valor, array_values(array_column($disponiveis, 'cotacao_atual'))),
+            'blocos' => CalculoBlocos::blocos($pernas),
+            'calculo' => $this->criacao->calcular($apostador, (string) $aposta->valor, CalculoBlocos::cotacoes($pernas)),
         ];
+    }
+
+    /**
+     * Bloco Criar Aposta que o vendedor não pode validar (desligado, abaixo do mínimo ou acima do
+     * máximo dele): os palpites do bloco ficam indisponíveis, com o motivo (spec 008).
+     *
+     * @param  list<array<string, mixed>>  $palpites
+     * @return list<array<string, mixed>>
+     */
+    private function marcar_blocos_fora_das_regras(Apostador $apostador, array $palpites): array
+    {
+        $disponiveis = array_filter($palpites, fn (array $palpite) => $palpite['motivo'] === null);
+
+        foreach (RegrasAposta::palpites_por_jogo_pre_jogo($disponiveis) as $confrontos_id => $do_jogo) {
+            if (count($do_jogo) < 2) {
+                continue;
+            }
+
+            try {
+                $this->regras->conferir_blocos($apostador, $do_jogo, [['confrontos_id' => $confrontos_id, 'cotacao_vista' => '1.00']]);
+            } catch (RegraApostaException $excecao) {
+                foreach ($palpites as $indice => $palpite) {
+                    if ($palpite['motivo'] === null && $palpite['confrontos_id'] === $confrontos_id && $palpite['confrontos_ao_vivo_id'] === null) {
+                        $palpites[$indice]['motivo'] = $excecao->getMessage();
+                    }
+                }
+            }
+        }
+
+        return $palpites;
     }
 
     /**
@@ -100,6 +138,7 @@ class ValidacaoCodigos
                 'multiplicador' => $apostador->multiplicador(),
                 'premio_maximo' => $apostador->premio_maximo(),
                 'ganho_multiplo_palpites' => $apostador->ganho_multiplo_palpites(),
+                ...$this->criacao->valores_criar_aposta($apostador, $preparo['pernas']),
                 'usuarios_id' => $apostador->usuario()->id,
                 'validada_em' => now(),
                 'ip_validacao' => $ip,
@@ -108,8 +147,9 @@ class ValidacaoCodigos
             ]);
             $aposta->save();
 
-            $this->substituir_palpites($aposta, $preparo['palpites']);
-            $this->criacao->confirmar($apostador, $aposta, count($preparo['palpites']), false);
+            $this->substituir_palpites($aposta, $preparo);
+            // o bloco Criar Aposta conta como um jogo na comissão e nos limites (spec 008)
+            $this->criacao->confirmar($apostador, $aposta, count($preparo['pernas']), false);
 
             return $aposta;
         });
@@ -180,25 +220,32 @@ class ValidacaoCodigos
     }
 
     /**
-     * Chave do palpite na aposta: o confronto ou, no especial, a categoria (os dois têm índice
-     * único por aposta, que vale também para os excluídos).
+     * Chave do palpite na aposta: no especial, a categoria (índice único por aposta, que vale também
+     * para os excluídos); nos demais, o confronto com o mercado e o jogador, porque o bloco Criar
+     * Aposta repete o confronto (spec 008).
      *
      * @param  array<string, mixed>|ApostasPalpites  $palpite
      */
     private static function chave(array|ApostasPalpites $palpite): string
     {
-        return $palpite['especiais_id'] !== null ? "especial:{$palpite['especiais_id']}" : "confronto:{$palpite['confrontos_id']}";
+        return $palpite['especiais_id'] !== null
+            ? "especial:{$palpite['especiais_id']}"
+            : "confronto:{$palpite['confrontos_id']}:{$palpite['codigo_cotacao']}:{$palpite['confrontos_jogadores_id']}";
     }
 
     /**
-     * Troca os palpites do visitante pelos validados. O palpite de um confronto (ou de uma categoria
-     * especial) que continua na aposta é atualizado; os demais são excluídos logicamente e os novos,
-     * criados.
+     * Troca os palpites do visitante pelos validados. O palpite (confronto, mercado e jogador, ou
+     * categoria especial) que continua na aposta é atualizado; os demais são excluídos logicamente e
+     * os novos, criados. Os blocos Criar Aposta são regravados com os do vendedor.
      *
-     * @param  list<array<string, mixed>>  $palpites
+     * @param  array<string, mixed>  $preparo  CriacaoApostas::preparar
      */
-    private function substituir_palpites(Apostas $aposta, array $palpites): void
+    private function substituir_palpites(Apostas $aposta, array $preparo): void
     {
+        $palpites = $this->criacao->gravar_blocos($aposta, $preparo['palpites'], $preparo['pernas'], $preparo['blocos']);
+        $blocos_mantidos = array_values(array_unique(array_filter(array_column($palpites, 'apostas_blocos_id'))));
+        $aposta->blocos()->whereNotIn('id', $blocos_mantidos)->delete();
+
         $existentes = ApostasPalpites::withTrashed()->where('apostas_id', $aposta->id)->get()->keyBy(fn (ApostasPalpites $palpite) => self::chave($palpite));
         $novos = [];
         $mantidos = [];
@@ -214,6 +261,7 @@ class ValidacaoCodigos
 
             $existente->restore();
             $existente->fill([
+                'apostas_blocos_id' => $palpite['apostas_blocos_id'] ?? null,
                 'campeonatos_id' => $palpite['campeonatos_id'],
                 'especiais_opcoes_id' => $palpite['especiais_opcoes_id'],
                 'esporte' => $palpite['esporte'],

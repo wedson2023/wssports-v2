@@ -22,6 +22,7 @@ class UsuariosConfiguracoes extends Model
         'minuto_limite_ao_vivo',
         'cotacao_maxima_ao_vivo',
         ...self::CAMPOS_APOSTA,
+        ...self::CAMPOS_CRIAR_APOSTA,
         ...self::COMISSOES_PRE_JOGO,
         ...self::COMISSOES_AO_VIVO,
     ];
@@ -50,6 +51,17 @@ class UsuariosConfiguracoes extends Model
         'limite_simples',
         'limite_duplo',
         'limite_geral',
+    ];
+
+    /**
+     * Criar Aposta do vendedor (spec 008); fora de CAMPOS_APOSTA porque as regras de validação
+     * deles são próprias.
+     */
+    public const CAMPOS_CRIAR_APOSTA = [
+        'criar_aposta_habilitado',
+        'desconto_criar_aposta',
+        'quantidade_minima_criar_aposta',
+        'quantidade_maxima_criar_aposta',
     ];
 
     /**
@@ -117,6 +129,10 @@ class UsuariosConfiguracoes extends Model
             'limite_simples' => 'decimal:2',
             'limite_duplo' => 'decimal:2',
             'limite_geral' => 'decimal:2',
+            'criar_aposta_habilitado' => 'boolean',
+            'desconto_criar_aposta' => 'decimal:2',
+            'quantidade_minima_criar_aposta' => 'integer',
+            'quantidade_maxima_criar_aposta' => 'integer',
             ...array_fill_keys([...self::COMISSOES_PRE_JOGO, ...self::COMISSOES_AO_VIVO], 'decimal:2'),
         ];
     }

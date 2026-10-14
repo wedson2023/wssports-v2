@@ -14,7 +14,7 @@ const esconder_imagem = (evento) => {
 };
 
 // card do jogo: times, horário (ou placar e período no ao vivo) e cotações (FR-021, FR-022)
-export default function MatchCard({ confronto, ao_vivo, codigo_selecionado, variacoes, ao_escolher, ao_abrir_detalhes }) {
+export default function MatchCard({ confronto, ao_vivo, codigos_selecionados, variacoes, ao_escolher, ao_abrir_detalhes }) {
     const perto = !ao_vivo && confronto.minutos_para_inicio < minutos_perto;
 
     return (
@@ -50,7 +50,7 @@ export default function MatchCard({ confronto, ao_vivo, codigo_selecionado, vari
             </Match>
             <OddGroup
                 confronto={confronto}
-                codigo_selecionado={codigo_selecionado}
+                codigos_selecionados={codigos_selecionados}
                 variacoes={variacoes}
                 ao_escolher={ao_escolher}
                 ao_abrir_detalhes={ao_abrir_detalhes}
