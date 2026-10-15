@@ -62,6 +62,10 @@ class Apostas extends Model
             'cancelada_em' => 'datetime',
             'desconto_criar_aposta' => 'decimal:2',
             'liquidacao_criar_aposta' => LiquidacaoCriarAposta::class,
+            // apuração e pagamento (spec 009)
+            'apurada_em' => 'datetime',
+            'valor_pago' => 'decimal:2',
+            'liquidacao_pendente' => 'boolean',
         ];
     }
 

@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Enums\SituacaoConfronto;
 use App\Models\Campeonatos;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -92,8 +93,11 @@ class ImportacaoConfrontos
 
         // ativo, manual, cotações e sorteio não entram na atualização
         $atualizadas = [
-            'campeonatos_id', 'time_casa', 'escudo_casa', 'time_fora', 'escudo_fora', 'esporte', 'situacao',
+            'campeonatos_id', 'time_casa', 'escudo_casa', 'time_fora', 'escudo_fora', 'esporte',
             'data_inicio', 'updated_at',
+            // jogo já Cancelado, Adiado ou Encerrado (cargas de resultados e de cancelados, spec 009)
+            // não volta para Aguardando, senão a grade reabriria o jogo para apostas (FR-044)
+            'situacao' => DB::raw("IF(situacao IN ({$this->situacoes_finais()}), situacao, VALUES(situacao))"),
         ];
 
         DB::transaction(function () use ($linhas, $atualizadas) {
@@ -107,5 +111,15 @@ class ImportacaoConfrontos
             'gravados' => count($linhas),
             'ignorados' => $confrontos->count() - count($linhas),
         ];
+    }
+
+    /**
+     * Situações que a carga dos confrontos não troca, já entre aspas para o SQL (valores fixos do enum).
+     */
+    private function situacoes_finais(): string
+    {
+        $finais = [SituacaoConfronto::Cancelado, SituacaoConfronto::Adiado, SituacaoConfronto::Encerrado];
+
+        return implode(', ', array_map(fn (SituacaoConfronto $situacao) => "'{$situacao->value}'", $finais));
     }
 }

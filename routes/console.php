@@ -19,6 +19,15 @@ Schedule::command('confrontos:importar')->cron('1-59/5 * * * *')->runInBackgroun
 // cotações e jogadores a cada 5 min, 1 min depois dos confrontos (:02, :07, :12...)
 Schedule::command('confrontos_cotacoes:importar')->cron('2-59/5 * * * *')->runInBackground()->withoutOverlapping(10);
 
+// apuração (spec 009): resultados a cada 5 min, 1 min depois das cotações (:03, :08, :13...)
+Schedule::command('confrontos_resultados:importar')->cron('3-59/5 * * * *')->runInBackground()->withoutOverlapping(10);
+
+// jogos cancelados ou adiados a cada 5 min, 1 min depois dos resultados (:04, :09, :14...)
+Schedule::command('confrontos_cancelados:importar')->cron('4-59/5 * * * *')->runInBackground()->withoutOverlapping(10);
+
+// prêmios: credita os que já passaram da janela de segurança (antigo apostas:premiadas)
+Schedule::command('apostas:liquidar_premios')->everyMinute()->withoutOverlapping(5);
+
 // carga do ao vivo a cada 5 segundos; a trava por tempo protege se ela parar
 Schedule::command('confrontos_ao_vivo:importar')->everyFiveSeconds()->withoutOverlapping(1);
 

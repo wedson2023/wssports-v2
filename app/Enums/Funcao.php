@@ -79,6 +79,8 @@ enum Funcao: string
         'usuarios_configuracoes.editar',
         'visitantes_configuracoes.editar',
         'confrontos.alterar_limite',
+        // resultado de jogo manual (spec 009): só Admin e Supervisor
+        'confrontos.lancar_resultado',
     ];
 
     /**

@@ -72,6 +72,22 @@ class Confrontos extends Model
         return $this->hasOne(ConfrontosAoVivo::class, 'confrontos_id');
     }
 
+    /**
+     * Resultado recebido do provedor ou lançado à mão (spec 009).
+     */
+    public function resultado(): HasOne
+    {
+        return $this->hasOne(ConfrontosResultados::class, 'confrontos_id');
+    }
+
+    /**
+     * Gols por jogador, na ordem em que foram marcados (spec 009).
+     */
+    public function gols(): HasMany
+    {
+        return $this->hasMany(ConfrontosGols::class, 'confrontos_id')->orderBy('ordem');
+    }
+
     public function nao_permitidos(): HasMany
     {
         return $this->hasMany(ConfrontosNaoPermitidos::class, 'confrontos_id');

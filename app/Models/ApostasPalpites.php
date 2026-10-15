@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\MotivoCancelamentoPalpite;
 use App\Enums\ResultadoAposta;
 use App\Enums\SituacaoPalpite;
 use Illuminate\Database\Eloquent\Model;
@@ -40,6 +41,7 @@ class ApostasPalpites extends Model
             'dados_ao_vivo_decisao' => 'array',
             'cancelado_em' => 'datetime',
             'restaurado_em' => 'datetime',
+            'motivo_cancelamento' => MotivoCancelamentoPalpite::class,
         ];
     }
 

@@ -368,6 +368,10 @@ conferir o carrossel e a logo; trocar a logo e conferir que a nova aparece sem l
   quando não restou palpite ativo (prêmio igual ao valor apostado); Aguardando nos demais casos (há
   jogos ainda sem resultado). O pagamento do prêmio e a apuração dos jogos ficam para a spec de
   apuração.
+  > **Spec 009 (apuração)**: a decisão das apostas no encerramento e no cancelamento da categoria
+  > passou a usar a mesma regra da apuração dos jogos (`ApuracaoApostas::decidir`), e o prêmio é
+  > pago pela liquidação da spec 009 (`LiquidacaoApostas`). Uma aposta mista com os jogos já
+  > Vencedor também fica Vencedor ao encerrar a categoria.
 - **FR-019**: O bilhete, o comprovante impresso e a consulta pelo código DEVEM mostrar o palpite
   especial como "Vencedor: categoria", com a opção e a cotação.
 
