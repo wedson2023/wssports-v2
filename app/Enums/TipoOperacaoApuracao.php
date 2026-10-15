@@ -17,4 +17,6 @@ enum TipoOperacaoApuracao: string
     case PrêmioAjustado = 'Prêmio ajustado';
     case PrêmioEstornado = 'Prêmio estornado';
     case ValorDevolvido = 'Valor devolvido';
+    // encerramento de aposta desfeito porque o jogo já estava decidido (spec 010, FR-033)
+    case EncerramentoDesfeito = 'Encerramento desfeito';
 }

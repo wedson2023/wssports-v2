@@ -1,4 +1,5 @@
 import { Fragment } from 'react';
+import { router } from '@inertiajs/react';
 
 import Backdrop from '../Backdrop';
 import useTelaMobile from '../../hooks/useTelaMobile';
@@ -106,7 +107,10 @@ export default function TicketModal({ comprovante, ao_fechar }) {
     const visivel = Boolean(comprovante);
     useVoltarFecha(visivel, ao_fechar);
 
-    const compartilhar = () => compartilhar_texto(`*ACOMPANHE SEU BILHETE:* \n\n CÓDIGO: ${comprovante.codigo}`, e_mobile);
+    // o link leva ao bilhete em tempo real, como no sistema antigo (spec 010, FR-015)
+    const link_bilhete = () => `${window.location.origin}/bilhete/${comprovante.codigo}`;
+    const compartilhar = () => compartilhar_texto(`*ACOMPANHE SEU BILHETE:* \n\n ${link_bilhete()}`, e_mobile);
+    const acompanhar = () => router.visit(`/bilhete/${comprovante.codigo}`);
 
     return (
         <>
@@ -115,6 +119,9 @@ export default function TicketModal({ comprovante, ao_fechar }) {
                     <Title>Conferir Bilhete</Title>
                     <Icons>
                         <Icon $cor="green" title="Clique para compartilhar bilhete" onClick={compartilhar}>share</Icon>
+                        {comprovante && comprovante.situacao !== 'Pendente' && (
+                            <Icon $cor="green" title="Clique para acompanhar esse bilhete em tempo real" onClick={acompanhar}>desktop_mac</Icon>
+                        )}
                         <Icon $cor={tema.principal} title="Clique para fechar o bilhete" onClick={ao_fechar}>close</Icon>
                     </Icons>
                 </Header>

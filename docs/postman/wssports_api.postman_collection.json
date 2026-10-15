@@ -1,7 +1,7 @@
 {
     "info": {
         "name": "WSSports API",
-        "description": "Rotas da API do WSSports (autenticação JWT, gestão de usuários e permissões, área do cliente, gestão de clientes, confrontos e apostas).\n\nVariáveis da coleção:\n- base_url: endereço da API (ex.: http://127.0.0.1:8000/api)\n- token: token do painel, preenchido pelo login e refresh do painel\n- token_cliente: token do cliente, preenchido pelo cadastro, login e refresh da área do cliente\n- usuario_id / permissao: usados nas rotas de usuários e permissões\n- cliente_id / meio_pagamento_id / promocao_id: usados nas rotas de clientes\n- campeonato_id / confronto_id / registro_id / gerente_id: usados nas rotas de confrontos\n- codigo_aposta / palpite_id / confronto_ao_vivo_id: usados nas rotas de apostas\n\nFluxo: execute 'Login' (painel) e 'Login do cliente'; as demais rotas usam os tokens salvos.",
+        "description": "Rotas da API do WSSports (autenticação JWT, gestão de usuários e permissões, área do cliente, gestão de clientes, confrontos e apostas).\n\nVariáveis da coleção:\n- base_url: endereço da API (ex.: http://127.0.0.1:8000/api)\n- token: token do painel, preenchido pelo login e refresh do painel\n- token_cliente: token do cliente, preenchido pelo cadastro, login e refresh da área do cliente\n- usuario_id / permissao: usados nas rotas de usuários e permissões\n- cliente_id / meio_pagamento_id / promocao_id: usados nas rotas de clientes\n- campeonato_id / confronto_id / registro_id / gerente_id: usados nas rotas de confrontos\n- codigo_aposta / palpite_id / confronto_ao_vivo_id: usados nas rotas de apostas\n- codigo_aposta / chave_encerramento / endpoint_push: usados nas rotas da spec 010\n\nFluxo: execute 'Login' (painel) e 'Login do cliente'; as demais rotas usam os tokens salvos.",
         "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
     },
     "auth": {
@@ -132,6 +132,16 @@
         },
         {
             "key": "codigo_acesso",
+            "value": "",
+            "type": "string"
+        },
+        {
+            "key": "chave_encerramento",
+            "value": "",
+            "type": "string"
+        },
+        {
+            "key": "endpoint_push",
             "value": "",
             "type": "string"
         }
@@ -1462,7 +1472,7 @@
                         "description": "clientes.editar_configuracoes (Admin, Supervisor ou Gerente). Spec 004: campos de aposta opcionais.",
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \"realizar_aposta\": true,\n    \"apostar_ao_vivo\": true,\n    \"apostar_outros_esportes\": true,\n    \"cancelar_aposta\": false,\n    \"aceita_promocao\": true,\n    \"bloquear_saque\": false,\n    \"quantidade_minima_opcoes\": 1,\n    \"quantidade_maxima_opcoes\": 20,\n    \"valor_minimo_aposta\": \"2.00\",\n    \"valor_maximo_aposta\": \"1000.00\",\n    \"premio_maximo\": \"50000.00\",\n    \"valor_maximo_diario\": \"5000.00\",\n    \"valor_maximo_saque_diario\": \"5000.00\",\n    \"quantidade_maxima_saques_diaria\": 5,\n    \"odd_minima\": \"1.90\",\n    \"odd_maxima\": \"30.00\",\n    \"esportes_permitidos\": [\n        \"FUTEBOL\",\n        \"HOQUEI NO GELO\",\n        \"BAISEBOL\"\n    ],\n    \"apostar_jogadores\": true,\n    \"periodo_jogos\": \"Depois de amanhã\",\n    \"delay_ao_vivo\": 15,\n    \"multiplicador\": 1000,\n    \"ganho_multiplo_palpites\": \"0.00\"\n}"
+                            "raw": "{\n    \"realizar_aposta\": true,\n    \"apostar_ao_vivo\": true,\n    \"apostar_outros_esportes\": true,\n    \"cancelar_aposta\": false,\n    \"aceita_promocao\": true,\n    \"bloquear_saque\": false,\n    \"quantidade_minima_opcoes\": 1,\n    \"quantidade_maxima_opcoes\": 20,\n    \"valor_minimo_aposta\": \"2.00\",\n    \"valor_maximo_aposta\": \"1000.00\",\n    \"premio_maximo\": \"50000.00\",\n    \"valor_maximo_diario\": \"5000.00\",\n    \"valor_maximo_saque_diario\": \"5000.00\",\n    \"quantidade_maxima_saques_diaria\": 5,\n    \"odd_minima\": \"1.90\",\n    \"odd_maxima\": \"30.00\",\n    \"esportes_permitidos\": [\n        \"FUTEBOL\",\n        \"HOQUEI NO GELO\",\n        \"BAISEBOL\"\n    ],\n    \"apostar_jogadores\": true,\n    \"periodo_jogos\": \"Depois de amanhã\",\n    \"delay_ao_vivo\": 15,\n    \"multiplicador\": 1000,\n    \"ganho_multiplo_palpites\": \"0.00\",\n    \"encerrar_aposta\": true\n}"
                         }
                     }
                 },
@@ -5541,6 +5551,502 @@
                         "body": {
                             "mode": "raw",
                             "raw": "{\n    \"motivo\": \"Chave Pix inválida\"\n}"
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Bilhete em tempo real, encerramento e notificações (spec 010)",
+            "description": "Rotas da spec 010: bilhete em tempo real (público), encerramento de aposta (área do cliente e painel) e notificações push.",
+            "item": [
+                {
+                    "name": "Bilhete em tempo real",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/publico/bilhetes/{{codigo_aposta}}",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "publico",
+                                "bilhetes",
+                                "{{codigo_aposta}}"
+                            ],
+                            "query": [
+                                {
+                                    "key": "oferta_anterior",
+                                    "value": "",
+                                    "disabled": true
+                                }
+                            ]
+                        },
+                        "description": "Bilhete em tempo real pelo código, sem login (FR-001). Com o token do cliente dono: nome completo e bloco \"encerramento\". 404 \"Bilhete não encontrado ou ainda não validado.\" para código inexistente, Pendente, Em análise, Recusada ou Expirada. Limite de 120 consultas por minuto por IP. Query opcional \"oferta_anterior\" para a indicação subiu/caiu.",
+                        "auth": {
+                            "type": "bearer",
+                            "bearer": [
+                                {
+                                    "key": "token",
+                                    "value": "{{token_cliente}}",
+                                    "type": "string"
+                                }
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Encerrar aposta",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/area-cliente/apostas/{{codigo_aposta}}/encerramentos",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "area-cliente",
+                                "apostas",
+                                "{{codigo_aposta}}",
+                                "encerramentos"
+                            ]
+                        },
+                        "description": "Encerramento total ou parcial (FR-024 a FR-029). 201 Registrado; 202 Em análise (tempo de confirmação do ao vivo); 200 reenvio da mesma chave; 409 \"A oferta mudou.\" com o bloco atual; 422 com o motivo. Copie o token_oferta do GET do bilhete. Limite de 10 por minuto.",
+                        "auth": {
+                            "type": "bearer",
+                            "bearer": [
+                                {
+                                    "key": "token",
+                                    "value": "{{token_cliente}}",
+                                    "type": "string"
+                                }
+                            ]
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"modalidade\": \"Total\",\n    \"valor\": \"10.00\",\n    \"token_oferta\": \"\",\n    \"chave_idempotencia\": \"{{$guid}}\",\n    \"aceitar_alteracoes\": \"Somente para maior\"\n}"
+                        }
+                    }
+                },
+                {
+                    "name": "Situação do encerramento",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/area-cliente/apostas/{{codigo_aposta}}/encerramentos/{{chave_encerramento}}",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "area-cliente",
+                                "apostas",
+                                "{{codigo_aposta}}",
+                                "encerramentos",
+                                "{{chave_encerramento}}"
+                            ]
+                        },
+                        "description": "Acompanha um pedido Em análise. 404 se a chave não for desta aposta.",
+                        "auth": {
+                            "type": "bearer",
+                            "bearer": [
+                                {
+                                    "key": "token",
+                                    "value": "{{token_cliente}}",
+                                    "type": "string"
+                                }
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Programar encerramento automático",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/area-cliente/apostas/{{codigo_aposta}}/encerramento-automatico",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "area-cliente",
+                                "apostas",
+                                "{{codigo_aposta}}",
+                                "encerramento-automatico"
+                            ]
+                        },
+                        "description": "Valor-alvo maior que a oferta atual (FR-030); substitui o ativo. 422 com o motivo.",
+                        "auth": {
+                            "type": "bearer",
+                            "bearer": [
+                                {
+                                    "key": "token",
+                                    "value": "{{token_cliente}}",
+                                    "type": "string"
+                                }
+                            ]
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"valor_alvo\": \"50.00\"\n}"
+                        }
+                    }
+                },
+                {
+                    "name": "Desativar encerramento automático",
+                    "request": {
+                        "method": "DELETE",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/area-cliente/apostas/{{codigo_aposta}}/encerramento-automatico",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "area-cliente",
+                                "apostas",
+                                "{{codigo_aposta}}",
+                                "encerramento-automatico"
+                            ]
+                        },
+                        "description": "204; 404 \"Nenhum encerramento automático ativo.\"",
+                        "auth": {
+                            "type": "bearer",
+                            "bearer": [
+                                {
+                                    "key": "token",
+                                    "value": "{{token_cliente}}",
+                                    "type": "string"
+                                }
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Configurações do encerramento",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/configuracoes/encerramento",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "configuracoes",
+                                "encerramento"
+                            ]
+                        },
+                        "description": "Configurações gerais do encerramento (FR-036). Permissão configuracoes.editar."
+                    }
+                },
+                {
+                    "name": "Alterar configurações do encerramento",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/configuracoes/encerramento",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "configuracoes",
+                                "encerramento"
+                            ]
+                        },
+                        "description": "Grava só os campos enviados. Faixas: margens 0 a 50%; valor mínimo 0,01 a 10.000; percentual 0 a 100; validade 3 a 60 s; limite de parciais 1 a 50.",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"encerramento_habilitado\": true,\n    \"encerramento_parcial_habilitado\": true,\n    \"encerramento_automatico_habilitado\": true,\n    \"encerramento_jogos_nao_iniciados\": true,\n    \"margem_encerramento_pre_jogo\": \"7.00\",\n    \"margem_encerramento_ao_vivo\": \"10.00\",\n    \"valor_minimo_encerramento\": \"1.00\",\n    \"percentual_minimo_encerramento\": \"5.00\",\n    \"segundos_validade_oferta\": 8,\n    \"limite_encerramentos_parciais\": 5\n}"
+                        }
+                    }
+                },
+                {
+                    "name": "Encerramentos de apostas (painel)",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/apostas-encerramentos?pagina=1&por_pagina=20",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "apostas-encerramentos"
+                            ],
+                            "query": [
+                                {
+                                    "key": "data_inicial",
+                                    "value": "",
+                                    "disabled": true
+                                },
+                                {
+                                    "key": "data_final",
+                                    "value": "",
+                                    "disabled": true
+                                },
+                                {
+                                    "key": "clientes_id",
+                                    "value": "{{cliente_id}}",
+                                    "disabled": true
+                                },
+                                {
+                                    "key": "modalidade",
+                                    "value": "Total",
+                                    "disabled": true
+                                },
+                                {
+                                    "key": "situacao",
+                                    "value": "Creditado",
+                                    "disabled": true
+                                },
+                                {
+                                    "key": "pagina",
+                                    "value": "1"
+                                },
+                                {
+                                    "key": "por_pagina",
+                                    "value": "20"
+                                }
+                            ]
+                        },
+                        "description": "Lista dos encerramentos com o valor pago e quanto a aposta teria pago (FR-037). Permissão apostas_encerramentos.listar (Admin e Supervisor). por_pagina padrão 20, máximo 100."
+                    }
+                },
+                {
+                    "name": "Configuração das notificações",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/publico/notificacoes/configuracao",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "publico",
+                                "notificacoes",
+                                "configuracao"
+                            ]
+                        },
+                        "description": "Chave pública VAPID e se as notificações estão habilitadas no servidor.",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    }
+                },
+                {
+                    "name": "Inscrição deste aparelho",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/area-cliente/notificacoes/inscricao?endpoint={{endpoint_push}}",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "area-cliente",
+                                "notificacoes",
+                                "inscricao"
+                            ],
+                            "query": [
+                                {
+                                    "key": "endpoint",
+                                    "value": "{{endpoint_push}}"
+                                }
+                            ]
+                        },
+                        "description": "Preferências da inscrição do aparelho (404 se não houver).",
+                        "auth": {
+                            "type": "bearer",
+                            "bearer": [
+                                {
+                                    "key": "token",
+                                    "value": "{{token_cliente}}",
+                                    "type": "string"
+                                }
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Gravar inscrição do aparelho",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/area-cliente/notificacoes/inscricao",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "area-cliente",
+                                "notificacoes",
+                                "inscricao"
+                            ]
+                        },
+                        "description": "Cria ou atualiza a inscrição pelo endpoint (FR-040, FR-041). Na criação, todos os tipos ligados. Limite de 20 por minuto.",
+                        "auth": {
+                            "type": "bearer",
+                            "bearer": [
+                                {
+                                    "key": "token",
+                                    "value": "{{token_cliente}}",
+                                    "type": "string"
+                                }
+                            ]
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"endpoint\": \"{{endpoint_push}}\",\n    \"chaves\": {\n        \"p256dh\": \"\",\n        \"auth\": \"\"\n    },\n    \"codificacao\": \"aes128gcm\",\n    \"preferencias\": {\n        \"receber_gols\": true,\n        \"receber_intervalo\": true,\n        \"receber_fim_jogo\": true,\n        \"receber_resultado_aposta\": true,\n        \"receber_encerramento_automatico\": true\n    }\n}"
+                        }
+                    }
+                },
+                {
+                    "name": "Desativar notificações do aparelho",
+                    "request": {
+                        "method": "DELETE",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/area-cliente/notificacoes/inscricao?endpoint={{endpoint_push}}",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "area-cliente",
+                                "notificacoes",
+                                "inscricao"
+                            ],
+                            "query": [
+                                {
+                                    "key": "endpoint",
+                                    "value": "{{endpoint_push}}"
+                                }
+                            ]
+                        },
+                        "description": "Desativa as notificações deste aparelho. 204.",
+                        "auth": {
+                            "type": "bearer",
+                            "bearer": [
+                                {
+                                    "key": "token",
+                                    "value": "{{token_cliente}}",
+                                    "type": "string"
+                                }
+                            ]
                         }
                     }
                 }

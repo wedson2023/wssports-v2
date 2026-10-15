@@ -140,15 +140,23 @@ class CancelamentoApostas
         $valor = (string) $aposta->valor;
 
         if ($aposta->clientes_id !== null) {
-            $this->saldo->creditar(
-                Clientes::withTrashed()->findOrFail($aposta->clientes_id),
-                $aposta->forma_pagamento->carteira(),
-                $valor,
-                OrigemTransacao::Estorno,
-                $autor,
-                $aposta->id,
-                "Cancelamento da aposta {$aposta->codigo}",
-            );
+            // com encerramento parcial (spec 010, R-21), só a parte que continua valendo volta: a
+            // parte encerrada já é paga pelo encerramento
+            $valor_em_jogo = $aposta->valor_em_jogo();
+
+            if (bccomp($valor_em_jogo, '0', 2) > 0) {
+                $this->saldo->creditar(
+                    Clientes::withTrashed()->findOrFail($aposta->clientes_id),
+                    $aposta->forma_pagamento->carteira(),
+                    $valor_em_jogo,
+                    OrigemTransacao::Estorno,
+                    $autor,
+                    $aposta->id,
+                    "Cancelamento da aposta {$aposta->codigo}",
+                );
+            }
+
+            // as ligações com o rollover já foram reduzidas pelo parcial: desfaz só o que restou
             $this->rollover->desfazer($aposta);
 
             return;

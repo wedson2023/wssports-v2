@@ -48,6 +48,8 @@ export default defineConfig({
                 modifyURLPrefix: { '': '/build/' },
                 inlineWorkboxRuntime: true,
                 additionalManifestEntries: arquivos_publicos(),
+                // notificações push (spec 010, R-14): handlers servidos pelo Laravel, sem cache
+                importScripts: ['/sw-notificacoes.js'],
                 navigateFallback: null,
                 skipWaiting: true,
                 clientsClaim: true,

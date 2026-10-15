@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AcessosAssistidosController;
 use App\Http\Controllers\ApostasController;
+use App\Http\Controllers\ApostasEncerramentosController;
 use App\Http\Controllers\ApostasPalpitesController;
 use App\Http\Controllers\AreaClienteAcessoAssistidoController;
 use App\Http\Controllers\AreaClienteApostasController;
@@ -9,10 +10,13 @@ use App\Http\Controllers\AreaClienteAutenticacaoController;
 use App\Http\Controllers\AreaClienteBonusController;
 use App\Http\Controllers\AreaClienteCadastroController;
 use App\Http\Controllers\AreaClienteDepositosController;
+use App\Http\Controllers\AreaClienteEncerramentoAutomaticoController;
+use App\Http\Controllers\AreaClienteEncerramentosController;
 use App\Http\Controllers\AreaClienteIndicacoesController;
 use App\Http\Controllers\AreaClienteMeiosPagamentoController;
 use App\Http\Controllers\AreaClienteMeusDadosController;
 use App\Http\Controllers\AreaClienteMinhaContaController;
+use App\Http\Controllers\AreaClienteNotificacoesController;
 use App\Http\Controllers\AreaClienteRecuperacaoSenhaController;
 use App\Http\Controllers\AreaClienteSaquesController;
 use App\Http\Controllers\AutenticacaoController;
@@ -28,6 +32,7 @@ use App\Http\Controllers\ClientesPromocoesController;
 use App\Http\Controllers\ClientesTransacoesController;
 use App\Http\Controllers\ConfiguracoesApuracaoController;
 use App\Http\Controllers\ConfiguracoesCriarApostaController;
+use App\Http\Controllers\ConfiguracoesEncerramentoController;
 use App\Http\Controllers\ConfiguracoesLogoController;
 use App\Http\Controllers\ConfiguracoesPagamentosController;
 use App\Http\Controllers\ConfiguracoesRegrasController;
@@ -49,6 +54,8 @@ use App\Http\Controllers\PorcentagensConfrontosController;
 use App\Http\Controllers\PorcentagensVendedoresController;
 use App\Http\Controllers\PublicoApostasController;
 use App\Http\Controllers\PublicoAvisosController;
+use App\Http\Controllers\PublicoBilhetesController;
+use App\Http\Controllers\PublicoNotificacoesController;
 use App\Http\Controllers\PublicoConfrontosController;
 use App\Http\Controllers\PublicoConfrontosDetalheController;
 use App\Http\Controllers\PublicoEspeciaisController;
@@ -134,6 +141,17 @@ Route::prefix('area-cliente')->group(function () {
         // apostas do cliente com o próprio saldo (o cliente não cancela nem edita)
         Route::post('apostas', [AreaClienteApostasController::class, 'store']);
         Route::get('apostas/{codigo}/situacao', [AreaClienteApostasController::class, 'situacao']);
+
+        // encerramento de aposta pelo dono (spec 010): total, parcial e automático
+        Route::post('apostas/{codigo}/encerramentos', [AreaClienteEncerramentosController::class, 'store'])->middleware('throttle:10,1');
+        Route::get('apostas/{codigo}/encerramentos/{chave}', [AreaClienteEncerramentosController::class, 'show']);
+        Route::put('apostas/{codigo}/encerramento-automatico', [AreaClienteEncerramentoAutomaticoController::class, 'update']);
+        Route::delete('apostas/{codigo}/encerramento-automatico', [AreaClienteEncerramentoAutomaticoController::class, 'destroy']);
+
+        // notificações push do aparelho (spec 010): inscrição e preferências por tipo de aviso
+        Route::get('notificacoes/inscricao', [AreaClienteNotificacoesController::class, 'show']);
+        Route::put('notificacoes/inscricao', [AreaClienteNotificacoesController::class, 'update']);
+        Route::delete('notificacoes/inscricao', [AreaClienteNotificacoesController::class, 'destroy']);
     });
 });
 
@@ -187,6 +205,12 @@ Route::get('publico/confrontos-ao-vivo/{confronto_ao_vivo}', [PublicoConfrontosD
 Route::post('publico/apostas/consultar', [PublicoApostasController::class, 'consultar']);
 Route::post('publico/apostas', [PublicoApostasController::class, 'store']);
 Route::get('publico/apostas/{codigo}', [PublicoApostasController::class, 'show']);
+
+// bilhete em tempo real (spec 010): público pelo código; o token do cliente identifica o dono
+Route::get('publico/bilhetes/{codigo}', [PublicoBilhetesController::class, 'show']);
+
+// notificações push (spec 010): chave pública VAPID para o navegador inscrever o aparelho
+Route::get('publico/notificacoes/configuracao', [PublicoNotificacoesController::class, 'configuracao']);
 
 // gestão de confrontos no painel: mesmo token dos usuários da spec 001
 Route::middleware(['auth:api', 'garantir_acesso'])->group(function () {
@@ -271,6 +295,9 @@ Route::middleware(['auth:api', 'garantir_acesso'])->group(function () {
 
     // tabela de jogos impressa pelo vendedor, com as cotações dele
     Route::get('tabela-jogos', [TabelaJogosController::class, 'index']);
+
+    // encerramentos de aposta dos clientes (spec 010): Admin e Supervisor
+    Route::get('apostas-encerramentos', [ApostasEncerramentosController::class, 'index']);
 });
 
 // aviso da banca no site (sem login; aceita token de cliente): o aviso a mostrar e o "Lido"
@@ -332,6 +359,10 @@ Route::middleware(['auth:api', 'garantir_acesso'])->group(function () {
     // configurações gerais da apuração (spec 009)
     Route::get('configuracoes/apuracao', [ConfiguracoesApuracaoController::class, 'show']);
     Route::put('configuracoes/apuracao', [ConfiguracoesApuracaoController::class, 'update']);
+
+    // configurações gerais do encerramento de aposta (spec 010)
+    Route::get('configuracoes/encerramento', [ConfiguracoesEncerramentoController::class, 'show']);
+    Route::put('configuracoes/encerramento', [ConfiguracoesEncerramentoController::class, 'update']);
 
     Route::post('clientes/{cliente}/acesso-assistido', [AcessosAssistidosController::class, 'store'])
         ->missing(fn () => abort(404, 'Cliente não encontrado.'));

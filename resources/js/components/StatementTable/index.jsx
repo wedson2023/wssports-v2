@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 
 import Spinner from '../Spinner';
+import { cores_estado } from '../../utils/live_states';
 import { formatar_real, para_centavos } from '../../utils/money';
 import { Container, Empty, Head, Icon, List, Row, Sentinel, Status } from './styles';
 
@@ -24,6 +25,8 @@ const situacao = (item) => {
         if (item.aposta.cancelada) return { icone: 'not_interested', cor: '#999' };
         if (item.aposta.resultado === 'Vencedor') return { icone: 'emoji_events', cor: 'gold' };
         if (item.aposta.resultado === 'Perdedor') return { icone: 'highlight_off', cor: 'red' };
+        // encerrada pelo cliente (spec 010): mesma cor do bilhete em tempo real
+        if (item.aposta.resultado === 'Encerrada') return { icone: 'price_check', cor: cores_estado.encerrada };
 
         return { icone: 'query_builder', cor: '#999' };
     }

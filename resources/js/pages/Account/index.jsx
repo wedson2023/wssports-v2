@@ -14,7 +14,6 @@ import ReferralModal from '../../components/ReferralModal';
 import ReferralsModal from '../../components/ReferralsModal';
 import StatementFilters from '../../components/StatementFilters';
 import StatementTable, { Icon as BonusIcon } from '../../components/StatementTable';
-import TicketModal from '../../components/TicketModal';
 import WithdrawModal from '../../components/WithdrawModal';
 import useMinhaConta from '../../hooks/useMinhaConta';
 import useSessao from '../../hooks/useSessao';
@@ -38,7 +37,6 @@ export default function Account({ acesso = null }) {
     const [menu_aberto, definir_menu_aberto] = useState(false);
     // modal aberto: confirmar_saida | motivo | deposito | saque | bonus | indicar | indicacoes
     const [modal, definir_modal] = useState(null);
-    const [bilhete, definir_bilhete] = useState(null);
     const [motivo, definir_motivo] = useState('');
 
     useEffect(() => {
@@ -97,22 +95,15 @@ export default function Account({ acesso = null }) {
         retomar?.();
     };
 
-    const tocar_linha = async (item) => {
+    const tocar_linha = (item) => {
         if (item.saque?.situacao === 'Recusado') {
             definir_motivo(item.saque.motivo ?? 'Saque recusado.');
             definir_modal('motivo');
             return;
         }
 
-        if (!item.aposta) return;
-
-        try {
-            const { data } = await api.get(`/publico/apostas/${encodeURIComponent(item.aposta.codigo)}`);
-            definir_bilhete(data.data);
-        } catch (erro) {
-            if (erro.response?.status === 404) alerta_atencao('Bilhete não encontrado.');
-            else alerta_erro(erro);
-        }
+        // operação de aposta abre direto o bilhete em tempo real (spec 010, FR-015)
+        if (item.aposta) router.visit(`/bilhete/${encodeURIComponent(item.aposta.codigo)}`);
     };
 
     const escolher_item = (chave) => {
@@ -275,7 +266,6 @@ export default function Account({ acesso = null }) {
                 ao_salvar={perfil_salvo}
                 ao_senha_alterada={sair_da_conta}
             />
-            {bilhete && <TicketModal comprovante={bilhete} ao_fechar={() => definir_bilhete(null)} />}
         </Container>
     );
 }

@@ -73,4 +73,14 @@ return [
         'url_autorizacao' => 'https://auth.mercadopago.com.br/authorization',
     ],
 
+    // notificações push do aplicativo (spec 010, R-13): par de chaves VAPID próprio, sem serviço
+    // externo; gerar uma vez com "php artisan notificacoes_push:gerar_chaves". Trocar as chaves
+    // invalida as inscrições dos aparelhos
+    'notificacoes_push' => [
+        'chave_publica' => env('VAPID_PUBLIC_KEY'),
+        'chave_privada' => env('VAPID_PRIVATE_KEY'),
+        // contato do remetente exigido pelos serviços de push (mailto: ou https:)
+        'assunto' => env('VAPID_SUBJECT', 'mailto:'.env('MAIL_FROM_ADDRESS', 'contato@example.com')),
+    ],
+
 ];

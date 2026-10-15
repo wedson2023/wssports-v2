@@ -4,7 +4,9 @@ namespace App\Services;
 
 use App\Enums\OrigemApuracao;
 use App\Enums\SituacaoConfronto;
+use App\Enums\TipoEventoConfronto;
 use App\Enums\TipoOperacaoApuracao;
+use App\Events\ConfrontoAtualizado;
 use App\Models\Confrontos;
 use App\Models\ConfrontosGols;
 use App\Models\ConfrontosResultados;
@@ -43,6 +45,7 @@ class ImportacaoResultados
         private ValidacaoCargaProvedor $validacao,
         private ApuracaoApostas $apuracao,
         private RegistroApuracao $registro,
+        private EventosConfrontos $eventos,
     ) {}
 
     /**
@@ -141,7 +144,39 @@ class ImportacaoResultados
             return ['alterado' => true, 'apostas' => 0];
         }
 
-        return ['alterado' => true, 'apostas' => $this->apuracao->apurar_confronto($confronto, $origem)['apuradas']];
+        $acabou_de_encerrar = ! $apuravel_antes && $novo->apuravel();
+
+        // o aviso de fim de jogo vai antes da apuração, para os clientes com aposta ainda em aberto
+        // nele (spec 010, FR-043)
+        if ($acabou_de_encerrar) {
+            $this->eventos->registrar_e_avisar($confronto->id, null, TipoEventoConfronto::FimDeJogo, (int) $novo->placar_casa, (int) $novo->placar_fora, null);
+        }
+
+        $apuradas = $this->apuracao->apurar_confronto($confronto, $origem)['apuradas'];
+
+        if ($acabou_de_encerrar) {
+            $this->avisar_fim_de_jogo($confronto, $novo);
+        }
+
+        return ['alterado' => true, 'apostas' => $apuradas];
+    }
+
+    /**
+     * O jogo acabou de ser encerrado (spec 010): o bilhete em tempo real recebe o placar final, depois
+     * da apuração (os selos viram o resultado).
+     */
+    private function avisar_fim_de_jogo(Confrontos $confronto, ConfrontosResultados $resultado): void
+    {
+        ConfrontoAtualizado::emitir(ConfrontoAtualizado::de_jogo(
+            $confronto->id,
+            $resultado->only(self::CAMPOS),
+            (string) $confronto->esporte,
+            $resultado->situacao->value,
+            null,
+            false,
+            false,
+            true,
+        ));
     }
 
     /**

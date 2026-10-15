@@ -3,7 +3,9 @@
 namespace App\Console\Commands;
 
 use App\Enums\SituacaoAposta;
+use App\Enums\SituacaoEncerramento;
 use App\Models\Apostas;
+use App\Models\ApostasEncerramentos;
 use App\Services\DecisaoAoVivo;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
@@ -47,8 +49,44 @@ class RecusarAnalisesPresasCommand extends Command
             });
         }
 
-        $this->info("{$recusadas} aposta(s) em análise recusada(s).");
+        $encerramentos = $this->recusar_encerramentos_presos();
+
+        $this->info("{$recusadas} aposta(s) em análise recusada(s); {$encerramentos} encerramento(s) em análise recusado(s).");
 
         return self::SUCCESS;
+    }
+
+    /**
+     * Encerramentos de aposta Em análise (spec 010, R-09) que passaram do tempo de confirmação mais
+     * a margem sem decisão: recusados sem mover nada.
+     */
+    private function recusar_encerramentos_presos(): int
+    {
+        $recusados = 0;
+
+        $candidatos = ApostasEncerramentos::where('situacao', SituacaoEncerramento::EmAnálise)
+            ->where('created_at', '<=', now()->subSeconds(self::MARGEM_SEGUNDOS))
+            ->pluck('id');
+
+        foreach ($candidatos as $id) {
+            $recusados += (int) DB::transaction(function () use ($id) {
+                $encerramento = ApostasEncerramentos::lockForUpdate()->find($id);
+
+                if ($encerramento === null || $encerramento->situacao !== SituacaoEncerramento::EmAnálise
+                    || $encerramento->created_at->copy()->addSeconds($encerramento->aposta->delay_ao_vivo() + self::MARGEM_SEGUNDOS)->isFuture()) {
+                    return false;
+                }
+
+                $encerramento->forceFill([
+                    'situacao' => SituacaoEncerramento::Recusado,
+                    'motivo_recusa' => 'Tempo de confirmação esgotado.',
+                    'decidido_em' => now(),
+                ])->save();
+
+                return true;
+            });
+        }
+
+        return $recusados;
     }
 }

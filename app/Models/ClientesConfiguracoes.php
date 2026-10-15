@@ -40,6 +40,8 @@ class ClientesConfiguracoes extends Model
         'delay_ao_vivo',
         'multiplicador',
         'ganho_multiplo_palpites',
+        // encerramento de aposta (spec 010)
+        'encerrar_aposta',
     ];
 
     /**
@@ -68,6 +70,7 @@ class ClientesConfiguracoes extends Model
         'delay_ao_vivo' => 'integer',
         'multiplicador' => 'integer',
         'ganho_multiplo_palpites' => 'decimal:2',
+        'encerrar_aposta' => 'boolean',
     ];
 
     protected $table = 'clientes_configuracoes';

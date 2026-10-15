@@ -150,6 +150,14 @@ enum Funcao: string
     ];
 
     /**
+     * Permissões do encerramento de aposta (spec 010): listar os encerramentos no painel. Só Admin e
+     * Supervisor.
+     */
+    public const PERMISSOES_ENCERRAMENTOS = [
+        'apostas_encerramentos.listar',
+    ];
+
+    /**
      * Nível hierárquico: 1 é o topo (Admin) e 4 a base (Vendedor).
      */
     public function nivel(): int
@@ -207,6 +215,7 @@ enum Funcao: string
         $permissoes_confrontos = array_filter(self::PERMISSOES_CONFRONTOS, fn (string $permissao) => $this->pode_usar($permissao));
         $permissoes_site = array_filter([...self::PERMISSOES_ESPECIAIS, ...self::PERMISSOES_SITE], fn (string $permissao) => $this->pode_usar($permissao));
         $permissoes_pagamentos = array_filter(self::PERMISSOES_PAGAMENTOS, fn (string $permissao) => $this->pode_usar($permissao));
+        $permissoes_encerramentos = array_filter(self::PERMISSOES_ENCERRAMENTOS, fn (string $permissao) => $this->pode_usar($permissao));
 
         return [
             ...self::PERMISSOES_GESTAO,
@@ -215,6 +224,7 @@ enum Funcao: string
             ...$permissoes_apostas,
             ...array_values($permissoes_site),
             ...array_values($permissoes_pagamentos),
+            ...array_values($permissoes_encerramentos),
         ];
     }
 
@@ -232,8 +242,8 @@ enum Funcao: string
      * confrontos; Gerente não usa as permissões de clientes restritas (excluir, restaurar e
      * estorno) e, das de confrontos, só as de PERMISSOES_CONFRONTOS_GERENTE. Nas apostas, criar e
      * validar código são só do Vendedor; cancelar, de todos; o resto, de Gerente para cima.
-     * Especiais, recursos do site e pagamentos são só de Admin e Supervisor (vincular o gateway, só
-     * Admin).
+     * Especiais, recursos do site, pagamentos e encerramentos de aposta são só de Admin e Supervisor
+     * (vincular o gateway, só Admin).
      */
     public function pode_usar(string $permissao): bool
     {
@@ -242,7 +252,7 @@ enum Funcao: string
             return $this === self::Admin;
         }
 
-        if (in_array($permissao, [...self::PERMISSOES_ESPECIAIS, ...self::PERMISSOES_SITE, ...self::PERMISSOES_PAGAMENTOS], true)) {
+        if (in_array($permissao, [...self::PERMISSOES_ESPECIAIS, ...self::PERMISSOES_SITE, ...self::PERMISSOES_PAGAMENTOS, ...self::PERMISSOES_ENCERRAMENTOS], true)) {
             return $this === self::Admin || $this === self::Supervisor;
         }
 

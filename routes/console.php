@@ -28,6 +28,12 @@ Schedule::command('confrontos_cancelados:importar')->cron('4-59/5 * * * *')->run
 // prêmios: credita os que já passaram da janela de segurança (antigo apostas:premiadas)
 Schedule::command('apostas:liquidar_premios')->everyMinute()->withoutOverlapping(5);
 
+// encerramento de aposta (spec 010): credita os encerramentos vencidos na janela de segurança
+Schedule::command('apostas:liquidar_encerramentos')->everyMinute()->withoutOverlapping(5);
+
+// encerramentos automáticos das apostas só com jogos do pré-jogo (os do ao vivo vão pela carga)
+Schedule::command('apostas:conferir_encerramentos_automaticos')->everyMinute()->withoutOverlapping(2);
+
 // carga do ao vivo a cada 5 segundos; a trava por tempo protege se ela parar
 Schedule::command('confrontos_ao_vivo:importar')->everyFiveSeconds()->withoutOverlapping(1);
 

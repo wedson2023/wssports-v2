@@ -195,6 +195,76 @@ class RolloverClientes
     }
 
     /**
+     * Encerramento de aposta (spec 010, FR-038): retira do progresso de cada rollover a parte
+     * encerrada (o que a aposta ainda soma × proporção) e reduz a ligação na mesma medida, para um
+     * cancelamento posterior desfazer só o que restou. Devolve o que saiu de cada rollover, para o
+     * encerramento desfeito poder devolver.
+     *
+     * @return list<array{clientes_rollovers_id: int, valor: string}>
+     */
+    public function retirar(Apostas $aposta, string $proporcao): array
+    {
+        $ligacoes = ApostasRollovers::where('apostas_id', $aposta->id)
+            ->whereNull('desfeito_em')
+            ->orderBy('clientes_rollovers_id')
+            ->get();
+
+        $retiradas = [];
+
+        foreach ($ligacoes as $ligacao) {
+            $valor = bcmul((string) $ligacao->valor, $proporcao, 2);
+
+            if (bccomp($valor, '0', 2) <= 0) {
+                continue;
+            }
+
+            $rollover = ClientesRollovers::lockForUpdate()->find($ligacao->clientes_rollovers_id);
+
+            if ($rollover !== null) {
+                $rollover->valor_apostado = bcsub((string) $rollover->valor_apostado, $valor, 2);
+                $rollover->cumprido_em = bccomp((string) $rollover->valor_apostado, (string) $rollover->valor_exigido, 2) >= 0 ? $rollover->cumprido_em : null;
+                $rollover->save();
+            }
+
+            $ligacao->valor = bcsub((string) $ligacao->valor, $valor, 2);
+            $ligacao->save();
+
+            $retiradas[] = ['clientes_rollovers_id' => (int) $ligacao->clientes_rollovers_id, 'valor' => $valor];
+        }
+
+        return $retiradas;
+    }
+
+    /**
+     * Encerramento desfeito (spec 010, FR-038): o que foi retirado volta ao progresso e à ligação.
+     *
+     * @param  list<array{clientes_rollovers_id: int, valor: string}>  $retiradas
+     */
+    public function devolver(array $retiradas, int $apostas_id): void
+    {
+        foreach ($retiradas as $retirada) {
+            $rollover = ClientesRollovers::lockForUpdate()->find($retirada['clientes_rollovers_id']);
+
+            if ($rollover !== null) {
+                $rollover->valor_apostado = bcadd((string) $rollover->valor_apostado, $retirada['valor'], 2);
+                $rollover->cumprido_em = bccomp((string) $rollover->valor_apostado, (string) $rollover->valor_exigido, 2) >= 0
+                    ? ($rollover->cumprido_em ?? now())
+                    : null;
+                $rollover->save();
+            }
+
+            $ligacao = ApostasRollovers::where('apostas_id', $apostas_id)
+                ->where('clientes_rollovers_id', $retirada['clientes_rollovers_id'])
+                ->first();
+
+            if ($ligacao !== null) {
+                $ligacao->valor = bcadd((string) $ligacao->valor, $retirada['valor'], 2);
+                $ligacao->save();
+            }
+        }
+    }
+
+    /**
      * Promoção estornada: os rollovers pendentes dela deixam de valer.
      */
     public function cancelar_da_promocao(int $clientes_id, int $clientes_promocoes_id): void

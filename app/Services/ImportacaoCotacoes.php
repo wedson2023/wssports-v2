@@ -2,12 +2,18 @@
 
 namespace App\Services;
 
+use App\Enums\ResultadoAposta;
+use App\Enums\SituacaoAposta;
+use App\Enums\SituacaoPalpite;
+use App\Events\ConfrontoAtualizado;
+use App\Jobs\ConferirEncerramentosAutomaticos;
 use App\Models\Campeonatos;
 use App\Models\Configuracoes;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Throwable;
 
 /**
  * Carga das cotações do pré-jogo (rota "cotacao" do provedor): grava as cotações, o sorteio de
@@ -62,7 +68,82 @@ class ImportacaoCotacoes
 
         $confrontos = $cotacoes->only(array_keys($atuais))->values();
 
-        return DB::transaction(fn () => $this->gravar($confrontos, $atuais, $configuracoes, now()) + ['ignorados' => $ignorados]);
+        $resumo = DB::transaction(fn () => $this->gravar($confrontos, $atuais, $configuracoes, now()) + ['ignorados' => $ignorados]);
+
+        // bilhete em tempo real (spec 010, R-22): as cotações novas chegam aos bilhetes abertos; uma
+        // falha aqui não desfaz a carga já gravada
+        try {
+            $this->avisar_bilhetes($atuais);
+        } catch (Throwable $erro) {
+            Log::warning('Carga das cotações: aviso aos bilhetes não concluído: '.class_basename($erro).' - '.$erro->getMessage());
+        }
+
+        return $resumo;
+    }
+
+    /**
+     * Avisa o bilhete em tempo real dos jogos da carga que têm palpite em aberto numa aposta ativa
+     * (só esses, para não enviar milhares de mensagens a cada carga).
+     *
+     * @param  array<int, object>  $atuais
+     */
+    private function avisar_bilhetes(array $atuais): void
+    {
+        $esportes = collect($atuais)->mapWithKeys(fn (object $atual) => [(int) $atual->id => (string) $atual->esporte]);
+        $com_aposta = $this->jogos_com_aposta_aberta($esportes->keys()->all());
+
+        if ($com_aposta === []) {
+            return;
+        }
+
+        // a oferta muda com as cotações: confere os encerramentos automáticos desses jogos (R-12)
+        ConferirEncerramentosAutomaticos::despachar_se_houver($com_aposta);
+
+        $ao_vivo = DB::table('confrontos_ao_vivo')->whereIn('confrontos_id', $com_aposta)->whereNull('deleted_at')->get()->keyBy('confrontos_id');
+
+        foreach ($com_aposta as $confrontos_id) {
+            $jogo = $ao_vivo->get($confrontos_id);
+
+            ConfrontoAtualizado::emitir(ConfrontoAtualizado::de_jogo(
+                $confrontos_id,
+                $jogo,
+                $esportes[$confrontos_id],
+                $jogo?->situacao,
+                $jogo !== null ? (int) $jogo->minuto : null,
+                false,
+                true,
+            ));
+        }
+    }
+
+    /**
+     * Jogos, entre os informados, com palpite ativo e sem resultado numa aposta Ativa e Aguardando.
+     *
+     * @param  list<int>  $ids
+     * @return list<int>
+     */
+    private function jogos_com_aposta_aberta(array $ids): array
+    {
+        $jogos = [];
+
+        foreach (array_chunk($ids, self::LOTE) as $lote) {
+            DB::table('apostas_palpites as ap')
+                ->join('apostas as a', 'a.id', '=', 'ap.apostas_id')
+                ->whereIn('ap.confrontos_id', $lote)
+                ->where('ap.situacao', SituacaoPalpite::Ativo->value)
+                ->where('ap.resultado', ResultadoAposta::Aguardando->value)
+                ->where('a.situacao', SituacaoAposta::Ativa->value)
+                ->where('a.resultado', ResultadoAposta::Aguardando->value)
+                ->whereNull('ap.deleted_at')
+                ->whereNull('a.deleted_at')
+                ->distinct()
+                ->pluck('ap.confrontos_id')
+                ->each(function (int $id) use (&$jogos) {
+                    $jogos[] = $id;
+                });
+        }
+
+        return $jogos;
     }
 
     /**
