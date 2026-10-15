@@ -87,7 +87,7 @@ processo `reverb:start`; navegadores atuais e PWA instalada (iOS 16.4+ para push
 |---|---|
 | Tabelas | 5 novas (`apostas_encerramentos`, `apostas_encerramentos_automaticos`, `clientes_inscricoes_notificacoes`, `clientes_notificacoes`, `confrontos_eventos`), 3 alteradas (`apostas`, `configuracoes`, `clientes_configuracoes`) |
 | Enums | 5 novos, 3 alterados |
-| Serviços | 11 novos, 4 alterados |
+| Serviços | 11 novos, 6 alterados |
 | Rotas | 12 novas na API, 2 novas na web; 1 existente ganha um campo |
 | Permissões | 1 nova (`apostas_encerramentos.listar`, Admin e Supervisor) |
 | Comandos / jobs | 3 comandos novos e 1 alterado; 3 jobs novos |
@@ -128,6 +128,9 @@ processo `reverb:start`; navegadores atuais e PWA instalada (iOS 16.4+ para push
 **Confirmações do responsável (2026-10-15)**: lista de arquivos existentes; as 4 dependências e o
 processo do Reverb; `fracao_restante` (R-07); permissão só de Admin e Supervisor (R-19); critério
 do desfazimento (R-11); jogo com resultado gravado sem oferta até a apuração (R-05, item 8).
+Depois do `/speckit-analyze`: cancelamento pelo painel devolve só o valor em jogo (R-21) e a carga
+de cotações do pré-jogo avisa o bilhete (R-22), com `CancelamentoApostas.php` e
+`ImportacaoCotacoes.php` acrescentados à lista.
 
 ### Arquivos existentes que serão alterados (Princípio IV)
 
@@ -147,6 +150,8 @@ do desfazimento (R-11); jogo com resultado gravado sem oferta até a apuração 
 | `app/Services/ApuracaoApostas.php` | `decidir` preserva `Encerrada`; confere e desfaz encerramento (FR-033); cancela o automático da aposta decidida; depois da transação, `ApostaAtualizada` e aviso de resultado | R-08, R-11, R-12, R-17 |
 | `app/Services/ImportacaoAoVivo.php` | Lê o estado anterior dos jogos recebidos e chama `ProcessamentoAoVivo` depois da transação | R-16 |
 | `app/Services/ImportacaoResultados.php` | Quando o jogo passa a apurável, registra `Fim de jogo` e emite `ConfrontoAtualizado` | R-16 |
+| `app/Services/CancelamentoApostas.php` | `devolver` credita ao cliente `valor_em_jogo()` no lugar de `valor` | R-21 (analyze) |
+| `app/Services/ImportacaoCotacoes.php` | Depois de gravar, emite `ConfrontoAtualizado` e despacha a conferência dos automáticos para os jogos da carga com aposta em aberto | R-22 (analyze), SC-001 |
 | `app/Console/Commands/RecusarAnalisesPresasCommand.php` | Também recusa encerramentos `Em análise` presos | R-09 |
 | `app/Http/Controllers/AreaClienteMinhaContaController.php` | Origem `Encerramento de aposta` no filtro de palpites e na ligação da transação com a aposta | FR-015, FR-032 |
 | `app/Http/Controllers/ArquivosPwaController.php` | Método `notificacoes` (serve `/sw-notificacoes.js`) | R-14 |
@@ -158,7 +163,7 @@ do desfazimento (R-11); jogo com resultado gravado sem oferta até a apuração 
 | `database/seeders/DatabaseSeeder.php` | Chama `EncerramentoSeeder` depois do `ApuracaoSeeder` | R-19 |
 | `config/services.php` | Bloco `notificacoes_push` (chaves VAPID e assunto, do `.env`) | R-13 |
 | `.env.example` | Variáveis `REVERB_*` e `VAPID_*`; `BROADCAST_CONNECTION=reverb` | R-01, R-13 |
-| `composer.json` / `composer.lock` | `laravel/reverb`, `minishlink/web-push`; script `dev` sobe o `reverb:start` | dependências |
+| `composer.json` / `composer.lock` | `laravel/reverb`, `minishlink/web-push`; script `dev` sobe o `reverb:start` e o `queue:listen` passa a atender `apostas,notificacoes,default` | dependências; filas dos jobs (analyze, U3) |
 | `docs/postman/wssports_api.postman_collection.json` | Regenerada | constituição |
 
 **Frontend**
@@ -284,7 +289,8 @@ app/
 │   ├── NotificacoesPush.php                             # NOVO  envio Web Push (R-13)
 │   ├── InscricoesNotificacoes.php                       # NOVO  grava e remove inscrições (R-15)
 │   ├── ConfiguracoesEncerramento.php                    # NOVO  leitura das configurações + regras do cliente
-│   └── ApuracaoApostas.php, ImportacaoAoVivo.php, ImportacaoResultados.php, RolloverClientes.php  # ALTERADOS
+│   └── ApuracaoApostas.php, ImportacaoAoVivo.php, ImportacaoResultados.php, ImportacaoCotacoes.php,
+│       RolloverClientes.php, CancelamentoApostas.php                                  # ALTERADOS
 └── Support/
     ├── TokenOferta.php                                  # NOVO  assina e confere o token da oferta (R-09)
     └── PlacarConfronto.php                              # ALTERADO

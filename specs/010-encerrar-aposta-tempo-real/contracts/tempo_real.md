@@ -11,7 +11,9 @@ enviado é o `broadcastAs()`. Falha do Reverb vira `Log::warning` e não interro
 
 Emitido por `ProcessamentoAoVivo` quando, na carga do ao vivo, mudou placar, período, minuto, gols
 por tempo, escanteios ou cotações do jogo. Também é emitido quando o resultado final é gravado
-(`periodo` = situação do resultado).
+(`periodo` = situação do resultado) e pela carga de cotações do pré-jogo, para os jogos com aposta
+em aberto (R-22). Nesse caso, `cotacoes_alteradas = true`, `gol = false` e o placar segue o
+último conhecido (nulo antes do início).
 
 ```json
 {

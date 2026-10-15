@@ -81,6 +81,16 @@ push na próxima spec; uma spec só."
   `apostas_encerramentos.listar`, dada por padrão ao Admin e ao Supervisor, no mesmo padrão das
   permissões de clientes (FR-037).
 
+### Session 2026-10-15 (analyze)
+
+- Q: O painel cancela uma aposta que já teve encerramento parcial. Quanto volta para o cliente?
+  → A: Só o valor apostado que continua valendo (valor × fração restante), e só o rollover que essa
+  parte ainda soma. A parte encerrada já foi (ou será) paga pelo encerramento. A aposta encerrada
+  (total) não pode ser cancelada, porque o resultado dela já não é Aguardando.
+- Q: A mudança de cotação do pré-jogo também chega ao bilhete em até 5 segundos (SC-001)? → A: Sim.
+  A carga de cotações do pré-jogo avisa o bilhete dos jogos que têm aposta em aberto, como a carga
+  do ao vivo.
+
 ## Referências do sistema antigo
 
 - Bilhete em tempo real: `resources/js/screens/ticket/index.js` e `styles.js` (rota
@@ -246,6 +256,8 @@ e conferir que o próximo gol não gera aviso.
 - Prêmio limitado pelo prêmio máximo: a oferta é calculada sobre o prêmio limitado.
 - Cliente desativado ou com encerramento desligado na configuração dele: não há oferta.
 - Duas confirmações iguais (toque duplo, rede lenta): só um encerramento é registrado.
+- Cancelamento pelo painel de uma aposta com encerramento parcial: devolve só o valor apostado que
+  continua valendo e desfaz só o rollover que essa parte soma.
 - Inscrição de notificação expirada ou removida pelo aparelho: é descartada no primeiro envio que
   falhar, sem afetar os demais aparelhos.
 - Jogo com várias mudanças seguidas (gol e intervalo na mesma atualização): cada evento gera um
@@ -420,7 +432,7 @@ e conferir que o próximo gol não gera aviso.
 ### Key Entities
 
 - **Encerramento de aposta**: cada encerramento feito em uma aposta. Modalidade (total, parcial,
-  automático), situação (registrado, creditado, desfeito), oferta, valor pago, margem aplicada,
+  automático), situação (em análise, recusado, registrado, creditado, desfeito), oferta, valor pago, margem aplicada,
   cotações e placares usados por palpite, valor apostado e prêmio antes e depois, data e hora,
   IP, aparelho e autor. Ligado à aposta, ao cliente e, no acesso assistido, ao usuário do painel.
 - **Encerramento automático**: o valor-alvo programado pelo cliente para uma aposta, com situação

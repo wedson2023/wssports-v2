@@ -463,6 +463,32 @@ jogos não iniciados, margens, mínimos, validade, limite de parciais, minutos d
 componente novo `CashOutRules` monta o texto com esses valores, dentro do `RulesContent`. Com o
 encerramento desligado, a seção não aparece.
 
+## R-21 — Cancelamento pelo painel de aposta com encerramento parcial (analyze, G1)
+
+**Decisão**: `CancelamentoApostas::devolver` passa a creditar ao cliente `Apostas::valor_em_jogo()`
+(valor × `fracao_restante`) no lugar de `valor`. O `RolloverClientes::desfazer` continua igual: as
+ligações já foram reduzidas pelo `retirar` do parcial, então ele desfaz só o que a parte restante
+soma. A aposta encerrada (total) já fica de fora, porque o cancelamento exige resultado
+`Aguardando`. A aposta de vendedor não muda (nunca tem encerramento).
+
+**Motivo**: sem isso, o cancelamento devolveria o valor inteiro e o cliente receberia duas vezes a
+parte encerrada. Bloquear o cancelamento tiraria do painel a correção de apostas com erro.
+
+**Alternativa considerada**: bloquear o cancelamento de apostas com encerramento que vale.
+
+## R-22 — Cotações do pré-jogo no bilhete em até 5 s (analyze, I1)
+
+**Decisão**: depois de gravar, `ImportacaoCotacoes::importar` emite `ConfrontoAtualizado` (com
+`cotacoes_alteradas = true` e o placar zerado, sem gol) para os jogos da carga que têm palpite
+ativo em aposta `Ativa` e `Aguardando` (uma consulta). Também despacha `ConferirEncerramentosAutomaticos`
+para esses jogos quando houver automático ativo. Cada emissão fica em try/catch, com warning.
+
+**Motivo**: o SC-001 pede a cotação na tela em até 5 s depois de chegar ao sistema. Sem o evento, a
+mudança do pré-jogo só aparecia na verificação de 60 s. Emitir só para jogos com aposta em aberto
+evita milhares de mensagens a cada carga.
+
+**Alternativa considerada**: limitar o SC-001 ao ao vivo (o pré-jogo ficaria com até 60 s).
+
 ## Dependências novas (constituição: Stack e Restrições Técnicas)
 
 | Pacote | Lado | Por quê |
@@ -489,3 +515,5 @@ visuais). Nenhum fake participa do cálculo ou do pagamento do encerramento.
 4. R-19 (grupo de permissão só de Admin e Supervisor, em vez do padrão das de clientes).
 5. R-11 (critério objetivo do "já estava decidido" do FR-033).
 6. R-05, critério 8 (jogo com resultado gravado torna a aposta inelegível até a apuração).
+7. R-21 e R-22, vindos do `/speckit-analyze` (aprovados em 2026-10-15 ao seguir as recomendações):
+   `CancelamentoApostas.php` e `ImportacaoCotacoes.php` entram na lista de arquivos alterados.

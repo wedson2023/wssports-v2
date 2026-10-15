@@ -63,7 +63,7 @@ php artisan schedule:work
 | # | Passos | Esperado | Requisito |
 |---|---|---|---|
 | 14 | C1 aposta R$ 50,00 (Saldo) em A + B, nenhum iniciado | Oferta = prêmio ÷ cotações atuais × 0,93, truncada (conferir à mão); abas Total, Parcial e Automático | US2-1, FR-019 a FR-021 |
-| 15 | Mudar a cotação de B no mock do pré-jogo e rodar `confrontos_cotacoes:importar` | Em até 60 s, a oferta muda com a indicação "subiu" ou "caiu" | US2-2, FR-023 |
+| 15 | Mudar a cotação de B no mock do pré-jogo e rodar `confrontos_cotacoes:importar` | Em até 5 s depois do fim da carga, a cotação atual e a oferta mudam com a indicação "subiu" ou "caiu" | US2-2, FR-023, SC-001 (R-22) |
 | 16 | Total → Encerrar → confirmar dentro de 8 s | Em até 3 toques: "Aposta encerrada" com o valor e o horário previsto do crédito; aposta `Encerrada`; encerramento `Registrado` com `creditar_em` = agora + janela | US2-3, FR-024, FR-027, SC-003 |
 | 17 | `php artisan apostas:liquidar_encerramentos` depois da janela | Crédito em Saldo, origem `Encerramento de aposta`, `referencia_id` = aposta; situação `Creditado`; Minha Conta mostra a operação ligada à aposta | FR-032, SC-007 |
 | 18 | Abrir a confirmação e esperar 8 s | A confirmação some e a oferta atual reaparece | US2-4, FR-024 |
@@ -85,6 +85,7 @@ php artisan schedule:work
 | 34 | Painel: `GET /api/apostas-encerramentos` com Admin, Supervisor e Gerente; filtros de período, cliente e modalidade; `por_pagina=500` | Admin e Supervisor listam (no máximo 100 por página) com `teria_pago`; Gerente 403 | FR-037 |
 | 35 | `PUT /api/configuracoes/encerramento` com margem 60 | 422 com a mensagem da faixa | FR-036 |
 | 36 | Página `/regras` com o encerramento ligado e depois desligado | Seção com as regras e os valores atuais; some quando desligado | FR-039 |
+| 48 | Aposta de R$ 50,00 de C1 com parcial de metade (`fracao_restante` ≈ 0,5); o Admin cancela pelo painel. Depois, tentar cancelar a aposta do 16 (total) | Estorno de R$ 25,00 (valor em jogo), não de R$ 50,00; o rollover desfaz só o que a parte restante somava; o encerramento parcial continua valendo. A aposta encerrada (total) não pode ser cancelada ("Não é possível cancelar uma aposta já apurada.") | Edge, R-21 |
 
 ## US3 — Notificações
 
@@ -106,5 +107,7 @@ php artisan schedule:work
 
 - Postman: as 12 rotas novas e o campo `encerrar_aposta` na coleção regenerada.
 - `php artisan route:list --path=api` mostra as rotas com os middlewares do [contrato](contracts/api.md).
+- Medir de ponta a ponta (relógio da carga no log × horário em que a tela muda ou o aviso chega):
+  mudança no mock → tela em até 5 s (SC-001) e → aviso no aparelho em até 15 s (SC-008).
 - Desligar o Reverb e conferir que `confrontos_ao_vivo:importar` continua gravando (só warning no
   log).

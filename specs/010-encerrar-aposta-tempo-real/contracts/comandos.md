@@ -15,6 +15,7 @@
 | Comando | Mudança |
 |---|---|
 | `confrontos_ao_vivo:importar` | Sem mudança no comando. O serviço `ImportacaoAoVivo` passa a chamar `ProcessamentoAoVivo` depois de gravar (R-16), que dispara broadcast, eventos/push e conferência dos automáticos. Falhas nesse pós-processamento vão para o log e não desfazem a carga. |
+| `confrontos_cotacoes:importar` | Sem mudança no comando. O serviço `ImportacaoCotacoes` passa a emitir `ConfrontoAtualizado` e a despachar `ConferirEncerramentosAutomaticos` para os jogos da carga com aposta em aberto (R-22); falha → warning. |
 | `apostas:recusar_analises_presas` | Também recusa encerramentos `Em análise` presos há mais que o delay + 60 s ("Tempo de confirmação esgotado."), sem mover nada (R-09). |
 
 ## Jobs novos
@@ -42,7 +43,8 @@ php artisan reverb:start --host=0.0.0.0 --port=8080
 ```
 
 Em produção, sob supervisor e atrás do proxy (`wss://`). Em desenvolvimento, o script
-`composer dev` passa a subir também o Reverb.
+`composer dev` passa a subir também o Reverb, e o `queue:listen` dele passa a atender as filas
+`apostas,notificacoes,default`.
 
 ## `routes/console.php` (acréscimos)
 
