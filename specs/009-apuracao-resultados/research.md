@@ -50,6 +50,9 @@ Pasta `C:\Users\wedso\OneDrive\Área de Trabalho\projetos\wssports.bet`, consult
   sincroniza: atualiza ou restaura as ordens recebidas e remove (soft delete) as que sumiram.
 - **Motivo**: o provedor manda a lista inteira de gols do jogo a cada carga; a ordem identifica o
   gol e resolve "Primeiro" (ordem 1) e "Último" (maior ordem). Corrige o defeito 6.
+- **Conferido na resposta real (2026-10-14, implementação)**: o provedor manda `nome: null` em
+  cerca de 80% dos gols e minutos com acréscimo (`"45+1"`). Por isso `nome` aceita nulo e `minuto`
+  é texto: descartar esses gols faria o "Primeiro"/"Último" olhar o gol errado.
 
 ### R-03 — Quando apurar (FR-004, clarify)
 

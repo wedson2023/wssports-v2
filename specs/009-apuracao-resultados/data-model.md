@@ -36,8 +36,8 @@ validação. `apuravel()` = `situacao = Encerrado` e os dois placares não nulos
 | `id` | id | — |
 | `confrontos_id` | foreignId → `confrontos` | Jogo em que o gol foi marcado |
 | `ordem` | unsignedTinyInteger | Número do gol no jogo (1 = primeiro gol), lido de "1º Gol" do provedor |
-| `nome` | string(150) | Nome do jogador que marcou, como o provedor envia |
-| `minuto` | unsignedSmallInteger, nulo | Minuto do gol |
+| `nome` | string(150), nulo | Nome do jogador que marcou, como o provedor envia; nulo quando o provedor não informa o autor |
+| `minuto` | string(10), nulo | Minuto do gol como o provedor envia, com acréscimos (ex.: 45+1) |
 | `tempo_jogo` | string(20), nulo | Tempo de jogo do gol como o provedor envia (ex.: 1º tempo) |
 | timestamps, softDeletes | | |
 

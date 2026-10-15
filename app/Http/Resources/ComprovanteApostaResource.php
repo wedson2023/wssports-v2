@@ -24,6 +24,8 @@ use Illuminate\Support\Carbon;
  */
 class ComprovanteApostaResource extends JsonResource
 {
+    private const FUTEBOL = 'FUTEBOL';
+
     /**
      * @param  bool  $mostrar_comissao  só para o vendedor da aposta ou a hierarquia dele
      */
@@ -86,7 +88,7 @@ class ComprovanteApostaResource extends JsonResource
                 ])
                 ->all(),
             'palpites' => $aposta->palpites()
-                ->with(['confronto', 'campeonato', 'jogador', 'especial', 'opcao_especial'])
+                ->with(['confronto.resultado', 'confronto.ao_vivo', 'campeonato', 'jogador', 'especial', 'opcao_especial'])
                 ->orderBy('id')
                 ->get()
                 ->map(fn (ApostasPalpites $palpite) => $this->palpite($palpite, $fuso))
@@ -160,12 +162,11 @@ class ComprovanteApostaResource extends JsonResource
             return $this->palpite_especial($palpite, $fuso);
         }
 
-        $ao_vivo = $palpite->dados_ao_vivo_envio;
-
         return [
             'id' => $palpite->id,
             'apostas_blocos_id' => $palpite->apostas_blocos_id,
             'situacao' => $palpite->situacao->value,
+            'resultado' => $palpite->resultado->value,
             'campeonato' => $palpite->campeonato?->nome,
             'time_casa' => $palpite->confronto?->time_casa,
             'time_fora' => $palpite->confronto?->time_fora,
@@ -176,10 +177,56 @@ class ComprovanteApostaResource extends JsonResource
             'jogador' => $palpite->jogador?->nome,
             'jogador_tipo' => $palpite->jogador_tipo,
             'cotacao' => (string) $palpite->cotacao_final,
-            'placar_casa' => $ao_vivo['placar_casa'] ?? null,
-            'placar_fora' => $ao_vivo['placar_fora'] ?? null,
-            'minuto' => $ao_vivo['minuto'] ?? null,
+            ...$this->andamento($palpite),
         ];
+    }
+
+    /**
+     * Placar e período do jogo como no comprovante do sistema antigo (spec 009): o resultado
+     * gravado pela apuração ou, com o jogo em andamento, o placar atual do ao vivo. Gols por
+     * tempo e escanteios só no futebol; tudo nulo antes do início.
+     *
+     * @return array<string, mixed>
+     */
+    private function andamento(ApostasPalpites $palpite): array
+    {
+        $resultado = $palpite->confronto?->resultado;
+        $ao_vivo = $palpite->confronto?->ao_vivo;
+        $futebol = $palpite->esporte === self::FUTEBOL;
+
+        if ($resultado !== null) {
+            return [
+                'periodo' => $resultado->situacao->value,
+                'placar_casa' => $resultado->placar_casa,
+                'placar_fora' => $resultado->placar_fora,
+                'minuto' => null,
+                'primeiro_tempo' => $futebol ? $this->tempo($resultado->gols_primeiro_tempo_casa, $resultado->gols_primeiro_tempo_fora) : null,
+                'segundo_tempo' => $futebol ? $this->tempo($resultado->gols_segundo_tempo_casa, $resultado->gols_segundo_tempo_fora) : null,
+                'escanteios' => $futebol && $resultado->escanteios_casa !== null && $resultado->escanteios_fora !== null
+                    ? $resultado->escanteios_casa + $resultado->escanteios_fora
+                    : null,
+            ];
+        }
+
+        return [
+            'periodo' => $ao_vivo?->situacao->value,
+            'placar_casa' => $ao_vivo?->placar_casa,
+            'placar_fora' => $ao_vivo?->placar_fora,
+            'minuto' => $ao_vivo?->minuto,
+            'primeiro_tempo' => null,
+            'segundo_tempo' => null,
+            'escanteios' => null,
+        ];
+    }
+
+    /**
+     * Gols de um tempo ("casa x fora"); nulo quando o provedor não mandou.
+     *
+     * @return array{casa: int, fora: int}|null
+     */
+    private function tempo(?int $casa, ?int $fora): ?array
+    {
+        return $casa !== null && $fora !== null ? ['casa' => $casa, 'fora' => $fora] : null;
     }
 
     /**
@@ -206,9 +253,13 @@ class ComprovanteApostaResource extends JsonResource
             'jogador' => null,
             'jogador_tipo' => null,
             'cotacao' => (string) $palpite->cotacao_final,
+            'periodo' => null,
             'placar_casa' => null,
             'placar_fora' => null,
             'minuto' => null,
+            'primeiro_tempo' => null,
+            'segundo_tempo' => null,
+            'escanteios' => null,
         ];
     }
 

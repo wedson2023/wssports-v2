@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Enums\AcaoHistoricoAposta;
 use App\Enums\LiquidacaoCriarAposta;
+use App\Enums\MotivoCancelamentoPalpite;
 use App\Enums\ResultadoAposta;
 use App\Enums\SituacaoAposta;
 use App\Enums\SituacaoBloco;
@@ -74,23 +75,85 @@ class EdicaoApostas
     }
 
     /**
-     * Cancelamento feito pelo sistema ao cancelar uma categoria especial (spec 006, R-11): mesma
-     * regra do cancelamento pelo painel, mas pode cancelar o último palpite ativo (sem palpite
-     * ativo, a cotação total fica 1,00 e o prêmio igual ao valor, como no sistema antigo). Deve
-     * rodar dentro da transação de quem chama, com a aposta e o palpite já bloqueados.
+     * Cancelamento feito pelo sistema: categoria especial cancelada (spec 006, R-11), jogo cancelado
+     * e empate anula aposta (spec 009, com o motivo e sem autor). Mesma regra do cancelamento pelo
+     * painel, inclusive a do bloco (Anular bloco), mas pode cancelar o último palpite ativo (sem
+     * palpite ativo, a cotação total fica 1,00 e o prêmio igual ao valor, como no sistema antigo).
+     * Deve rodar dentro da transação de quem chama, com a aposta e o palpite já bloqueados; o
+     * palpite é recarregado no fim.
      */
-    public function cancelar_palpite_pelo_sistema(Apostas $aposta, ApostasPalpites $palpite, Usuarios $autor, string $ip, ?string $user_agent): Apostas
-    {
-        $palpite->fill(['situacao' => SituacaoPalpite::Cancelado, 'cancelado_em' => now(), 'cancelado_por' => $autor->id])->save();
+    public function cancelar_palpite_pelo_sistema(
+        Apostas $aposta,
+        ApostasPalpites $palpite,
+        ?Usuarios $autor,
+        ?string $ip,
+        ?string $user_agent,
+        ?MotivoCancelamentoPalpite $motivo = null,
+    ): Apostas {
+        $bloco = $this->bloco_anulavel($aposta, $palpite);
+
+        if ($bloco !== null) {
+            $this->anular_bloco($bloco, $autor, $motivo);
+            $palpite->refresh();
+        } else {
+            $palpite->fill([
+                'situacao' => SituacaoPalpite::Cancelado,
+                'cancelado_em' => now(),
+                'cancelado_por' => $autor?->id,
+                'motivo_cancelamento' => $motivo,
+            ])->save();
+        }
+
         $this->recalcular_e_registrar($aposta, $palpite, AcaoHistoricoAposta::CancelarPalpite, $autor, $ip, $user_agent);
 
         return $aposta;
     }
 
     /**
-     * Recalcula a aposta e registra a edição no histórico, com os valores de antes e de depois.
+     * Desfaz o "empate anula aposta" quando a correção do placar tira o empate (spec 009, R-06):
+     * só para palpites que o próprio sistema devolveu por empate. Com "Anular bloco", o bloco
+     * inteiro volta. Deve rodar dentro da transação de quem chama, com a aposta já bloqueada.
      */
-    private function recalcular_e_registrar(Apostas $aposta, ApostasPalpites $palpite, AcaoHistoricoAposta $acao, Usuarios $autor, string $ip, ?string $user_agent): void
+    public function restaurar_palpite_pelo_sistema(Apostas $aposta, ApostasPalpites $palpite): Apostas
+    {
+        if ($palpite->motivo_cancelamento !== MotivoCancelamentoPalpite::EmpateAnulaAposta) {
+            throw new RegraApostaException('Só o palpite devolvido por empate pode ser restaurado pelo sistema.');
+        }
+
+        $bloco = $this->bloco_anulavel($aposta, $palpite);
+
+        if ($bloco !== null) {
+            $this->restaurar_bloco($bloco, null);
+            $palpite->refresh();
+        } else {
+            $palpite->fill([
+                'situacao' => SituacaoPalpite::Ativo,
+                'restaurado_em' => now(),
+                'restaurado_por' => null,
+                'motivo_cancelamento' => null,
+            ])->save();
+        }
+
+        $this->recalcular_e_registrar($aposta, $palpite, AcaoHistoricoAposta::RestaurarPalpite, null, null, null);
+
+        return $aposta;
+    }
+
+    /**
+     * Com "Anular bloco", o palpite de um bloco Criar Aposta leva o bloco inteiro junto (spec 008).
+     */
+    private function bloco_anulavel(Apostas $aposta, ApostasPalpites $palpite): ?ApostasBlocos
+    {
+        return $palpite->apostas_blocos_id !== null && $aposta->liquidacao_criar_aposta === LiquidacaoCriarAposta::AnularBloco
+            ? ApostasBlocos::lockForUpdate()->find($palpite->apostas_blocos_id)
+            : null;
+    }
+
+    /**
+     * Recalcula a aposta e registra a edição no histórico, com os valores de antes e de depois.
+     * Sem autor e sem IP quando a ação é do sistema (spec 009).
+     */
+    private function recalcular_e_registrar(Apostas $aposta, ApostasPalpites $palpite, AcaoHistoricoAposta $acao, ?Usuarios $autor, ?string $ip, ?string $user_agent): void
     {
         $antes = [
             'cotacao_total' => (string) $aposta->cotacao_total,
@@ -110,7 +173,7 @@ class EdicaoApostas
             'premio_posterior' => $aposta->premio,
             'valor_acrescido_anterior' => $antes['valor_acrescido'],
             'valor_acrescido_posterior' => $aposta->valor_acrescido,
-            'usuarios_id' => $autor->id,
+            'usuarios_id' => $autor?->id,
             'ip' => $ip,
             'user_agent' => $user_agent !== null ? mb_substr($user_agent, 0, self::TAMANHO_USER_AGENT) : null,
         ]);
@@ -121,10 +184,7 @@ class EdicaoApostas
      */
     private function marcar(Apostas $aposta, ApostasPalpites $palpite, AcaoHistoricoAposta $acao, Usuarios $autor): void
     {
-        // com "Anular bloco", o palpite de um bloco Criar Aposta leva o bloco inteiro junto (spec 008)
-        $bloco = $palpite->apostas_blocos_id !== null && $aposta->liquidacao_criar_aposta === LiquidacaoCriarAposta::AnularBloco
-            ? ApostasBlocos::lockForUpdate()->find($palpite->apostas_blocos_id)
-            : null;
+        $bloco = $this->bloco_anulavel($aposta, $palpite);
 
         if ($acao === AcaoHistoricoAposta::CancelarPalpite) {
             if ($palpite->situacao !== SituacaoPalpite::Ativo) {
@@ -164,10 +224,15 @@ class EdicaoApostas
      * fica Anulado, valendo 1,00. Pode deixar a aposta sem palpite ativo: ela continua Ativa com
      * cotação total 1,00 e prêmio igual ao valor.
      */
-    private function anular_bloco(ApostasBlocos $bloco, Usuarios $autor): void
+    private function anular_bloco(ApostasBlocos $bloco, ?Usuarios $autor, ?MotivoCancelamentoPalpite $motivo = null): void
     {
         $bloco->palpites()->where('situacao', SituacaoPalpite::Ativo)
-            ->update(['situacao' => SituacaoPalpite::Cancelado, 'cancelado_em' => now(), 'cancelado_por' => $autor->id]);
+            ->update([
+                'situacao' => SituacaoPalpite::Cancelado,
+                'cancelado_em' => now(),
+                'cancelado_por' => $autor?->id,
+                'motivo_cancelamento' => $motivo,
+            ]);
 
         $bloco->fill(['situacao' => SituacaoBloco::Anulado])->save();
     }
@@ -175,10 +240,10 @@ class EdicaoApostas
     /**
      * Desfaz a anulação (FR-020): todos os palpites do bloco voltam, com as cotações gravadas.
      */
-    private function restaurar_bloco(ApostasBlocos $bloco, Usuarios $autor): void
+    private function restaurar_bloco(ApostasBlocos $bloco, ?Usuarios $autor): void
     {
         $bloco->palpites()->where('situacao', SituacaoPalpite::Cancelado)
-            ->update(['situacao' => SituacaoPalpite::Ativo, 'restaurado_em' => now(), 'restaurado_por' => $autor->id]);
+            ->update(['situacao' => SituacaoPalpite::Ativo, 'restaurado_em' => now(), 'restaurado_por' => $autor?->id, 'motivo_cancelamento' => null]);
 
         $bloco->fill(['situacao' => SituacaoBloco::Ativo])->save();
     }

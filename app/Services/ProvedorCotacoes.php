@@ -75,6 +75,33 @@ class ProvedorCotacoes
     }
 
     /**
+     * Resultados dos jogos do pré-jogo: placar, gols por tempo, escanteios e gols por jogador
+     * (spec 009).
+     *
+     * @return array<int|string, mixed>
+     */
+    public function buscar_resultados(): array
+    {
+        return $this->enviar(
+            'resultados',
+            fn () => $this->cliente('tempo_limite_resultados')->get($this->url('url_pre_jogo', 'resultados')),
+        );
+    }
+
+    /**
+     * Códigos dos jogos cancelados ou adiados (spec 009).
+     *
+     * @return array<int|string, mixed>
+     */
+    public function buscar_cancelados(): array
+    {
+        return $this->enviar(
+            'cancelados',
+            fn () => $this->cliente('tempo_limite_cancelados')->get($this->url('url_pre_jogo', 'cancelados')),
+        );
+    }
+
+    /**
      * Minuto de um jogo no segundo provedor (conferência do ao vivo).
      */
     public function consultar_minuto(int $codigo_externo): int

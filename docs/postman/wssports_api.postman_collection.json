@@ -2327,6 +2327,38 @@
                     }
                 },
                 {
+                    "name": "Lançar resultado de jogo manual",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/confrontos/{{confronto_id}}/resultado",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "confrontos",
+                                "{{confronto_id}}",
+                                "resultado"
+                            ]
+                        },
+                        "description": "confrontos.lancar_resultado (Admin e Supervisor). Só jogo manual (jogo do provedor → 422). Placar obrigatório (0 a 99); gols de tempo os quatro juntos; escanteios os dois juntos; gols opcionais (sem o campo mantém os gravados, lista vazia apaga). O jogo fica Encerrado e as apostas dele são apuradas e pagas como na carga automática; o mesmo corpo de novo não muda nada (apostas_apuradas 0).",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"placar_casa\": 2,\n    \"placar_fora\": 1,\n    \"gols_primeiro_tempo_casa\": 1,\n    \"gols_primeiro_tempo_fora\": 0,\n    \"gols_segundo_tempo_casa\": 1,\n    \"gols_segundo_tempo_fora\": 1,\n    \"escanteios_casa\": 7,\n    \"escanteios_fora\": 3,\n    \"gols\": [\n        {\n            \"ordem\": 1,\n            \"nome\": \"Rebecca Rayner\",\n            \"minuto\": \"12\",\n            \"tempo_jogo\": \"1º tempo\"\n        },\n        {\n            \"ordem\": 2,\n            \"nome\": \"Ana Souza\",\n            \"minuto\": \"45+2\",\n            \"tempo_jogo\": \"2º tempo\"\n        }\n    ]\n}"
+                        }
+                    }
+                },
+                {
                     "name": "Listar ao vivo (painel)",
                     "request": {
                         "method": "GET",
@@ -4408,6 +4440,64 @@
                         "body": {
                             "mode": "raw",
                             "raw": "{\n    \"criar_aposta_habilitado\": true,\n    \"desconto_criar_aposta\": \"15.00\",\n    \"quantidade_minima_criar_aposta\": 2,\n    \"quantidade_maxima_criar_aposta\": 10,\n    \"liquidacao_criar_aposta\": \"Recalcular\"\n}"
+                        }
+                    }
+                },
+                {
+                    "name": "Consultar configurações da apuração",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/configuracoes/apuracao",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "configuracoes",
+                                "apuracao"
+                            ]
+                        },
+                        "description": "configuracoes.editar. Configurações gerais da apuração (spec 009): remover_confronto_cancelado (cancela automaticamente os palpites de jogos cancelados ou adiados nas apostas ainda sem resultado) e minutos_pagamento_premio (espera entre a decisão da aposta e o crédito do prêmio)."
+                    }
+                },
+                {
+                    "name": "Alterar configurações da apuração",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/configuracoes/apuracao",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "configuracoes",
+                                "apuracao"
+                            ]
+                        },
+                        "description": "configuracoes.editar. Só os campos enviados mudam. remover_confronto_cancelado verdadeiro ou falso; minutos_pagamento_premio de 0 a 1440.",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"remover_confronto_cancelado\": true,\n    \"minutos_pagamento_premio\": 5\n}"
                         }
                     }
                 }

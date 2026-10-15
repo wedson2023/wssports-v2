@@ -26,6 +26,7 @@ use App\Http\Controllers\ClientesController;
 use App\Http\Controllers\ClientesMeiosPagamentoController;
 use App\Http\Controllers\ClientesPromocoesController;
 use App\Http\Controllers\ClientesTransacoesController;
+use App\Http\Controllers\ConfiguracoesApuracaoController;
 use App\Http\Controllers\ConfiguracoesCriarApostaController;
 use App\Http\Controllers\ConfiguracoesLogoController;
 use App\Http\Controllers\ConfiguracoesPagamentosController;
@@ -35,6 +36,7 @@ use App\Http\Controllers\ConfrontosAoVivoNaoPermitidosController;
 use App\Http\Controllers\ConfrontosController;
 use App\Http\Controllers\ConfrontosLimitesController;
 use App\Http\Controllers\ConfrontosNaoPermitidosController;
+use App\Http\Controllers\ConfrontosResultadosController;
 use App\Http\Controllers\ConfrontosTetoCotacoesController;
 use App\Http\Controllers\EncerramentoEspeciaisController;
 use App\Http\Controllers\EspeciaisController;
@@ -203,6 +205,9 @@ Route::middleware(['auth:api', 'garantir_acesso'])->group(function () {
     Route::get('confrontos-ao-vivo', [ConfrontosAoVivoController::class, 'index']);
     Route::patch('confrontos/{confronto}/situacao', [ConfrontosController::class, 'alterar_situacao'])
         ->missing($confronto_nao_encontrado);
+    // resultado de jogo manual (spec 009)
+    Route::put('confrontos/{confronto}/resultado', [ConfrontosResultadosController::class, 'update'])
+        ->missing($confronto_nao_encontrado);
     Route::apiResource('confrontos', ConfrontosController::class)
         ->missing($confronto_nao_encontrado);
 
@@ -323,6 +328,10 @@ Route::middleware(['auth:api', 'garantir_acesso'])->group(function () {
     // configurações gerais do Criar Aposta (spec 008)
     Route::get('configuracoes/criar-aposta', [ConfiguracoesCriarApostaController::class, 'show']);
     Route::put('configuracoes/criar-aposta', [ConfiguracoesCriarApostaController::class, 'update']);
+
+    // configurações gerais da apuração (spec 009)
+    Route::get('configuracoes/apuracao', [ConfiguracoesApuracaoController::class, 'show']);
+    Route::put('configuracoes/apuracao', [ConfiguracoesApuracaoController::class, 'update']);
 
     Route::post('clientes/{cliente}/acesso-assistido', [AcessosAssistidosController::class, 'store'])
         ->missing(fn () => abort(404, 'Cliente não encontrado.'));

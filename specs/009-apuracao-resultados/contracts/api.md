@@ -3,8 +3,29 @@
 Rotas novas: `configuracoes/apuracao` (no grupo das configurações de pagamento, mesmo padrão de
 `configuracoes/criar-aposta` da spec 008, permissão `configuracoes.editar`, que já existe) e
 `confrontos/{confronto}/resultado` (no grupo de gestão de confrontos da spec 003, permissão nova
-`confrontos.lancar_resultado`). As demais rotas não mudam: o comprovante e o extrato passam a mostrar os valores novos
-(`resultado` do palpite `Devolvido` e a origem `Devolução de aposta`) pelos campos que já existem.
+`confrontos.lancar_resultado`). As demais rotas não mudam: o extrato passa a mostrar a origem
+`Devolução de aposta` pelos campos que já existem.
+
+## Comprovante (todas as rotas que devolvem `ComprovanteApostaResource`)
+
+Cada palpite ganha o andamento do jogo, como no comprovante do sistema antigo:
+
+```json
+{
+  "situacao": "Ativo", "resultado": "Perdedor", "periodo": "Encerrado",
+  "placar_casa": 1, "placar_fora": 3, "minuto": null,
+  "primeiro_tempo": { "casa": 1, "fora": 0 }, "segundo_tempo": { "casa": 0, "fora": 3 },
+  "escanteios": 9
+}
+```
+
+- `resultado`: `Aguardando`, `Vencedor`, `Perdedor` ou `Devolvido`.
+- Com resultado gravado: `periodo` é a situação do resultado (`Encerrado`) e o placar é o final.
+- Sem resultado e com o jogo no ao vivo: `periodo`, placar e `minuto` atuais do ao vivo.
+- Antes do início: `periodo`, placar e demais campos nulos. O placar do momento da aposta ao vivo
+  não vai mais no comprovante.
+- `primeiro_tempo`, `segundo_tempo` e `escanteios` (soma dos dois times): só no futebol e só com
+  resultado; nulos quando o provedor não mandou.
 
 ## `GET /api/configuracoes/apuracao`
 
@@ -61,8 +82,8 @@ Corpo (nomes do sistema):
   "escanteios_casa": 7,
   "escanteios_fora": 3,
   "gols": [
-    { "ordem": 1, "nome": "Rebecca Rayner", "minuto": 12, "tempo_jogo": "1º tempo" },
-    { "ordem": 2, "nome": "Ana Souza", "minuto": 58, "tempo_jogo": "2º tempo" }
+    { "ordem": 1, "nome": "Rebecca Rayner", "minuto": "12", "tempo_jogo": "1º tempo" },
+    { "ordem": 2, "nome": "Ana Souza", "minuto": "45+2", "tempo_jogo": "2º tempo" }
   ]
 }
 ```
@@ -75,7 +96,7 @@ Corpo (nomes do sistema):
 | `gols` | `nullable`, lista de até 99 itens; ausente = mantém os gols gravados; lista vazia = nenhum gol |
 | `gols.*.ordem` | `required`, inteiro de 1 a 99, sem repetição |
 | `gols.*.nome` | `required`, texto até 150 |
-| `gols.*.minuto` | `nullable`, inteiro de 0 a 200 |
+| `gols.*.minuto` | `nullable`, minuto com acréscimos no formato `45` ou `45+1` |
 | `gols.*.tempo_jogo` | `nullable`, texto até 20 |
 
 Mensagens (422):
@@ -101,7 +122,7 @@ Mensagens (422):
     "gols_segundo_tempo_fora": 1,
     "escanteios_casa": 7,
     "escanteios_fora": 3,
-    "gols": [{ "ordem": 1, "nome": "Rebecca Rayner", "minuto": 12, "tempo_jogo": "1º tempo" }],
+    "gols": [{ "ordem": 1, "nome": "Rebecca Rayner", "minuto": "12", "tempo_jogo": "1º tempo" }],
     "apostas_apuradas": 12
   }
 }

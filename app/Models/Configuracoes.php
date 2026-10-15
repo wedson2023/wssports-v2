@@ -79,6 +79,9 @@ class Configuracoes extends Model
         'quantidade_minima_criar_aposta',
         'quantidade_maxima_criar_aposta',
         'liquidacao_criar_aposta',
+        // apuração (spec 009)
+        'remover_confronto_cancelado',
+        'minutos_pagamento_premio',
     ];
 
     /**
@@ -121,6 +124,9 @@ class Configuracoes extends Model
             'quantidade_minima_criar_aposta' => 'integer',
             'quantidade_maxima_criar_aposta' => 'integer',
             'liquidacao_criar_aposta' => LiquidacaoCriarAposta::class,
+            // apuração (spec 009)
+            'remover_confronto_cancelado' => 'boolean',
+            'minutos_pagamento_premio' => 'integer',
         ];
     }
 

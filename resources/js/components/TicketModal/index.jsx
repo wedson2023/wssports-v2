@@ -15,6 +15,44 @@ const real = (valor) => `R$ ${formatar_real(para_centavos(valor))}`;
 // situação exibida: o resultado quando já apurado, senão a situação da aposta
 const situacao_exibida = (comprovante) => (comprovante.resultado && comprovante.resultado !== 'Aguardando' ? comprovante.resultado : comprovante.situacao);
 
+// situação do palpite: cancelado, o resultado quando já apurado, o período do jogo em andamento ou
+// a situação (como no sistema antigo)
+const situacao_palpite = (palpite) => {
+    if (palpite.situacao === 'Cancelado') {
+        return palpite.situacao;
+    }
+
+    if (palpite.resultado && palpite.resultado !== 'Aguardando') {
+        return palpite.resultado;
+    }
+
+    return palpite.periodo ?? palpite.situacao;
+};
+
+const placar = (casa, fora) => `${casa ?? 0} x ${fora ?? 0}`;
+
+// placar, gols por tempo, escanteios e período: só com o jogo em andamento ou com resultado
+const linhas_andamento = (palpite) => (
+    <>
+        {palpite.placar_casa !== null && (
+            <Row><Label>Placar:</Label><span>{placar(palpite.placar_casa, palpite.placar_fora)}</span></Row>
+        )}
+        {palpite.primeiro_tempo && (
+            <Row><Label>1º Tempo:</Label><span>{placar(palpite.primeiro_tempo.casa, palpite.primeiro_tempo.fora)}</span></Row>
+        )}
+        {palpite.segundo_tempo && (
+            <Row><Label>2º Tempo:</Label><span>{placar(palpite.segundo_tempo.casa, palpite.segundo_tempo.fora)}</span></Row>
+        )}
+        {palpite.esporte === 'FUTEBOL' && (
+            <Row><Label>Escanteios:</Label><span>{palpite.escanteios ?? '-'}</span></Row>
+        )}
+        <Row>
+            <Label>Período:</Label>
+            <span>{palpite.minuto !== null ? `${palpite.periodo} - ${palpite.minuto} minuto(s)` : palpite.periodo}</span>
+        </Row>
+    </>
+);
+
 const linha_palpite = (palpite) => (
     <Hunch $cancelado={palpite.situacao === 'Cancelado'}>
         <Teams>{palpite.time_casa} x {palpite.time_fora}</Teams>
@@ -23,12 +61,10 @@ const linha_palpite = (palpite) => (
         <Row><Label>Palpite:</Label><span>{texto_palpite(palpite)}</span></Row>
         <Row><Label>Cotação:</Label><span>{Number(palpite.cotacao).toFixed(2)}</span></Row>
         <Row><Label>Tipo:</Label><span>{palpite.esporte}</span></Row>
-        {palpite.placar_casa !== null && (
-            <Row><Label>Placar:</Label><span>{`${palpite.placar_casa ?? 0} x ${palpite.placar_fora ?? 0}`}</span></Row>
-        )}
+        {palpite.periodo && linhas_andamento(palpite)}
         <Row>
             <Label>Situação:</Label>
-            <Status $situacao={palpite.situacao}>{palpite.situacao}</Status>
+            <Status $situacao={situacao_palpite(palpite)}>{situacao_palpite(palpite)}</Status>
         </Row>
     </Hunch>
 );

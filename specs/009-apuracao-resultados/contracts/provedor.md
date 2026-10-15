@@ -35,9 +35,10 @@ sistema antigo; a API do provedor **não muda**.
 | `escanteio_casa`, `escanteio_fora` | `escanteios_casa`, `escanteios_fora` | inteiro ≥ 0 ou nulo |
 | `eventos` | `confrontos_gols` | lista ou `null` (`null` = sem gols informados, mantém os gravados); evento inválido é ignorado sozinho |
 | `eventos[].tipo_evento` | `ordem` | número inteiro no início do texto ("10º Gol" → 10); sem número → evento ignorado |
-| `eventos[].nome` | `nome` | texto, até 150 caracteres |
-| `eventos[].minuto` | `minuto` | inteiro ≥ 0 ou nulo |
-| `eventos[].tempo_jogo` | `tempo_jogo` | texto, opcional, até 20 caracteres |
+| `eventos[].nome` | `nome` | texto, até 150 caracteres; **o provedor manda `null`** em boa parte dos gols (autor não informado): o gol entra assim mesmo, porque conta na ordem (primeiro e último gol) |
+| `eventos[].minuto` | `minuto` | texto como o provedor envia, com acréscimos (`"89"`, `"45+1"`), até 10 caracteres; inválido vira nulo sem descartar o gol |
+| `eventos[].tempo_jogo` | `tempo_jogo` | texto, opcional, até 20 caracteres (o provedor manda `"1"` ou `"2"`) |
+| `_id`, `__v`, `created_at`, `updated_at` | — | ignorados (campos internos do provedor, conferidos na resposta real em 2026-10-14) |
 | `eventos[].confrontos_id` | — | ignorado (o gol fica no jogo do item) |
 
 Efeitos: grava o resultado; se a assinatura mudou, registra "Resultado do jogo" e reapura as

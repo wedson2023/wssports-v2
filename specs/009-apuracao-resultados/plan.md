@@ -139,6 +139,8 @@ confrontos (R-19); rota do resultado de jogo manual (R-18); medição de desempe
 | `routes/console.php` | agenda dos 3 comandos | R-14 |
 | `routes/api.php` | 3 rotas e `use` dos 2 controllers | contrato |
 | `docs/postman/wssports_api.postman_collection.json` | regenerada | constituição |
+| `app/Http/Resources/ComprovanteApostaResource.php` | cada palpite traz `resultado`, `periodo`, placar (resultado gravado ou ao vivo atual), `primeiro_tempo`, `segundo_tempo` e `escanteios` (só futebol); o placar do envio do ao vivo deixa de ir | comprovante como no sistema antigo (ajuste pós-implementação) |
+| `resources/js/components/TicketModal/index.jsx` | situação do palpite mostra o resultado (ou o período do jogo) e as linhas de placar, tempos, escanteios e período com o jogo em andamento ou encerrado | idem |
 
 **Specs anteriores (artefatos coerentes com o código)**
 
@@ -148,8 +150,8 @@ confrontos (R-19); rota do resultado de jogo manual (R-18); medição de desempe
 | `specs/006-ajustes-tela-principal/spec.md` | Nota em FR-018: a decisão e o pagamento das apostas com especial passam pela apuração da spec 009 |
 
 **Nenhum outro arquivo existente muda**: `SaldoClientes`, `CalculoPremio`, `CalculoBlocos`,
-`RolloverClientes`, `ExecutarCargaPreJogo`, `CancelamentoApostas`,
-`ComprovanteApostaResource` e o frontend.
+`RolloverClientes`, `ExecutarCargaPreJogo` e `CancelamentoApostas`. No frontend, só o
+`TicketModal` muda.
 
 **Impacto no banco local**: `php artisan migrate` (3 tabelas novas, colunas com padrão em
 `apostas`, `apostas_palpites` e `configuracoes`; `usuarios_id` e `ip` de `apostas_historico`

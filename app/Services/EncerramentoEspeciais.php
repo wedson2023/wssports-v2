@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Enums\OrigemApuracao;
 use App\Enums\ResultadoAposta;
 use App\Enums\SituacaoAposta;
 use App\Enums\SituacaoEspecial;
@@ -18,12 +19,16 @@ use Illuminate\Validation\ValidationException;
 /**
  * Encerramento e cancelamento de categorias especiais (spec 006, FR-018 e FR-018a), como no
  * sistema antigo no que não depende dos jogos: o palpite especial ganha o resultado comparando com
- * a opção vencedora, e a aposta recebe o resultado quando ele já pode ser decidido. Nenhum saldo é
- * movimentado (o pagamento é da spec de apuração).
+ * a opção vencedora, e a aposta é decidida e paga pela apuração da spec 009 (ApuracaoApostas e
+ * LiquidacaoApostas).
  */
 class EncerramentoEspeciais
 {
-    public function __construct(private EdicaoApostas $edicao) {}
+    public function __construct(
+        private EdicaoApostas $edicao,
+        private ApuracaoApostas $apuracao,
+        private LiquidacaoApostas $liquidacao,
+    ) {}
 
     /**
      * @return int quantidade de apostas afetadas
@@ -110,8 +115,8 @@ class EncerramentoEspeciais
     }
 
     /**
-     * Resultado de cada aposta, olhando só os palpites ativos: Perdedor se algum perdeu; Vencedor
-     * se não restou palpite ativo ou se todos são especiais vencedores; senão segue Aguardando.
+     * Decide e liquida cada aposta pela mesma regra da apuração dos jogos (spec 009, R-09), para
+     * que apostas só de especiais e mistas (especial + jogos) sejam decididas e pagas igual.
      *
      * @param  list<int>  $apostas_ids
      */
@@ -119,18 +124,9 @@ class EncerramentoEspeciais
     {
         foreach ($apostas_ids as $apostas_id) {
             $aposta = Apostas::lockForUpdate()->find($apostas_id);
-            $ativos = $aposta->palpites_ativos()->get();
 
-            $resultado = match (true) {
-                $ativos->contains(fn (ApostasPalpites $palpite) => $palpite->resultado === ResultadoAposta::Perdedor) => ResultadoAposta::Perdedor,
-                $ativos->every(fn (ApostasPalpites $palpite) => $palpite->e_especial() && $palpite->resultado === ResultadoAposta::Vencedor) => ResultadoAposta::Vencedor,
-                default => ResultadoAposta::Aguardando,
-            };
-
-            if ($resultado !== ResultadoAposta::Aguardando) {
-                $aposta->resultado = $resultado;
-                $aposta->save();
-            }
+            $this->apuracao->decidir($aposta, OrigemApuracao::EncerramentoEspecial, $this->apuracao->fotografia($aposta));
+            $this->liquidacao->liquidar($aposta, OrigemApuracao::EncerramentoEspecial);
         }
 
         return count($apostas_ids);

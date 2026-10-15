@@ -99,6 +99,10 @@ dos dois; `usuarios_id` é preenchido na validação. Transições em [research.
 
 **Índice**: (`apostas_id`, `created_at`).
 
+> **Spec 009 (apuração)**: `usuarios_id` e `ip` passaram a aceitar nulo — nulo quando a ação foi
+> do sistema (palpite cancelado por jogo cancelado ou devolvido por "empate anula aposta", e a
+> restauração desse palpite).
+
 ### Tabela `clientes_rollovers`
 
 | Coluna | Tipo | Regras |
@@ -208,7 +212,7 @@ As cargas do provedor (spec 003) não alteram essa coluna (o upsert não a inclu
 | Enum | Casos (valor gravado) |
 |---|---|
 | `SituacaoAposta` | `Pendente`, `EmAnálise` (`Em análise`), `Ativa`, `Recusada`, `Expirada`, `Cancelada` |
-| `ResultadoAposta` | `Aguardando`, `Vencedor`, `Perdedor` |
+| `ResultadoAposta` | `Aguardando`, `Vencedor`, `Perdedor`; `Devolvido` acrescentado na spec 009, só no palpite ("empate anula aposta", vale 1,00) |
 | `TipoAposta` | `PréJogo` (`Pré-jogo`), `AoVivo` (`Ao vivo`) |
 | `FormaPagamento` | `Dinheiro`, `Saldo`, `PromoçãoEsportes` (`Promoção esportes`) |
 | `AceitarAlteracoes` | `Nenhuma`, `SomenteParaMaior` (`Somente para maior`), `Qualquer` |
