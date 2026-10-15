@@ -26,6 +26,9 @@ php artisan queue:work --queue=apostas,notificacoes,default --tries=1   # se o d
 php artisan schedule:work
 ```
 
+- **Windows (XAMPP)**: gerar as chaves VAPID e enviar push usam `openssl_pkey_new`, que precisa da
+  variável `OPENSSL_CONF` (ex.: `C:\xampp\php\extras\ssl\openssl.cnf`) no terminal do comando e no
+  worker da fila. O build do Vite 7 exige Node 20.19+.
 - **Push** exige contexto seguro: `localhost` no desktop ou um túnel HTTPS (ngrok) no celular. O
   `npm run build` é necessário para o service worker (ele só é registrado em produção).
 - **Dados do ao vivo**: usar o mock do provedor das specs 003 e 009. O placar, a situação, o minuto

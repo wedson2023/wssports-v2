@@ -99,7 +99,8 @@ export const Status = styled.span`
     text-align: center;
     font-size: 0.7em;
     color: #fff;
-    background-color: ${({ $situacao }) => ({ Vencedor: 'green', Perdedor: 'red' })[$situacao] ?? '#222'};
+    /* Encerrada (spec 010): mesma cor do bilhete em tempo real */
+    background-color: ${({ $situacao }) => ({ Vencedor: 'green', Perdedor: 'red', Encerrada: '#7c5cd6' })[$situacao] ?? '#222'};
 `;
 
 export const Hunches = styled.div`

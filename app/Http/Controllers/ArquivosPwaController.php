@@ -30,6 +30,18 @@ class ArquivosPwaController extends Controller
     }
 
     /**
+     * Tratamento das notificações push (spec 010, R-14), importado pelo service worker; sem cache,
+     * para a versão nova valer na próxima atualização do service worker.
+     */
+    public function notificacoes(): BinaryFileResponse
+    {
+        return response()->file(resource_path('pwa/push_notifications.js'), [
+            'Content-Type' => 'application/javascript; charset=utf-8',
+            'Cache-Control' => 'no-cache',
+        ]);
+    }
+
+    /**
      * Manifest do aplicativo (contracts/paginas.md).
      */
     public function manifest(): JsonResponse

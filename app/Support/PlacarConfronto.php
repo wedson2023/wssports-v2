@@ -2,6 +2,7 @@
 
 namespace App\Support;
 
+use App\Enums\SituacaoAoVivo;
 use App\Models\ConfrontosGols;
 use App\Models\ConfrontosResultados;
 use Illuminate\Support\Collection;
@@ -47,6 +48,31 @@ final class PlacarConfronto
             $resultado->escanteios_casa,
             $resultado->escanteios_fora,
             $gols->sortBy('ordem')->map(fn (ConfrontosGols $gol) => ['ordem' => $gol->ordem, 'nome' => $gol->nome])->values()->all(),
+        );
+    }
+
+    /**
+     * Placar atual de um jogo do ao vivo (linha de confrontos_ao_vivo), para os selos "ganhando
+     * agora" e "perdendo agora" do bilhete (spec 010, R-06). O ao vivo não traz o autor dos gols;
+     * no 1º tempo, os gols do 2º tempo ainda não informados contam como 0.
+     */
+    public static function do_ao_vivo(object $jogo): self
+    {
+        $numero = fn (mixed $valor) => $valor === null ? null : (int) $valor;
+        // a linha pode vir do query builder (texto) ou do model (enum)
+        $situacao = $jogo->situacao instanceof SituacaoAoVivo ? $jogo->situacao->value : (string) $jogo->situacao;
+        $primeiro_tempo = $situacao === SituacaoAoVivo::PrimeiroTempo->value;
+        $segundo_tempo = fn (mixed $valor) => $valor === null && $primeiro_tempo ? 0 : $numero($valor);
+
+        return new self(
+            [
+                self::JOGO => ['casa' => (int) $jogo->placar_casa, 'fora' => (int) $jogo->placar_fora],
+                self::PRIMEIRO_TEMPO => ['casa' => $numero($jogo->gols_primeiro_tempo_casa), 'fora' => $numero($jogo->gols_primeiro_tempo_fora)],
+                self::SEGUNDO_TEMPO => ['casa' => $segundo_tempo($jogo->gols_segundo_tempo_casa), 'fora' => $segundo_tempo($jogo->gols_segundo_tempo_fora)],
+            ],
+            $numero($jogo->escanteios_casa),
+            $numero($jogo->escanteios_fora),
+            [],
         );
     }
 

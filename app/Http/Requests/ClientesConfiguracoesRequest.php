@@ -50,6 +50,8 @@ class ClientesConfiguracoesRequest extends FormRequest
             'esportes_permitidos' => ['required', 'array', 'min:1'],
             'esportes_permitidos.*' => ['required', 'string', 'max:50', 'distinct'],
             ...$this->regras_aposta(self::CAMPOS_APOSTA),
+            // encerramento de aposta (spec 010): opcional, para o painel que ainda não envia o campo
+            'encerrar_aposta' => ['sometimes', 'boolean'],
         ];
     }
 

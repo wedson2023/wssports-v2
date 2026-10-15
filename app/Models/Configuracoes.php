@@ -82,6 +82,17 @@ class Configuracoes extends Model
         // apuração (spec 009)
         'remover_confronto_cancelado',
         'minutos_pagamento_premio',
+        // encerramento de aposta (spec 010)
+        'encerramento_habilitado',
+        'encerramento_parcial_habilitado',
+        'encerramento_automatico_habilitado',
+        'encerramento_jogos_nao_iniciados',
+        'margem_encerramento_pre_jogo',
+        'margem_encerramento_ao_vivo',
+        'valor_minimo_encerramento',
+        'percentual_minimo_encerramento',
+        'segundos_validade_oferta',
+        'limite_encerramentos_parciais',
     ];
 
     /**
@@ -127,6 +138,17 @@ class Configuracoes extends Model
             // apuração (spec 009)
             'remover_confronto_cancelado' => 'boolean',
             'minutos_pagamento_premio' => 'integer',
+            // encerramento de aposta (spec 010)
+            'encerramento_habilitado' => 'boolean',
+            'encerramento_parcial_habilitado' => 'boolean',
+            'encerramento_automatico_habilitado' => 'boolean',
+            'encerramento_jogos_nao_iniciados' => 'boolean',
+            'margem_encerramento_pre_jogo' => 'decimal:2',
+            'margem_encerramento_ao_vivo' => 'decimal:2',
+            'valor_minimo_encerramento' => 'decimal:2',
+            'percentual_minimo_encerramento' => 'decimal:2',
+            'segundos_validade_oferta' => 'integer',
+            'limite_encerramentos_parciais' => 'integer',
         ];
     }
 

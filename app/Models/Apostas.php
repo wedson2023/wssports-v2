@@ -7,6 +7,7 @@ use App\Enums\FormaPagamento;
 use App\Enums\LiquidacaoCriarAposta;
 use App\Enums\ResultadoAposta;
 use App\Enums\SituacaoAposta;
+use App\Enums\SituacaoEncerramentoAutomatico;
 use App\Enums\SituacaoPalpite;
 use App\Enums\TipoAposta;
 use App\Support\CodigoAposta;
@@ -14,6 +15,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 /**
@@ -66,7 +68,26 @@ class Apostas extends Model
             'apurada_em' => 'datetime',
             'valor_pago' => 'decimal:2',
             'liquidacao_pendente' => 'boolean',
+            // encerramento de aposta (spec 010)
+            'fracao_restante' => 'decimal:10',
         ];
+    }
+
+    /**
+     * Encerramentos pedidos pelo cliente (spec 010).
+     */
+    public function encerramentos(): HasMany
+    {
+        return $this->hasMany(ApostasEncerramentos::class, 'apostas_id');
+    }
+
+    /**
+     * Encerramento automático ativo (no máximo um por aposta, spec 010).
+     */
+    public function encerramento_automatico(): HasOne
+    {
+        return $this->hasOne(ApostasEncerramentosAutomaticos::class, 'apostas_id')
+            ->where('situacao', SituacaoEncerramentoAutomatico::Ativo);
     }
 
     /**
@@ -124,11 +145,28 @@ class Apostas extends Model
     }
 
     /**
-     * Total que o apostador recebe se ganhar: prêmio + acréscimo por múltiplos palpites.
+     * Total que o apostador recebe se ganhar: prêmio + acréscimo por múltiplos palpites, só da parte
+     * que continua valendo depois de encerramentos parciais (spec 010, R-07), truncado em centavos.
      */
     public function total_a_pagar(): string
     {
-        return bcadd((string) $this->premio, (string) $this->valor_acrescido, 2);
+        return bcmul(bcadd((string) $this->premio, (string) $this->valor_acrescido, 2), $this->fracao(), 2);
+    }
+
+    /**
+     * Valor apostado que continua valendo depois de encerramentos parciais (spec 010).
+     */
+    public function valor_em_jogo(): string
+    {
+        return bcmul((string) $this->valor, $this->fracao(), 2);
+    }
+
+    /**
+     * Fração que continua valendo; 1 quando a aposta ainda não foi lida do banco com a coluna.
+     */
+    private function fracao(): string
+    {
+        return (string) ($this->fracao_restante ?? '1');
     }
 
     /**

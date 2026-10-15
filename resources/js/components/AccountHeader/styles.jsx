@@ -30,6 +30,12 @@ export const Icon = styled.span`
     `}
 `;
 
+// sino e menu lado a lado, à direita (spec 010)
+export const Actions = styled.div`
+    display: flex;
+    align-items: center;
+`;
+
 export const Welcome = styled.h4`
     color: ${({ theme }) => theme.texto_principal};
     margin-top: 5px;

@@ -291,6 +291,8 @@ app/
 │   ├── ConfiguracoesEncerramento.php                    # NOVO  leitura das configurações + regras do cliente
 │   └── ApuracaoApostas.php, ImportacaoAoVivo.php, ImportacaoResultados.php, ImportacaoCotacoes.php,
 │       RolloverClientes.php, CancelamentoApostas.php                                  # ALTERADOS
+├── Exceptions/
+│   └── OfertaAlteradaException.php                      # NOVO (implementação)  409 da oferta alterada (R-09)
 └── Support/
     ├── TokenOferta.php                                  # NOVO  assina e confere o token da oferta (R-09)
     └── PlacarConfronto.php                              # ALTERADO
@@ -328,7 +330,9 @@ resources/
     │   └── useSessao.js                # ALTERADO
     ├── utils/
     │   ├── realtime.js                 # NOVO  cria o Echo com as props tempo_real
-    │   └── web_push.js                 # NOVO  conversão da chave VAPID e detecção de suporte/iPhone
+    │   ├── web_push.js                 # NOVO  conversão da chave VAPID e detecção de suporte/iPhone
+    │   ├── live_states.js              # NOVO (implementação)  cores e ícones dos estados do bilhete
+    │   └── shields.js                  # NOVO (implementação)  endereço do escudo (mesma regra do MatchCard)
     └── pages/Account/index.jsx, pages/Rules/index.jsx   # ALTERADOS
 
 routes/api.php, routes/web.php, routes/console.php       # ALTERADOS

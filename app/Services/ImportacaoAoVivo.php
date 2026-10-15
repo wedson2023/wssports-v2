@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\Campeonatos;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Throwable;
 
 /**
  * Carga do ao vivo: grava placar, minuto, situação e cotações dos jogos em andamento. Só os jogos
@@ -18,6 +19,7 @@ class ImportacaoAoVivo
     public function __construct(
         private ProvedorCotacoes $provedor,
         private ValidacaoCargaProvedor $validacao,
+        private ProcessamentoAoVivo $processamento,
     ) {}
 
     /**
@@ -90,6 +92,7 @@ class ImportacaoAoVivo
         }
 
         $atualizadas = array_values(array_diff(array_keys($linhas[0] ?? []), ['codigo_externo', 'created_at']));
+        $anteriores = $this->estado_anterior(array_column($linhas, 'codigo_externo'));
 
         DB::transaction(function () use ($linhas, $atualizadas) {
             foreach (array_chunk($linhas, self::LOTE) as $lote) {
@@ -97,6 +100,45 @@ class ImportacaoAoVivo
             }
         });
 
+        // bilhete em tempo real, eventos dos jogos e encerramentos automáticos (spec 010); uma falha
+        // aqui não desfaz a carga já gravada
+        try {
+            $this->processamento->processar($anteriores, $linhas);
+        } catch (Throwable $erro) {
+            Log::warning('Carga do ao vivo: pós-processamento não concluído: '.class_basename($erro).' - '.$erro->getMessage());
+        }
+
         return ['recebidos' => $confrontos->count(), 'gravados' => count($linhas)];
+    }
+
+    /**
+     * Placar, situação, minuto e cotações gravados antes desta carga, por código externo (spec 010,
+     * R-16): base da comparação do pós-processamento.
+     *
+     * @param  list<int>  $codigos
+     * @return array<int, array<string, mixed>>
+     */
+    private function estado_anterior(array $codigos): array
+    {
+        return DB::table('confrontos_ao_vivo')
+            ->whereIn('codigo_externo', $codigos)
+            ->get([
+                'id',
+                'codigo_externo',
+                'confrontos_id',
+                'placar_casa',
+                'placar_fora',
+                'gols_primeiro_tempo_casa',
+                'gols_primeiro_tempo_fora',
+                'gols_segundo_tempo_casa',
+                'gols_segundo_tempo_fora',
+                'escanteios_casa',
+                'escanteios_fora',
+                'minuto',
+                'situacao',
+                'cotacoes',
+            ])
+            ->mapWithKeys(fn (object $jogo) => [(int) $jogo->codigo_externo => (array) $jogo])
+            ->all();
     }
 }

@@ -17,7 +17,9 @@
     "dependencies": {
         "@fontsource/roboto": "^5.3.0",
         "@inertiajs/react": "^2.3.28",
+        "laravel-echo": "^2.6.1",
         "material-icons": "^1.13.14",
+        "pusher-js": "^8.6.0",
         "react": "^19.3.0",
         "react-dom": "^19.3.0",
         "styled-components": "^6.5.3",

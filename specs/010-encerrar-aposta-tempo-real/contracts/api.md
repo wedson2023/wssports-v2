@@ -85,7 +85,7 @@ Sem login. Aceita o token do cliente (`Authorization: Bearer`, opcional) para id
 | `cliente` | primeiro nome + inicial do último sobrenome com ponto; nome completo quando `dono` (FR-002) |
 | `dono` | o token é do cliente da aposta (inclui o acesso assistido) |
 | `valor_em_jogo` / `total_a_pagar` | já multiplicados por `fracao_restante` (R-07) |
-| `progresso` | uma contagem por palpite fora de bloco e por bloco (FR-002) |
+| `progresso` | uma contagem por palpite fora de bloco e por bloco (FR-002), mais `segmentos` (`[{estado, resultado}]`, um por palpite ou bloco, na ordem da barra) |
 | `palpites[].estado` | `nao_iniciado`, `ao_vivo`, `encerrado` (resultado gravado), `cancelado` |
 | `palpites[].selo` | só com `estado = ao_vivo` e resultado `Aguardando`: `Ganhando agora`, `Perdendo agora` ou `Aguardando` (R-06); nulo nos demais |
 | `palpites[].cotacao_atual` | cotação atual do mesmo mercado, ajustada para quem vê (o cliente dono ou o público do site); nula com o jogo encerrado, o palpite decidido ou o mercado sem cotação |
@@ -93,7 +93,7 @@ Sem login. Aceita o token do cliente (`Authorization: Bearer`, opcional) para id
 | `palpites[].minutos_para_inicio` | só com `estado = nao_iniciado` |
 | `palpites[]` especial | mesmo formato do comprovante (time_casa "Vencedor", categoria em time_fora) |
 | `canais` | canais a assinar (só os jogos em aberto); vazio quando `final` |
-| `encerramento` | só para o dono e só com a aposta `Ativa`/`Aguardando`; nulo nos demais (ver abaixo) |
+| `encerramento` | só para o dono (ver abaixo). Com a aposta no estado final, vem só `{disponivel: false, motivo: null, final: true, registrados}` quando ela teve encerramento (o dono vê o que recebeu); nulo para os demais |
 
 **`encerramento`** (dono):
 
@@ -113,6 +113,7 @@ Sem login. Aceita o token do cliente (`Authorization: Bearer`, opcional) para id
   "parcial": { "disponivel": true, "motivo": null, "restantes": 5 },
   "automatico": { "disponivel": true, "ativo": { "valor_alvo": "250.00", "criado_em": "…" } },
   "em_analise": null,
+  "final": false,
   "registrados": [
     { "modalidade": "Parcial", "valor": "40.00", "situacao": "Registrado", "creditar_em": "…" }
   ]
@@ -163,7 +164,7 @@ Respostas:
 | **201** | aceito (pré-jogo) | `{ "data": Encerramento }` com `situacao: "Registrado"` |
 | **202** | aguardando o tempo de confirmação do ao vivo | `{ "data": Encerramento }` com `situacao: "Em análise"` e `segundos_restantes` |
 | **200** | reenvio da mesma `chave_idempotencia` | o registro existente |
-| **409** | oferta vencida, adulterada ou fora da preferência | `{ "message": "A oferta mudou.", "encerramento": {…bloco atualizado…} }` |
+| **409** | oferta vencida, adulterada, de outra fração da aposta, ou recusada na decisão imediata (sem jogo ao vivo) por lance ou fora da preferência | `{ "message": "<motivo>", "encerramento": {…bloco atualizado…} }` |
 | **422** | aposta inelegível, parcial desligado, limite de parciais, valor fora da faixa | `{ "message": "<motivo da R-05 ou da validação>" }` |
 
 **Encerramento**:
@@ -331,7 +332,7 @@ Aceita o campo novo opcional `encerrar_aposta` (boolean). `GET` passa a devolvê
 
 | Rota | Resposta |
 |---|---|
-| `GET /bilhete/{codigo}` | página Inertia `Ticket`, com as props `codigo` e `tempo_real` (`{ chave, host, porta, esquema }` do Reverb, lidas da configuração a cada carga) |
+| `GET /bilhete/{codigo}` | página Inertia `Ticket`, com as props `codigo` e `tempo_real` (`{ chave, host, porta, esquema }` do Reverb, lidas da configuração a cada carga; nulo quando o broadcasting não é o Reverb, e a página fica só na consulta periódica) |
 | `GET /sw-notificacoes.js` | `resources/pwa/push_notifications.js`, `application/javascript`, `Cache-Control: no-cache` (R-14) |
 
 ## 6. Coleção do Postman

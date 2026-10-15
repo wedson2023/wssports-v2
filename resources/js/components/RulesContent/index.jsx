@@ -2,6 +2,7 @@ import { usePage } from '@inertiajs/react';
 
 import BetLimits from '../BetLimits';
 import BonusRules from '../BonusRules';
+import CashOutRules from '../CashOutRules';
 import MarketRules from '../MarketRules';
 import RulesBlock from '../RulesBlock';
 import { BackLink, BankRule, BankRules, Help, Logo, LogoArea, Page, TopBar, TopTitle } from './styles';
@@ -9,7 +10,7 @@ import { BackLink, BankRule, BankRules, Help, Logo, LogoArea, Page, TopBar, TopT
 // regulamento da banca em blocos, como no sistema antigo (spec 006, FR-021a): regras da banca,
 // regras de bônus, regras de apostas e limites de aposta; barra com "Voltar" e atalho do WhatsApp
 // aprovados na spec 005
-export default function RulesContent({ regras, regras_bonus = [], limites_aposta = null }) {
+export default function RulesContent({ regras, regras_bonus = [], limites_aposta = null, encerramento = null }) {
     const { tema, contatos, nome_sistema } = usePage().props;
 
     const falar_no_whatsapp = () => {
@@ -44,6 +45,8 @@ export default function RulesContent({ regras, regras_bonus = [], limites_aposta
                 </RulesBlock>
             )}
 
+            {/* encerramento de aposta (spec 010, FR-039) */}
+            <CashOutRules encerramento={encerramento} />
             <BonusRules promocoes={regras_bonus} />
             <MarketRules />
             <BetLimits limites={limites_aposta} />

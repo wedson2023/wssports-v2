@@ -31,7 +31,36 @@ class RegrasController extends Controller
             'regras' => Configuracoes::atual()->paragrafos_regras(),
             'regras_bonus' => $this->regras_bonus(),
             'limites_aposta' => $this->limites_aposta($publico, $regras),
+            'encerramento' => $this->encerramento(),
         ]);
+    }
+
+    /**
+     * Regras do encerramento de aposta com os valores atuais (spec 010, FR-039); nulo quando o
+     * encerramento está desligado.
+     *
+     * @return array<string, mixed>|null
+     */
+    private function encerramento(): ?array
+    {
+        $configuracoes = Configuracoes::atual();
+
+        if (! $configuracoes->encerramento_habilitado) {
+            return null;
+        }
+
+        return [
+            'parcial' => $configuracoes->encerramento_parcial_habilitado,
+            'automatico' => $configuracoes->encerramento_automatico_habilitado,
+            'jogos_nao_iniciados' => $configuracoes->encerramento_jogos_nao_iniciados,
+            'margem_pre_jogo' => (string) $configuracoes->margem_encerramento_pre_jogo,
+            'margem_ao_vivo' => (string) $configuracoes->margem_encerramento_ao_vivo,
+            'valor_minimo' => (string) $configuracoes->valor_minimo_encerramento,
+            'percentual_minimo' => (string) $configuracoes->percentual_minimo_encerramento,
+            'segundos_validade' => $configuracoes->segundos_validade_oferta,
+            'limite_parciais' => $configuracoes->limite_encerramentos_parciais,
+            'minutos_janela' => $configuracoes->minutos_pagamento_premio,
+        ];
     }
 
     /**

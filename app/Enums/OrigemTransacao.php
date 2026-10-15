@@ -23,4 +23,6 @@ enum OrigemTransacao: string
     case BônusExcluído = 'Bônus excluído';
     // apuração (spec 009): valor devolvido quando todos os palpites da aposta foram cancelados
     case DevoluçãoAposta = 'Devolução de aposta';
+    // encerramento de aposta pelo cliente (spec 010): valor creditado depois da janela
+    case EncerramentoAposta = 'Encerramento de aposta';
 }

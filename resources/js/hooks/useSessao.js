@@ -5,6 +5,7 @@ import axios from 'axios';
 import api from '../utils/api';
 import { atualizar_sessao, criar_sessao, encerrar_sessao, ler_sessao } from '../utils/session';
 import { gravar_acesso_assistido, ler_acesso_assistido, remover_acesso_assistido } from '../utils/storage';
+import { inscricao_atual } from '../utils/web_push';
 
 // sessão de login do site (apostador ou usuário do painel), entregue pelo PublicLayout
 export const SessaoContext = createContext(null);
@@ -35,15 +36,34 @@ const nome_do_cliente = async (token) => {
 // limites de aposta da página de regras)
 const props_do_publico = ['listagem', 'configuracoes', 'saldo', 'apostador', 'limites_aposta'];
 
+// remove a inscrição push deste aparelho no servidor e no navegador; falhas não impedem a saída
+const remover_inscricao_push = async (token) => {
+    try {
+        const inscricao = await inscricao_atual();
+
+        if (!inscricao) return;
+
+        await api.delete('/area-cliente/notificacoes/inscricao', {
+            params: { endpoint: inscricao.endpoint },
+            headers: { Authorization: `Bearer ${token}` },
+        });
+        await inscricao.unsubscribe();
+    } catch {
+        // sem conexão ou inscrição já removida: segue saindo
+    }
+};
+
 // sessão que muda a tela: cliente, ou usuário do painel enquanto não se sabe se é gestor
 const usa_token = (sessao) => sessao?.tipo === 'cliente' || (sessao?.tipo === 'usuario' && sessao.apostador !== 'visitante');
 
 // com sessão de cliente ou de vendedor, o token vai em todas as requisições (Inertia e API), para
 // a tela usar as cotações e os limites dele e o cupom apostar como ele; gestor aposta como visitante
-// na tela de créditos, o acesso assistido pelo painel (spec 007) tem prioridade sobre a sessão
-// salva no aparelho, que fica intacta
+// na tela de créditos e no bilhete em tempo real (spec 010), o acesso assistido pelo painel (spec
+// 007) tem prioridade sobre a sessão salva no aparelho, que fica intacta
+const usa_acesso_assistido = (caminho) => caminho === '/minha-conta' || caminho.startsWith('/bilhete/');
+
 const aplicar_token = (sessao) => {
-    const assistido = window.location.pathname === '/minha-conta' ? ler_acesso_assistido() : null;
+    const assistido = usa_acesso_assistido(window.location.pathname) ? ler_acesso_assistido() : null;
     const valor = assistido ? `Bearer ${assistido.token}` : (usa_token(sessao) ? `Bearer ${sessao.token}` : null);
 
     [axios.defaults.headers.common, api.defaults.headers.common].forEach((cabecalhos) => {
@@ -138,6 +158,9 @@ export const useEstadoSessao = () => {
         const atual = ler_sessao();
 
         if (atual) {
+            // o aparelho deixa de receber os avisos do cliente que saiu (spec 010, R-15)
+            if (atual.tipo === 'cliente') await remover_inscricao_push(atual.token);
+
             try {
                 await api.post(rotas_logout[atual.tipo], {}, { headers: { Authorization: `Bearer ${atual.token}` } });
             } catch {

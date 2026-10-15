@@ -30,7 +30,7 @@ class AreaClienteMinhaContaController extends Controller
      * depósito e o estorno que já existia (cancelamento de aposta e estorno de promoção).
      */
     private const ORIGENS_POR_OPERACAO = [
-        'palpites' => [OrigemTransacao::Aposta, OrigemTransacao::Prêmio],
+        'palpites' => [OrigemTransacao::Aposta, OrigemTransacao::Prêmio, OrigemTransacao::EncerramentoAposta],
         'depositos' => [OrigemTransacao::Depósito],
         'saques' => [OrigemTransacao::Saque, OrigemTransacao::DevoluçãoSaque],
         'bonus' => [OrigemTransacao::Promoção, OrigemTransacao::ConversãoBônus, OrigemTransacao::BônusExpirado, OrigemTransacao::BônusExcluído],
@@ -76,7 +76,7 @@ class AreaClienteMinhaContaController extends Controller
      */
     private function carregar_relacionados(Collection $transacoes): void
     {
-        $ids_apostas = $transacoes->filter(fn (ClientesTransacoes $t) => in_array($t->origem, [OrigemTransacao::Aposta, OrigemTransacao::Prêmio], true))
+        $ids_apostas = $transacoes->filter(fn (ClientesTransacoes $t) => in_array($t->origem, [OrigemTransacao::Aposta, OrigemTransacao::Prêmio, OrigemTransacao::EncerramentoAposta], true))
             ->pluck('referencia_id')
             ->filter();
 
@@ -92,7 +92,7 @@ class AreaClienteMinhaContaController extends Controller
         $saques = Saques::whereIn('id', $ids_saques)->get()->keyBy('id');
 
         foreach ($transacoes as $transacao) {
-            if (in_array($transacao->origem, [OrigemTransacao::Aposta, OrigemTransacao::Prêmio], true)) {
+            if (in_array($transacao->origem, [OrigemTransacao::Aposta, OrigemTransacao::Prêmio, OrigemTransacao::EncerramentoAposta], true)) {
                 $transacao->setRelation('aposta', $apostas->get($transacao->referencia_id));
             }
 
