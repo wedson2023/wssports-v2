@@ -33,6 +33,7 @@ class DatabaseSeeder extends Seeder
         $this->call(ApostasSeeder::class);
         $this->call(ApuracaoSeeder::class);
         $this->call(EncerramentoSeeder::class);
+        $this->call(CassinoSeeder::class);
         $this->call(EspeciaisSeeder::class);
         $this->call(ClientesPromocoesSeeder::class);
         $this->call(AvisosSeeder::class);

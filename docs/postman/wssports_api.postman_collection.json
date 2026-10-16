@@ -1,7 +1,7 @@
 {
     "info": {
         "name": "WSSports API",
-        "description": "Rotas da API do WSSports (autenticação JWT, gestão de usuários e permissões, área do cliente, gestão de clientes, confrontos e apostas).\n\nVariáveis da coleção:\n- base_url: endereço da API (ex.: http://127.0.0.1:8000/api)\n- token: token do painel, preenchido pelo login e refresh do painel\n- token_cliente: token do cliente, preenchido pelo cadastro, login e refresh da área do cliente\n- usuario_id / permissao: usados nas rotas de usuários e permissões\n- cliente_id / meio_pagamento_id / promocao_id: usados nas rotas de clientes\n- campeonato_id / confronto_id / registro_id / gerente_id: usados nas rotas de confrontos\n- codigo_aposta / palpite_id / confronto_ao_vivo_id: usados nas rotas de apostas\n- codigo_aposta / chave_encerramento / endpoint_push: usados nas rotas da spec 010\n\nFluxo: execute 'Login' (painel) e 'Login do cliente'; as demais rotas usam os tokens salvos.",
+        "description": "Rotas da API do WSSports (autenticação JWT, gestão de usuários e permissões, área do cliente, gestão de clientes, confrontos e apostas).\n\nVariáveis da coleção:\n- base_url: endereço da API (ex.: http://127.0.0.1:8000/api)\n- token: token do painel, preenchido pelo login e refresh do painel\n- token_cliente: token do cliente, preenchido pelo cadastro, login e refresh da área do cliente\n- usuario_id / permissao: usados nas rotas de usuários e permissões\n- cliente_id / meio_pagamento_id / promocao_id: usados nas rotas de clientes\n- campeonato_id / confronto_id / registro_id / gerente_id: usados nas rotas de confrontos\n- codigo_aposta / palpite_id / confronto_ao_vivo_id: usados nas rotas de apostas\n- codigo_aposta / chave_encerramento / endpoint_push: usados nas rotas da spec 010\n- jogo_cassino / canal_cassino / provedor_cassino / sessao_cassino / acao_cassino / cassino_hall / cassino_chave: usados nas rotas da spec 011 (hall e chave só para simular o callback localmente)\n\nFluxo: execute 'Login' (painel) e 'Login do cliente'; as demais rotas usam os tokens salvos.",
         "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
     },
     "auth": {
@@ -142,6 +142,41 @@
         },
         {
             "key": "endpoint_push",
+            "value": "",
+            "type": "string"
+        },
+        {
+            "key": "jogo_cassino",
+            "value": "",
+            "type": "string"
+        },
+        {
+            "key": "canal_cassino",
+            "value": "",
+            "type": "string"
+        },
+        {
+            "key": "provedor_cassino",
+            "value": "",
+            "type": "string"
+        },
+        {
+            "key": "sessao_cassino",
+            "value": "",
+            "type": "string"
+        },
+        {
+            "key": "acao_cassino",
+            "value": "",
+            "type": "string"
+        },
+        {
+            "key": "cassino_hall",
+            "value": "",
+            "type": "string"
+        },
+        {
+            "key": "cassino_chave",
             "value": "",
             "type": "string"
         }
@@ -4858,7 +4893,8 @@
                             "query": [
                                 {
                                     "key": "operacao",
-                                    "value": "palpites"
+                                    "value": "palpites",
+                                    "description": "Valores: palpites, depositos, saques, bonus, cashback, estornos, cassino (uma linha por sessão de jogo)."
                                 },
                                 {
                                     "key": "situacao",
@@ -4874,7 +4910,7 @@
                                 }
                             ]
                         },
-                        "description": "Movimentações da mais recente para a mais antiga. operacao: palpites, depositos, saques, bonus, cashback, estornos; situacao (só com palpites): Aguardando, Vencedor, Perdedor; por_pagina até 100 (padrão 30)."
+                        "description": "Movimentações da mais recente para a mais antiga. operacao: palpites, depositos, saques, bonus, cashback, estornos; situacao (só com palpites): Aguardando, Vencedor, Perdedor; por_pagina até 100 (padrão 30).\n\nCassino (spec 011): operacao=cassino lista uma linha por sessão de jogo, com a chave \"cassino\" (sessao_id, jogo, totais)."
                     }
                 },
                 {
@@ -6048,6 +6084,985 @@
                                 }
                             ]
                         }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Cassino (spec 011)",
+            "description": "Rotas da spec 011: página do cassino (público), abrir jogo e rodadas (área do cliente), callback do provedor (carteira) e painel (catálogo, chamadas, relatórios e configuração).",
+            "item": [
+                {
+                    "name": "Configurações do cassino",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/configuracoes/cassino",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "configuracoes",
+                                "cassino"
+                            ]
+                        },
+                        "description": "Configurações gerais do cassino (FR-031) e a url_callback a cadastrar no hall do provedor. Permissão configuracoes.editar."
+                    }
+                },
+                {
+                    "name": "Alterar configurações do cassino",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/configuracoes/cassino",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "configuracoes",
+                                "cassino"
+                            ]
+                        },
+                        "description": "Grava só os campos enviados. dias_registro_chamadas_cassino de 1 a 90. Não há bloqueio por GGR.",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"cassino_habilitado\": true,\n    \"cassino_demo_habilitado\": false,\n    \"data_prestacao_contas_cassino\": \"2026-10-01\",\n    \"dias_registro_chamadas_cassino\": 15\n}"
+                        }
+                    }
+                },
+                {
+                    "name": "Cassino: início (público)",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/publico/cassino?aparelho=celular",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "publico",
+                                "cassino"
+                            ],
+                            "query": [
+                                {
+                                    "key": "aparelho",
+                                    "value": "celular",
+                                    "disabled": false
+                                }
+                            ]
+                        },
+                        "description": "Provedores, tipos com contagem e linhas iniciais (Populares + até 10 por tipo) (R-07). Cache de 5 min por aparelho. 403 \"Acesso ao cassino não está disponível.\" com o cassino desligado.",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    }
+                },
+                {
+                    "name": "Cassino: jogos (público)",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/publico/cassino/jogos?aparelho=celular",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "publico",
+                                "cassino",
+                                "jogos"
+                            ],
+                            "query": [
+                                {
+                                    "key": "aparelho",
+                                    "value": "celular",
+                                    "disabled": false
+                                },
+                                {
+                                    "key": "provedor",
+                                    "value": "",
+                                    "disabled": true
+                                },
+                                {
+                                    "key": "tipo",
+                                    "value": "slots",
+                                    "disabled": true
+                                },
+                                {
+                                    "key": "busca",
+                                    "value": "tiger",
+                                    "disabled": true
+                                },
+                                {
+                                    "key": "pagina",
+                                    "value": "1",
+                                    "disabled": true
+                                },
+                                {
+                                    "key": "por_pagina",
+                                    "value": "50",
+                                    "disabled": true
+                                }
+                            ]
+                        },
+                        "description": "Grade filtrada e paginada (padrão 50, máximo 100). A busca (2 a 60 caracteres) ignora provedor e tipo. tipo=populares usa a regra da linha Populares.",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    }
+                },
+                {
+                    "name": "Cassino: abrir jogo (cliente)",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/area-cliente/cassino/jogos/{{jogo_cassino}}/abrir",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "area-cliente",
+                                "cassino",
+                                "jogos",
+                                "{{jogo_cassino}}",
+                                "abrir"
+                            ]
+                        },
+                        "description": "Abre o jogo com dinheiro (FR-013 a FR-017). Tenta os canais pela prioridade e passa ao próximo quando o provedor recusa. 200 com url, moldura e sessao_id; 403 acesso assistido ou cassino desligado; 422 \"Jogo indisponível no momento.\"; 503 provedor fora do ar. Limite de 20 por minuto.",
+                        "auth": {
+                            "type": "bearer",
+                            "bearer": [
+                                {
+                                    "key": "token",
+                                    "value": "{{token_cliente}}",
+                                    "type": "string"
+                                }
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Cassino: abrir demo (público)",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/publico/cassino/jogos/{{jogo_cassino}}/demo",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "publico",
+                                "cassino",
+                                "jogos",
+                                "{{jogo_cassino}}",
+                                "demo"
+                            ]
+                        },
+                        "description": "Abre o demo sem login, sem sessão e sem saldo (R-10). 422 \"Demo indisponível para este jogo.\" com o demo desligado na configuração ou jogo sem demo.",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    }
+                },
+                {
+                    "name": "Callback: getBalance",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/cassino/carteira",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "cassino",
+                                "carteira"
+                            ]
+                        },
+                        "description": "Chamada do provedor (contracts/provedor.md). Sempre HTTP 200 no formato do provedor. Validação de hall e chave em toda chamada; registrada em cassinos_chamadas sem a chave.",
+                        "auth": {
+                            "type": "noauth"
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"cmd\": \"getBalance\",\n    \"hall\": \"{{cassino_hall}}\",\n    \"key\": \"{{cassino_chave}}\",\n    \"login\": \"wss{{cliente_id}}\"\n}"
+                        }
+                    }
+                },
+                {
+                    "name": "Callback: writeBet SPIN",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/cassino/carteira",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "cassino",
+                                "carteira"
+                            ]
+                        },
+                        "description": "Lançamento de rodada (R-14). Repetir o mesmo tradeId devolve a mesma resposta sem mover saldo. Erros: user_not_found, fail_balance, unknown_action, wrong_params, wrong_hall, wrong_key.",
+                        "auth": {
+                            "type": "noauth"
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"cmd\": \"writeBet\",\n    \"hall\": \"{{cassino_hall}}\",\n    \"key\": \"{{cassino_chave}}\",\n    \"login\": \"wss{{cliente_id}}\",\n    \"bet\": \"1.00\",\n    \"win\": \"0.00\",\n    \"tradeId\": \"{{$guid}}\",\n    \"action\": \"SPIN\",\n    \"sessionId\": \"sessao-teste-1\",\n    \"gameId\": \"9946\"\n}"
+                        }
+                    }
+                },
+                {
+                    "name": "Callback: writeBet BET_AND_WINS",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/cassino/carteira",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "cassino",
+                                "carteira"
+                            ]
+                        },
+                        "description": "Aposta e prêmio na mesma chamada: um único movimento líquido (prêmio − aposta).",
+                        "auth": {
+                            "type": "noauth"
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"cmd\": \"writeBet\",\n    \"hall\": \"{{cassino_hall}}\",\n    \"key\": \"{{cassino_chave}}\",\n    \"login\": \"wss{{cliente_id}}\",\n    \"bet\": \"1.00\",\n    \"win\": \"2.50\",\n    \"tradeId\": \"{{$guid}}\",\n    \"action\": \"BET_AND_WINS\",\n    \"sessionId\": \"sessao-teste-1\",\n    \"gameId\": \"9946\"\n}"
+                        }
+                    }
+                },
+                {
+                    "name": "Callback: writeBet CANCEL",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/cassino/carteira",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "cassino",
+                                "carteira"
+                            ]
+                        },
+                        "description": "Cancelamento (R-19): devolve a aposta original à carteira dela (pelo tradeId da original em refundTradeId/betTradeId/originalTradeId, ou pela última aposta da sessão com o mesmo valor).",
+                        "auth": {
+                            "type": "noauth"
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"cmd\": \"writeBet\",\n    \"hall\": \"{{cassino_hall}}\",\n    \"key\": \"{{cassino_chave}}\",\n    \"login\": \"wss{{cliente_id}}\",\n    \"bet\": \"1.00\",\n    \"win\": \"0.00\",\n    \"tradeId\": \"{{$guid}}\",\n    \"action\": \"CANCEL\",\n    \"sessionId\": \"sessao-teste-1\",\n    \"gameId\": \"9946\"\n}"
+                        }
+                    }
+                },
+                {
+                    "name": "Cassino: rodadas da sessão (cliente)",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/area-cliente/cassino/sessoes/{{sessao_cassino}}/rodadas",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "area-cliente",
+                                "cassino",
+                                "sessoes",
+                                "{{sessao_cassino}}",
+                                "rodadas"
+                            ],
+                            "query": [
+                                {
+                                    "key": "pagina",
+                                    "value": "1",
+                                    "disabled": true
+                                },
+                                {
+                                    "key": "por_pagina",
+                                    "value": "50",
+                                    "disabled": true
+                                }
+                            ]
+                        },
+                        "description": "Rodadas de uma sessão do próprio cliente (FR-028), paginado (padrão 50, máximo 100). 404 para sessão de outro cliente. Funciona no acesso assistido.",
+                        "auth": {
+                            "type": "bearer",
+                            "bearer": [
+                                {
+                                    "key": "token",
+                                    "value": "{{token_cliente}}",
+                                    "type": "string"
+                                }
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Jogos do cassino (painel)",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/cassinos-jogos",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "cassinos-jogos"
+                            ],
+                            "query": [
+                                {
+                                    "key": "busca",
+                                    "value": "",
+                                    "disabled": true
+                                },
+                                {
+                                    "key": "provedor",
+                                    "value": "",
+                                    "disabled": true
+                                },
+                                {
+                                    "key": "tipo",
+                                    "value": "",
+                                    "disabled": true
+                                },
+                                {
+                                    "key": "ativo",
+                                    "value": "1",
+                                    "disabled": true
+                                },
+                                {
+                                    "key": "popular",
+                                    "value": "1",
+                                    "disabled": true
+                                },
+                                {
+                                    "key": "removido",
+                                    "value": "nao",
+                                    "disabled": true
+                                },
+                                {
+                                    "key": "sem_canal_abrivel",
+                                    "value": "1",
+                                    "disabled": true
+                                },
+                                {
+                                    "key": "repetidos",
+                                    "value": "1",
+                                    "disabled": true
+                                },
+                                {
+                                    "key": "pagina",
+                                    "value": "1",
+                                    "disabled": true
+                                },
+                                {
+                                    "key": "por_pagina",
+                                    "value": "20",
+                                    "disabled": true
+                                }
+                            ]
+                        },
+                        "description": "Catálogo com os canais (permissão cassinos_jogos.gerenciar). repetidos=1 lista jogos com o mesmo nome em outro provedor (R-02)."
+                    }
+                },
+                {
+                    "name": "Alterar jogo do cassino",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/cassinos-jogos/{{jogo_cassino}}",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "cassinos-jogos",
+                                "{{jogo_cassino}}"
+                            ]
+                        },
+                        "description": "ativo, popular e ordem (0 a 65535). Ao ativar um jogo com nome repetido em outro provedor, a resposta traz \"aviso\".",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"ativo\": true,\n    \"popular\": true,\n    \"ordem\": 1\n}"
+                        }
+                    }
+                },
+                {
+                    "name": "Alterar canal do jogo",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/cassinos-jogos-canais/{{canal_cassino}}",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "cassinos-jogos-canais",
+                                "{{canal_cassino}}"
+                            ]
+                        },
+                        "description": "ativo, pre_pago, bonus_primeiro, prioridade (0 a 999) e disponivel (true limpa a indisponibilidade).",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"ativo\": true,\n    \"pre_pago\": false,\n    \"bonus_primeiro\": false,\n    \"prioridade\": 10,\n    \"disponivel\": true\n}"
+                        }
+                    }
+                },
+                {
+                    "name": "Provedores do cassino",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/cassinos-provedores",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "cassinos-provedores"
+                            ],
+                            "query": [
+                                {
+                                    "key": "pagina",
+                                    "value": "1",
+                                    "disabled": true
+                                },
+                                {
+                                    "key": "por_pagina",
+                                    "value": "20",
+                                    "disabled": true
+                                }
+                            ]
+                        },
+                        "description": "Provedores com a quantidade de jogos."
+                    }
+                },
+                {
+                    "name": "Alterar provedor do cassino",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/cassinos-provedores/{{provedor_cassino}}",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "cassinos-provedores",
+                                "{{provedor_cassino}}"
+                            ]
+                        },
+                        "description": "nome, ativo, ordem e porcentagem_comissao (0 a 100). Para enviar a imagem (PNG/JPG/WEBP até 1 MB), use form-data com POST e _method=PUT.",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"nome\": \"PG Soft\",\n    \"ativo\": true,\n    \"ordem\": 1,\n    \"porcentagem_comissao\": \"15.50\"\n}"
+                        }
+                    }
+                },
+                {
+                    "name": "Sincronizações do catálogo",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/cassinos-sincronizacoes",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "cassinos-sincronizacoes"
+                            ],
+                            "query": [
+                                {
+                                    "key": "pagina",
+                                    "value": "1",
+                                    "disabled": true
+                                },
+                                {
+                                    "key": "por_pagina",
+                                    "value": "20",
+                                    "disabled": true
+                                }
+                            ]
+                        },
+                        "description": "Resumo das cargas do catálogo."
+                    }
+                },
+                {
+                    "name": "Sincronizar catálogo agora",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/cassinos-sincronizacoes",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "cassinos-sincronizacoes"
+                            ]
+                        },
+                        "description": "202 com a carga Em andamento (roda na fila). 409 com outra carga em andamento. Limite de 1 por minuto."
+                    }
+                },
+                {
+                    "name": "Tipos de ação do provedor",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/cassinos-acoes",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "cassinos-acoes"
+                            ],
+                            "query": [
+                                {
+                                    "key": "pagina",
+                                    "value": "1",
+                                    "disabled": true
+                                },
+                                {
+                                    "key": "por_pagina",
+                                    "value": "20",
+                                    "disabled": true
+                                }
+                            ]
+                        },
+                        "description": "Tipos de ação do writeBet e o efeito no saldo (FR-022)."
+                    }
+                },
+                {
+                    "name": "Cadastrar tipo de ação",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/cassinos-acoes",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "cassinos-acoes"
+                            ]
+                        },
+                        "description": "efeito: Aposta, Prêmio, Aposta com prêmio, Rodada grátis, Cancelamento ou Reembolso.",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"acao\": \"GAMBLE\",\n    \"efeito\": \"Aposta com prêmio\",\n    \"ativo\": true,\n    \"descricao\": \"Dobra do prêmio\"\n}"
+                        }
+                    }
+                },
+                {
+                    "name": "Alterar tipo de ação",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/cassinos-acoes/{{acao_cassino}}",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "cassinos-acoes",
+                                "{{acao_cassino}}"
+                            ]
+                        },
+                        "description": "Mesmos campos do cadastro.",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"efeito\": \"Aposta com prêmio\",\n    \"ativo\": true\n}"
+                        }
+                    }
+                },
+                {
+                    "name": "Excluir tipo de ação",
+                    "request": {
+                        "method": "DELETE",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/cassinos-acoes/{{acao_cassino}}",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "cassinos-acoes",
+                                "{{acao_cassino}}"
+                            ]
+                        },
+                        "description": "Exclusão lógica; a ação passa a ser recusada como desconhecida."
+                    }
+                },
+                {
+                    "name": "Chamadas do provedor",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/cassinos-chamadas",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "cassinos-chamadas"
+                            ],
+                            "query": [
+                                {
+                                    "key": "resultado",
+                                    "value": "Recusada",
+                                    "disabled": true
+                                },
+                                {
+                                    "key": "comando",
+                                    "value": "writeBet",
+                                    "disabled": true
+                                },
+                                {
+                                    "key": "login",
+                                    "value": "",
+                                    "disabled": true
+                                },
+                                {
+                                    "key": "trade_id",
+                                    "value": "",
+                                    "disabled": true
+                                },
+                                {
+                                    "key": "data_inicial",
+                                    "value": "",
+                                    "disabled": true
+                                },
+                                {
+                                    "key": "data_final",
+                                    "value": "",
+                                    "disabled": true
+                                },
+                                {
+                                    "key": "pagina",
+                                    "value": "1",
+                                    "disabled": true
+                                },
+                                {
+                                    "key": "por_pagina",
+                                    "value": "20",
+                                    "disabled": true
+                                }
+                            ]
+                        },
+                        "description": "Registro das chamadas do callback, sem a chave (FR-026). Permissão cassinos_rodadas.listar. resultado=Recusada mostra ações desconhecidas e chamadas inválidas."
+                    }
+                },
+                {
+                    "name": "Relatório do cassino",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/cassinos-rodadas/relatorio?data_inicial=2026-10-01&data_final=2026-10-31",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "cassinos-rodadas",
+                                "relatorio"
+                            ],
+                            "query": [
+                                {
+                                    "key": "data_inicial",
+                                    "value": "2026-10-01",
+                                    "disabled": false
+                                },
+                                {
+                                    "key": "data_final",
+                                    "value": "2026-10-31",
+                                    "disabled": false
+                                },
+                                {
+                                    "key": "agrupar",
+                                    "value": "jogo",
+                                    "disabled": true
+                                },
+                                {
+                                    "key": "provedor",
+                                    "value": "",
+                                    "disabled": true
+                                },
+                                {
+                                    "key": "pagina",
+                                    "value": "1",
+                                    "disabled": true
+                                },
+                                {
+                                    "key": "por_pagina",
+                                    "value": "20",
+                                    "disabled": true
+                                }
+                            ]
+                        },
+                        "description": "Resumo e detalhe por jogo, provedor ou canal: rodadas, entradas, saídas, GGR e comissão (FR-032). Período de até 366 dias. Permissão cassinos_rodadas.listar."
+                    }
+                },
+                {
+                    "name": "Histórico da sessão no provedor",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/cassinos-sessoes/{{sessao_cassino}}/historico",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "cassinos-sessoes",
+                                "{{sessao_cassino}}",
+                                "historico"
+                            ]
+                        },
+                        "description": "Consulta o gameSessionsLog do provedor (FR-033). 422 sem identificação da sessão no provedor; 503 provedor fora do ar."
                     }
                 }
             ]

@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="300" height="220" viewBox="0 0 300 220">
+    <!-- imagem padrão do cartão do jogo do cassino quando a do provedor não carrega (spec 011) -->
+    <defs>
+        <linearGradient id="fundo" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stop-color="#3a3a3a"/>
+            <stop offset="1" stop-color="#151515"/>
+        </linearGradient>
+    </defs>
+    <rect width="300" height="220" fill="url(#fundo)"/>
+    <g fill="none" stroke="#777" stroke-width="6" stroke-linejoin="round">
+        <rect x="112" y="62" width="76" height="76" rx="14"/>
+    </g>
+    <g fill="#777">
+        <circle cx="132" cy="82" r="7"/>
+        <circle cx="168" cy="82" r="7"/>
+        <circle cx="150" cy="100" r="7"/>
+        <circle cx="132" cy="118" r="7"/>
+        <circle cx="168" cy="118" r="7"/>
+    </g>
+    <text x="150" y="172" fill="#999" font-family="Roboto, Arial, sans-serif" font-size="16" text-anchor="middle">Cassino</text>
+</svg>

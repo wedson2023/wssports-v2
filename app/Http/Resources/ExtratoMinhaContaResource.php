@@ -5,6 +5,7 @@ namespace App\Http\Resources;
 use App\Enums\OrigemTransacao;
 use App\Enums\SituacaoAposta;
 use App\Enums\TipoRollover;
+use App\Enums\TipoTransacao;
 use App\Models\ClientesTransacoes;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
@@ -33,17 +34,42 @@ class ExtratoMinhaContaResource extends JsonResource
     {
         $deposito = $this->relationLoaded('deposito') ? $this->getRelation('deposito') : null;
         $data = $deposito?->pago_em ?? $this->created_at;
+        $cassino = $this->cassino();
 
         return [
             'id' => $this->id,
             'data' => $data->copy()->setTimezone('-03:00')->toIso8601String(),
             'operacao' => self::OPERACOES[$this->origem->value] ?? $this->origem->value,
-            'tipo' => $this->tipo,
-            'valor' => $this->valor,
+            // na linha da sessão de jogo: perdeu (débito) ou ganhou (crédito) no total da sessão
+            'tipo' => $cassino ? (bccomp($cassino['total_ganho'], $cassino['total_apostado'], 2) < 0 ? TipoTransacao::Débito : TipoTransacao::Crédito) : $this->tipo,
+            'valor' => $cassino ? $cassino['total_apostado'] : $this->valor,
             'aposta' => $this->aposta(),
             'rollover' => $this->rollover_deposito(),
             'bonus' => $this->bonus(),
             'saque' => $this->saque(),
+            'cassino' => $cassino,
+        ];
+    }
+
+    /**
+     * Sessão de jogo do cassino da linha (spec 011, R-20): a linha mostra os totais da sessão.
+     *
+     * @return array{sessao_id: int, jogo: string, total_apostado: string, total_ganho: string, quantidade_rodadas: int}|null
+     */
+    private function cassino(): ?array
+    {
+        $sessao = $this->relationLoaded('sessao_cassino') ? $this->getRelation('sessao_cassino') : null;
+
+        if ($sessao === null) {
+            return null;
+        }
+
+        return [
+            'sessao_id' => $sessao->id,
+            'jogo' => $sessao->jogo?->nome ?? $sessao->codigo_provedor,
+            'total_apostado' => (string) $sessao->total_apostado,
+            'total_ganho' => (string) $sessao->total_ganho,
+            'quantidade_rodadas' => $sessao->quantidade_rodadas,
         ];
     }
 

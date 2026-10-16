@@ -70,11 +70,11 @@ export default function StatementTable({ itens, fim, carregando, ao_carregar_mai
                     const rollover = item.rollover?.restante ?? item.bonus?.restante;
 
                     return (
-                        <Row key={item.id} onClick={() => ao_tocar_linha(item)} $clicavel={Boolean(item.aposta || item.saque?.situacao === 'Recusado')}>
+                        <Row key={item.id} onClick={() => ao_tocar_linha(item)} $clicavel={Boolean(item.aposta || item.cassino || item.saque?.situacao === 'Recusado')}>
                             <div>{data_curta(item.data)}</div>
                             <div>{item.operacao}</div>
                             <div>{valor(item.valor)}</div>
-                            <div>{item.aposta ? valor(item.aposta.premio) : sem_valor}</div>
+                            <div>{item.aposta ? valor(item.aposta.premio) : item.cassino ? valor(item.cassino.total_ganho) : sem_valor}</div>
                             <div>{expira_em(item.bonus)}</div>
                             <div>{rollover !== undefined ? valor(rollover) : sem_valor}</div>
                             <div>{item.bonus ? valor(item.bonus.liberado) : sem_valor}</div>

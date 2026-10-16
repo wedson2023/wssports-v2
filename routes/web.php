@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\ArquivosPwaController;
 use App\Http\Controllers\BilheteController;
+use App\Http\Controllers\CassinoController;
 use App\Http\Controllers\MinhaContaController;
 use App\Http\Controllers\PaginaInicialController;
 use App\Http\Controllers\PainelController;
@@ -14,6 +15,10 @@ Route::get('/', [PaginaInicialController::class, 'index'])->name('pagina_inicial
 Route::get('regras', [RegrasController::class, 'index'])->name('regras');
 // bilhete em tempo real (spec 010)
 Route::get('bilhete/{codigo}', [BilheteController::class, 'index'])->name('bilhete');
+// área do cassino (spec 011)
+Route::get('cassino', [CassinoController::class, 'index'])->name('cassino');
+// saída do jogo do cassino: endereço fixo usado pelo provedor no home_url do jogo
+Route::get('close.php', [CassinoController::class, 'fechar'])->name('cassino.fechar');
 // tela de créditos do cliente (spec 007)
 Route::get('minha-conta', [MinhaContaController::class, 'index'])->name('minha_conta');
 // retorno da autorização do Mercado Pago (vínculo da conta da banca, spec 007)

@@ -63,15 +63,15 @@ class DadosFake
     }
 
     /**
-     * FAKE — indicadores de Acumuladão e de Cassino. Substituídos pelas specs próprias.
+     * FAKE — indicador de Acumuladão. Substituído pela spec própria (o de Cassino passou a vir da
+     * configuração na spec 011).
      *
-     * @return array{acumuladao: bool, cassino: bool}
+     * @return array{acumuladao: bool}
      */
     public static function indicadores(): array
     {
         return [
             'acumuladao' => true,
-            'cassino' => true,
         ];
     }
 

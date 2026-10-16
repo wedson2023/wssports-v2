@@ -25,4 +25,6 @@ enum OrigemTransacao: string
     case DevoluçãoAposta = 'Devolução de aposta';
     // encerramento de aposta pelo cliente (spec 010): valor creditado depois da janela
     case EncerramentoAposta = 'Encerramento de aposta';
+    // cassino (spec 011): movimento líquido de uma rodada; referencia_id = sessão de jogo
+    case Cassino = 'Cassino';
 }

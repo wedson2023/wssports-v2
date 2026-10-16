@@ -158,6 +158,16 @@ enum Funcao: string
     ];
 
     /**
+     * Permissões do cassino (spec 011): gerenciar o catálogo (jogos, provedores, canais, tipos de
+     * ação e sincronização) e consultar o movimento (relatório, histórico e chamadas do provedor).
+     * Só Admin e Supervisor.
+     */
+    public const PERMISSOES_CASSINO = [
+        'cassinos_jogos.gerenciar',
+        'cassinos_rodadas.listar',
+    ];
+
+    /**
      * Nível hierárquico: 1 é o topo (Admin) e 4 a base (Vendedor).
      */
     public function nivel(): int
@@ -216,6 +226,7 @@ enum Funcao: string
         $permissoes_site = array_filter([...self::PERMISSOES_ESPECIAIS, ...self::PERMISSOES_SITE], fn (string $permissao) => $this->pode_usar($permissao));
         $permissoes_pagamentos = array_filter(self::PERMISSOES_PAGAMENTOS, fn (string $permissao) => $this->pode_usar($permissao));
         $permissoes_encerramentos = array_filter(self::PERMISSOES_ENCERRAMENTOS, fn (string $permissao) => $this->pode_usar($permissao));
+        $permissoes_cassino = array_filter(self::PERMISSOES_CASSINO, fn (string $permissao) => $this->pode_usar($permissao));
 
         return [
             ...self::PERMISSOES_GESTAO,
@@ -225,6 +236,7 @@ enum Funcao: string
             ...array_values($permissoes_site),
             ...array_values($permissoes_pagamentos),
             ...array_values($permissoes_encerramentos),
+            ...array_values($permissoes_cassino),
         ];
     }
 
@@ -242,8 +254,8 @@ enum Funcao: string
      * confrontos; Gerente não usa as permissões de clientes restritas (excluir, restaurar e
      * estorno) e, das de confrontos, só as de PERMISSOES_CONFRONTOS_GERENTE. Nas apostas, criar e
      * validar código são só do Vendedor; cancelar, de todos; o resto, de Gerente para cima.
-     * Especiais, recursos do site, pagamentos e encerramentos de aposta são só de Admin e Supervisor
-     * (vincular o gateway, só Admin).
+     * Especiais, recursos do site, pagamentos, encerramentos de aposta e cassino são só de Admin e
+     * Supervisor (vincular o gateway, só Admin).
      */
     public function pode_usar(string $permissao): bool
     {
@@ -252,7 +264,7 @@ enum Funcao: string
             return $this === self::Admin;
         }
 
-        if (in_array($permissao, [...self::PERMISSOES_ESPECIAIS, ...self::PERMISSOES_SITE, ...self::PERMISSOES_PAGAMENTOS, ...self::PERMISSOES_ENCERRAMENTOS], true)) {
+        if (in_array($permissao, [...self::PERMISSOES_ESPECIAIS, ...self::PERMISSOES_SITE, ...self::PERMISSOES_PAGAMENTOS, ...self::PERMISSOES_ENCERRAMENTOS, ...self::PERMISSOES_CASSINO], true)) {
             return $this === self::Admin || $this === self::Supervisor;
         }
 

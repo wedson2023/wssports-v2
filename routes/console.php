@@ -52,3 +52,9 @@ Schedule::command('depositos:conferir')->everyMinute()->withoutOverlapping(2);
 
 // bônus: retira os vencidos que não cumpriram o rollover (antigo BonusCommand)
 Schedule::command('bonus:expirar')->everyTenMinutes()->withoutOverlapping(5);
+
+// cassino (spec 011): catálogo do provedor de hora em hora, no minuto 5 (antigo command:cassino)
+Schedule::command('cassinos_jogos:sincronizar')->hourlyAt(5)->runInBackground()->withoutOverlapping(30);
+
+// cassino: limpa o registro de chamadas do provedor (retenção da configuração)
+Schedule::command('cassinos_chamadas:limpar')->dailyAt('04:00')->withoutOverlapping(30);

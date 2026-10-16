@@ -83,4 +83,22 @@ return [
         'assunto' => env('VAPID_SUBJECT', 'mailto:'.env('MAIL_FROM_ADDRESS', 'contato@example.com')),
     ],
 
+    // provedor do cassino (spec 011, TBS2): hall e chave do hall só no .env; a chave vai no corpo das
+    // chamadas e nunca é registrada no log nem no banco
+    'provedor_cassino' => [
+        // endereço base da API; a abertura do jogo usa o mesmo endereço + "openGame/"
+        'url_api' => env('CASSINO_URL_API', 'http://tbs2api.aslot.net/API/'),
+        'hall' => env('CASSINO_HALL'),
+        'chave' => env('CASSINO_CHAVE'),
+        // confere a assinatura "sign" (sha256) das chamadas do provedor; desligada até conferir a
+        // ordem dos campos com uma chamada real
+        'assinatura' => (bool) env('CASSINO_ASSINATURA', false),
+        // prefixo do login do cliente no provedor (prefixo + id do cliente)
+        'prefixo_login' => env('CASSINO_PREFIXO_LOGIN', 'wss'),
+        // tempos limite, em segundos
+        'tempo_limite_lista' => 60,
+        'tempo_limite_abertura' => 10,
+        'tempo_limite_historico' => 10,
+    ],
+
 ];

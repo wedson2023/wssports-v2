@@ -34,9 +34,6 @@ import { Content } from './styles';
 // atualização do ao vivo (FR-033)
 const intervalo_ao_vivo_ms = 7000;
 
-// esportes sem ação (Cassino fica para a spec própria; Especiais ganhou ação na spec 006)
-const esportes_sem_acao = ['CASSINO'];
-
 // colunas do cabeçalho com o botão dia/noite antes de Criar Conta / Entrar (FR-053)
 const colunas_cabecalho = { desktop: '40px 100px 100px', mobile: '40px 100px 100px' };
 
@@ -223,7 +220,11 @@ export default function Home({ filtros, listagem, configuracoes, banners, aviso,
     const abrir_ao_vivo = () => aplicar_filtros({ tipo: 'ao_vivo', esporte: 'FUTEBOL', dia: null, busca: null, campeonato: null });
 
     const escolher_esporte = (chave) => {
-        if (esportes_sem_acao.includes(chave)) return;
+        // o cassino tem área própria (spec 011)
+        if (chave === 'CASSINO') {
+            router.visit('/cassino');
+            return;
+        }
 
         if (chave === 'AO VIVO') {
             abrir_ao_vivo();

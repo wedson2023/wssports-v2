@@ -20,7 +20,7 @@ class ExtratoMinhaContaRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'operacao' => ['nullable', 'in:palpites,depositos,saques,bonus,cashback,estornos'],
+            'operacao' => ['nullable', 'in:palpites,depositos,saques,bonus,cashback,estornos,cassino'],
             'situacao' => ['nullable', 'in:Aguardando,Vencedor,Perdedor', 'prohibited_unless:operacao,palpites'],
             'pagina' => ['nullable', 'integer', 'min:1'],
             'por_pagina' => ['nullable', 'integer', 'between:1,100'],

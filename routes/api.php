@@ -9,6 +9,7 @@ use App\Http\Controllers\AreaClienteApostasController;
 use App\Http\Controllers\AreaClienteAutenticacaoController;
 use App\Http\Controllers\AreaClienteBonusController;
 use App\Http\Controllers\AreaClienteCadastroController;
+use App\Http\Controllers\AreaClienteCassinoController;
 use App\Http\Controllers\AreaClienteDepositosController;
 use App\Http\Controllers\AreaClienteEncerramentoAutomaticoController;
 use App\Http\Controllers\AreaClienteEncerramentosController;
@@ -25,12 +26,22 @@ use App\Http\Controllers\BannersController;
 use App\Http\Controllers\CampeonatosController;
 use App\Http\Controllers\CampeonatosNaoPermitidosController;
 use App\Http\Controllers\CancelamentoApostasController;
+use App\Http\Controllers\CassinoCarteiraController;
+use App\Http\Controllers\CassinosAcoesController;
+use App\Http\Controllers\CassinosChamadasController;
+use App\Http\Controllers\CassinosJogosCanaisController;
+use App\Http\Controllers\CassinosJogosController;
+use App\Http\Controllers\CassinosProvedoresController;
+use App\Http\Controllers\CassinosRodadasController;
+use App\Http\Controllers\CassinosSessoesController;
+use App\Http\Controllers\CassinosSincronizacoesController;
 use App\Http\Controllers\ClientesConfiguracoesController;
 use App\Http\Controllers\ClientesController;
 use App\Http\Controllers\ClientesMeiosPagamentoController;
 use App\Http\Controllers\ClientesPromocoesController;
 use App\Http\Controllers\ClientesTransacoesController;
 use App\Http\Controllers\ConfiguracoesApuracaoController;
+use App\Http\Controllers\ConfiguracoesCassinoController;
 use App\Http\Controllers\ConfiguracoesCriarApostaController;
 use App\Http\Controllers\ConfiguracoesEncerramentoController;
 use App\Http\Controllers\ConfiguracoesLogoController;
@@ -55,6 +66,7 @@ use App\Http\Controllers\PorcentagensVendedoresController;
 use App\Http\Controllers\PublicoApostasController;
 use App\Http\Controllers\PublicoAvisosController;
 use App\Http\Controllers\PublicoBilhetesController;
+use App\Http\Controllers\PublicoCassinoController;
 use App\Http\Controllers\PublicoNotificacoesController;
 use App\Http\Controllers\PublicoConfrontosController;
 use App\Http\Controllers\PublicoConfrontosDetalheController;
@@ -152,6 +164,16 @@ Route::prefix('area-cliente')->group(function () {
         Route::get('notificacoes/inscricao', [AreaClienteNotificacoesController::class, 'show']);
         Route::put('notificacoes/inscricao', [AreaClienteNotificacoesController::class, 'update']);
         Route::delete('notificacoes/inscricao', [AreaClienteNotificacoesController::class, 'destroy']);
+
+        // cassino (spec 011): abrir jogo com dinheiro
+        Route::post('cassino/jogos/{jogo}/abrir', [AreaClienteCassinoController::class, 'abrir'])
+            ->middleware('throttle:20,1')
+            ->whereNumber('jogo')
+            ->missing(fn () => abort(422, 'Jogo indisponível no momento.'));
+        // rodadas de uma sessão de jogo (linha do extrato)
+        Route::get('cassino/sessoes/{sessao}/rodadas', [AreaClienteCassinoController::class, 'rodadas'])
+            ->whereNumber('sessao')
+            ->missing(fn () => abort(404, 'Sessão não encontrada.'));
     });
 });
 
@@ -211,6 +233,20 @@ Route::get('publico/bilhetes/{codigo}', [PublicoBilhetesController::class, 'show
 
 // notificações push (spec 010): chave pública VAPID para o navegador inscrever o aparelho
 Route::get('publico/notificacoes/configuracao', [PublicoNotificacoesController::class, 'configuracao']);
+
+// cassino (spec 011): tela inicial e grade de jogos, sem login
+Route::middleware('throttle:120,1')->group(function () {
+    Route::get('publico/cassino', [PublicoCassinoController::class, 'inicio']);
+    Route::get('publico/cassino/jogos', [PublicoCassinoController::class, 'jogos']);
+});
+Route::post('publico/cassino/jogos/{jogo}/demo', [PublicoCassinoController::class, 'demo'])
+    ->middleware('throttle:20,1')
+    ->whereNumber('jogo')
+    ->missing(fn () => abort(422, 'Demo indisponível para este jogo.'));
+
+// callback do provedor do cassino (spec 011): URL a cadastrar no hall (APP_URL/api/cassino/carteira);
+// público, protegido pela chave do hall conferida em toda chamada
+Route::post('cassino/carteira', CassinoCarteiraController::class)->middleware('throttle:1200,1');
 
 // gestão de confrontos no painel: mesmo token dos usuários da spec 001
 Route::middleware(['auth:api', 'garantir_acesso'])->group(function () {
@@ -364,6 +400,10 @@ Route::middleware(['auth:api', 'garantir_acesso'])->group(function () {
     Route::get('configuracoes/encerramento', [ConfiguracoesEncerramentoController::class, 'show']);
     Route::put('configuracoes/encerramento', [ConfiguracoesEncerramentoController::class, 'update']);
 
+    // configurações do cassino (spec 011)
+    Route::get('configuracoes/cassino', [ConfiguracoesCassinoController::class, 'show']);
+    Route::put('configuracoes/cassino', [ConfiguracoesCassinoController::class, 'update']);
+
     Route::post('clientes/{cliente}/acesso-assistido', [AcessosAssistidosController::class, 'store'])
         ->missing(fn () => abort(404, 'Cliente não encontrado.'));
 
@@ -371,4 +411,32 @@ Route::middleware(['auth:api', 'garantir_acesso'])->group(function () {
     Route::get('saques', [SaquesController::class, 'index']);
     Route::post('saques/{saque}/pagar', [SaquesController::class, 'pagar'])->missing($saque_nao_encontrado);
     Route::post('saques/{saque}/recusar', [SaquesController::class, 'recusar'])->missing($saque_nao_encontrado);
+});
+
+// cassino no painel (spec 011): catálogo, sincronização, tipos de ação e chamadas do provedor
+// (cassinos_jogos.gerenciar); relatório e histórico da sessão (cassinos_rodadas.listar)
+Route::middleware(['auth:api', 'garantir_acesso'])->group(function () {
+    $jogo_nao_encontrado = fn () => abort(404, 'Jogo não encontrado.');
+    Route::get('cassinos-jogos', [CassinosJogosController::class, 'index']);
+    Route::put('cassinos-jogos/{jogo}', [CassinosJogosController::class, 'update'])->missing($jogo_nao_encontrado);
+    Route::put('cassinos-jogos-canais/{canal}', [CassinosJogosCanaisController::class, 'update'])
+        ->missing(fn () => abort(404, 'Canal não encontrado.'));
+
+    Route::get('cassinos-provedores', [CassinosProvedoresController::class, 'index']);
+    Route::put('cassinos-provedores/{provedor}', [CassinosProvedoresController::class, 'update'])
+        ->missing(fn () => abort(404, 'Provedor não encontrado.'));
+
+    Route::get('cassinos-sincronizacoes', [CassinosSincronizacoesController::class, 'index']);
+    Route::post('cassinos-sincronizacoes', [CassinosSincronizacoesController::class, 'store'])->middleware('throttle:1,1');
+
+    Route::apiResource('cassinos-acoes', CassinosAcoesController::class)
+        ->except('show')
+        ->parameters(['cassinos-acoes' => 'acao'])
+        ->missing(fn () => abort(404, 'Tipo de ação não encontrado.'));
+
+    Route::get('cassinos-chamadas', [CassinosChamadasController::class, 'index']);
+
+    Route::get('cassinos-rodadas/relatorio', [CassinosRodadasController::class, 'relatorio']);
+    Route::get('cassinos-sessoes/{sessao}/historico', [CassinosSessoesController::class, 'historico'])
+        ->missing(fn () => abort(404, 'Sessão não encontrada.'));
 });
