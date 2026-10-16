@@ -35,10 +35,10 @@ cenários da spec. Rotas e formatos estão em [contracts/](contracts/); tabelas 
 |---|---|---|
 | 1 | Abrir `/cassino` no celular (DevTools) | Banners, busca, provedores (os 10 do antigo + Aviator), tipos, Populares e uma linha por tipo com até 10 jogos e "Veja mais"; visual igual ao `screens/casino` antigo |
 | 2 | Buscar "Fortune Tiger" | Um único resultado, PG Soft (SC-001) |
-| 3 | Buscar "Aviator" e "Mines" | Um resultado de cada, mesmo com `spribe` e `spribe_sr` no provedor |
+| 3 | Buscar "Aviator" e "Mines" | Um resultado de cada, mesmo com `spribe` e `spribe_sr` no provedor. O Aviator do `spribe` não aparece porque o canal `spribe_sr` é pré-pago e começa desativado; `GET /cassinos-jogos?repetidos=1` lista o caso |
 | 4 | Tocar num provedor e depois num tipo; rolar a grade | Só jogos do filtro, carregando de 50 em 50; "Limpar" volta à página inicial |
 | 5 | Abrir no computador | Só jogos com aparelho `Todos` ou `Computador` |
-| 6 | `PUT /configuracoes/cassino` com `cassino_habilitado` false e recarregar `/cassino` e `/` | Mensagem "Acesso ao cassino não está disponível."; "Cassino" some da barra de esportes |
+| 6 | `PUT /configuracoes/cassino` com `cassino_habilitado` false e recarregar `/cassino` e `/` | Alerta "Acesso ao cassino não está disponível." e volta para `/` em 3 s; "Cassino" some da barra de esportes |
 
 ## US2: Jogar com o próprio saldo
 

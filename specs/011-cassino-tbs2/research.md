@@ -125,6 +125,15 @@ conferido pelo registro de chamadas (R-15).
 - **Alternativas rejeitadas**:
   - provedor pelo `label`, como no antigo: é a causa da repetição;
   - ativar todos: 49 provedores na barra mudariam o visual e incluiriam canais sem crédito.
+- **Limite conhecido (analyze, aprovado)**:
+  - o mesmo jogo pode vir em dois provedores diferentes, como o Aviator em `spribe`
+    (`spribe_sr`) e em `fast_games` (`aviator_op`); como o provedor faz parte da chave, ficam dois
+    jogos;
+  - hoje só um aparece, porque o `spribe_sr` é pré-pago e começa desativado;
+  - o painel lista esses casos (filtro `repetidos`) e avisa ao ativar um jogo que ficaria repetido;
+  - juntar por nome entre provedores foi rejeitado: jogos diferentes de provedores diferentes podem
+    ter o mesmo nome.
+- **Provedor sem logo (analyze, aprovado)**: a barra mostra o nome do provedor no lugar da imagem.
 
 ### R-03: Jogo único e recadastro
 
@@ -283,7 +292,11 @@ conferido pelo registro de chamadas (R-15).
     - `sessao_provedor` (`content.gameRes.sessionId`);
     - carteira nula;
   - o `writeBet` localiza a sessão pelo `sessionId`;
-  - sessão desconhecida (lobby da Evolution, jogo aberto em outra aba) é criada na hora pelo
+  - sem sessão com esse `sessionId`, reaproveita a sessão mais recente do mesmo cliente e
+    `codigo_provedor` com atividade nas últimas 12 h e grava nela o `sessionId` recebido (analyze:
+    o provedor pode usar nas rodadas uma identificação diferente da devolvida na abertura, o que
+    repetiria linhas no extrato);
+  - sem nenhuma (lobby da Evolution, jogo aberto em outra aba há mais tempo), a sessão é criada na hora pelo
     `login` + `gameId` (canal pelo `codigo_provedor`; jogo fora do catálogo continua sendo
     processado, com canal nulo);
   - a contagem de aberturas do jogo (`aberturas`) sobe na abertura, não a cada rodada.
@@ -423,8 +436,12 @@ conferido pelo registro de chamadas (R-15).
     - no `Prêmio` separado, a carteira da última aposta da sessão;
     - sem aposta na sessão, a carteira da sessão ou, se nula, `Saldo`;
   - `getBalance` (que só traz o `login`) responde o saldo da carteira da sessão mais recente do
-    cliente aberta nas últimas 12 h; sem sessão, ou sessão sem carteira, responde o saldo da
-    carteira que a regra escolheria;
+    cliente com atividade nas últimas 12 h;
+  - sem sessão, ou com sessão ainda sem carteira (antes da primeira aposta, analyze): responde o
+    saldo da primeira carteira da ordem com saldo maior que zero; sem saldo em nenhuma, o saldo
+    real;
+  - limite aceito (analyze): com dois jogos abertos ao mesmo tempo em carteiras diferentes, a
+    consulta mostra a carteira da sessão mais recente;
   - o bônus de cassino vencido no meio da sessão já foi retirado pela expiração de bônus, então a
     regra passa naturalmente ao saldo real.
 - **Por quê**: FR-020 e FR-024, decididos no clarify.
@@ -496,7 +513,8 @@ conferido pelo registro de chamadas (R-15).
   - coluna `configuracoes.cassino_habilitado` (padrão desligado);
   - o indicador `indicadores.cassino` passa a vir dela (sai do `DadosFake`, FR-035);
   - com o cassino desligado:
-    - a página `/cassino` mostra "Acesso ao cassino não está disponível." e o link para os esportes;
+    - a página `/cassino` mostra o alerta "Acesso ao cassino não está disponível." e, 3 s depois,
+      volta para `/`, como no antigo (analyze, aprovado);
     - a barra de esportes esconde "Cassino";
     - a Minha Conta esconde o card "Bônus cassino" e o filtro Cassino;
     - a abertura é recusada;
@@ -547,6 +565,13 @@ conferido pelo registro de chamadas (R-15).
 - **Por quê**: FR-031 e FR-034.
 - **Alternativas rejeitadas**: reaproveitar `configuracoes.editar` para o catálogo: o catálogo mexe
   no que o cliente vê e merece permissão própria (FR-034).
+- **Agrupamento por área (analyze, aprovado)**:
+  - `cassinos_jogos.gerenciar` cobre todo o catálogo (provedores, canais, ações, sincronizações);
+  - `cassinos_rodadas.listar` cobre tudo o que é consulta do movimento: relatório, histórico da
+    sessão e chamadas do provedor;
+  - é o mesmo critério de `configuracoes.editar`, que cobre várias telas de configuração;
+  - uma permissão por tabela (ex.: `cassinos_chamadas.listar`) foi rejeitada, porque daria cinco
+    permissões para dois perfis de uso.
 
 ### R-25: Nomes das tabelas
 
@@ -569,8 +594,16 @@ conferido pelo registro de chamadas (R-15).
 - **Alternativas rejeitadas**:
   - `clientes_cassinos_sessoes`: separaria sessões e rodadas do restante do cassino;
   - manter os nomes antigos (`jogos_cassinos`, `cassinos`): não seguem a regra de prefixo.
-- **A confirmar com o responsável**: o uso de `cassinos_` como prefixo sem uma tabela `cassinos`
-  (Princípio VI). Ver plan.md, Constitution Check.
+- **Confirmado pelo responsável em 2026-10-16** (depois do `/speckit-analyze`): o prefixo
+  `cassinos_` sem uma tabela `cassinos` (Princípio VI).
+
+### R-26: Saque pela Carteira do cassino
+
+- **Decisão** (analyze, aprovado): o botão Sacar do balão da Carteira abre o `WithdrawModal` do v2,
+  o mesmo da Minha Conta.
+- **Por quê**: o saque do v2 já foi aprovado na spec 007, com validações e Pix.
+- **Alternativas rejeitadas**: a janela de alerta com campo de valor do antigo (`Swal` + `saque-pix`),
+  que pularia as regras de saque da spec 007.
 
 ## Dependências novas (constituição, Stack e Restrições Técnicas)
 

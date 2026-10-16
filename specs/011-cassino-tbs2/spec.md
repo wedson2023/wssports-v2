@@ -55,6 +55,28 @@ As respostas abaixo são as recomendações aplicadas.
   15,5%; evolution 18,5%; spribe e aviator 14%; pragmatic, amatic e NetEnt 12%; red tiger e booming
   17,5%; novomatic 14%; demais 0%), editáveis no painel (FR-031).
 
+### Session 2026-10-16 (analyze)
+
+Decisões tomadas depois do `/speckit-analyze`, aprovadas pelo responsável ("sigo suas
+recomendações").
+
+- Q: Provedor sem logo na barra de provedores? → A: Mostra o nome do provedor no lugar da imagem.
+  Só acontece com provedor ativado além dos do sistema antigo.
+- Q: O botão Sacar da Carteira do cassino abre o quê? → A: O saque do v2 (o mesmo da Minha Conta),
+  no lugar da janela de alerta com campo de valor do antigo.
+- Q: O que aparece em /cassino com o cassino desligado? → A: Igual ao antigo: o alerta "Acesso ao
+  cassino não está disponível." e, 3 segundos depois, a volta para a página de esportes.
+- Q: E o mesmo jogo cadastrado pelo provedor em dois provedores diferentes (ex.: Aviator em
+  `spribe` e em `fast_games`)? → A: Limite conhecido: cada provedor tem o seu jogo. Hoje só um deles
+  abre (o outro está num canal pré-pago desativado). O painel lista esses casos e avisa ao ativar um
+  jogo que ficaria repetido.
+- Q: Que carteira a consulta de saldo mostra antes da primeira aposta da sessão? → A: A primeira
+  da ordem da sessão (saldo real e depois bônus de cassino, ou o inverso no canal "bônus primeiro")
+  que tiver saldo maior que zero; sem saldo em nenhuma, o saldo real.
+- Q: E se a rodada chegar com uma identificação de sessão diferente da recebida na abertura? → A: A
+  rodada entra na sessão mais recente do mesmo cliente e jogo aberta nas últimas 12 horas, que passa
+  a usar a identificação nova, para não criar linhas repetidas no extrato.
+
 ### Diferenças em relação ao sistema antigo (aprovadas pelo responsável, Princípios VII e VIII)
 
 - o catálogo deixa de ter um registro por nome + canal: o jogo é único e os canais do provedor são
@@ -110,8 +132,9 @@ buscar "Fortune Tiger" e conferir que cada jogo aparece uma única vez, com imag
    jogo aparece uma única vez.
 4. **Given** o celular, **When** a pessoa abre /cassino, **Then** vê só os jogos que funcionam no
    celular; no computador, só os que funcionam no computador.
-5. **Given** o cassino desativado na configuração, **When** alguém abre /cassino, **Then** vê a
-   mensagem de que o cassino não está disponível e o atalho do cassino some do site.
+5. **Given** o cassino desativado na configuração, **When** alguém abre /cassino, **Then** vê o
+   alerta de que o cassino não está disponível e volta para a página de esportes, e o atalho do
+   cassino some do site.
 
 ---
 
@@ -282,8 +305,8 @@ rodadas, entradas, saídas, GGR e comissão de cada um.
 - **FR-010**: Só jogos ativos, de provedor ativo, com pelo menos um canal ativo e que funcionem no
   aparelho de quem vê DEVEM aparecer.
 - **FR-011**: O botão "Demo" só DEVE aparecer quando o jogo e o hall permitirem demo.
-- **FR-012**: Com o cassino desativado, a área /cassino DEVE mostrar que o cassino não está
-  disponível, e o atalho "Cassino" do site e o card "Bônus cassino" da Minha Conta NÃO DEVEM
+- **FR-012**: Com o cassino desativado, a área /cassino DEVE avisar que o cassino não está
+  disponível e voltar para a página de esportes (como no antigo), e o atalho "Cassino" do site e o card "Bônus cassino" da Minha Conta NÃO DEVEM
   aparecer.
 
 **Abrir jogo**
@@ -311,7 +334,8 @@ rodadas, entradas, saídas, GGR e comissão de cada um.
 - **FR-019**: Toda resposta DEVE seguir o formato do provedor, inclusive nos erros (cliente não
   encontrado, saldo insuficiente), e nenhuma chamada pode ficar sem resposta.
 - **FR-020**: A consulta de saldo DEVE devolver, em reais com duas casas, o saldo da carteira da
-  sessão (antes da primeira aposta, o da carteira que a regra do FR-024 escolheria).
+  sessão (antes da primeira aposta, o da primeira carteira da ordem do FR-024 com saldo maior que
+  zero; sem saldo em nenhuma, o saldo real).
 - **FR-021**: Cada rodada DEVE mover o saldo uma única vez, com a conta do cliente travada durante o
   lançamento, e devolver o saldo novo; o mesmo lançamento repetido (mesma identificação de rodada)
   DEVE devolver a mesma resposta sem mover o saldo de novo.

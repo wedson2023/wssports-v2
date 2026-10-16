@@ -91,7 +91,7 @@ Decisões em [research.md](research.md).
 | Rotas | 22 novas na API, 2 novas na web; 1 existente com filtro novo (extrato) |
 | Permissões | 2 novas (`cassinos_jogos.gerenciar`, `cassinos_rodadas.listar`), Admin e Supervisor |
 | Comandos / jobs | 2 comandos novos, 1 job novo |
-| Frontend | 1 página nova, 14 componentes novos, 2 hooks novos, 1 utilitário novo; 5 arquivos existentes alterados |
+| Frontend | 1 página nova, 13 componentes novos, 2 hooks novos, 1 utilitário novo; 5 arquivos existentes alterados |
 
 ## Constitution Check
 
@@ -101,18 +101,18 @@ Decisões em [research.md](research.md).
 |---|---|---|
 | I. `snake_case` | Métodos (`escolher`, `somar_cassino`, `abrir`); chaves (`total_apostado`, `bonus_primeiro`); comandos (`cassinos_jogos:sincronizar`); hooks `useCassino`, `useJogoCassino` | ✅ Pass |
 | I. Banco em português | Tabelas e colunas em português; siglas e termos consagrados (`url`, `ip`, `trade_id`, `json`) | ✅ Pass |
-| I. Prefixo de tabelas | Prefixo `cassinos_` em todas as tabelas novas, sem tabela `cassinos` (R-25). `cassinos_jogos_canais` e `cassinos_rodadas_rollovers` seguem a tabela a que se ligam | ⚠️ A confirmar |
+| I. Prefixo de tabelas | Prefixo `cassinos_` em todas as tabelas novas, sem tabela `cassinos` (R-25). `cassinos_jogos_canais` e `cassinos_rodadas_rollovers` seguem a tabela a que se ligam | ✅ Pass (confirmado) |
 | I. Enums | Casos em `PascalCase` com acento (`ApostaComPrêmio`, `RodadaGrátis`, `Concluída`); valores com espaço (`'Aposta com prêmio'`, `'Em andamento'`) | ✅ Pass |
 | I. Permissões | `cassinos_jogos.gerenciar`, `cassinos_rodadas.listar` (`<tabela>.<acao>`) | ✅ Pass |
 | I. Rotas em kebab-case | `/publico/cassino/jogos`, `/cassinos-jogos-canais`, `/configuracoes/cassino`, `/cassino/carteira`. Exceção: `/close.php`, endereço fixo exigido pelo provedor (`home_url`) | ✅ Pass |
 | I. Frontend | Componentes em inglês `PascalCase` (`GameCard`, `GameFrame`, `CasinoRoundsModal`); props e variáveis em `snake_case` português; transient props `$ativo`; utilitário `utils/casino_types.js` | ✅ Pass |
 | II. Idioma | Artefatos, comentários, logs e mensagens em português | ✅ Pass |
 | III. Componentes React | Cada componente novo e a página `Casino` em pasta própria com `index.jsx` e `styles.jsx` | ✅ Pass |
-| IV. Escopo estrito | Arquivos existentes listados abaixo, cada um com o motivo | ⏳ Aguardando confirmação |
+| IV. Escopo estrito | Arquivos existentes listados abaixo, cada um com o motivo, confirmados pelo responsável em 2026-10-16 | ✅ Pass (confirmado) |
 | V. Legibilidade | Revisão ao final de cada tarefa | ✅ Pass |
 | VI. Consistência | Saldo só por `SaldoClientes`; escolha de carteira no padrão do `EscolhaCarteira`; rollover com ligação no padrão de `apostas_rollovers`; cliente HTTP no padrão do `ProvedorCotacoes`; configuração por rota própria no padrão de `configuracoes/encerramento`; permissões no `Funcao` + seeder no padrão do `EncerramentoSeeder`; área do cliente com `GarantirAcessoCliente`. Padrão novo: callback público autenticado pela chave do hall, sem equivalente no projeto (o webhook do Mercado Pago é o mais próximo e também valida assinatura no serviço) | ✅ Pass |
 | VII. Sistema antigo | Consultado e listado no [research.md](research.md#sistema-antigo-princípio-vii); diferenças aprovadas na spec (Clarifications) | ✅ Pass |
-| VIII. Fidelidade visual | Página e componentes reproduzem `screens/casino`, `modal/balance`, `modal/bonus` e `details_casino`. Diferenças aprovadas: jogo na moldura quando o provedor permite (FR-014) e coluna prêmio preenchida (FR-028). Provedor sem logo mostra o nome (só acontece com provedor ativado além dos 10 do antigo) | ✅ Pass |
+| VIII. Fidelidade visual | Página e componentes reproduzem `screens/casino`, `modal/balance`, `modal/bonus` e `details_casino`. Diferenças aprovadas: jogo na moldura quando o provedor permite (FR-014); coluna prêmio preenchida (FR-028); provedor sem logo mostra o nome; Sacar abre o `WithdrawModal` (R-26). O cassino desligado repete o antigo: alerta e volta para `/` (R-21) | ✅ Pass (confirmado) |
 | IX. Dados fake | Remove `DadosFake::indicadores()['cassino']` (FR-035); nenhum fake novo | ✅ Pass |
 | Timestamps e soft delete | 9 tabelas com `timestamps()` + `softDeletes()`. Exclusão física só em `cassinos_chamadas` (log técnico, R-15), justificada abaixo em Complexity Tracking | ✅ Pass (justificado) |
 | Comentários de colunas | Todas as colunas novas e as 4 de `configuracoes` com `->comment()`; `clientes_transacoes.origem` não é alterada (o valor `Cassino` existe só no enum) | ✅ Pass |
@@ -123,13 +123,22 @@ Decisões em [research.md](research.md).
 | Postman | Coleção regenerada com as 22 rotas e o filtro novo | ✅ Pass |
 | Novas dependências | Nenhuma | ✅ Pass |
 
-**Resultado do gate**: aprovado, com dois pontos para o responsável confirmar antes do
-`/speckit-tasks`:
+**Resultado do gate**: aprovado.
 
-1. A lista de arquivos existentes abaixo (Princípio IV).
-2. O prefixo `cassinos_` sem uma tabela `cassinos` (R-25, Princípio VI). Se não for aceito, a
-   alternativa é renomear `cassinos_jogos` para `cassinos` (o jogo como recurso principal) e as
-   demais para `cassinos_canais`, `cassinos_sessoes`, etc.
+**Confirmações do responsável (2026-10-16, depois do `/speckit-analyze`)**:
+
+- a lista de arquivos existentes abaixo (Princípio IV);
+- o prefixo `cassinos_` sem uma tabela `cassinos` (R-25);
+- as diferenças visuais:
+  - provedor sem logo mostra o nome;
+  - Sacar abre o `WithdrawModal` (R-26);
+  - cassino desligado volta a ser alerta + redirecionamento, como no antigo (R-21);
+- o agrupamento das permissões por área (R-24);
+- o limite do jogo repetido entre provedores (R-02);
+- a reutilização de sessão (R-11);
+- a carteira da consulta de saldo (R-17).
+
+Com isso, o componente `CasinoUnavailable` saiu do plano.
 
 ### Arquivos existentes que serão alterados (Princípio IV)
 
@@ -197,7 +206,7 @@ foram conferidos:
 - credenciais só no ambiente;
 - nenhuma tarefa de teste.
 
-**Status: aprovado**, sujeito às duas confirmações acima.
+**Status: aprovado** (confirmações acima).
 
 ## Project Structure
 
@@ -327,7 +336,6 @@ resources/
     │   ├── WalletPopup/          # NOVO  balão da carteira (modal/balance)
     │   ├── PromotionsModal/      # NOVO  modal Promoções (modal/bonus)
     │   ├── GameFrame/            # NOVO  jogo em moldura, voltar e tela cheia
-    │   ├── CasinoUnavailable/    # NOVO  mensagem do cassino desligado
     │   ├── CasinoRoundsModal/    # NOVO  detalhe das rodadas (details_casino)
     │   └── BalanceCards/, StatementFilters/, StatementTable/   # ALTERADOS
     ├── hooks/

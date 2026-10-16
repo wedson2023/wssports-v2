@@ -28,10 +28,10 @@ Postman ou, num hall de teste, com um túnel.
 
 A sincronização do catálogo fica na Foundational, porque US1 depende de jogos no banco.
 
-> ⏳ **Pendente antes do `/speckit-implement`** (plan.md, Constitution Check): o responsável precisa
-> confirmar (1) a lista de arquivos existentes (Princípio IV) e (2) o prefixo `cassinos_` sem tabela
-> `cassinos` (R-25). Se o prefixo mudar, os nomes das tabelas, models e rotas destas tarefas mudam
-> junto.
+> ✅ **Confirmado pelo responsável em 2026-10-16** (depois do `/speckit-analyze`): a lista de arquivos
+> existentes do plan.md (Princípio IV), o prefixo `cassinos_` (R-25), as diferenças visuais e as
+> regras da seção "Session 2026-10-16 (analyze)" da spec. A T066 foi removida (cassino desligado
+> volta a ser alerta + redirecionamento, como no antigo).
 
 ## Format: `[ID] [P?] [Story] Description`
 
@@ -108,7 +108,7 @@ A sincronização do catálogo fica na Foundational, porque US1 depende de jogos
 - [ ] T002 [P] ⚠️ Em `.env.example`, acrescentar `CASSINO_URL_API`, `CASSINO_HALL`, `CASSINO_CHAVE`, `CASSINO_ASSINATURA=false` e `CASSINO_PREFIXO_LOGIN=wss`, sem valores de credencial e com um comentário em português.
 - [ ] T003 [P] No `.env` local (não versionado), colocar as credenciais de teste do hall informadas pelo responsável (R-01). Nenhum arquivo do repositório muda. Conferir com `git status` que o `.env` continua ignorado.
 - [ ] T004 [P] Criar `config/cassino.php`, com cada chave comentada em português:
-  - `apelidos_provedores`: `['netentp' => 'netent', 'microgaming' => 'microgaming', 'nolimitcity' => 'nolimit_city']`, aplicado depois da normalização, que deixa minúsculas e remove espaço, `_` e `-`; a normalização faz `micro-gaming` virar `microgaming` e `net ent` virar `netent` (R-02);
+  - `apelidos_provedores`: `['netentp' => 'netent', 'nolimitcity' => 'nolimit_city']`, aplicado depois da normalização, que deixa minúsculas e remove espaço, `_` e `-`; a normalização faz `micro-gaming` virar `microgaming` e `net ent` virar `netent` (R-02);
   - `sufixos_pre_pagos`: `['_sr', '_sz']`;
   - `prioridade_sufixos`: sem sufixo e `_op` 10, `_kn` 20, `_sl` e `_xg` 30, `_asia` e `_premium` 40, padrão 50; pré-pagos 90 (R-06);
   - `continente`: `'eur'`;
@@ -386,7 +386,8 @@ sincronização do catálogo.
 - [ ] T045 ⚠️ Em `routes/console.php`, acrescentar `Schedule::command('cassinos_jogos:sincronizar')->hourlyAt(5)->runInBackground()->withoutOverlapping(30);` com o comentário de contracts/comandos.md.
 - [ ] T046 Rodar `php artisan migrate`, `php artisan db:seed --class=CassinoSeeder` e `php artisan cassinos_jogos:sincronizar`, e conferir:
   - cerca de 6.365 recebidos;
-  - Fortune Tiger com um único jogo e canais `pgsoft_op` e `pgsoft_op_kn`;
+  - Fortune Tiger com um único jogo, canal `pgsoft_op_kn` (código 9946);
+  - Aviator visível uma vez só (canal `aviator_op`; o do `spribe_sr` fica sem canal abrível);
   - `spribe_sr` com `pre_pago` true e `ativo` false;
   - nenhum provedor novo ativo.
 
@@ -437,7 +438,7 @@ sincronização do catálogo.
   - os jogos saem pelo `JogoCassinoResource`.
 - [ ] T051 [US1] Criar `app/Http/Controllers/CassinoController.php` com o método `index`, que renderiza a página Inertia `Casino` com as props `cassino` (`habilitado`, `demo_habilitado`), `banners` (`Banners::ativos()`) e `promocoes`:
   - `promocoes` traz as vigentes, com `campanha`, `modalidade`, `tipo_ganho`, `valor`, `ganho_em`, `quantidade_indicacoes` e `termina_em`, como o `modal/bonus` antigo;
-  - reaproveitar a mesma consulta usada pelo `RegrasController`, sem alterar esse arquivo.
+  - usar direto o scope `ClientesPromocoes::vigentes()` (sem copiar a consulta do `RegrasController` e sem alterar esse arquivo), excluindo a categoria de primeiro cadastro, como o antigo (`ganho_em != 'Primeiro cadastro'`).
 - [ ] T052 [US1] ⚠️ Rotas:
   - em `routes/api.php`: `GET publico/cassino` e `GET publico/cassino/jogos`, com `throttle:120,1` e o comentário "cassino (spec 011)";
   - em `routes/web.php` ⚠️: `GET cassino` → `CassinoController@index`, `name('cassino')`;
@@ -504,14 +505,13 @@ sincronização do catálogo.
   - blocos "Saldo" e "Bônus", cada um com o valor e "Meta a cumprir", vindos de `GET /area-cliente/minha-conta` (`saldos.saldo` e `saldos.bonus_cassino`);
   - botões Depositar (`account_balance_wallet`, abre o `DepositModal` existente) e Sacar (`download`, abre o `WithdrawModal` existente);
   - o conteúdo da página fica com `blur(8px)` enquanto o balão está aberto, como no antigo.
-- [ ] T066 [P] [US1] Criar `resources/js/components/CasinoUnavailable/`, com a mensagem "Acesso ao cassino não está disponível." e o botão para os esportes (`/`), no estilo da `Message` do antigo.
 - [ ] T067 [US1] Criar `resources/js/pages/Casino/` (`index.jsx`, `styles.jsx`), montando a página com `useCassino` e o `Container`, `Loading` e `Content` do antigo:
   - **Ordem**: `CasinoHeader` → `BannerCarousel` (banners) → `CasinoSearch` → `ProviderBar` → `GameTypeBar` → linhas (`GameRow`) ou `GameGrid` com filtro → `Footer` → `CasinoTabs` → `CasinoMenu`.
   - **Filtros**: ao filtrar, rolar até a barra de provedores (offset −70).
   - **Barra inferior**:
     - "Minha conta" vai para `/minha-conta` com cliente logado; sem login, abre o `AuthModal`;
     - "Carteira" abre o `WalletPopup` com cliente logado; sem login, abre o `AuthModal`.
-  - **Cassino desligado** (prop ou 403): mostra o `CasinoUnavailable`.
+  - **Cassino desligado** (prop ou 403), como no antigo: `alerta_atencao('Acesso ao cassino não está disponível.')` de `utils/alerts.js` e, 3 s depois, `router.visit('/')` (R-21).
   - **Jogar e Demo**: chegam ao `GameCard` como `ao_jogar`/`ao_demo`, ligados em US2; até lá, sem login, abrem o `AuthModal`.
   - **Visitante com `?user=`**: código de indicação abre o cadastro, como no antigo.
 - [ ] T068 [US1] ⚠️ Em `resources/js/pages/Home/index.jsx`:
@@ -547,7 +547,7 @@ perder nem duplicar dinheiro.
     - senão, a primeira da ordem que cobre;
     - nenhuma cobre: null;
     - compara com `bccomp` sobre `getRawOriginal`.
-  - **`carteira_saldo(Clientes $cliente, ?CassinosSessoes $sessao): Carteira`**: carteira usada no `getBalance`.
+  - **`carteira_saldo(Clientes $cliente, ?CassinosSessoes $sessao): Carteira`**: carteira usada no `getBalance` (R-17): a carteira da sessão, quando houver; senão, a primeira da `ordem` com saldo maior que zero; se nenhuma tiver, `Saldo`. Sem sessão, a ordem padrão (`[Saldo, PromoçãoCassino]`).
 - [ ] T072 [P] [US2] ⚠️ Em `app/Services/RolloverClientes.php`, acrescentar dois métodos sem mexer nos existentes:
   - **`somar_cassino(CassinosRodadas $rodada): void`**:
     - mesma lógica do `somar`, com o tipo e a carteira pela `carteira` da rodada (Saldo → Depósito/Saldo; Promoção cassino → Bônus/PromoçãoCassino);
@@ -576,7 +576,7 @@ perder nem duplicar dinheiro.
     - **Transação**:
       1. `Clientes::lockForUpdate()`;
       2. rodada com o mesmo `trade_id` → resposta igual, com `saldo_posterior` e `operationId` = id, marcada `Repetida`;
-      3. sessão pelo `sessionId` ou criada (login + `gameId` → canal por `codigo_provedor`, R-11);
+      3. sessão pelo `sessionId`; sem ela, reaproveita a sessão mais recente do mesmo cliente e `codigo_provedor` com `ultima_rodada_em` ou `aberta_em` nas últimas `horas_sessao_saldo` horas, gravando o `sessionId` recebido em `sessao_provedor`; sem nenhuma, cria (login + `gameId` → canal por `codigo_provedor`) (R-11);
       4. ação: maiúsculas → `CassinosAcoes` ativa; vazia → `Aposta com prêmio`; desconhecida → `unknown_action`;
       5. efeito de devolução → `CancelamentoRodadasCassino`;
       6. senão:
@@ -750,6 +750,7 @@ Todas as alterações desta fase chamam `ListagemCassino::limpar_cache()`. Os `a
     - `ativo` e `popular` nullable boolean;
     - `removido` nullable `in:sim,nao`;
     - `sem_canal_abrivel` nullable boolean;
+    - `repetidos` nullable boolean (jogos cujo `nome_normalizado` também existe em outro provedor, R-02);
     - `pagina`;
     - `por_pagina` `between:1,100`;
   - `authorize` com `cassinos_jogos.gerenciar`.
@@ -758,8 +759,8 @@ Todas as alterações desta fase chamam `ListagemCassino::limpar_cache()`. Os `a
   - campos do jogo, mais `provedor` (`id` e `nome`), `aberturas` e `removido_em`;
   - `canais`, todos, com `id`, `canal`, `codigo_provedor`, `pre_pago`, `bonus_primeiro`, `prioridade`, `ativo`, `demo`, `flash`, `indisponivel_em`, `motivo_indisponibilidade` e `removido_em`.
 - [ ] T101 [US4] Criar `app/Http/Controllers/CassinosJogosController.php`:
-  - `index`: lista paginada (padrão 20) com eager loading de provedor e canais;
-  - `update`.
+  - `index`: lista paginada (padrão 20) com eager loading de provedor e canais; o filtro `repetidos` usa um `whereIn nome_normalizado` com subconsulta agrupada (`having count(distinct cassinos_provedores_id) > 1`);
+  - `update`: ao ativar um jogo cujo nome já está visível em outro provedor, a resposta traz `aviso` "Já existe um jogo com este nome em outro provedor; ele aparecerá duas vezes na página." (R-02).
 - [ ] T102 [P] [US4] Criar `app/Http/Requests/CassinosJogosCanaisRequest.php` com regras `sometimes`: `ativo`, `pre_pago` e `bonus_primeiro` boolean, `prioridade` integer entre 0 e 999, `disponivel` accepted.
 - [ ] T103 [US4] Criar `app/Http/Controllers/CassinosJogosCanaisController.php`, método `update`: `disponivel` limpa `indisponivel_em` e `motivo_indisponibilidade`; responde com o canal.
 - [ ] T104 [P] [US4] Criar `app/Http/Requests/CassinosProvedoresRequest.php` com regras `sometimes`:
@@ -909,6 +910,7 @@ Todas as alterações desta fase chamam `ListagemCassino::limpar_cache()`. Os `a
   - `CassinoController`: T051 → T079;
   - `AreaClienteCassinoController`: T077 → T088;
   - `pages/Casino`: T067 → T085.
+- **T066**: removida depois do `/speckit-analyze` (o cassino desligado não tem componente próprio; o comportamento está na T067). Os números das demais tarefas foram mantidos.
 
 ### Parallel Opportunities
 
@@ -916,7 +918,7 @@ Todas as alterações desta fase chamam `ListagemCassino::limpar_cache()`. Os `a
 |---|---|
 | Setup | T002 a T005 |
 | Foundational | Migrations T009, T010, T014 e T015; enums T016 a T022; models T023 a T032; T035, T036, T039, T040 e T041 |
-| US1 | T048 e T049; T053 e os componentes T055 a T059 e T062 a T066 |
+| US1 | T048 e T049; T053 e os componentes T055 a T059 e T062 a T065 |
 | US2 | T069 a T072; T081; T084 |
 | US3 | T087, T090, T093, T094, T095 e T096 |
 | US4 | Requests e resources T098 a T100, T102, T104, T105, T107, T108, T110, T111, T113 e T114 |
@@ -942,7 +944,6 @@ Task: "T062 CasinoTabs"
 Task: "T063 CasinoMenu"
 Task: "T064 PromotionsModal"
 Task: "T065 WalletPopup"
-Task: "T066 CasinoUnavailable"
 ```
 
 ## Parallel Example: User Story 2

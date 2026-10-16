@@ -175,6 +175,7 @@ Toda alteração do catálogo limpa o cache da página.
 - `popular`;
 - `removido` (`sim`/`nao`);
 - `sem_canal_abrivel`;
+- `repetidos`: jogos cujo nome também existe em outro provedor (R-02);
 - `pagina`, `por_pagina` (padrão 20, máximo 100).
 
 **Item da lista**:
@@ -195,6 +196,10 @@ Campos (`sometimes`):
 | `ordem` | inteiro, 0 a 65535 |
 
 O nome do jogo vem sempre do provedor (é a chave do jogo, R-03) e não é editado no painel.
+
+Quando a ativação deixa o jogo com o mesmo nome de outro jogo visível de outro provedor, a resposta
+traz `"aviso": "Já existe um jogo com este nome em outro provedor; ele aparecerá duas vezes na
+página."` (R-02).
 
 ### 3.2 Canais
 
@@ -339,7 +344,7 @@ cadastrar no provedor.
 
 | Rota | Resposta |
 |---|---|
-| `GET /cassino` | Página Inertia `Casino`. Props: `cassino` (`habilitado`, `demo_habilitado`), `banners` e `promocoes` (vigentes: campanha, modalidade, valor, tipo de ganho, regra e fim). Com o cassino desligado, a página mostra a mensagem (FR-012) |
+| `GET /cassino` | Página Inertia `Casino`. Props: `cassino` (`habilitado`, `demo_habilitado`), `banners` e `promocoes` (vigentes: campanha, modalidade, valor, tipo de ganho, regra e fim). Com o cassino desligado, a página mostra o alerta e volta para `/` em 3 s, como no antigo (FR-012, R-21) |
 | `GET /close.php` | HTML mínimo sem cache: envia `closeGame` ao `parent` e, fora de moldura, redireciona para `/cassino` (R-09) |
 
 Props compartilhadas (alteradas): `indicadores.cassino` passa a vir de
