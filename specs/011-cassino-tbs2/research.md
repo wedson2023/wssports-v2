@@ -107,8 +107,10 @@ conferido pelo registro de chamadas (R-15).
 
 - **Decisão**:
   - o provedor é o `title`, normalizado (minúsculas, sem espaço, `_` nem `-`);
-  - a tabela de apelidos em `config/cassino.php` junta grafias do mesmo provedor (`netentp` →
-    `netent`, `microgaming` e `micro-gaming` → `microgaming`, `nolimitcity` → `nolimit_city`);
+  - a normalização já junta `NetEnt`/`net ent`, `micro-gaming`/`microgaming` e
+    `nolimit_city`/`nolimitcity`; a tabela de apelidos em `config/cassino.php` cobre o que sobra
+    (`netentp` → `netent`);
+  - por isso os códigos não têm `_` (implementação): `redtiger`, `fastgames` (Aviator);
   - `cassinos_provedores` guarda:
     - o código normalizado;
     - o nome exibido (editável);
@@ -256,8 +258,9 @@ conferido pelo registro de chamadas (R-15).
 - **Decisão**:
   - quando `withoutFrame` é 0, o jogo abre no `GameFrame`, um iframe em tela cheia com botão
     voltar e tela cheia;
-  - quando é 1, abre em página própria: a janela é aberta antes da chamada (no toque) e recebe o
-    URL depois, para não ser bloqueada;
+  - quando é 1, abre em página própria, na mesma aba (`window.location.assign`); a saída do jogo
+    volta pelo `/close.php` ao cassino. Implementação: abrir uma janela em branco antes da chamada
+    deixaria uma aba vazia aberta e fechada a cada jogo em moldura (a maioria), por isso a mesma aba;
   - o `GameFrame` fecha:
     - com as mensagens `closeGame`, `close` e `GAME_MODE:LOBBY` (`message` do `window`);
     - quando o iframe carrega o `/close.php`;
@@ -293,9 +296,12 @@ conferido pelo registro de chamadas (R-15).
     - carteira nula;
   - o `writeBet` localiza a sessão pelo `sessionId`;
   - sem sessão com esse `sessionId`, reaproveita a sessão mais recente do mesmo cliente e
-    `codigo_provedor` com atividade nas últimas 12 h e grava nela o `sessionId` recebido (analyze:
-    o provedor pode usar nas rodadas uma identificação diferente da devolvida na abertura, o que
-    repetiria linhas no extrato);
+    `codigo_provedor` com atividade nas últimas 12 h **que ainda não tem rodadas** (ou sem
+    `sessionId`) e grava nela o `sessionId` recebido (analyze: o provedor pode usar nas rodadas uma
+    identificação diferente da devolvida na abertura, o que repetiria linhas no extrato). A
+    restrição "sem rodadas" foi acrescentada na implementação: sem ela, sessões diferentes do mesmo
+    jogo viravam uma só;
+  - sem `sessionId` na chamada, vale a sessão mais recente do mesmo jogo;
   - sem nenhuma (lobby da Evolution, jogo aberto em outra aba há mais tempo), a sessão é criada na hora pelo
     `login` + `gameId` (canal pelo `codigo_provedor`; jogo fora do catálogo continua sendo
     processado, com canal nulo);
@@ -433,15 +439,17 @@ conferido pelo registro de chamadas (R-15).
     - quando muda, grava a carteira nova na sessão;
   - o prêmio vai para a carteira da rodada da aposta:
     - no `Aposta com prêmio`, a mesma rodada;
-    - no `Prêmio` separado, a carteira da última aposta da sessão;
+    - no `Prêmio` separado, a carteira da aposta da mesma rodada (`betInfo.round_id`, teste real
+      de 2026-10-16) e, sem ela, a da última aposta da sessão;
     - sem aposta na sessão, a carteira da sessão ou, se nula, `Saldo`;
-  - `getBalance` (que só traz o `login`) responde o saldo da carteira da sessão mais recente do
-    cliente com atividade nas últimas 12 h;
+  - `getBalance` responde o saldo da carteira da sessão do `sessionId` recebido (o provedor manda
+    `sessionId` e `gameId` também na consulta de saldo, conferido no teste real); sem ele, a da
+    sessão mais recente do cliente com atividade nas últimas 12 h;
   - sem sessão, ou com sessão ainda sem carteira (antes da primeira aposta, analyze): responde o
     saldo da primeira carteira da ordem com saldo maior que zero; sem saldo em nenhuma, o saldo
     real;
-  - limite aceito (analyze): com dois jogos abertos ao mesmo tempo em carteiras diferentes, a
-    consulta mostra a carteira da sessão mais recente;
+  - o limite de dois jogos abertos ao mesmo tempo (analyze) só vale quando o provedor não manda o
+    `sessionId` na consulta;
   - o bônus de cassino vencido no meio da sessão já foi retirado pela expiração de bônus, então a
     regra passa naturalmente ao saldo real.
 - **Por quê**: FR-020 e FR-024, decididos no clarify.

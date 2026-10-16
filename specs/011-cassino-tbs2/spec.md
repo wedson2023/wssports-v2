@@ -77,6 +77,12 @@ recomendações").
   rodada entra na sessão mais recente do mesmo cliente e jogo aberta nas últimas 12 horas, que passa
   a usar a identificação nova, para não criar linhas repetidas no extrato.
 
+### Session 2026-10-16 (implementação)
+
+- Q: E os jogos cuja imagem o provedor não manda ou cujo endereço não existe (404 em parte dos jogos
+  Spribe e Red Tiger)? → A: O cartão mostra uma imagem padrão do cassino
+  (`/images/cassino/jogo_sem_imagem.svg`) no lugar da imagem quebrada (pedido do responsável).
+
 ### Diferenças em relação ao sistema antigo (aprovadas pelo responsável, Princípios VII e VIII)
 
 - o catálogo deixa de ter um registro por nome + canal: o jogo é único e os canais do provedor são

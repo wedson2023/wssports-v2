@@ -32,7 +32,8 @@ class TratarRequisicoesInertia extends Middleware
             // cores ainda fake; a logo vem da configuração (spec 006)
             'tema' => [...DadosFake::tema(), 'logo' => Configuracoes::atual()->url_logo()],
             'contatos' => DadosFake::contatos(),
-            'indicadores' => DadosFake::indicadores(),
+            // Acumuladão ainda fake; o cassino vem da configuração (spec 011, FR-035)
+            'indicadores' => [...DadosFake::indicadores(), 'cassino' => (bool) Configuracoes::atual()->cassino_habilitado],
         ];
     }
 

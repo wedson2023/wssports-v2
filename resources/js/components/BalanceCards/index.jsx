@@ -19,11 +19,12 @@ const cartoes = [
 
 // os três saldos (Balances de screens/credits) e o aviso das apostas premiadas; saldo negativo
 // por estorno em vermelho (spec 007, FR-007)
-export default function BalanceCards({ saldos }) {
+// cartoes_ocultos: chaves que não aparecem (ex.: bonus_cassino com o cassino desligado, spec 011)
+export default function BalanceCards({ saldos, cartoes_ocultos = [] }) {
     return (
         <>
             <Balances>
-                {cartoes.map(({ chave, titulo }) => {
+                {cartoes.filter(({ chave }) => !cartoes_ocultos.includes(chave)).map(({ chave, titulo }) => {
                     const carteira = saldos?.[chave];
 
                     return (

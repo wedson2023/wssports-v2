@@ -93,6 +93,11 @@ class Configuracoes extends Model
         'percentual_minimo_encerramento',
         'segundos_validade_oferta',
         'limite_encerramentos_parciais',
+        // cassino (spec 011)
+        'cassino_habilitado',
+        'cassino_demo_habilitado',
+        'data_prestacao_contas_cassino',
+        'dias_registro_chamadas_cassino',
     ];
 
     /**
@@ -149,6 +154,11 @@ class Configuracoes extends Model
             'percentual_minimo_encerramento' => 'decimal:2',
             'segundos_validade_oferta' => 'integer',
             'limite_encerramentos_parciais' => 'integer',
+            // cassino (spec 011)
+            'cassino_habilitado' => 'boolean',
+            'cassino_demo_habilitado' => 'boolean',
+            'data_prestacao_contas_cassino' => 'date',
+            'dias_registro_chamadas_cassino' => 'integer',
         ];
     }
 

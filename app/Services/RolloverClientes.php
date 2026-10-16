@@ -8,6 +8,8 @@ use App\Enums\TipoRollover;
 use App\Exceptions\RegraApostaException;
 use App\Models\Apostas;
 use App\Models\ApostasRollovers;
+use App\Models\CassinosRodadas;
+use App\Models\CassinosRodadasRollovers;
 use App\Models\Clientes;
 use App\Models\ClientesPromocoes;
 use App\Models\ClientesRollovers;
@@ -261,6 +263,76 @@ class RolloverClientes
                 $ligacao->valor = bcadd((string) $ligacao->valor, $retirada['valor'], 2);
                 $ligacao->save();
             }
+        }
+    }
+
+    /**
+     * Cassino (spec 011, FR-025, R-18): a aposta de uma rodada soma nos rollovers pendentes da
+     * carteira usada (saldo real → Depósito; bônus de cassino → Bônus de cassino), do mais antigo para
+     * o mais novo, com a ligação para o cancelamento desfazer.
+     */
+    public function somar_cassino(CassinosRodadas $rodada): void
+    {
+        [$tipo, $carteira] = $rodada->carteira === Carteira::PromoçãoCassino
+            ? [TipoRollover::Bônus, Carteira::PromoçãoCassino]
+            : [TipoRollover::Depósito, Carteira::Saldo];
+
+        $restante = (string) $rodada->valor_aposta;
+
+        $pendentes = ClientesRollovers::where('clientes_id', $rodada->clientes_id)
+            ->where('tipo', $tipo)
+            ->where('carteira', $carteira)
+            ->pendentes()
+            ->lockForUpdate()
+            ->get();
+
+        foreach ($pendentes as $rollover) {
+            if (bccomp($restante, '0', 2) <= 0) {
+                break;
+            }
+
+            $falta = bcsub((string) $rollover->valor_exigido, (string) $rollover->valor_apostado, 2);
+            $usado = bccomp($restante, $falta, 2) < 0 ? $restante : $falta;
+
+            if (bccomp($usado, '0', 2) <= 0) {
+                continue;
+            }
+
+            $rollover->valor_apostado = bcadd((string) $rollover->valor_apostado, $usado, 2);
+            $rollover->cumprido_em = bccomp((string) $rollover->valor_apostado, (string) $rollover->valor_exigido, 2) >= 0 ? now() : null;
+            $rollover->save();
+
+            CassinosRodadasRollovers::create([
+                'cassinos_rodadas_id' => $rodada->id,
+                'clientes_rollovers_id' => $rollover->id,
+                'valor' => $usado,
+            ]);
+
+            $restante = bcsub($restante, $usado, 2);
+        }
+    }
+
+    /**
+     * Cassino (spec 011, R-18): desfaz exatamente o que a aposta da rodada somou (cancelamento ou
+     * reembolso pelo provedor).
+     */
+    public function desfazer_cassino(CassinosRodadas $rodada): void
+    {
+        $ligacoes = CassinosRodadasRollovers::where('cassinos_rodadas_id', $rodada->id)
+            ->whereNull('desfeito_em')
+            ->orderBy('clientes_rollovers_id')
+            ->get();
+
+        foreach ($ligacoes as $ligacao) {
+            $rollover = ClientesRollovers::lockForUpdate()->find($ligacao->clientes_rollovers_id);
+
+            if ($rollover !== null) {
+                $rollover->valor_apostado = bcsub((string) $rollover->valor_apostado, (string) $ligacao->valor, 2);
+                $rollover->cumprido_em = null;
+                $rollover->save();
+            }
+
+            $ligacao->forceFill(['desfeito_em' => now()])->save();
         }
     }
 

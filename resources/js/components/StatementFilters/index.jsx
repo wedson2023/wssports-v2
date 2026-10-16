@@ -11,6 +11,9 @@ const operacoes = [
     { valor: 'estornos', titulo: 'Estornos' },
 ];
 
+// cassino (spec 011): uma linha por sessão de jogo; só com o cassino ligado
+const operacao_cassino = { valor: 'cassino', titulo: 'Cassino' };
+
 const situacoes = [
     { valor: '', titulo: 'Todos palpites' },
     { valor: 'Aguardando', titulo: 'Aguardando' },
@@ -19,7 +22,7 @@ const situacoes = [
 ];
 
 // filtros do extrato (ContainerFilter de screens/credits): a situação só vale para Palpites
-export default function StatementFilters({ filtros, ao_mudar, carregando }) {
+export default function StatementFilters({ filtros, ao_mudar, carregando, com_cassino = false }) {
     return (
         <Container>
             {carregando ? <Spinner tamanho={24} cor="#999" /> : <i className="material-icons" aria-hidden="true">filter_list</i>}
@@ -28,7 +31,7 @@ export default function StatementFilters({ filtros, ao_mudar, carregando }) {
                 value={filtros.operacao}
                 onChange={(evento) => ao_mudar({ operacao: evento.target.value, situacao: '' })}
             >
-                {operacoes.map(({ valor, titulo }) => <option key={valor} value={valor}>{titulo}</option>)}
+                {(com_cassino ? [...operacoes, operacao_cassino] : operacoes).map(({ valor, titulo }) => <option key={valor} value={valor}>{titulo}</option>)}
             </Select>
             <Select
                 aria-label="Situação do palpite"

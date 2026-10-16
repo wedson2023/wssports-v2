@@ -174,7 +174,8 @@ Com isso, o componente `CasinoUnavailable` saiu do plano.
 | `resources/js/components/StatementTable/index.jsx` | Linha de cassino clicável e coluna prêmio com o total ganho | FR-028 |
 
 **Arquivos estáticos**: `public/images/cassino/provedores/*.png` (novos, copiados das 10 logos de
-`wssports.bet/public/images/cassino/provedor`).
+`wssports.bet/public/images/cassino/provedor`, com o nome pelo código normalizado) e
+`public/images/gamming.png` (fundo da página do cassino antigo; acrescentado na implementação).
 
 **Nenhum outro arquivo existente muda**. Em especial, não mudam:
 
@@ -243,7 +244,8 @@ app/
 │   ├── ResultadoChamadaCassino.php                      # NOVO
 │   └── OrigemTransacao.php, Funcao.php                  # ALTERADOS
 ├── Exceptions/
-│   └── FalhaProvedorCassinoException.php                # NOVO  erro do openGame com o código do provedor
+│   ├── FalhaProvedorCassinoException.php                # NOVO  erro do openGame com o código do provedor
+│   └── RecusaCarteiraCassinoException.php               # NOVO (implementação)  recusa do writeBet: desfaz a transação
 ├── Fakes/DadosFake.php                                  # ALTERADO
 ├── Http/
 │   ├── Controllers/

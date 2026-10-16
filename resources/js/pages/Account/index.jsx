@@ -6,6 +6,7 @@ import AccountMenu from '../../components/AccountMenu';
 import AssistedBanner from '../../components/AssistedBanner';
 import Backdrop from '../../components/Backdrop';
 import BalanceCards from '../../components/BalanceCards';
+import CasinoRoundsModal from '../../components/CasinoRoundsModal';
 import ConfirmModal from '../../components/ConfirmModal';
 import DepositModal from '../../components/DepositModal';
 import InactiveAccount from '../../components/InactiveAccount';
@@ -26,7 +27,7 @@ import { Container, Content, Loading } from './styles';
 // tela de créditos do cliente (/minha-conta, spec 007): igual à screens/credits do antigo; os
 // modais (depósito, saque, Meus dados, indicações) têm o visual novo
 export default function Account({ acesso = null }) {
-    const { contatos, nome_sistema } = usePage().props;
+    const { contatos, nome_sistema, indicadores } = usePage().props;
     const { sessao, sair, acesso_assistido, iniciar_acesso_assistido, encerrar_acesso_assistido } = useSessao();
     const e_mobile = useTelaMobile();
     // com ?acesso= na URL, o painel abriu a conta do cliente: troca o código antes de carregar
@@ -38,6 +39,8 @@ export default function Account({ acesso = null }) {
     // modal aberto: confirmar_saida | motivo | deposito | saque | bonus | indicar | indicacoes
     const [modal, definir_modal] = useState(null);
     const [motivo, definir_motivo] = useState('');
+    // sessão de jogo do cassino com o detalhe das rodadas aberto (spec 011)
+    const [sessao_cassino, definir_sessao_cassino] = useState(null);
 
     useEffect(() => {
         if (!acesso) return;
@@ -99,6 +102,12 @@ export default function Account({ acesso = null }) {
         if (item.saque?.situacao === 'Recusado') {
             definir_motivo(item.saque.motivo ?? 'Saque recusado.');
             definir_modal('motivo');
+            return;
+        }
+
+        // linha de uma sessão de jogo do cassino: detalhe das rodadas (spec 011, FR-028)
+        if (item.cassino) {
+            definir_sessao_cassino(item.cassino);
             return;
         }
 
@@ -208,8 +217,9 @@ export default function Account({ acesso = null }) {
                     <AssistedBanner nome={acesso_assistido.nome} usuario={acesso_assistido.usuario} vence_em={acesso_assistido.vence_em} ao_voltar={voltar_ao_painel} />
                 )}
                 <AccountHeader nome={conta.dados.cliente.nome} ao_voltar={() => router.visit('/')} ao_abrir_menu={() => definir_menu_aberto(true)} />
-                <BalanceCards saldos={conta.dados.saldos} />
-                <StatementFilters filtros={conta.filtros} ao_mudar={conta.definir_filtros} carregando={conta.carregando_extrato} />
+                {/* cassino desligado: sem o card Bônus cassino e sem o filtro Cassino (spec 011, FR-012) */}
+                <BalanceCards saldos={conta.dados.saldos} cartoes_ocultos={indicadores.cassino ? [] : ['bonus_cassino']} />
+                <StatementFilters filtros={conta.filtros} ao_mudar={conta.definir_filtros} carregando={conta.carregando_extrato} com_cassino={indicadores.cassino} />
                 <StatementTable
                     itens={conta.itens}
                     fim={conta.fim}
@@ -256,6 +266,7 @@ export default function Account({ acesso = null }) {
                 ao_concluir={conta.recarregar_tudo}
                 ao_completar_cadastro={completar_cadastro}
             />
+            <CasinoRoundsModal sessao={sessao_cassino} ao_fechar={() => definir_sessao_cassino(null)} />
             <ReferralModal aberto={modal === 'indicar'} resumo_inicial={conta.resumo_indicacoes} ao_fechar={fechar_modal} ao_ver_indicacoes={() => definir_modal('indicacoes')} />
             <ReferralsModal aberto={modal === 'indicacoes'} ao_fechar={fechar_modal} />
             <ProfileModal

@@ -300,9 +300,9 @@ Seeder `CassinoSeeder` (chamado pelo `DatabaseSeeder` depois do `EncerramentoSee
   - `pragmatic` 12;
   - `galaxsys` 0;
   - `novomatic` 14;
-  - `red_tiger` 17,5;
+  - `redtiger` 17,5;
   - `amatic` 12;
   - `booming` 17,5;
   - `netent` 12;
-- `fast_games` (nome exibido "Aviator") 14, ativo;
+- `fastgames` (title `fast_games`, nome exibido "Aviator") 14, ativo;
 - as ações de R-16.

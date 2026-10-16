@@ -344,7 +344,7 @@ cadastrar no provedor.
 
 | Rota | Resposta |
 |---|---|
-| `GET /cassino` | Página Inertia `Casino`. Props: `cassino` (`habilitado`, `demo_habilitado`), `banners` e `promocoes` (vigentes: campanha, modalidade, valor, tipo de ganho, regra e fim). Com o cassino desligado, a página mostra o alerta e volta para `/` em 3 s, como no antigo (FR-012, R-21) |
+| `GET /cassino` | Página Inertia `Casino`. Props: `cassino` (`habilitado`, `demo_habilitado`, `somente_cassino`: sem o atalho "Esportes" no menu lateral), `banners` e `promocoes` (vigentes: campanha, modalidade, valor, tipo de ganho, regra e fim). Com o cassino desligado, a página mostra o alerta e volta para `/` em 3 s, como no antigo (FR-012, R-21) |
 | `GET /close.php` | HTML mínimo sem cache: envia `closeGame` ao `parent` e, fora de moldura, redireciona para `/cassino` (R-09) |
 
 Props compartilhadas (alteradas): `indicadores.cassino` passa a vir de
