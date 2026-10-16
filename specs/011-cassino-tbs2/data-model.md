@@ -229,9 +229,9 @@ Model: `fillable` e casts (`boolean`, `date`, `integer`). Não há bloqueio por 
 
 ### `clientes_transacoes`
 
-Sem coluna nova. A origem `Cassino` passa a existir (enum). O `referencia_id` aponta para
-`cassinos_sessoes.id` nessas transações. O comentário da coluna `origem` é atualizado com o valor
-novo.
+Sem migration. A origem `Cassino` passa a existir só no enum `OrigemTransacao` (a coluna `origem` é
+`string(30)`, sem comentário, criada antes da regra 3.3.0, e fica como está). O `referencia_id`
+aponta para `cassinos_sessoes.id` nessas transações.
 
 ## 11. Enums
 
@@ -289,7 +289,6 @@ Ordem de criação (as chaves estrangeiras respeitam a ordem):
 8. `create_cassinos_rodadas_rollovers_table`
 9. `create_cassinos_chamadas_table`
 10. `add_cassino_to_configuracoes_table` (4 colunas)
-11. `update_origem_comment_clientes_transacoes_table` (comentário da coluna `origem` com `Cassino`)
 
 Seeder `CassinoSeeder` (chamado pelo `DatabaseSeeder` depois do `EncerramentoSeeder`):
 

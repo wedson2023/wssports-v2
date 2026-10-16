@@ -85,13 +85,13 @@ Decisões em [research.md](research.md).
 
 | Item | Quantidade |
 |---|---|
-| Tabelas | 9 novas (`cassinos_*`), 2 alteradas (`configuracoes`: 4 colunas; `clientes_transacoes`: comentário de `origem`) |
+| Tabelas | 9 novas (`cassinos_*`), 1 alterada (`configuracoes`: 4 colunas) |
 | Enums | 6 novos, 2 alterados (`OrigemTransacao`, `Funcao`) |
 | Serviços | 10 novos, 1 alterado (`RolloverClientes`) |
 | Rotas | 22 novas na API, 2 novas na web; 1 existente com filtro novo (extrato) |
 | Permissões | 2 novas (`cassinos_jogos.gerenciar`, `cassinos_rodadas.listar`), Admin e Supervisor |
 | Comandos / jobs | 2 comandos novos, 1 job novo |
-| Frontend | 1 página nova, 13 componentes novos, 2 hooks novos, 1 utilitário novo; 6 arquivos existentes alterados |
+| Frontend | 1 página nova, 14 componentes novos, 2 hooks novos, 1 utilitário novo; 5 arquivos existentes alterados |
 
 ## Constitution Check
 
@@ -115,7 +115,7 @@ Decisões em [research.md](research.md).
 | VIII. Fidelidade visual | Página e componentes reproduzem `screens/casino`, `modal/balance`, `modal/bonus` e `details_casino`. Diferenças aprovadas: jogo na moldura quando o provedor permite (FR-014) e coluna prêmio preenchida (FR-028). Provedor sem logo mostra o nome (só acontece com provedor ativado além dos 10 do antigo) | ✅ Pass |
 | IX. Dados fake | Remove `DadosFake::indicadores()['cassino']` (FR-035); nenhum fake novo | ✅ Pass |
 | Timestamps e soft delete | 9 tabelas com `timestamps()` + `softDeletes()`. Exclusão física só em `cassinos_chamadas` (log técnico, R-15), justificada abaixo em Complexity Tracking | ✅ Pass (justificado) |
-| Comentários de colunas | Todas as colunas novas e as 4 de `configuracoes` com `->comment()`; `clientes_transacoes.origem` ganha o valor `Cassino` no comentário | ✅ Pass |
+| Comentários de colunas | Todas as colunas novas e as 4 de `configuracoes` com `->comment()`; `clientes_transacoes.origem` não é alterada (o valor `Cassino` existe só no enum) | ✅ Pass |
 | Referências a tabelas inexistentes | Nenhuma; a ordem das migrations respeita as chaves | ✅ Pass |
 | Paginação ≤ 100 | Grade 50, rodadas 50, painel 20; todas com máximo de 100 | ✅ Pass |
 | Atualização e cache | Configuração do cassino nas props a cada carga; `/close.php` sem cache; o cache de 5 min é só de dados do catálogo, limpo a cada alteração | ✅ Pass |
@@ -304,7 +304,7 @@ config/
 ├── cassino.php                                          # NOVO  apelidos de provedores, sufixos pré-pagos, prioridades, continente
 └── services.php                                         # ALTERADO
 
-database/migrations/                                     # 11 NOVAS (data-model.md, seção 14)
+database/migrations/                                     # 10 NOVAS (data-model.md, seção 14)
 database/seeders/CassinoSeeder.php                       # NOVO
 database/seeders/DatabaseSeeder.php                      # ALTERADO
 
@@ -316,6 +316,7 @@ resources/
     ├── pages/Casino/index.jsx, styles.jsx               # NOVO  página do cassino (screens/casino)
     ├── components/
     │   ├── CasinoHeader/         # NOVO  menu, logo, Criar Conta, suporte
+    │   ├── CasinoSearch/         # NOVO  busca pelo nome do jogo (screens/components/search do antigo)
     │   ├── ProviderBar/          # NOVO  barra de provedores (Providers)
     │   ├── GameTypeBar/          # NOVO  barra de tipos (Types)
     │   ├── GameRow/              # NOVO  linha por tipo com "Veja mais" (Item)
@@ -341,7 +342,7 @@ routes/api.php, routes/web.php, routes/console.php       # ALTERADOS
 docs/postman/wssports_api.postman_collection.json         # ALTERADO (regenerado)
 ```
 
-**Componentes existentes reutilizados sem alteração**: `BannerCarousel`, `SearchBar`, `Footer`,
+**Componentes existentes reutilizados sem alteração**: `BannerCarousel`, `Footer`,
 `AuthModal`, `DepositModal`, `WithdrawModal`, `Spinner`, `EmptyMessage`, `ModalCard`, `Backdrop`;
 hooks `useSessao`, `useTelaMobile`, `useVoltarFecha`; utilitários `api.js`, `money.js`,
 `alerts.js`.
