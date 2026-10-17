@@ -57,6 +57,18 @@ antigo."
   senha" com código enviado por e-mail, no padrão da recuperação do cliente (código de 6 dígitos,
   validade de 15 minutos, até 5 tentativas, nova senha digitada duas vezes).
 
+### Session 2026-10-17 (`/speckit-plan`)
+
+- Q: As alterações em arquivos existentes listadas no plano estão autorizadas? → A: Sim
+  (Princípio IV), inclusive `ProcessamentoDepositos`, `PagamentoSaques`, `StoreUsuariosRequest`, a
+  extração do trait `ChavePix`, as máscaras públicas do `ClientesResource` e os arquivos que usam
+  `codigo_afiliado`.
+- Q: O envio de e-mail pelo Laravel (Mailables na fila) está aprovado como padrão novo? → A: Sim
+  (Princípio VI), e aproveitar para criar também o e-mail do cadastro de clientes: o cliente que
+  informar e-mail no cadastro recebe um e-mail de boas-vindas. A confirmação de cadastro por link
+  do antigo (`CadastroMail`, ligada pela configuração `confirmacao_cadastro`) não é trazida, porque
+  no sistema novo a conta do cliente já nasce ativa e conectada (spec 002).
+
 ## Referências do sistema antigo *(Princípios VII e VIII)*
 
 - Backend: `app/Http/Controllers/FiliadosController.php`, `app/Models/Filiados.php`,
@@ -413,6 +425,10 @@ P1.
 - **FR-013**: O sistema DEVE enviar e-mail ao afiliado no cadastro público (recebido, em análise),
   na aprovação (com o endereço para entrar) e na recusa (com o motivo, se informado). A falha no
   envio NÃO DEVE desfazer o cadastro nem a decisão.
+- **FR-013a**: O cliente que informar e-mail no cadastro (público ou pelo acesso do painel) DEVE
+  receber um e-mail de boas-vindas com o nome dele, a logo da banca e o endereço do site, no visual
+  dos e-mails do antigo. Sem e-mail, nada é enviado. A falha no envio NÃO DEVE desfazer o cadastro
+  nem impedir a entrada do cliente.
 - **FR-014**: Só Admin e Supervisor com `afiliados.alterar_situacao` DEVEM poder aprovar ou recusar
   um afiliado "Em análise". Na aprovação, PODEM informar gerente responsável e regra de comissão;
   sem isso, ficam os atuais.
@@ -636,4 +652,5 @@ P1.
 - Lançamentos são gerados a partir dos fluxos de depósito, saque e estorno já existentes (spec
   007), sem alterar o comportamento desses fluxos para o cliente.
 - Comissão sobre o resultado das apostas e do cassino (GGR), saque pelo afiliado, exclusão
-  definitiva e tela administrativa estão fora do escopo.
+  definitiva, tela administrativa e confirmação de cadastro do cliente por link estão fora do
+  escopo.
