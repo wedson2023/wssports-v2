@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AfiliadosPaginasController;
 use App\Http\Controllers\ArquivosPwaController;
 use App\Http\Controllers\BilheteController;
 use App\Http\Controllers\CassinoController;
@@ -25,6 +26,9 @@ Route::get('minha-conta', [MinhaContaController::class, 'index'])->name('minha_c
 Route::get('mercado-pago/retorno', [RetornoMercadoPagoController::class, 'index'])->name('mercado_pago.retorno');
 // tela do Admin com o botão de vínculo do Mercado Pago
 Route::get('painel', [PainelController::class, 'index'])->name('painel');
+// afiliados (spec 012): página pública de cadastro e painel do afiliado
+Route::get('cadastro-afiliado', [AfiliadosPaginasController::class, 'cadastro'])->name('cadastro_afiliado');
+Route::get('afiliados', [AfiliadosPaginasController::class, 'painel'])->name('afiliados');
 
 // aplicativo instalável (PWA): service worker na raiz do site e manifest montado no servidor
 Route::get('sw.js', [ArquivosPwaController::class, 'service_worker'])->name('pwa.service_worker');

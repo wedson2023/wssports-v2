@@ -108,8 +108,8 @@ class MinhaContaResource extends JsonResource
     {
         $promocao = ClientesPromocoes::vigentes()
             ->where('categoria', CategoriaPromocao::Indicação)
-            ->paraAfiliado($this->codigo_afiliado)
-            ->orderByRaw('codigo_afiliado is null')
+            ->paraAfiliado($this->afiliados_id)
+            ->orderByRaw('afiliados_id is null')
             ->orderBy('id')
             ->first();
 

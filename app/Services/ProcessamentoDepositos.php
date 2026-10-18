@@ -26,6 +26,7 @@ class ProcessamentoDepositos
         private RolloverClientes $rollover,
         private EscolhaPromocoes $promocoes,
         private Indicacoes $indicacoes,
+        private ComissoesAfiliados $comissoes,
     ) {}
 
     /**
@@ -141,13 +142,16 @@ class ProcessamentoDepositos
     }
 
     /**
-     * O primeiro depósito aprovado valida a indicação do cliente (US9).
+     * O primeiro depósito aprovado valida a indicação do cliente (US9); todo depósito aprovado gera
+     * a comissão do afiliado do cliente, conforme a regra dele (spec 012).
      */
     private function depois_de_aprovar(Clientes $cliente, Depositos $deposito, bool $primeiro_deposito): void
     {
         if ($primeiro_deposito) {
             $this->indicacoes->validar($cliente, $deposito);
         }
+
+        $this->comissoes->registrar_deposito($deposito, $primeiro_deposito);
     }
 
     /**
@@ -199,6 +203,10 @@ class ProcessamentoDepositos
             'situacao' => $total_estornado_agora ? SituacaoDeposito::Estornado : SituacaoDeposito::Aprovado,
             'estornado_em' => now(),
         ])->save();
+
+        // estorno parcial ou total desconta a comissão do afiliado (spec 012, FR-030); depois de
+        // gravar o novo valor_estornado, que entra na chave do lançamento
+        $this->comissoes->registrar_estorno($deposito, $diferenca);
 
         if (! $total_estornado_agora) {
             return;

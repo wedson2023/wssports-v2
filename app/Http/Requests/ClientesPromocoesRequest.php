@@ -81,7 +81,8 @@ class ClientesPromocoesRequest extends FormRequest
                 'boolean',
                 Rule::when($categoria !== CategoriaPromocao::PrimeiroDepósito, ['declined']),
             ],
-            'codigo_afiliado' => ['nullable', 'string', 'max:50'],
+            // afiliado dono da promoção (spec 012): só os clientes dele a recebem
+            'afiliados_id' => ['nullable', 'integer', Rule::exists('afiliados', 'id')->whereNull('deleted_at')],
             'quantidade_indicacoes' => $categoria === CategoriaPromocao::Indicação
                 ? ['required', 'integer', 'min:1']
                 : ['prohibited'],
@@ -117,7 +118,8 @@ class ClientesPromocoesRequest extends FormRequest
             'dias_cumprir.max' => 'Os dias para cumprir o bônus devem ser no máximo 3650.',
             'rollover_primeiro_deposito.boolean' => 'O rollover no primeiro depósito deve ser verdadeiro ou falso.',
             'rollover_primeiro_deposito.declined' => 'O rollover no primeiro depósito só vale para promoções de primeiro depósito.',
-            'codigo_afiliado.max' => 'O código de afiliado deve ter no máximo 50 caracteres.',
+            'afiliados_id.integer' => 'Afiliado não encontrado.',
+            'afiliados_id.exists' => 'Afiliado não encontrado.',
             'quantidade_indicacoes.required' => 'Informe a quantidade de indicações exigida.',
             'quantidade_indicacoes.integer' => 'A quantidade de indicações deve ser um número inteiro.',
             'quantidade_indicacoes.min' => 'A quantidade de indicações deve ser pelo menos 1.',

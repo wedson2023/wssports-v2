@@ -3,6 +3,7 @@
 namespace App\Http\Requests;
 
 use App\Enums\Funcao;
+use App\Models\Afiliados;
 use App\Models\Usuarios;
 use Closure;
 use Illuminate\Foundation\Http\FormRequest;
@@ -88,14 +89,15 @@ class StoreUsuariosRequest extends FormRequest
     }
 
     /**
-     * Login único sem diferenciar maiúsculas/minúsculas, incluindo usuários excluídos.
+     * Login único sem diferenciar maiúsculas/minúsculas, incluindo usuários excluídos e também os
+     * logins dos afiliados, que entram pela mesma tela (spec 012, FR-002).
      */
     private function regra_login_unico(): Closure
     {
         return function (string $atributo, mixed $valor, Closure $falhar) {
-            $login_em_uso = Usuarios::withTrashed()
-                ->whereRaw('LOWER(login) = ?', [mb_strtolower($valor)])
-                ->exists();
+            $login = mb_strtolower($valor);
+            $login_em_uso = Usuarios::withTrashed()->whereRaw('LOWER(login) = ?', [$login])->exists()
+                || Afiliados::withTrashed()->whereRaw('LOWER(login) = ?', [$login])->exists();
 
             if ($login_em_uso) {
                 $falhar('O login informado já está em uso.');

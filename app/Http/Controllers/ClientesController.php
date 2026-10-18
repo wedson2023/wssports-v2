@@ -51,7 +51,7 @@ class ClientesController extends Controller implements HasMiddleware
 
     public function show(Clientes $cliente): ClientesResource
     {
-        return new ClientesResource($cliente->load('configuracoes'));
+        return new ClientesResource($cliente->load(['configuracoes', 'afiliado']));
     }
 
     /**
@@ -61,7 +61,7 @@ class ClientesController extends Controller implements HasMiddleware
     {
         $cliente->update($request->validated());
 
-        return new ClientesResource($cliente->load('configuracoes'));
+        return new ClientesResource($cliente->load(['configuracoes', 'afiliado']));
     }
 
     /**
@@ -80,7 +80,7 @@ class ClientesController extends Controller implements HasMiddleware
             $cliente->invalidar_tokens();
         }
 
-        return new ClientesResource($cliente->load('configuracoes'));
+        return new ClientesResource($cliente->load(['configuracoes', 'afiliado']));
     }
 
     /**
@@ -136,7 +136,7 @@ class ClientesController extends Controller implements HasMiddleware
             $cliente->restore();
         });
 
-        return new ClientesResource($cliente->load('configuracoes'));
+        return new ClientesResource($cliente->load(['configuracoes', 'afiliado']));
     }
 
     /**
@@ -165,7 +165,7 @@ class ClientesController extends Controller implements HasMiddleware
             'busca' => ['nullable', 'string', 'max:150'],
             'ativo' => ['nullable', 'boolean'],
             'ddi' => ['nullable', 'digits_between:1,3'],
-            'codigo_afiliado' => ['nullable', 'string', 'max:50'],
+            'afiliados_id' => ['nullable', 'integer'],
             'cadastro_de' => ['nullable', 'date_format:Y-m-d'],
             'cadastro_ate' => ['nullable', 'date_format:Y-m-d'],
             'idade_minima' => ['nullable', 'integer', 'min:0'],
@@ -198,11 +198,11 @@ class ClientesController extends Controller implements HasMiddleware
         $busca_completa = ! ClientesResource::deve_mascarar($request);
 
         $clientes = $consulta
-            ->with('configuracoes')
+            ->with(['configuracoes', 'afiliado'])
             ->when(isset($filtros['busca']), fn (Builder $c) => $this->aplicar_busca($c, $filtros['busca'], $busca_completa))
             ->when(isset($filtros['ativo']), fn (Builder $c) => $c->where('ativo', (bool) $filtros['ativo']))
             ->when(isset($filtros['ddi']), fn (Builder $c) => $c->where('ddi', $filtros['ddi']))
-            ->when(isset($filtros['codigo_afiliado']), fn (Builder $c) => $c->where('codigo_afiliado', $filtros['codigo_afiliado']))
+            ->when(isset($filtros['afiliados_id']), fn (Builder $c) => $c->where('afiliados_id', (int) $filtros['afiliados_id']))
             ->when(isset($filtros['cadastro_de']), fn (Builder $c) => $c->where('created_at', '>=', $filtros['cadastro_de'].' 00:00:00'))
             ->when(isset($filtros['cadastro_ate']), fn (Builder $c) => $c->where('created_at', '<=', $filtros['cadastro_ate'].' 23:59:59'))
             ->when(isset($filtros['idade_minima']), fn (Builder $c) => $c->where('data_nascimento', '<=', now()->subYears((int) $filtros['idade_minima'])->toDateString()))

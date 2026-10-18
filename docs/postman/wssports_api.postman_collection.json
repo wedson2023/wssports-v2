@@ -1,7 +1,7 @@
 {
     "info": {
         "name": "WSSports API",
-        "description": "Rotas da API do WSSports (autenticação JWT, gestão de usuários e permissões, área do cliente, gestão de clientes, confrontos e apostas).\n\nVariáveis da coleção:\n- base_url: endereço da API (ex.: http://127.0.0.1:8000/api)\n- token: token do painel, preenchido pelo login e refresh do painel\n- token_cliente: token do cliente, preenchido pelo cadastro, login e refresh da área do cliente\n- usuario_id / permissao: usados nas rotas de usuários e permissões\n- cliente_id / meio_pagamento_id / promocao_id: usados nas rotas de clientes\n- campeonato_id / confronto_id / registro_id / gerente_id: usados nas rotas de confrontos\n- codigo_aposta / palpite_id / confronto_ao_vivo_id: usados nas rotas de apostas\n- codigo_aposta / chave_encerramento / endpoint_push: usados nas rotas da spec 010\n- jogo_cassino / canal_cassino / provedor_cassino / sessao_cassino / acao_cassino / cassino_hall / cassino_chave: usados nas rotas da spec 011 (hall e chave só para simular o callback localmente)\n\nFluxo: execute 'Login' (painel) e 'Login do cliente'; as demais rotas usam os tokens salvos.",
+        "description": "Rotas da API do WSSports (autenticação JWT, gestão de usuários e permissões, área do cliente, gestão de clientes, confrontos e apostas).\n\nVariáveis da coleção:\n- base_url: endereço da API (ex.: http://127.0.0.1:8000/api)\n- token: token do painel, preenchido pelo login e refresh do painel\n- token_cliente: token do cliente, preenchido pelo cadastro, login e refresh da área do cliente\n- usuario_id / permissao: usados nas rotas de usuários e permissões\n- cliente_id / meio_pagamento_id / promocao_id: usados nas rotas de clientes\n- campeonato_id / confronto_id / registro_id / gerente_id: usados nas rotas de confrontos\n- codigo_aposta / palpite_id / confronto_ao_vivo_id: usados nas rotas de apostas\n- codigo_aposta / chave_encerramento / endpoint_push: usados nas rotas da spec 010\n- jogo_cassino / canal_cassino / provedor_cassino / sessao_cassino / acao_cassino / cassino_hall / cassino_chave: usados nas rotas da spec 011 (hall e chave só para simular o callback localmente)\n- token_afiliado / afiliado_id: usados nas rotas de afiliados da spec 012 (token_afiliado é preenchido pelo login, refresh e troca de senha do afiliado)\n\nFluxo: execute 'Login' (painel) e 'Login do cliente'; as demais rotas usam os tokens salvos.",
         "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
     },
     "auth": {
@@ -178,6 +178,16 @@
         {
             "key": "cassino_chave",
             "value": "",
+            "type": "string"
+        },
+        {
+            "key": "token_afiliado",
+            "value": "",
+            "type": "string"
+        },
+        {
+            "key": "afiliado_id",
+            "value": "1",
             "type": "string"
         }
     ],
@@ -658,13 +668,13 @@
                                 "cadastro"
                             ]
                         },
-                        "description": "Cadastro público. 201 com cliente e token; 422 validação/duplicidade; 429 mais de 5 por minuto do mesmo IP. Spec 007: codigo_indicacao (8 caracteres) do link de indicação de outro cliente; inexistente é ignorado.",
+                        "description": "Cadastro público. 201 com cliente e token; 422 validação/duplicidade; 429 mais de 5 por minuto do mesmo IP. Spec 007: codigo_indicacao (8 caracteres) do link de indicação de outro cliente; inexistente é ignorado. codigo_afiliado (spec 012): código do link ?user=; inexistente dá 422; afiliado não ativo cadastra sem ligação.",
                         "auth": {
                             "type": "noauth"
                         },
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \"nome\": \"Maria Souza\",\n    \"ddi\": \"55\",\n    \"telefone\": \"(11) 98888-7777\",\n    \"email\": \"maria@mail.com\",\n    \"password\": \"senha1234\",\n    \"password_confirmation\": \"senha1234\",\n    \"cpf\": \"529.982.247-25\",\n    \"data_nascimento\": \"1990-05-10\",\n    \"genero\": \"Feminino\",\n    \"codigo_afiliado\": null,\n    \"aceita_promocao\": true,\n    \"codigo_indicacao\": null\n}"
+                            "raw": "{\n    \"nome\": \"Maria Souza\",\n    \"ddi\": \"55\",\n    \"telefone\": \"(11) 98888-7777\",\n    \"email\": \"maria@mail.com\",\n    \"password\": \"senha1234\",\n    \"password_confirmation\": \"senha1234\",\n    \"cpf\": \"529.982.247-25\",\n    \"data_nascimento\": \"1990-05-10\",\n    \"genero\": \"Feminino\",\n    \"codigo_afiliado\": \"\",\n    \"aceita_promocao\": true,\n    \"codigo_indicacao\": null\n}"
                         }
                     },
                     "event": [
@@ -1200,7 +1210,7 @@
                                 }
                             ]
                         },
-                        "description": "clientes.listar. Filtros: busca, ativo, ddi, codigo_afiliado, cadastro_de, cadastro_ate, idade_minima, idade_maxima, genero, saldo_minimo, saldo_maximo, com_saldo_promocional, saque_bloqueado, com_cpf, com_email."
+                        "description": "clientes.listar. Filtros: busca, ativo, ddi, afiliados_id, cadastro_de, cadastro_ate, idade_minima, idade_maxima, genero, saldo_minimo, saldo_maximo, com_saldo_promocional, saque_bloqueado, com_cpf, com_email."
                     }
                 },
                 {
@@ -1715,10 +1725,10 @@
                                 "clientes-promocoes"
                             ]
                         },
-                        "description": "clientes_promocoes.gerenciar. Mesma categoria e modalidade não podem ter períodos sobrepostos. Spec 007: dias_cumprir (padrão 30), rollover_primeiro_deposito (só Primeiro depósito), codigo_afiliado e quantidade_indicacoes (obrigatório em Indicação, proibido nas demais).",
+                        "description": "clientes_promocoes.gerenciar. Mesma categoria e modalidade não podem ter períodos sobrepostos. Spec 007: dias_cumprir (padrão 30), rollover_primeiro_deposito (só Primeiro depósito), afiliados_id e quantidade_indicacoes (obrigatório em Indicação, proibido nas demais).",
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \"nome\": \"Bônus de boas-vindas\",\n    \"descricao\": \"R$ 20 para apostar em esportes\",\n    \"modalidade\": \"Esportes\",\n    \"categoria\": \"Primeiro cadastro\",\n    \"tipo_ganho\": \"Fixo\",\n    \"valor\": \"20.00\",\n    \"rollover\": 5,\n    \"valor_minimo_aposta\": \"2.00\",\n    \"valor_maximo_aposta\": \"100.00\",\n    \"valor_maximo_deposito\": null,\n    \"valor_maximo_conversao\": \"200.00\",\n    \"odd_minima_aposta_simples\": \"1.50\",\n    \"odd_minima_aposta_multipla\": \"1.30\",\n    \"data_inicio\": \"2026-10-01 00:00:00\",\n    \"data_fim\": null,\n    \"ativa\": true,\n    \"dias_cumprir\": 30,\n    \"rollover_primeiro_deposito\": false,\n    \"codigo_afiliado\": null\n}"
+                            "raw": "{\n    \"nome\": \"Bônus de boas-vindas\",\n    \"descricao\": \"R$ 20 para apostar em esportes\",\n    \"modalidade\": \"Esportes\",\n    \"categoria\": \"Primeiro cadastro\",\n    \"tipo_ganho\": \"Fixo\",\n    \"valor\": \"20.00\",\n    \"rollover\": 5,\n    \"valor_minimo_aposta\": \"2.00\",\n    \"valor_maximo_aposta\": \"100.00\",\n    \"valor_maximo_deposito\": null,\n    \"valor_maximo_conversao\": \"200.00\",\n    \"odd_minima_aposta_simples\": \"1.50\",\n    \"odd_minima_aposta_multipla\": \"1.30\",\n    \"data_inicio\": \"2026-10-01 00:00:00\",\n    \"data_fim\": null,\n    \"ativa\": true,\n    \"dias_cumprir\": 30,\n    \"rollover_primeiro_deposito\": false,\n    \"afiliados_id\": null\n}"
                         }
                     }
                 },
@@ -1746,10 +1756,10 @@
                                 "{{promocao_id}}"
                             ]
                         },
-                        "description": "clientes_promocoes.gerenciar. Promoção aplicada não muda valor, tipo de ganho, categoria e modalidade. Spec 007: dias_cumprir (padrão 30), rollover_primeiro_deposito (só Primeiro depósito), codigo_afiliado e quantidade_indicacoes (obrigatório em Indicação, proibido nas demais).",
+                        "description": "clientes_promocoes.gerenciar. Promoção aplicada não muda valor, tipo de ganho, categoria e modalidade. Spec 007: dias_cumprir (padrão 30), rollover_primeiro_deposito (só Primeiro depósito), afiliados_id e quantidade_indicacoes (obrigatório em Indicação, proibido nas demais).",
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \"nome\": \"Bônus de boas-vindas 2\",\n    \"dias_cumprir\": 30,\n    \"rollover_primeiro_deposito\": false,\n    \"codigo_afiliado\": null\n}"
+                            "raw": "{\n    \"nome\": \"Bônus de boas-vindas 2\",\n    \"dias_cumprir\": 30,\n    \"rollover_primeiro_deposito\": false,\n    \"afiliados_id\": null\n}"
                         }
                     }
                 },
@@ -7063,6 +7073,1095 @@
                             ]
                         },
                         "description": "Consulta o gameSessionsLog do provedor (FR-033). 422 sem identificação da sessão no provedor; 503 provedor fora do ar."
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Área do afiliado (spec 012)",
+            "description": "Área do afiliado: guard próprio (token_afiliado), separado do painel e dos clientes.",
+            "auth": {
+                "type": "bearer",
+                "bearer": [
+                    {
+                        "key": "token",
+                        "value": "{{token_afiliado}}",
+                        "type": "string"
+                    }
+                ]
+            },
+            "item": [
+                {
+                    "name": "Cadastro público do afiliado",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "auth": {
+                            "type": "noauth"
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"nome\": \"Maria Souza\",\n    \"login\": \"maria.souza2\",\n    \"password\": \"senha1234\",\n    \"password_confirmation\": \"senha1234\",\n    \"email\": \"maria2@exemplo.com\",\n    \"cpf\": \"123.456.789-09\",\n    \"ddi\": \"55\",\n    \"telefone\": \"(81) 99999-9999\",\n    \"cidade\": \"Recife\",\n    \"estado\": \"PE\",\n    \"endereco\": \"Rua A, 10\",\n    \"pix_tipo_chave\": \"CPF\",\n    \"pix_chave\": \"123.456.789-09\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/area-afiliado/cadastro",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "area-afiliado",
+                                "cadastro"
+                            ]
+                        },
+                        "description": "Cadastro público (FR-010 a FR-013): cria o afiliado Em análise, sem gerente, com a regra padrão; situação, gerente e regra enviados são ignorados. 201 sem token; 422 por campo; 429 acima de 5 por minuto por IP."
+                    }
+                },
+                {
+                    "name": "Login do afiliado",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "// salva o token retornado para as demais requisições",
+                                    "if (pm.response.code === 200) {",
+                                    "    pm.collectionVariables.set('token_afiliado', pm.response.json().token);",
+                                    "}"
+                                ]
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "auth": {
+                            "type": "noauth"
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"login\": \"afiliado.exemplo\",\n    \"password\": \"afiliado123\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/area-afiliado/auth/login",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "area-afiliado",
+                                "auth",
+                                "login"
+                            ]
+                        },
+                        "description": "200 com token (salvo em token_afiliado); 401 login/senha inválidos; 403 em análise, recusado ou inativo; 429 após 5 erros em 1 minuto."
+                    }
+                },
+                {
+                    "name": "Recuperar senha do afiliado",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "auth": {
+                            "type": "noauth"
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"identificacao\": \"afiliado.exemplo\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/area-afiliado/auth/recuperar-senha",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "area-afiliado",
+                                "auth",
+                                "recuperar-senha"
+                            ]
+                        },
+                        "description": "Login ou e-mail. Sempre 200 com a mesma mensagem; o código de 6 dígitos vai por e-mail (15 min). 429 se pedir de novo em menos de 60 s."
+                    }
+                },
+                {
+                    "name": "Redefinir senha do afiliado",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "auth": {
+                            "type": "noauth"
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"identificacao\": \"afiliado.exemplo\",\n    \"codigo\": \"123456\",\n    \"password\": \"novasenha1\",\n    \"password_confirmation\": \"novasenha1\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/area-afiliado/auth/redefinir-senha",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "area-afiliado",
+                                "auth",
+                                "redefinir-senha"
+                            ]
+                        },
+                        "description": "204 e os tokens antigos deixam de valer; 422 \"Código inválido ou expirado.\"."
+                    }
+                },
+                {
+                    "name": "Refresh do afiliado",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "// salva o token retornado para as demais requisições",
+                                    "if (pm.response.code === 200) {",
+                                    "    pm.collectionVariables.set('token_afiliado', pm.response.json().token);",
+                                    "}"
+                                ]
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/area-afiliado/auth/refresh",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "area-afiliado",
+                                "auth",
+                                "refresh"
+                            ]
+                        },
+                        "description": "Token novo (salvo em token_afiliado)."
+                    }
+                },
+                {
+                    "name": "Logout do afiliado",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/area-afiliado/auth/logout",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "area-afiliado",
+                                "auth",
+                                "logout"
+                            ]
+                        },
+                        "description": "204."
+                    }
+                },
+                {
+                    "name": "Painel do afiliado",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/area-afiliado/painel",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "area-afiliado",
+                                "painel"
+                            ]
+                        },
+                        "description": "Nome, código, link, valor a receber, última prestação, regra vigente e quantidade de clientes indicados."
+                    }
+                },
+                {
+                    "name": "Extrato do afiliado",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/area-afiliado/extrato?de=2026-10-01&ate=2026-10-31&situacao=&por_pagina=30",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "area-afiliado",
+                                "extrato"
+                            ],
+                            "query": [
+                                {
+                                    "key": "de",
+                                    "value": "2026-10-01"
+                                },
+                                {
+                                    "key": "ate",
+                                    "value": "2026-10-31"
+                                },
+                                {
+                                    "key": "situacao",
+                                    "value": ""
+                                },
+                                {
+                                    "key": "por_pagina",
+                                    "value": "30"
+                                }
+                            ]
+                        },
+                        "description": "Lançamentos do afiliado, mais recentes primeiro. situacao: aberto | prestado. por_pagina até 100."
+                    }
+                },
+                {
+                    "name": "Clientes indicados",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/area-afiliado/clientes?por_pagina=30",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "area-afiliado",
+                                "clientes"
+                            ],
+                            "query": [
+                                {
+                                    "key": "por_pagina",
+                                    "value": "30"
+                                }
+                            ]
+                        },
+                        "description": "Nome parcialmente oculto, data do cadastro e total depositado."
+                    }
+                },
+                {
+                    "name": "Prestações do afiliado",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/area-afiliado/prestacoes?por_pagina=30",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "area-afiliado",
+                                "prestacoes"
+                            ],
+                            "query": [
+                                {
+                                    "key": "por_pagina",
+                                    "value": "30"
+                                }
+                            ]
+                        },
+                        "description": "Histórico de prestações de contas."
+                    }
+                },
+                {
+                    "name": "Meus dados do afiliado",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/area-afiliado/meus-dados",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "area-afiliado",
+                                "meus-dados"
+                            ]
+                        },
+                        "description": "Dados do afiliado sem máscara e chave Pix."
+                    }
+                },
+                {
+                    "name": "Alterar meus dados do afiliado",
+                    "request": {
+                        "method": "PATCH",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"telefone\": \"81999998888\",\n    \"cidade\": \"Recife\",\n    \"estado\": \"PE\",\n    \"endereco\": \"Rua B, 20\",\n    \"pix_tipo_chave\": \"E-mail\",\n    \"pix_chave\": \"afiliado@exemplo.com\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/area-afiliado/meus-dados",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "area-afiliado",
+                                "meus-dados"
+                            ]
+                        },
+                        "description": "Só ddi, telefone, cidade, estado, endereço e Pix; nome, login, e-mail, CPF e código dão 422."
+                    }
+                },
+                {
+                    "name": "Trocar senha do afiliado",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "type": "text/javascript",
+                                "exec": [
+                                    "// salva o token retornado para as demais requisições",
+                                    "if (pm.response.code === 200) {",
+                                    "    pm.collectionVariables.set('token_afiliado', pm.response.json().token);",
+                                    "}"
+                                ]
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"senha_atual\": \"afiliado123\",\n    \"password\": \"novasenha1\",\n    \"password_confirmation\": \"novasenha1\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/area-afiliado/meus-dados/senha",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "area-afiliado",
+                                "meus-dados",
+                                "senha"
+                            ]
+                        },
+                        "description": "200 com token novo (salvo em token_afiliado); os demais deixam de valer. 422 se a senha atual estiver errada."
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Afiliados (painel, spec 012)",
+            "description": "Gestão de afiliados com o token do painel. Gerente só vê e age sobre os seus.",
+            "item": [
+                {
+                    "name": "Listar afiliados",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/afiliados?situacao=&busca=&usuarios_id=&de=2026-10-01&ate=2026-10-31&por_pagina=20",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "afiliados"
+                            ],
+                            "query": [
+                                {
+                                    "key": "situacao",
+                                    "value": ""
+                                },
+                                {
+                                    "key": "busca",
+                                    "value": ""
+                                },
+                                {
+                                    "key": "usuarios_id",
+                                    "value": ""
+                                },
+                                {
+                                    "key": "de",
+                                    "value": "2026-10-01"
+                                },
+                                {
+                                    "key": "ate",
+                                    "value": "2026-10-31"
+                                },
+                                {
+                                    "key": "por_pagina",
+                                    "value": "20"
+                                }
+                            ]
+                        },
+                        "description": "afiliados.listar. Filtros: situacao (Em análise, Ativo, Inativo, Recusado), busca (nome, login ou código), usuarios_id (gerente), de/ate (período dos totais; padrão hoje). Gerente só vê os seus. por_pagina até 100."
+                    }
+                },
+                {
+                    "name": "Afiliados excluídos",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/afiliados/excluidos?por_pagina=20",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "afiliados",
+                                "excluidos"
+                            ],
+                            "query": [
+                                {
+                                    "key": "por_pagina",
+                                    "value": "20"
+                                }
+                            ]
+                        },
+                        "description": "afiliados.restaurar. Mesmos filtros, só a lixeira."
+                    }
+                },
+                {
+                    "name": "Cadastrar afiliado",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"nome\": \"Maria Souza\",\n    \"login\": \"afiliado.novo\",\n    \"password\": \"senha1234\",\n    \"password_confirmation\": \"senha1234\",\n    \"email\": \"novo@exemplo.com\",\n    \"cpf\": \"123.456.789-09\",\n    \"ddi\": \"55\",\n    \"telefone\": \"(81) 99999-9999\",\n    \"cidade\": \"Recife\",\n    \"estado\": \"PE\",\n    \"endereco\": \"Rua A, 10\",\n    \"pix_tipo_chave\": \"CPF\",\n    \"pix_chave\": \"123.456.789-09\",\n    \"usuarios_id\": \"{{gerente_id}}\",\n    \"tipo_ganho\": \"Qualquer depósito\",\n    \"percentual\": 10\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/afiliados",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "afiliados"
+                            ]
+                        },
+                        "description": "afiliados.cadastrar. Nasce Ativo. Gerente fica como responsável (usuarios_id ignorado). tipo_ganho/percentual só valem com afiliados.editar_comissao; sem ela, a regra padrão."
+                    }
+                },
+                {
+                    "name": "Consultar afiliado",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/afiliados/{{afiliado_id}}",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "afiliados",
+                                "{{afiliado_id}}"
+                            ]
+                        },
+                        "description": "afiliados.consultar. Com gerente, regra vigente, Pix, valor a receber e última prestação. 404 fora do alcance do Gerente."
+                    }
+                },
+                {
+                    "name": "Editar afiliado",
+                    "request": {
+                        "method": "PATCH",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"nome\": \"Maria Souza Lima\",\n    \"telefone\": \"81999997777\",\n    \"pix_tipo_chave\": \"Telefone\",\n    \"pix_chave\": \"81999997777\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/afiliados/{{afiliado_id}}",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "afiliados",
+                                "{{afiliado_id}}"
+                            ]
+                        },
+                        "description": "afiliados.editar. login proibido; password (+ confirmação) invalida os tokens; usuarios_id e codigo só Admin/Supervisor."
+                    }
+                },
+                {
+                    "name": "Alterar situação do afiliado",
+                    "request": {
+                        "method": "PATCH",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"situacao\": \"Inativo\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/afiliados/{{afiliado_id}}/situacao",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "afiliados",
+                                "{{afiliado_id}}",
+                                "situacao"
+                            ]
+                        },
+                        "description": "afiliados.alterar_situacao. Só entre Ativo e Inativo; inativar invalida os tokens."
+                    }
+                },
+                {
+                    "name": "Aprovar afiliado",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"usuarios_id\": \"{{gerente_id}}\",\n    \"tipo_ganho\": \"Saldo líquido\",\n    \"percentual\": 20\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/afiliados/{{afiliado_id}}/aprovar",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "afiliados",
+                                "{{afiliado_id}}",
+                                "aprovar"
+                            ]
+                        },
+                        "description": "afiliados.alterar_situacao + Admin/Supervisor. De Em análise ou Recusado para Ativo; e-mail de aprovação. Corpo opcional."
+                    }
+                },
+                {
+                    "name": "Recusar afiliado",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"motivo\": \"Dados incompletos\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/afiliados/{{afiliado_id}}/recusar",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "afiliados",
+                                "{{afiliado_id}}",
+                                "recusar"
+                            ]
+                        },
+                        "description": "afiliados.alterar_situacao + Admin/Supervisor. Só de Em análise; e-mail de recusa."
+                    }
+                },
+                {
+                    "name": "Histórico de regras de comissão",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/afiliados/{{afiliado_id}}/comissoes?por_pagina=20",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "afiliados",
+                                "{{afiliado_id}}",
+                                "comissoes"
+                            ],
+                            "query": [
+                                {
+                                    "key": "por_pagina",
+                                    "value": "20"
+                                }
+                            ]
+                        },
+                        "description": "afiliados.consultar."
+                    }
+                },
+                {
+                    "name": "Trocar regra de comissão",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"tipo_ganho\": \"Saldo líquido\",\n    \"percentual\": 15\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/afiliados/{{afiliado_id}}/comissao",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "afiliados",
+                                "{{afiliado_id}}",
+                                "comissao"
+                            ]
+                        },
+                        "description": "afiliados.editar_comissao. Encerra a vigente e abre a nova; lançamentos já gerados não mudam."
+                    }
+                },
+                {
+                    "name": "Lançamentos do afiliado",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/afiliados/{{afiliado_id}}/lancamentos?de=&ate=&situacao=&clientes_id=&por_pagina=30",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "afiliados",
+                                "{{afiliado_id}}",
+                                "lancamentos"
+                            ],
+                            "query": [
+                                {
+                                    "key": "de",
+                                    "value": ""
+                                },
+                                {
+                                    "key": "ate",
+                                    "value": ""
+                                },
+                                {
+                                    "key": "situacao",
+                                    "value": ""
+                                },
+                                {
+                                    "key": "clientes_id",
+                                    "value": ""
+                                },
+                                {
+                                    "key": "por_pagina",
+                                    "value": "30"
+                                }
+                            ]
+                        },
+                        "description": "afiliados.consultar. situacao: aberto | prestado."
+                    }
+                },
+                {
+                    "name": "Clientes do afiliado",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/afiliados/{{afiliado_id}}/clientes?por_pagina=20",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "afiliados",
+                                "{{afiliado_id}}",
+                                "clientes"
+                            ],
+                            "query": [
+                                {
+                                    "key": "por_pagina",
+                                    "value": "20"
+                                }
+                            ]
+                        },
+                        "description": "afiliados.consultar. Clientes ligados, com máscara do painel e total depositado."
+                    }
+                },
+                {
+                    "name": "Prestações do afiliado (painel)",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/afiliados/{{afiliado_id}}/prestacoes?por_pagina=20",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "afiliados",
+                                "{{afiliado_id}}",
+                                "prestacoes"
+                            ],
+                            "query": [
+                                {
+                                    "key": "por_pagina",
+                                    "value": "20"
+                                }
+                            ]
+                        },
+                        "description": "afiliados.consultar. Histórico com quem prestou."
+                    }
+                },
+                {
+                    "name": "Prestar contas",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"password\": \"password\",\n    \"observacao\": \"Pago via Pix\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/afiliados/{{afiliado_id}}/prestacoes",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "afiliados",
+                                "{{afiliado_id}}",
+                                "prestacoes"
+                            ]
+                        },
+                        "description": "afiliados.prestar_contas. Fecha todos os lançamentos em aberto; negativo vira pago 0. 422 se a senha do usuário estiver errada."
+                    }
+                },
+                {
+                    "name": "Excluir afiliado",
+                    "request": {
+                        "method": "DELETE",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/afiliados/{{afiliado_id}}",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "afiliados",
+                                "{{afiliado_id}}"
+                            ]
+                        },
+                        "description": "afiliados.excluir (Admin/Supervisor). Lixeira, sufixo nos dados únicos, tokens invalidados. 204."
+                    }
+                },
+                {
+                    "name": "Restaurar afiliado",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "[]"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/afiliados/{{afiliado_id}}/restaurar",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "afiliados",
+                                "{{afiliado_id}}",
+                                "restaurar"
+                            ]
+                        },
+                        "description": "afiliados.restaurar (Admin/Supervisor). Corpo opcional com login, email, cpf ou codigo novos quando houver conflito (422 por campo)."
+                    }
+                },
+                {
+                    "name": "Configuração de afiliados",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/configuracoes/afiliados",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "configuracoes",
+                                "afiliados"
+                            ]
+                        },
+                        "description": "configuracoes.editar. Regra padrão do cadastro público."
+                    }
+                },
+                {
+                    "name": "Alterar configuração de afiliados",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"afiliados_tipo_ganho_padrao\": \"Saldo líquido\",\n    \"afiliados_percentual_padrao\": 10\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/configuracoes/afiliados",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "configuracoes",
+                                "afiliados"
+                            ]
+                        },
+                        "description": "configuracoes.editar."
                     }
                 }
             ]

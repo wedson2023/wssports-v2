@@ -32,7 +32,12 @@ class ClientesPromocoesResource extends JsonResource
             'ativa' => $this->ativa,
             'dias_cumprir' => $this->dias_cumprir,
             'rollover_primeiro_deposito' => $this->rollover_primeiro_deposito,
-            'codigo_afiliado' => $this->codigo_afiliado,
+            'afiliados_id' => $this->afiliados_id,
+            'afiliado' => $this->whenLoaded('afiliado', fn () => $this->afiliado === null ? null : [
+                'id' => $this->afiliado->id,
+                'nome' => $this->afiliado->nome,
+                'codigo' => $this->afiliado->codigo,
+            ]),
             'quantidade_indicacoes' => $this->quantidade_indicacoes,
             'vigente' => $this->vigente(),
             'aplicada' => $this->aplicada(),

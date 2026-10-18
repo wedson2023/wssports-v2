@@ -57,7 +57,7 @@ class ClientesPromocoes extends Model
         'ativa',
         'dias_cumprir',
         'rollover_primeiro_deposito',
-        'codigo_afiliado',
+        'afiliados_id',
         'quantidade_indicacoes',
     ];
 
@@ -111,15 +111,23 @@ class ClientesPromocoes extends Model
 
     /**
      * Promoções que valem para o afiliado informado: as sem afiliado e as dele; sem afiliado, só
-     * as sem afiliado (spec 007, FR-018g).
+     * as sem afiliado (spec 007, FR-018g; ligação por afiliados_id desde a spec 012).
      */
-    public function scopeParaAfiliado(Builder $consulta, ?string $codigo_afiliado): Builder
+    public function scopeParaAfiliado(Builder $consulta, ?int $afiliados_id): Builder
     {
-        if ($codigo_afiliado === null || $codigo_afiliado === '') {
-            return $consulta->whereNull('codigo_afiliado');
+        if ($afiliados_id === null) {
+            return $consulta->whereNull('afiliados_id');
         }
 
-        return $consulta->where(fn (Builder $afiliado) => $afiliado->whereNull('codigo_afiliado')->orWhere('codigo_afiliado', $codigo_afiliado));
+        return $consulta->where(fn (Builder $afiliado) => $afiliado->whereNull('afiliados_id')->orWhere('afiliados_id', $afiliados_id));
+    }
+
+    /**
+     * Afiliado dono da promoção (spec 012); nulo = promoção geral.
+     */
+    public function afiliado(): BelongsTo
+    {
+        return $this->belongsTo(Afiliados::class, 'afiliados_id')->withTrashed();
     }
 
     public function vigente(): bool

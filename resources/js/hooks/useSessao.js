@@ -13,13 +13,14 @@ export const SessaoContext = createContext(null);
 // telefone brasileiro com DDD: só dígitos, 10 ou 11
 const parece_telefone = (texto) => /^\d{10,11}$/.test(texto);
 
-// rotas de login da API: apostador entra com telefone, usuário do painel com login
+// rotas de login da API: apostador entra com telefone; usuário do painel e afiliado (spec 012) com login
 const rotas_login = {
     cliente: (identificacao, senha) => api.post('/area-cliente/auth/login', { ddi: '55', telefone: identificacao, password: senha }),
     usuario: (identificacao, senha) => api.post('/auth/login', { login: identificacao, password: senha }),
+    afiliado: (identificacao, senha) => api.post('/area-afiliado/auth/login', { login: identificacao, password: senha }),
 };
 
-const rotas_logout = { cliente: '/area-cliente/auth/logout', usuario: '/auth/logout' };
+const rotas_logout = { cliente: '/area-cliente/auth/logout', usuario: '/auth/logout', afiliado: '/area-afiliado/auth/logout' };
 
 // nome do apostador, para o cabeçalho; sem ele, o cabeçalho mostra só "Olá"
 const nome_do_cliente = async (token) => {
@@ -31,6 +32,20 @@ const nome_do_cliente = async (token) => {
         return null;
     }
 };
+
+// nome do afiliado, para o painel dele (spec 012)
+const nome_do_afiliado = async (token) => {
+    try {
+        const { data } = await api.get('/area-afiliado/meus-dados', { headers: { Authorization: `Bearer ${token}` } });
+
+        return data.data?.nome ?? null;
+    } catch {
+        return null;
+    }
+};
+
+// nome guardado na sessão de cada público; o usuário do painel fica com o login digitado
+const nome_da_sessao = { cliente: nome_do_cliente, afiliado: nome_do_afiliado };
 
 // props da tela que mudam com quem está logado (cotações, limites e saldo do cliente; apostador;
 // limites de aposta da página de regras)
@@ -113,12 +128,13 @@ export const useEstadoSessao = () => {
         });
     }, []);
 
-    // um campo para os dois públicos: tenta primeiro o que o texto parece ser e depois o outro;
-    // devolve a sessão ou lança o erro da última tentativa
+    // um campo para os três públicos: tenta primeiro o que o texto parece ser e depois os outros
+    // (painel antes do afiliado, research R-04 da spec 012); devolve a sessão ou lança o erro da
+    // última tentativa
     const entrar = useCallback(async (identificacao, senha) => {
         const texto = identificacao.trim();
         const somente_digitos = texto.replace(/\D/g, '');
-        const ordem = parece_telefone(somente_digitos) ? ['cliente', 'usuario'] : ['usuario', 'cliente'];
+        const ordem = parece_telefone(somente_digitos) ? ['cliente', 'usuario', 'afiliado'] : ['usuario', 'afiliado', 'cliente'];
         let ultimo_erro = null;
 
         for (const tipo of ordem) {
@@ -128,7 +144,7 @@ export const useEstadoSessao = () => {
 
             try {
                 const { data } = await rotas_login[tipo](valor, senha);
-                const nome = tipo === 'cliente' ? await nome_do_cliente(data.token) : texto;
+                const nome = nome_da_sessao[tipo] ? await nome_da_sessao[tipo](data.token) : texto;
                 const nova = criar_sessao({ tipo, token: data.token, expira_em: data.expira_em, nome });
 
                 definir_sessao(nova);
@@ -143,6 +159,15 @@ export const useEstadoSessao = () => {
         }
 
         throw ultimo_erro;
+    }, []);
+
+    // token novo da mesma sessão (ex.: troca de senha do afiliado, spec 012), mantendo tipo e nome
+    const trocar_token = useCallback((token, expira_em) => {
+        const atual = ler_sessao();
+
+        if (!atual) return;
+
+        definir_sessao(criar_sessao({ tipo: atual.tipo, token, expira_em, nome: atual.nome }));
     }, []);
 
     // cadastro do apostador: a API já devolve o token, então ele entra direto
@@ -204,8 +229,8 @@ export const useEstadoSessao = () => {
     }, []);
 
     return useMemo(
-        () => ({ sessao, entrar, cadastrar, sair, expirar, definir_apostador, acesso_assistido, iniciar_acesso_assistido, encerrar_acesso_assistido }),
-        [sessao, entrar, cadastrar, sair, expirar, definir_apostador, acesso_assistido, iniciar_acesso_assistido, encerrar_acesso_assistido],
+        () => ({ sessao, entrar, cadastrar, sair, expirar, trocar_token, definir_apostador, acesso_assistido, iniciar_acesso_assistido, encerrar_acesso_assistido }),
+        [sessao, entrar, cadastrar, sair, expirar, trocar_token, definir_apostador, acesso_assistido, iniciar_acesso_assistido, encerrar_acesso_assistido],
     );
 };
 

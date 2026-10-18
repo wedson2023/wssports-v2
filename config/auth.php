@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\Afiliados;
 use App\Models\Clientes;
 use App\Models\Usuarios;
 
@@ -55,6 +56,12 @@ return [
             'driver' => 'jwt',
             'provider' => 'clientes',
         ],
+
+        // autenticação dos afiliados por token JWT, separada da do painel e da dos clientes (spec 012)
+        'afiliados' => [
+            'driver' => 'jwt',
+            'provider' => 'afiliados',
+        ],
     ],
 
     /*
@@ -84,6 +91,12 @@ return [
         'clientes' => [
             'driver' => 'eloquent',
             'model' => Clientes::class,
+        ],
+
+        // afiliados que indicam clientes e recebem comissão (spec 012)
+        'afiliados' => [
+            'driver' => 'eloquent',
+            'model' => Afiliados::class,
         ],
 
         // 'users' => [

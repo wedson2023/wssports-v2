@@ -168,6 +168,35 @@ enum Funcao: string
     ];
 
     /**
+     * Permissões de afiliados (spec 012): gestão, situação, comissão e prestação de contas.
+     */
+    public const PERMISSOES_AFILIADOS = [
+        'afiliados.listar',
+        'afiliados.consultar',
+        'afiliados.cadastrar',
+        'afiliados.editar',
+        'afiliados.alterar_situacao',
+        'afiliados.prestar_contas',
+        'afiliados.editar_comissao',
+        'afiliados.excluir',
+        'afiliados.restaurar',
+    ];
+
+    /**
+     * Permissões de afiliados que só Admin e Supervisor podem usar, mesmo que o Gerente as receba.
+     */
+    public const PERMISSOES_AFILIADOS_RESTRITAS = [
+        'afiliados.excluir',
+        'afiliados.restaurar',
+    ];
+
+    /**
+     * Permissão de afiliados que o Gerente pode usar, mas não recebe ao ser cadastrado: a regra de
+     * comissão mexe no custo da banca e é liberada caso a caso.
+     */
+    public const PERMISSAO_AFILIADOS_SOB_PEDIDO = 'afiliados.editar_comissao';
+
+    /**
      * Nível hierárquico: 1 é o topo (Admin) e 4 a base (Vendedor).
      */
     public function nivel(): int
@@ -227,6 +256,11 @@ enum Funcao: string
         $permissoes_pagamentos = array_filter(self::PERMISSOES_PAGAMENTOS, fn (string $permissao) => $this->pode_usar($permissao));
         $permissoes_encerramentos = array_filter(self::PERMISSOES_ENCERRAMENTOS, fn (string $permissao) => $this->pode_usar($permissao));
         $permissoes_cassino = array_filter(self::PERMISSOES_CASSINO, fn (string $permissao) => $this->pode_usar($permissao));
+        $permissoes_afiliados = array_filter(
+            self::PERMISSOES_AFILIADOS,
+            fn (string $permissao) => $this->pode_usar($permissao)
+                && ! ($this === self::Gerente && $permissao === self::PERMISSAO_AFILIADOS_SOB_PEDIDO),
+        );
 
         return [
             ...self::PERMISSOES_GESTAO,
@@ -237,6 +271,7 @@ enum Funcao: string
             ...array_values($permissoes_pagamentos),
             ...array_values($permissoes_encerramentos),
             ...array_values($permissoes_cassino),
+            ...array_values($permissoes_afiliados),
         ];
     }
 
@@ -255,13 +290,22 @@ enum Funcao: string
      * estorno) e, das de confrontos, só as de PERMISSOES_CONFRONTOS_GERENTE. Nas apostas, criar e
      * validar código são só do Vendedor; cancelar, de todos; o resto, de Gerente para cima.
      * Especiais, recursos do site, pagamentos, encerramentos de aposta e cassino são só de Admin e
-     * Supervisor (vincular o gateway, só Admin).
+     * Supervisor (vincular o gateway, só Admin). Afiliados: Vendedor nenhuma; Gerente todas menos
+     * excluir e restaurar.
      */
     public function pode_usar(string $permissao): bool
     {
         // vincular o gateway mexe no dinheiro de toda a banca: só o Admin
         if ($permissao === 'gateway_pagamento.vincular') {
             return $this === self::Admin;
+        }
+
+        if (in_array($permissao, self::PERMISSOES_AFILIADOS, true)) {
+            return match ($this) {
+                self::Admin, self::Supervisor => true,
+                self::Gerente => ! in_array($permissao, self::PERMISSOES_AFILIADOS_RESTRITAS, true),
+                self::Vendedor => false,
+            };
         }
 
         if (in_array($permissao, [...self::PERMISSOES_ESPECIAIS, ...self::PERMISSOES_SITE, ...self::PERMISSOES_PAGAMENTOS, ...self::PERMISSOES_ENCERRAMENTOS, ...self::PERMISSOES_CASSINO], true)) {

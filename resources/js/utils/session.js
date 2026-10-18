@@ -5,7 +5,8 @@ import { chave_sessao, gravar_json, ler_json, remover } from './storage';
 // segundos de folga: o token é descartado um pouco antes de vencer
 const folga_segundos = 30;
 
-// { tipo: 'cliente' | 'usuario', token, nome, vence_em (ms), apostador? }
+// { tipo: 'cliente' | 'usuario' | 'afiliado', token, nome, vence_em (ms), apostador? }
+// o afiliado (spec 012) navega no site como visitante: o token dele só vai nas rotas /area-afiliado
 // apostador (só usuário do painel): 'vendedor' ou 'visitante' (gestor), informado pela tela
 export const ler_sessao = () => {
     const sessao = ler_json(chave_sessao);
