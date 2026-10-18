@@ -45,7 +45,8 @@ servidor DigitalOcean `ai.wssports.bet`
 **Constraints**: servidor com 1 vCPU e 2 GB (build fora dele); sem segredos do `.env` no GitHub;
 nunca deixar o site em manutenção; um deploy por vez
 
-**Scale/Scope**: 1 workflow novo, 4 removidos, 2 scripts de servidor, 1 guia, 1 seeder alterado
+**Scale/Scope**: 1 workflow novo, 4 removidos, 3 scripts (`deploy.sh`, `server_setup.sh`,
+`notify.sh`), 1 guia, 1 seeder alterado
 
 ## Constitution Check
 
@@ -79,7 +80,8 @@ nunca deixar o site em manutenção; um deploy por vez
 | `.github/workflows/tests.yml`, `issues.yml`, `pull-requests.yml`, `update-changelog.yml` | Removidos | FR-019, R-13 |
 
 Mudanças só no servidor (fora do repositório), feitas pelo `server_setup.sh`: usuário `deploy`, dono
-e ACL de `/var/www/wssports`, `/etc/sudoers.d/deploy`, `/var/backups/wssports`, pacote `acl`.
+e ACL de `/var/www/wssports`, `/etc/sudoers.d/deploy`, `/var/backups/wssports`,
+`/var/www/wssports-deploy`, pacote `acl`.
 
 ## Project Structure
 
@@ -108,7 +110,8 @@ specs/013-deploy-continuo/
 
 scripts/deploy/
 ├── deploy.sh                      # passos no servidor, volta e marcadores (R-04, R-05, R-07)
-└── server_setup.sh                # preparação única do servidor (R-06)
+├── server_setup.sh                # preparação única do servidor (R-06)
+└── notify.sh                      # monta o texto do aviso e do resumo da execução (R-10)
 
 docs/deploy/
 └── README.md                      # guia: configurar do zero, segredos, CallMeBot, volta manual, restaurar cópia (FR-020)

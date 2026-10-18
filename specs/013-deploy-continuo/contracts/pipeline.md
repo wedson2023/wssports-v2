@@ -15,7 +15,7 @@
 |---|---|---|---|
 | `verificar` | — | não | artefato `build` (`public/build`) |
 | `deploy` | `verificar` | sim (usuário `deploy`) | `passo_falhou`, `volta`, `copia` |
-| `avisar` | `verificar`, `deploy` (`if: always()`) | não | — |
+| `avisar` | `verificar`, `deploy` (`if: always()`) | não | resumo da execução e WhatsApp (texto de `scripts/deploy/notify.sh`) |
 
 Segredos usados: ver [research.md](../research.md) R-11.
 
@@ -24,7 +24,7 @@ Segredos usados: ver [research.md](../research.md) R-11.
 - **Execução**: `ssh deploy@<host> 'bash -s' -- <commit-completo> < scripts/deploy/deploy.sh`
 - **Entrada**: 1 argumento, o commit a publicar (40 caracteres hexadecimais; qualquer outro valor
   encerra com erro antes de qualquer passo).
-- **Pré-requisitos no servidor**: build novo já em `/var/www/wssports-build-novo`; usuário e
+- **Pré-requisitos no servidor**: build novo já em `/var/www/wssports-deploy/build-novo`; usuário e
   permissões do `server_setup.sh`.
 - **Saída padrão** (marcadores lidos pelo job `deploy`):
 
@@ -45,5 +45,6 @@ Segredos usados: ver [research.md](../research.md) R-11.
 - **Execução**: uma vez, como root, no servidor: `bash server_setup.sh "<chave pública do pipeline>"`.
 - **Faz** (idempotente): instala `acl`; cria o usuário `deploy`; grava a chave em
   `authorized_keys`; ajusta dono e ACL de `/var/www/wssports`; copia a deploy key do GitHub para o
-  `deploy`; cria `/etc/sudoers.d/deploy` (validado com `visudo -c`); cria `/var/backups/wssports`.
+  `deploy`; cria `/etc/sudoers.d/deploy` (validado com `visudo -c`); cria `/var/backups/wssports` e
+  `/var/www/wssports-deploy` (pasta de trabalho do `deploy`).
 - **Não faz**: não mexe no `.env`, no banco, no Nginx nem no Supervisor.

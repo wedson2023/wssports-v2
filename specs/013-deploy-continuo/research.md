@@ -62,17 +62,19 @@ Ordem (FR-005), com `set -Eeuo pipefail` e um `trap ERR` que dispara a volta:
 | # | Passo (`::passo::`) | Comando principal |
 |---|---|---|
 | 1 | manutencao | `php artisan down --retry=15` |
-| 2 | guardar_versao | grava o commit atual (`git rev-parse HEAD`) e copia `public/build` para `public/build.anterior` |
+| 2 | guardar_versao | grava o commit atual (`git rev-parse HEAD`) e copia `public/build` para `/var/www/wssports-deploy/build.anterior` |
 | 3 | atualizar_codigo | `git fetch --prune origin` + `git reset --hard <commit>` (descarta mudanças locais; `.env` e `storage` são ignorados pelo git) |
 | 4 | dependencias | `composer install --no-dev --optimize-autoloader --no-interaction` |
-| 5 | frontend | troca `public/build` pelo build recebido em `/var/www/wssports-build-novo` |
+| 5 | frontend | troca `public/build` pelo build recebido em `/var/www/wssports-deploy/build-novo` |
 | 6 | copia_banco | só se houver migration pendente (R-07) |
 | 7 | migrations | `php artisan migrate --force` |
 | 8 | caches | `php artisan optimize` (config, rotas, views e eventos) |
 | 9 | fila | `sudo supervisorctl restart wssports-fila:*` |
 | 10 | no_ar | `php artisan up` |
 
-**Volta (FR-008)**: `git reset --hard <commit guardado>`, devolve `public/build.anterior`,
+**Volta (FR-008)**: desfaz só os passos que já aconteceram (U2 do `/speckit-analyze`): sem commit
+guardado ainda, apenas `php artisan up`; com ele, `git reset --hard <commit guardado>`, devolve
+`/var/www/wssports-deploy/build.anterior` (se o frontend já tinha sido trocado),
 `composer install` do commit antigo, `php artisan optimize`, reinicia a fila e `php artisan up`. O
 `php artisan up` roda também num `trap EXIT` final, para o site nunca ficar em manutenção depois do
 fim (FR-009), mesmo que a volta falhe.
@@ -89,7 +91,11 @@ fim (FR-009), mesmo que a volta falhe.
   - a deploy key do GitHub (só leitura) copiada para `/home/deploy/.ssh`;
   - `/etc/sudoers.d/deploy` com uma única linha:
     `deploy ALL=(root) NOPASSWD: /usr/bin/supervisorctl restart wssports-fila\:*` (FR-012);
-  - pasta de cópias `/var/backups/wssports` (`deploy`, 700).
+  - pasta de cópias `/var/backups/wssports` (`deploy`, 700);
+  - pasta de trabalho `/var/www/wssports-deploy` (`deploy`, 750), onde ficam `build-novo` (recebido do
+    pipeline e recriado a cada deploy) e `build.anterior` (para a volta); fica fora de
+    `/var/www/wssports/public`, então os arquivos antigos não são servidos pela web. Como `/var/www` é
+    do root, o `deploy` não conseguiria recriar uma pasta direto ali depois do primeiro `mv`.
 - **`.env`**: continua `root:www-data 640`; o `deploy` lê porque está no grupo `www-data`, e nunca o
   altera (FR-006).
 - **Alternativas**: rodar o `artisan` como `www-data` via `sudo -u` (rejeitada: daria ao `deploy` todo
@@ -108,8 +114,10 @@ fim (FR-009), mesmo que a volta falhe.
 
 ## R-08 — Envio do frontend compilado
 
-- **Decisão**: `rsync -az --delete public/build/ deploy@servidor:/var/www/wssports-build-novo/` antes do
-  script; o passo 5 troca as pastas com `mv` (atômico na mesma partição).
+- **Decisão**: `rsync -az --delete public/build/ deploy@servidor:/var/www/wssports-deploy/build-novo/`
+  antes do script (o `rsync` cria a subpasta, porque `/var/www/wssports-deploy` é do `deploy`); o passo
+  5 move `public/build` para `build.anterior` e `build-novo` para `public/build` com `mv` (atômico na
+  mesma partição).
 - **Verificado**: o frontend não lê variáveis do `.env` na compilação (nenhum `import.meta.env`
   próprio), então o build do GitHub é igual ao do servidor. O `sw.js` do PWA sai dentro de
   `public/build` e é servido pela rota `sw.js` (`ArquivosPwaController`); a versão do build continua
@@ -123,6 +131,11 @@ fim (FR-009), mesmo que a volta falhe.
 
 ## R-10 — Aviso pelo CallMeBot
 
+- **Montagem do texto**: em `scripts/deploy/notify.sh`, que recebe o resultado por variáveis de ambiente
+  (`RESULTADO`, `COMMIT_CURTO`, `MENSAGEM_COMMIT`, `AUTOR`, `DURACAO`, `PASSO_FALHOU`, `VOLTA`, `COPIA`,
+  `LINK_LOG`) e imprime a mensagem; dá para rodar localmente com valores de falha, sem quebrar a
+  `main` (U3 do `/speckit-analyze`). O mesmo texto vai para o resumo da execução
+  (`$GITHUB_STEP_SUMMARY`, FR-010).
 - **Decisão**: no job `avisar`, `curl --get --max-time 30` em
   `https://api.callmebot.com/whatsapp.php` com `phone` (segredo `CALLMEBOT_TELEFONE`, formato
   `55DDNÚMERO`), `apikey` (segredo `CALLMEBOT_CHAVE`) e `text` codificado pelo próprio `curl`

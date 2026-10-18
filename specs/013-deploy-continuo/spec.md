@@ -85,8 +85,8 @@ em poucos minutos, a mudança no `https://ai.wssports.bet` e o deploy concluído
 3. **Given** um push com mudança no frontend, **When** o deploy termina, **Then** os usuários passam
    a receber o frontend novo na próxima interação, sem limpar cache (regra da constituição).
 4. **Given** um push em outra branch, **When** ele chega ao GitHub, **Then** nenhum deploy acontece.
-5. **Given** um deploy em andamento, **When** chega outro push na `main`, **Then** o segundo deploy
-   espera o primeiro terminar e depois roda; nunca há dois deploys ao mesmo tempo.
+5. **Given** um deploy em andamento, **When** chegam outros pushes na `main`, **Then** o deploy do
+   push mais recente roda quando o atual terminar; nunca há dois deploys ao mesmo tempo.
 
 ---
 
@@ -215,8 +215,9 @@ que o Admin tem todas as permissões da função dele.
 
 - **Servidor fora do ar ou SSH recusado**: o deploy falha antes de alterar qualquer coisa; aviso de
   falha com o passo "conexão com o servidor".
-- **Dois pushes seguidos**: os deploys rodam um de cada vez, em ordem; o segundo só começa quando o
-  primeiro termina (com sucesso ou não).
+- **Vários pushes seguidos**: nunca há dois deploys ao mesmo tempo; o que está rodando termina e, em
+  seguida, roda só o do push mais recente (os intermediários são pulados, porque o mais recente já
+  contém o código deles).
 - **Push que só muda documentação (`specs/`, `.md`)**: o deploy roda do mesmo jeito (simples e
   previsível); a parada de segundos é aceita.
 - **Commit que não existe no servidor ainda**: o servidor busca o commit no GitHub antes de
@@ -247,8 +248,8 @@ que o Admin tem todas as permissões da função dele.
 
 - **FR-001**: O deploy DEVE rodar a cada push na branch `main` e por disparo manual no GitHub; pushes
   em outras branches NÃO DEVEM disparar deploy.
-- **FR-002**: Só um deploy DEVE rodar por vez; um novo push durante um deploy DEVE esperar o atual
-  terminar (sem cancelar o que está em andamento).
+- **FR-002**: Só um deploy DEVE rodar por vez, sem cancelar o que está em andamento. Com vários pushes
+  durante um deploy, só o mais recente DEVE ser publicado em seguida (ele já contém os anteriores).
 
 **Verificações (antes de acessar o servidor)**
 

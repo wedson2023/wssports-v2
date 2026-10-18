@@ -42,8 +42,9 @@ sucesso
 | `/var/www/wssports/.env` | `root:www-data 640` | configuração; nunca alterada pelo deploy |
 | `/var/www/wssports/storage`, `bootstrap/cache` | ACL `deploy` + `www-data` (rwX, padrão herdado) | logs, sessões, caches |
 | `/var/www/wssports/public/build` | `deploy:www-data` | frontend em uso |
-| `/var/www/wssports/public/build.anterior` | `deploy:www-data` | frontend do deploy anterior (para a volta) |
-| `/var/www/wssports-build-novo` | `deploy` | build recebido do pipeline, antes da troca |
+| `/var/www/wssports-deploy` | `deploy`, 750 | pasta de trabalho do deploy (fora da pasta pública) |
+| `/var/www/wssports-deploy/build.anterior` | `deploy` | frontend do deploy anterior (para a volta) |
+| `/var/www/wssports-deploy/build-novo` | `deploy` | build recebido do pipeline, antes da troca; recriado a cada deploy |
 | `/var/backups/wssports/*.sql.gz` | `deploy`, 600 (pasta 700) | cópias do banco; só as 5 mais recentes |
 | `/etc/sudoers.d/deploy` | `root`, 440 | permissão única de reiniciar a fila |
 
