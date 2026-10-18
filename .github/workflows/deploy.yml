@@ -1,0 +1,184 @@
+# Deploy contínuo do servidor de teste ai.wssports.bet (spec 013; contracts/pipeline.md).
+# verificar: sintaxe do PHP e compilação do frontend, sem tocar no servidor.
+# deploy: envia o frontend e roda scripts/deploy/deploy.sh no servidor pelo usuário deploy.
+# avisar: resumo da execução e WhatsApp pelo CallMeBot, com sucesso ou falha.
+name: Deploy
+
+on:
+    push:
+        branches: [main]
+    workflow_dispatch:
+
+# um deploy por vez; o que está rodando nunca é cancelado (R-03)
+concurrency:
+    group: deploy-ai-wssports
+    cancel-in-progress: false
+
+permissions:
+    contents: read
+
+jobs:
+    verificar:
+        runs-on: ubuntu-24.04
+        outputs:
+            mensagem_commit: ${{ steps.dados.outputs.mensagem_commit }}
+            commit_curto: ${{ steps.dados.outputs.commit_curto }}
+            inicio: ${{ steps.dados.outputs.inicio }}
+        steps:
+            - name: Início da execução
+              id: inicio
+              run: echo "inicio=$(date +%s)" >> "$GITHUB_OUTPUT"
+
+            - uses: actions/checkout@v5
+
+            # a mensagem vem do git log porque o disparo manual não tem head_commit
+            - name: Dados do commit
+              id: dados
+              env:
+                  INICIO: ${{ steps.inicio.outputs.inicio }}
+              run: |
+                  {
+                      echo "mensagem_commit=$(git log -1 --format=%s | cut -c1-80)"
+                      echo "commit_curto=${GITHUB_SHA:0:7}"
+                      echo "inicio=$INICIO"
+                  } >> "$GITHUB_OUTPUT"
+
+            # não é teste automatizado: só confere se cada arquivo é PHP válido (R-09)
+            - name: Sintaxe do PHP
+              run: |
+                  php -v | head -1
+                  find app bootstrap config database routes -name '*.php' -print0 | xargs -0 -n1 -P4 php -l > /dev/null
+
+            - uses: actions/setup-node@v5
+              with:
+                  node-version: 20
+                  cache: npm
+
+            - name: Dependências do frontend
+              run: npm ci
+
+            - name: Compilação do frontend
+              run: npm run build
+
+            - uses: actions/upload-artifact@v5
+              with:
+                  name: build
+                  path: public/build
+                  retention-days: 1
+
+    deploy:
+        needs: verificar
+        runs-on: ubuntu-24.04
+        outputs:
+            passo_falhou: ${{ steps.marcadores.outputs.passo_falhou }}
+            volta: ${{ steps.marcadores.outputs.volta }}
+            copia: ${{ steps.marcadores.outputs.copia }}
+        env:
+            DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+            DEPLOY_USUARIO: ${{ secrets.DEPLOY_USUARIO }}
+        steps:
+            - uses: actions/checkout@v5
+
+            - uses: actions/download-artifact@v5
+              with:
+                  name: build
+                  path: build
+
+            # a impressão digital do servidor vem do segredo: conexão recusada se ela mudar (FR-014)
+            - name: Chave SSH
+              env:
+                  DEPLOY_CHAVE_SSH: ${{ secrets.DEPLOY_CHAVE_SSH }}
+                  DEPLOY_KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
+              run: |
+                  install -d -m 700 ~/.ssh
+                  printf '%s\n' "$DEPLOY_CHAVE_SSH" > ~/.ssh/deploy_chave
+                  chmod 600 ~/.ssh/deploy_chave
+                  printf '%s\n' "$DEPLOY_KNOWN_HOSTS" > ~/.ssh/known_hosts
+                  echo "OPCOES_SSH=-i $HOME/.ssh/deploy_chave -o StrictHostKeyChecking=yes -o BatchMode=yes" >> "$GITHUB_ENV"
+
+            - name: Envio do frontend
+              run: rsync -az --delete -e "ssh $OPCOES_SSH" build/ "$DEPLOY_USUARIO@$DEPLOY_HOST:/var/www/wssports-deploy/build-novo/"
+
+            - name: Deploy no servidor
+              run: |
+                  set -o pipefail
+                  ssh $OPCOES_SSH "$DEPLOY_USUARIO@$DEPLOY_HOST" 'bash -s' -- "$GITHUB_SHA" < scripts/deploy/deploy.sh 2>&1 | tee saida.log
+
+            - name: Marcadores do deploy
+              id: marcadores
+              if: always()
+              run: |
+                  touch saida.log
+                  marcador() { grep -m1 "^::$1:: " saida.log | cut -d' ' -f2- || true; }
+                  {
+                      echo "passo_falhou=$(marcador falha)"
+                      echo "volta=$(marcador volta)"
+                      echo "copia=$(marcador copia)"
+                  } >> "$GITHUB_OUTPUT"
+
+            - name: Apagar a chave
+              if: always()
+              run: rm -f ~/.ssh/deploy_chave
+
+    avisar:
+        needs: [verificar, deploy]
+        if: always()
+        runs-on: ubuntu-24.04
+        steps:
+            - uses: actions/checkout@v5
+              with:
+                  sparse-checkout: scripts/deploy
+
+            - name: Montar o aviso
+              env:
+                  RESULTADO_VERIFICAR: ${{ needs.verificar.result }}
+                  RESULTADO_DEPLOY: ${{ needs.deploy.result }}
+                  INICIO: ${{ needs.verificar.outputs.inicio }}
+                  COMMIT_CURTO: ${{ needs.verificar.outputs.commit_curto }}
+                  MENSAGEM_COMMIT: ${{ needs.verificar.outputs.mensagem_commit }}
+                  AUTOR: ${{ github.actor }}
+                  PASSO_FALHOU: ${{ needs.deploy.outputs.passo_falhou }}
+                  VOLTA: ${{ needs.deploy.outputs.volta }}
+                  COPIA: ${{ needs.deploy.outputs.copia }}
+                  LINK_LOG: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
+              run: |
+                  if [[ "$RESULTADO_VERIFICAR" != success ]]; then
+                      export RESULTADO=falha_verificacao
+                  elif [[ "$RESULTADO_DEPLOY" == success ]]; then
+                      export RESULTADO=sucesso
+                  else
+                      export RESULTADO=falha_servidor
+                  fi
+
+                  segundos=$(( $(date +%s) - ${INICIO:-$(date +%s)} ))
+                  export DURACAO="$((segundos / 60))min $((segundos % 60))s"
+                  export COMMIT_CURTO="${COMMIT_CURTO:-${GITHUB_SHA:0:7}}"
+
+                  bash scripts/deploy/notify.sh > aviso.txt
+                  cat aviso.txt
+                  {
+                      echo '```text'
+                      cat aviso.txt
+                      echo '```'
+                  } >> "$GITHUB_STEP_SUMMARY"
+
+            # falha no envio não muda o resultado do deploy (FR-017)
+            - name: Enviar no WhatsApp
+              continue-on-error: true
+              env:
+                  CALLMEBOT_TELEFONE: ${{ secrets.CALLMEBOT_TELEFONE }}
+                  CALLMEBOT_CHAVE: ${{ secrets.CALLMEBOT_CHAVE }}
+              run: |
+                  if [[ -z "$CALLMEBOT_TELEFONE" || -z "$CALLMEBOT_CHAVE" ]]; then
+                      echo "::warning::Segredos do CallMeBot não cadastrados: aviso no WhatsApp não enviado."
+                      exit 0
+                  fi
+
+                  if ! curl --silent --show-error --fail --get --max-time 30 \
+                      --data-urlencode "phone=$CALLMEBOT_TELEFONE" \
+                      --data-urlencode "text@aviso.txt" \
+                      --data-urlencode "apikey=$CALLMEBOT_CHAVE" \
+                      https://api.callmebot.com/whatsapp.php > /dev/null; then
+                      echo "::warning::Não foi possível enviar o aviso no WhatsApp."
+                      exit 1
+                  fi

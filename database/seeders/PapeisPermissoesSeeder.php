@@ -11,7 +11,8 @@ use Spatie\Permission\PermissionRegistrar;
 
 /**
  * Cria os papéis (funções) e as permissões de gestão de usuários, de clientes, de confrontos, de
- * apostas, de especiais e dos recursos do site.
+ * apostas, de especiais, dos recursos do site, de pagamentos, de encerramentos, do cassino e de
+ * afiliados, para a instalação num banco novo não depender da ordem dos outros seeders.
  * Os papéis não recebem permissões: elas são atribuídas diretamente a cada usuário.
  */
 class PapeisPermissoesSeeder extends Seeder
@@ -28,6 +29,9 @@ class PapeisPermissoesSeeder extends Seeder
             ...Funcao::PERMISSOES_ESPECIAIS,
             ...Funcao::PERMISSOES_SITE,
             ...Funcao::PERMISSOES_PAGAMENTOS,
+            ...Funcao::PERMISSOES_ENCERRAMENTOS,
+            ...Funcao::PERMISSOES_CASSINO,
+            ...Funcao::PERMISSOES_AFILIADOS,
         ];
 
         foreach ($permissoes as $permissao) {
