@@ -147,7 +147,8 @@ Afiliado com `meio_pagamento`, `comissao` vigente, `valor_a_receber`, `ultima_pr
 
 Campos: `nome`, `email`, `cpf`, `ddi`, `telefone`, `cidade`, `estado`, `endereco`, `pix_tipo_chave`,
 `pix_chave`, `password` (+ confirmação; invalida os tokens), `usuarios_id` (só Admin/Supervisor),
-`codigo` (só Admin/Supervisor). `login` é `prohibited`.
+`codigo` (só Admin/Supervisor; letras, números, `.`, `-` e `_`, de 4 a 50, gravado em maiúsculas).
+`login` é `prohibited`.
 
 ### 2.6 `PATCH /afiliados/{afiliado}/situacao` — `afiliados.alterar_situacao`
 

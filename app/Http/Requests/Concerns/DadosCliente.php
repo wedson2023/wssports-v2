@@ -122,7 +122,10 @@ trait DadosCliente
             'data_nascimento.before_or_equal' => 'É preciso ter 18 anos ou mais.',
             'genero.required' => 'O gênero é obrigatório.',
             'genero.enum' => 'O gênero informado é inválido.',
+            'codigo_afiliado.string' => 'Código de afiliado não encontrado.',
             'codigo_afiliado.max' => 'O código de afiliado deve ter no máximo 50 caracteres.',
+            'afiliados_id.integer' => 'Afiliado não encontrado.',
+            'afiliados_id.exists' => 'Afiliado não encontrado.',
             'aceita_promocao.boolean' => 'O campo aceita promoção deve ser verdadeiro ou falso.',
         ];
     }

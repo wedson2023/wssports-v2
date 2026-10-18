@@ -4,6 +4,8 @@ namespace App\Http\Requests;
 
 use App\Enums\Genero;
 use App\Http\Requests\Concerns\DadosCliente;
+use App\Services\VinculoAfiliados;
+use Closure;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Http\Exceptions\HttpResponseException;
 use Illuminate\Support\Facades\RateLimiter;
@@ -53,7 +55,9 @@ class StoreClientesRequest extends FormRequest
             'password' => ['required', 'confirmed', $this->regra_senha()],
             'data_nascimento' => ['required', 'date', 'before_or_equal:'.now()->subYears(18)->toDateString()],
             'genero' => ['required', Rule::enum(Genero::class)],
-            'codigo_afiliado' => ['nullable', 'string', 'max:50'],
+            // link do afiliado (?user=, spec 012): código inexistente recusa; afiliado não ativo
+            // deixa o cliente sem ligação (CadastroClientes)
+            'codigo_afiliado' => ['nullable', 'string', 'max:50', $this->regra_codigo_afiliado()],
             // link de indicação de outro cliente (spec 007); código inexistente é ignorado
             'codigo_indicacao' => ['nullable', 'string', 'size:8'],
             'aceita_promocao' => ['boolean'],
@@ -69,6 +73,18 @@ class StoreClientesRequest extends FormRequest
             ...$this->mensagens_dados_cliente(),
             'codigo_indicacao.size' => 'O código de indicação deve ter 8 caracteres.',
         ];
+    }
+
+    /**
+     * O código precisa ser de um afiliado cadastrado, mesmo que não esteja ativo (FR-023).
+     */
+    private function regra_codigo_afiliado(): Closure
+    {
+        return function (string $atributo, mixed $codigo, Closure $falhar) {
+            if (app(VinculoAfiliados::class)->resolver((string) $codigo) === null) {
+                $falhar('Código de afiliado não encontrado.');
+            }
+        };
     }
 
     /**

@@ -96,7 +96,7 @@ configurada) para os e-mails. No navegador: só a sessão existente, com `tipo: 
 | VI. Consistência | Mesmo padrão de `clientes`: guard JWT + middleware de acesso, Request/Resource, `permissao_cliente`, sufixo de exclusão, restauração com conflitos, recuperação de senha, seeder por recurso, configuração como `ConfiguracoesCassino`. Padrão novo: primeiros Mailables do projeto (R-10, R-21), aprovado pelo responsável em 2026-10-17 | ✅ Pass |
 | VII. Sistema antigo | Arquivos e funcionamento em R-01; diferenças em R-02, todas aprovadas na spec | ✅ Pass |
 | VIII. Fidelidade visual | Páginas iguais às do antigo; melhorias aprovadas na spec (Clarifications); referências em contracts/paginas.md | ✅ Pass |
-| IX. Dados fake | Nenhum (R-19) | ✅ Pass |
+| IX. Dados fake | Nenhum fake novo; usa o fake existente `DadosFake::tema()` (spec 005) nas cores das páginas e dos e-mails, fora de operações com dinheiro, lido de um ponto único (R-19) | ✅ Pass |
 | Stack: dependências | Nenhum pacote novo | ✅ Pass |
 | Timestamps, soft delete e comentários | Todas as tabelas novas com `timestamps()` + `softDeletes()`; toda coluna com `->comment()` | ✅ Pass |
 | Referências a tabelas inexistentes | `clientes.codigo_afiliado` e `clientes_promocoes.codigo_afiliado` (specs 002 e 007) viram `afiliados_id` com FK (R-09) | ✅ Pass |
@@ -191,6 +191,7 @@ app/
 │   ├── AfiliadoCadastroRecebido.php
 │   ├── AfiliadoAprovado.php
 │   ├── AfiliadoRecusado.php
+│   ├── Concerns/DadosEmail.php        # logo, nome e cor (fake do tema, R-19) dos e-mails
 │   ├── AfiliadoCodigoRecuperacao.php
 │   └── ClienteCadastroRealizado.php   # boas-vindas do cliente (R-21)
 ├── Listeners/
@@ -247,7 +248,8 @@ database/
 │   ├── xxxx_alterar_afiliado_clientes_e_promocoes_table.php   # codigo_afiliado → afiliados_id
 │   └── xxxx_add_afiliados_configuracoes_table.php
 └── seeders/
-    └── AfiliadosSeeder.php
+    ├── AfiliadosSeeder.php
+    └── AfiliadosVolumeSeeder.php      # 10.000 lançamentos para medir o SC-007
 
 resources/views/emails/
 ├── afiliados/

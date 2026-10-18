@@ -48,6 +48,8 @@ Sem testes automatizados (constituição). Validar pelos passos abaixo, usando a
   `afiliado`.
 - Código inexistente → 422 "Código de afiliado não encontrado.".
 - Inativar o afiliado, cadastrar outro cliente com o código → cliente sem afiliado.
+- Abrir `/?user=maria.souza` (afiliado do seeder com código `MARIA.SOUZA`, como um login antigo) e
+  cadastrar → cliente ligado a ele (SC-006).
 - Promoção de "Qualquer depósito" com `afiliados_id` do afiliado e outra geral → o cliente dele
   recebe a do afiliado; um cliente sem afiliado recebe a geral.
 
@@ -63,6 +65,8 @@ Com o gateway de testes da spec 007 (ou aprovando o depósito pelo fluxo de conf
 | Qualquer depósito 10% | estorno parcial de 40,00 do depósito de 100,00 | −4,00 |
 | Qualquer depósito 10% | saque pago | nenhum |
 
+- Repetir os casos da tabela com clientes diferentes até somar 20 movimentos ou mais e conferir
+  centavo a centavo (SC-003).
 - Reprocessar a mesma notificação do depósito → nenhum lançamento a mais.
 - Trocar a regra para 15% (`PUT /afiliados/{id}/comissao`) → depósitos seguintes com 15%, anteriores
   com 10%.
@@ -87,6 +91,8 @@ Com o gateway de testes da spec 007 (ou aprovando o depósito pelo fluxo de conf
 - Meus dados: alterar telefone e Pix; nome/CPF só leitura. Alterar senha com a atual errada → erro
   no campo; certa → continua logado com token novo.
 - Abrir `/afiliados` sem sessão → vai para `/?entrar=1`.
+- `php artisan db:seed --class=AfiliadosVolumeSeeder`, entrar com o afiliado do seeder e medir a
+  abertura do painel na aba Rede do navegador → até 2 s (SC-007).
 
 ## 8. Gestão pela API (US8)
 

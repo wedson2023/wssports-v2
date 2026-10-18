@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Enums\LiquidacaoCriarAposta;
 use App\Enums\MeioDeposito;
 use App\Enums\ModoSaque;
+use App\Enums\TipoGanhoAfiliado;
 use App\Services\ArmazenamentoImagens;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -98,6 +99,9 @@ class Configuracoes extends Model
         'cassino_demo_habilitado',
         'data_prestacao_contas_cassino',
         'dias_registro_chamadas_cassino',
+        // regra de comissão padrão do cadastro público de afiliados (spec 012)
+        'afiliados_tipo_ganho_padrao',
+        'afiliados_percentual_padrao',
     ];
 
     /**
@@ -159,6 +163,9 @@ class Configuracoes extends Model
             'cassino_demo_habilitado' => 'boolean',
             'data_prestacao_contas_cassino' => 'date',
             'dias_registro_chamadas_cassino' => 'integer',
+            // afiliados (spec 012)
+            'afiliados_tipo_ganho_padrao' => TipoGanhoAfiliado::class,
+            'afiliados_percentual_padrao' => 'decimal:2',
         ];
     }
 

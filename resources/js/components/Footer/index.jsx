@@ -31,9 +31,9 @@ export default function Footer() {
                 ))}
             </Icons>
             <Links>
-                {/* "Quem somos" e "Afiliados" ainda não têm tela no sistema novo */}
+                {/* "Quem somos" ainda não tem tela no sistema novo */}
                 <TextLink as="span">Quem somos</TextLink>
-                <TextLink as="span">Afiliados</TextLink>
+                <TextLink as={Link} href="/cadastro-afiliado">Afiliados</TextLink>
                 <TextLink as={Link} href="/regras">Termos e condições</TextLink>
             </Links>
             <Copy>

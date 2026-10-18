@@ -1,6 +1,15 @@
 <?php
 
 use App\Http\Controllers\AcessosAssistidosController;
+use App\Http\Controllers\AfiliadosComissoesController;
+use App\Http\Controllers\AfiliadosController;
+use App\Http\Controllers\AfiliadosExtratoController;
+use App\Http\Controllers\AfiliadosPrestacoesController;
+use App\Http\Controllers\AreaAfiliadoAutenticacaoController;
+use App\Http\Controllers\AreaAfiliadoCadastroController;
+use App\Http\Controllers\AreaAfiliadoMeusDadosController;
+use App\Http\Controllers\AreaAfiliadoPainelController;
+use App\Http\Controllers\AreaAfiliadoRecuperacaoSenhaController;
 use App\Http\Controllers\ApostasController;
 use App\Http\Controllers\ApostasEncerramentosController;
 use App\Http\Controllers\ApostasPalpitesController;
@@ -40,6 +49,7 @@ use App\Http\Controllers\ClientesController;
 use App\Http\Controllers\ClientesMeiosPagamentoController;
 use App\Http\Controllers\ClientesPromocoesController;
 use App\Http\Controllers\ClientesTransacoesController;
+use App\Http\Controllers\ConfiguracoesAfiliadosController;
 use App\Http\Controllers\ConfiguracoesApuracaoController;
 use App\Http\Controllers\ConfiguracoesCassinoController;
 use App\Http\Controllers\ConfiguracoesCriarApostaController;
@@ -78,6 +88,7 @@ use App\Http\Controllers\UsuariosController;
 use App\Http\Controllers\ValidacaoApostasController;
 use App\Http\Controllers\VisitantesConfiguracoesController;
 use App\Http\Controllers\WebhooksMercadoPagoController;
+use App\Http\Middleware\GarantirAcessoAfiliado;
 use App\Http\Middleware\GarantirAcessoCliente;
 use Illuminate\Support\Facades\Route;
 
@@ -177,6 +188,30 @@ Route::prefix('area-cliente')->group(function () {
     });
 });
 
+// área do afiliado (spec 012): guard próprio, separado do painel e dos clientes
+Route::prefix('area-afiliado')->group(function () {
+    // limite de 5 cadastros por minuto por IP aplicado no CadastroPublicoAfiliadoRequest
+    Route::post('cadastro', [AreaAfiliadoCadastroController::class, 'store']);
+    Route::post('auth/login', [AreaAfiliadoAutenticacaoController::class, 'login']);
+    Route::post('auth/recuperar-senha', [AreaAfiliadoRecuperacaoSenhaController::class, 'solicitar']);
+    Route::post('auth/redefinir-senha', [AreaAfiliadoRecuperacaoSenhaController::class, 'redefinir']);
+
+    // rotas autenticadas: exigem token de afiliado, afiliado ativo e token posterior à data de corte
+    Route::middleware(['auth:afiliados', GarantirAcessoAfiliado::class])->group(function () {
+        Route::post('auth/refresh', [AreaAfiliadoAutenticacaoController::class, 'refresh']);
+        Route::post('auth/logout', [AreaAfiliadoAutenticacaoController::class, 'logout']);
+
+        // painel do afiliado (US7): só os dados do próprio afiliado do token
+        Route::get('painel', [AreaAfiliadoPainelController::class, 'painel']);
+        Route::get('extrato', [AreaAfiliadoPainelController::class, 'extrato']);
+        Route::get('clientes', [AreaAfiliadoPainelController::class, 'clientes']);
+        Route::get('prestacoes', [AreaAfiliadoPainelController::class, 'prestacoes']);
+        Route::get('meus-dados', [AreaAfiliadoMeusDadosController::class, 'show']);
+        Route::patch('meus-dados', [AreaAfiliadoMeusDadosController::class, 'update']);
+        Route::put('meus-dados/senha', [AreaAfiliadoMeusDadosController::class, 'alterar_senha']);
+    });
+});
+
 // gestão de clientes e promoções no painel: mesmo token dos usuários da spec 001
 Route::middleware(['auth:api', 'garantir_acesso'])->group(function () {
     $cliente_nao_encontrado = fn () => abort(404, 'Cliente não encontrado.');
@@ -212,6 +247,45 @@ Route::middleware(['auth:api', 'garantir_acesso'])->group(function () {
     Route::apiResource('clientes-promocoes', ClientesPromocoesController::class)
         ->parameters(['clientes-promocoes' => 'promocao'])
         ->missing(fn () => abort(404, 'Promoção não encontrada.'));
+});
+
+// gestão de afiliados no painel (spec 012): mesmo token dos usuários; Gerente só vê os seus
+Route::middleware(['auth:api', 'garantir_acesso'])->group(function () {
+    $afiliado_nao_encontrado = fn () => abort(404, 'Afiliado não encontrado.');
+
+    // rotas específicas antes das de afiliados/{afiliado}
+    Route::get('afiliados', [AfiliadosController::class, 'index']);
+    Route::get('afiliados/excluidos', [AfiliadosController::class, 'excluidos']);
+    Route::post('afiliados/{afiliado}/restaurar', [AfiliadosController::class, 'restaurar'])
+        ->withTrashed()
+        ->missing($afiliado_nao_encontrado);
+
+    Route::post('afiliados', [AfiliadosController::class, 'store']);
+    Route::get('afiliados/{afiliado}', [AfiliadosController::class, 'show'])
+        ->whereNumber('afiliado')
+        ->missing($afiliado_nao_encontrado);
+    Route::patch('afiliados/{afiliado}', [AfiliadosController::class, 'update'])
+        ->missing($afiliado_nao_encontrado);
+    Route::delete('afiliados/{afiliado}', [AfiliadosController::class, 'destroy'])
+        ->missing($afiliado_nao_encontrado);
+    Route::patch('afiliados/{afiliado}/situacao', [AfiliadosController::class, 'alterar_situacao'])
+        ->missing($afiliado_nao_encontrado);
+    Route::get('afiliados/{afiliado}/lancamentos', [AfiliadosExtratoController::class, 'lancamentos'])
+        ->missing($afiliado_nao_encontrado);
+    Route::get('afiliados/{afiliado}/clientes', [AfiliadosExtratoController::class, 'clientes'])
+        ->missing($afiliado_nao_encontrado);
+    Route::post('afiliados/{afiliado}/aprovar', [AfiliadosController::class, 'aprovar'])
+        ->missing($afiliado_nao_encontrado);
+    Route::post('afiliados/{afiliado}/recusar', [AfiliadosController::class, 'recusar'])
+        ->missing($afiliado_nao_encontrado);
+    Route::get('afiliados/{afiliado}/comissoes', [AfiliadosComissoesController::class, 'index'])
+        ->missing($afiliado_nao_encontrado);
+    Route::put('afiliados/{afiliado}/comissao', [AfiliadosComissoesController::class, 'update'])
+        ->missing($afiliado_nao_encontrado);
+    Route::get('afiliados/{afiliado}/prestacoes', [AfiliadosPrestacoesController::class, 'index'])
+        ->missing($afiliado_nao_encontrado);
+    Route::post('afiliados/{afiliado}/prestacoes', [AfiliadosPrestacoesController::class, 'store'])
+        ->missing($afiliado_nao_encontrado);
 });
 
 // listagem pública de jogos (pré-jogo e ao vivo): sem login; aceita token de cliente ou do painel
@@ -403,6 +477,9 @@ Route::middleware(['auth:api', 'garantir_acesso'])->group(function () {
     // configurações do cassino (spec 011)
     Route::get('configuracoes/cassino', [ConfiguracoesCassinoController::class, 'show']);
     Route::put('configuracoes/cassino', [ConfiguracoesCassinoController::class, 'update']);
+    // regra de comissão padrão do cadastro público de afiliados (spec 012)
+    Route::get('configuracoes/afiliados', [ConfiguracoesAfiliadosController::class, 'show']);
+    Route::put('configuracoes/afiliados', [ConfiguracoesAfiliadosController::class, 'update']);
 
     Route::post('clientes/{cliente}/acesso-assistido', [AcessosAssistidosController::class, 'store'])
         ->missing(fn () => abort(404, 'Cliente não encontrado.'));

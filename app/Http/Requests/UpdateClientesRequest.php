@@ -47,7 +47,8 @@ class UpdateClientesRequest extends FormRequest
             'cpf' => ['sometimes', ...$this->regras_cpf($cliente->id)],
             'data_nascimento' => ['sometimes', 'required', 'date', 'before_or_equal:'.now()->subYears(18)->toDateString()],
             'genero' => ['sometimes', 'required', Rule::enum(Genero::class)],
-            'codigo_afiliado' => ['sometimes', 'nullable', 'string', 'max:50'],
+            // afiliado que indicou o cliente (spec 012); só a gestão altera
+            'afiliados_id' => ['sometimes', 'nullable', 'integer', Rule::exists('afiliados', 'id')->whereNull('deleted_at')],
             'password' => ['sometimes', 'required', 'confirmed', $this->regra_senha()],
             'saldo' => ['prohibited'],
             'saldo_promocao_esportes' => ['prohibited'],

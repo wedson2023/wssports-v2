@@ -173,8 +173,8 @@ class Indicacoes
     {
         return ClientesPromocoes::vigentes()
             ->where('categoria', CategoriaPromocao::Indicação)
-            ->paraAfiliado($indicador->codigo_afiliado)
-            ->orderByRaw('codigo_afiliado is null')
+            ->paraAfiliado($indicador->afiliados_id)
+            ->orderByRaw('afiliados_id is null')
             ->orderBy('id')
             ->first();
     }

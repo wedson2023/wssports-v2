@@ -69,6 +69,18 @@ antigo."
   do antigo (`CadastroMail`, ligada pela configuração `confirmacao_cadastro`) não é trazida, porque
   no sistema novo a conta do cliente já nasce ativa e conectada (spec 002).
 
+### Session 2026-10-17 (`/speckit-analyze`, recomendações aceitas pelo responsável)
+
+- Q: Como fica o código dos afiliados migrados, cujo login antigo pode ter ponto, hífen ou
+  sublinhado? → A: O código aceita letras, números, ponto, hífen e sublinhado (4 a 50); o código
+  gerado no cadastro continua com 8 letras e números. O SC-006 é verificado nesta spec com um
+  afiliado de código igual a um login antigo; a importação real fica para a spec de importação.
+- Q: Telefone pode faltar? → A: Só nos afiliados migrados; nos cadastros novos é obrigatório, como
+  e-mail e CPF.
+- Q: Afiliado Recusado pode ser aprovado depois? → A: Sim (reavaliação), sem nova recusa.
+- Q: A cor do tema usada nas páginas e nos e-mails é dado real? → A: Não; é o fake existente
+  `DadosFake::tema()` (spec 005), registrado nas premissas (Princípio IX).
+
 ## Referências do sistema antigo *(Princípios VII e VIII)*
 
 - Backend: `app/Http/Controllers/FiliadosController.php`, `app/Models/Filiados.php`,
@@ -371,7 +383,8 @@ P1.
 - **Prestação com afiliado na lixeira**: não permitida; é preciso restaurar antes.
 - **Arredondamento**: a comissão é arredondada para 2 casas (meio para cima) em cada lançamento.
 - **Percentual zero**: permitido; os lançamentos são gerados com valor zero e aparecem no extrato.
-- **Código público**: único, sem diferenciar maiúsculas e minúsculas, com letras e números; não
+- **Código público**: único, sem diferenciar maiúsculas e minúsculas, com letras, números, ponto,
+  hífen e sublinhado; não
   pode ser trocado pelo afiliado.
 - **Afiliados migrados sem e-mail ou CPF**: continuam válidos; esses campos só são obrigatórios em
   cadastros novos.
@@ -392,12 +405,13 @@ P1.
   comparar o valor normalizado (só dígitos).
 - **FR-004**: A senha DEVE seguir a regra dos clientes (mínimo de 8 caracteres, com letra e número)
   e ser digitada duas vezes no cadastro e na troca.
-- **FR-005**: A chave PIX DEVE ter tipo (CPF, CNPJ, Celular, E-mail ou Aleatória) e chave validada
+- **FR-005**: A chave PIX DEVE ter tipo (CPF, CNPJ, E-mail, Telefone ou Chave aleatória) e chave validada
   conforme o tipo, guardada como meio de pagamento do afiliado, no padrão dos meios de pagamento do
   cliente.
-- **FR-006**: O código público DEVE ser gerado pelo sistema no cadastro (único, letras maiúsculas e
-  números) e reconhecido sem diferenciar maiúsculas e minúsculas. Admin e Supervisor PODEM
-  alterá-lo pela API, respeitando a unicidade.
+- **FR-006**: O código público DEVE ser gerado pelo sistema no cadastro (único, 8 letras maiúsculas
+  e números) e reconhecido sem diferenciar maiúsculas e minúsculas. Admin e Supervisor PODEM
+  alterá-lo pela API, respeitando a unicidade, com letras, números, ponto, hífen e sublinhado (de 4
+  a 50 caracteres), para caber o login antigo dos afiliados migrados.
 - **FR-007**: A situação DEVE ser uma de: Em análise, Ativo, Inativo, Recusado. A origem DEVE ser
   Painel ou Público.
 
@@ -425,12 +439,13 @@ P1.
 - **FR-013**: O sistema DEVE enviar e-mail ao afiliado no cadastro público (recebido, em análise),
   na aprovação (com o endereço para entrar) e na recusa (com o motivo, se informado). A falha no
   envio NÃO DEVE desfazer o cadastro nem a decisão.
-- **FR-013a**: O cliente que informar e-mail no cadastro (público ou pelo acesso do painel) DEVE
+- **FR-013a**: O cliente que informar e-mail no cadastro DEVE
   receber um e-mail de boas-vindas com o nome dele, a logo da banca e o endereço do site, no visual
   dos e-mails do antigo. Sem e-mail, nada é enviado. A falha no envio NÃO DEVE desfazer o cadastro
   nem impedir a entrada do cliente.
 - **FR-014**: Só Admin e Supervisor com `afiliados.alterar_situacao` DEVEM poder aprovar ou recusar
-  um afiliado "Em análise". Na aprovação, PODEM informar gerente responsável e regra de comissão;
+  um afiliado "Em análise"; um afiliado "Recusado" também PODE ser aprovado depois (reavaliação),
+  mas não recusado de novo. Na aprovação, PODEM informar gerente responsável e regra de comissão;
   sem isso, ficam os atuais.
 
 **Configuração**
@@ -528,18 +543,19 @@ P1.
 - **FR-043**: A listagem DEVE ser paginada (padrão 20, no máximo 100 por página), com filtros por
   situação (Em análise, Ativo, Inativo, Recusado) ou lixeira, busca por nome, login ou código,
   gerente responsável e período, ordenada por nome.
-- **FR-044**: Cada item da listagem DEVE trazer: dados de identificação, situação, gerente, regra
+- **FR-044**: Cada item da listagem DEVE trazer (formato no `contracts/api.md` §2.1): id, nome,
+  login, código, e-mail, CPF, telefone, origem, situação, gerente, regra
   vigente, quantidade de clientes cadastrados no período, total de depósitos aprovados e de saques
   pagos dos clientes no período, comissão gerada no período, valor a receber (lançamentos em
   aberto) e data e valor da última prestação.
-- **FR-045**: A API DEVE permitir consultar um afiliado (`afiliados.consultar`), editar dados e
-  dados (`afiliados.editar`), trocar a regra (`afiliados.editar_comissao`), ativar e inativar (`afiliados.alterar_situacao`), consultar o extrato
+- **FR-045**: A API DEVE permitir consultar um afiliado (`afiliados.consultar`), editar os dados
+  (`afiliados.editar`), trocar a regra (`afiliados.editar_comissao`), ativar e inativar (`afiliados.alterar_situacao`), consultar o extrato
   de lançamentos com filtro de período e de aberto/prestado, os clientes indicados, o histórico de
   prestações e o histórico de regras. Todas as listagens são paginadas (no máximo 100).
 - **FR-046**: Na gestão, CPF, telefone, e-mail e chave PIX DEVEM sair mascarados para quem não tem
   `clientes.ver_dados_completos`, como nos clientes.
 - **FR-047**: A senha do afiliado PODE ser redefinida pela API por quem tem `afiliados.editar`,
-  seguindo a regra de senha; isso invalida os tokens dele.
+  seguindo a regra de senha (tokens invalidados pelo FR-020).
 - **FR-048**: Excluir DEVE ser lógico (lixeira), por Admin ou Supervisor com `afiliados.excluir`;
   login, e-mail, CPF e código recebem o sufixo de exclusão, como nos clientes. Não DEVE existir
   exclusão definitiva.
@@ -625,7 +641,9 @@ P1.
 - **SC-005**: Depois de cada prestação, o valor a receber do afiliado é R$ 0,00 e a prestação
   aparece no histórico, inclusive as de valor zero ou negativo.
 - **SC-006**: 100% dos links antigos `?user=LOGIN` de afiliados migrados continuam ligando novos
-  clientes ao afiliado certo.
+  clientes ao afiliado certo. Nesta spec, verificado com um afiliado cadastrado pela API com o
+  código igual a um login antigo (ex.: `maria.souza`); a conferência com os dados reais fica para a
+  spec de importação dos afiliados.
 - **SC-007**: O painel do afiliado abre com os dados em até 2 segundos para afiliados com até
   10.000 lançamentos.
 - **SC-008**: Nenhuma listagem de afiliados, lançamentos, clientes indicados ou prestações devolve
@@ -641,8 +659,12 @@ P1.
 - O e-mail usa a configuração de envio do Laravel já existente no projeto; o texto segue o do
   `FiliadoMail` antigo, com a mensagem de recusa acrescentada.
 - Os afiliados do sistema antigo serão importados por um processo de migração de dados fora desta
-  spec. Esta spec garante que o código migrado é o login antigo e que e-mail e CPF podem faltar
-  nos migrados.
+  spec. Esta spec garante que o código aceita o login antigo (FR-006) e que e-mail, CPF e
+  telefone podem faltar nos migrados (obrigatórios só nos cadastros novos).
+- Dado fake usado (Princípio IX): a cor principal do tema (`DadosFake::tema()`, spec 005) aparece
+  nas páginas e no botão dos e-mails. Não participa de operações com dinheiro e será substituída
+  pela spec de configurações do tema, sem mudar os componentes nem os e-mails (que leem a cor de um
+  ponto único).
 - A conversão de `clientes.codigo_afiliado` e `clientes_promocoes.codigo_afiliado` para
   referência ao afiliado atende à regra da constituição sobre colunas criadas sem chave
   estrangeira (specs 002 e 007).

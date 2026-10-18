@@ -38,7 +38,12 @@ class ClientesResource extends JsonResource
             'cpf' => $mascarar ? self::mascarar_cpf($cpf) : $cpf,
             'data_nascimento' => $this->data_nascimento?->format('Y-m-d'),
             'genero' => $this->genero,
-            'codigo_afiliado' => $this->codigo_afiliado,
+            'afiliados_id' => $this->afiliados_id,
+            'afiliado' => $this->whenLoaded('afiliado', fn () => $this->afiliado === null ? null : [
+                'id' => $this->afiliado->id,
+                'nome' => $this->afiliado->nome,
+                'codigo' => $this->sem_sufixo($this->afiliado->codigo),
+            ]),
             'aceita_promocao' => $this->configuracoes?->aceita_promocao,
             'ativo' => $this->ativo,
             'saldo' => $this->saldo,
@@ -77,12 +82,12 @@ class ClientesResource extends JsonResource
         return $valor === null ? null : preg_replace(self::SUFIXO_EXCLUSAO, '', $valor);
     }
 
-    private static function mascarar_cpf(?string $cpf): ?string
+    public static function mascarar_cpf(?string $cpf): ?string
     {
         return $cpf === null ? null : '***.'.substr($cpf, 3, 3).'.'.substr($cpf, 6, 3).'-**';
     }
 
-    private static function mascarar_telefone(string $ddi, string $telefone): string
+    public static function mascarar_telefone(string $ddi, string $telefone): string
     {
         if ($ddi !== '55') {
             return self::mascarar_ultimos($telefone);
@@ -91,7 +96,7 @@ class ClientesResource extends JsonResource
         return '('.substr($telefone, 0, 2).') '.str_repeat('*', strlen($telefone) - 6).'-'.substr($telefone, -4);
     }
 
-    private static function mascarar_email(?string $email): ?string
+    public static function mascarar_email(?string $email): ?string
     {
         if ($email === null || ! str_contains($email, '@')) {
             return $email;

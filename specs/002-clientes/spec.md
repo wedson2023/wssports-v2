@@ -541,6 +541,10 @@ transações de estorno.
 - **FR-009**: O código de afiliado, quando informado, DEVE ser guardado como texto, sem validação e
   sem ligação com outra tabela, pois a gestão de afiliados ainda não existe (será ligado em outra
   spec).
+  > Alterado pela spec 012 (FR-023, FR-024, research R-09): o código continua chegando no cadastro
+  > (`codigo_afiliado`, link `?user=`), mas vira a ligação `clientes.afiliados_id` (chave estrangeira
+  > para `afiliados`); código inexistente recusa o cadastro com "Código de afiliado não encontrado." e
+  > afiliado não ativo deixa o cliente sem ligação. A coluna `codigo_afiliado` foi removida.
 - **FR-010**: A senha do cliente DEVE ter no mínimo 8 caracteres, com pelo menos uma letra e um
   número, e DEVE ser informada duas vezes (senha e confirmação) no cadastro, na troca e na
   recuperação; a confirmação diferente DEVE recusar a operação. A senha DEVE ser armazenada de

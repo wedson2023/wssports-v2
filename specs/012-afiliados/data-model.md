@@ -11,16 +11,16 @@ alterada tem `->comment()` em português (constituição). Dinheiro em `decimal(
 | Coluna | Tipo | Regras |
 |---|---|---|
 | `nome` | varchar(150) | obrigatório |
-| `login` | varchar(80) | obrigatório; único entre `afiliados` e `usuarios`, sem diferenciar maiúsculas, contando excluídos; recebe sufixo na exclusão |
+| `login` | varchar(80) | obrigatório; até 50 caracteres com letras, números, ponto, hífen e sublinhado (`/^[A-Za-z0-9._-]{3,50}$/`); único entre `afiliados` e `usuarios`, sem diferenciar maiúsculas, contando excluídos; recebe sufixo na exclusão |
 | `password` | varchar(255) | hash (`cast hashed`); mínimo 8, letras e números |
 | `email` | varchar(150) nulo | único; minúsculas; obrigatório em cadastro novo; sufixo na exclusão |
 | `cpf` | varchar(40) nulo | único; só dígitos; `CpfValido`; obrigatório em cadastro novo; sufixo na exclusão |
 | `ddi` | varchar(3) | padrão `55` |
-| `telefone` | varchar(20) | só dígitos; DDI 55: 10 ou 11 dígitos |
+| `telefone` | varchar(20) nulo | só dígitos; DDI 55: 10 ou 11 dígitos; obrigatório em cadastro novo (pode faltar só nos migrados) |
 | `cidade` | varchar(100) nulo | |
 | `estado` | char(2) nulo | UF ou `EX` (estrangeiro), como no antigo |
 | `endereco` | varchar(255) nulo | |
-| `codigo` | varchar(80) | único; maiúsculas; código público do link `?user=`; sufixo na exclusão |
+| `codigo` | varchar(80) | único; maiúsculas; código público do link `?user=`; gerado com 8 letras e números; alterado pela gestão com `/^[A-Z0-9._-]{4,50}$/`; sufixo na exclusão |
 | `situacao` | varchar(20) | enum `SituacaoAfiliado`: `Em análise`, `Ativo`, `Inativo`, `Recusado` |
 | `motivo_recusa` | varchar(255) nulo | preenchido na recusa |
 | `origem_cadastro` | varchar(20) | enum `OrigemCadastroAfiliado`: `Painel`, `Público` |
@@ -44,7 +44,7 @@ alterada tem `->comment()` em português (constituição). Dinheiro em `decimal(
 ```text
 cadastro pelo painel ─────────────► Ativo ◄──────► Inativo
 cadastro público ──► Em análise ──┬─► Ativo (aprovar: Admin/Supervisor)
-                                  └─► Recusado (recusar: Admin/Supervisor, com motivo opcional)
+                                  └─► Recusado (recusar: Admin/Supervisor, com motivo opcional) ──► Ativo (aprovar depois)
 qualquer situação ──► lixeira (excluir) ──► situação anterior (restaurar)
 ```
 

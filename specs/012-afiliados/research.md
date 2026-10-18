@@ -70,7 +70,9 @@ CPF, SQL concatenado, float, paginação) listadas na spec.
   segue em 401/403/422 e lança o último erro, a mensagem do afiliado aparece quando ele é o último
   público tentado.
 - **Limite de tentativas**: `LoginAfiliadoRequest` igual ao `LoginRequest` (5 por login + IP em
-  60 s), com chave prefixada `afiliado|` para não somar com o do painel.
+  60 s), com chave prefixada `afiliado|` para não somar com o do painel. Efeito aceito: como a tela
+  tenta o painel antes do afiliado, cada senha errada de afiliado também conta no limite do painel,
+  então o 429 pode vir do painel; em qualquer caso, o máximo continua 5 tentativas por minuto.
 - **Unicidade**: login único sem diferenciar maiúsculas, contando excluídos, nos dois sentidos:
   o cadastro de afiliado confere `usuarios` e `afiliados`; o `StoreUsuariosRequest` passa a
   conferir também `afiliados` **(confirmado — alteração na spec 001, Princípio IV)**.
@@ -82,8 +84,9 @@ CPF, SQL concatenado, float, paginação) listadas na spec.
 - **Decisão**: coluna `afiliados.codigo` (até 50), único, gravado em maiúsculas. Novo cadastro:
   8 caracteres do mesmo alfabeto de `Clientes::gerar_codigo_indicacao` (sem 0, O, 1, I). Migrados:
   o login antigo em maiúsculas (o antigo copiava `?user=LOGIN.toUpperCase()`). Admin e Supervisor
-  podem alterar pela API (`codigo` aceito no update só para gestor geral), letras e números, de 4 a
-  50.
+  podem alterar pela API (`codigo` aceito no update só para gestor geral), com letras, números,
+  ponto, hífen e sublinhado, de 4 a 50 (`/^[A-Z0-9._-]{4,50}$/` depois das maiúsculas), para caber o
+  login antigo (decisão do `/speckit-analyze`, U1).
 - **Resolução** (serviço `VinculoAfiliados::resolver`): normaliza (`trim` + maiúsculas) e procura,
   com excluídos, por `codigo = X` ou `codigo LIKE 'X\_deleted\_%'`, preferindo o não excluído.
   Devolve `null` (não existe → erro 422 no cadastro do cliente) ou o afiliado; o cadastro só grava
@@ -99,7 +102,9 @@ CPF, SQL concatenado, float, paginação) listadas na spec.
     `ProcessamentoDepositos::depois_de_aprovar` (o `$primeiro_deposito` já é calculado ali:
     nenhum outro depósito Aprovado ou Estornado do cliente);
   - `registrar_estorno(Depositos $deposito, string $valor_estornado_agora)` — chamado em
-    `ProcessamentoDepositos::estornar`, logo depois do débito, no estorno parcial e no total;
+    `ProcessamentoDepositos::estornar` **depois de gravar o novo `valor_estornado`** (e antes do
+    `return` do estorno parcial), para a `chave_evento` usar o total já atualizado; vale no estorno
+    parcial e no total;
   - `registrar_saque(Saques $saque)` — chamado em `PagamentoSaques::dar_baixa` e
     `PagamentoSaques::confirmar` quando o saque passa a Pago.
   **(confirmado — alteração em `ProcessamentoDepositos` e `PagamentoSaques`, Princípio IV)**
@@ -269,7 +274,18 @@ CPF, SQL concatenado, float, paginação) listadas na spec.
 
 ## R-19 — Dados fake (Princípio IX)
 
-Nenhum dado fake novo. Os dados do painel do afiliado vêm da API desde a primeira entrega.
+Nenhum dado fake **novo**. Os dados do painel do afiliado vêm da API desde a primeira entrega.
+
+Fake **existente** usado:
+
+| Dado fake | Onde é usado nesta spec | Será substituído por |
+|---|---|---|
+| `DadosFake::tema()` (cor principal `temas` e `letter`, spec 005) | cores das páginas `/cadastro-afiliado` e `/afiliados` (pelos tokens do tema, como todas as páginas) e cor do botão dos e-mails | spec de configurações do tema (cor salva em `configuracoes`) |
+
+Para a troca não mexer nos e-mails, o layout de e-mail lê a cor de um único método
+(`App\Mail\Concerns\DadosEmail::dados_email()`, chave `cor_principal`), que hoje devolve
+`DadosFake::tema()['temas']`.
+Fora de qualquer operação com dinheiro.
 
 ## R-21 — E-mail de boas-vindas do cadastro de clientes (FR-013a)
 

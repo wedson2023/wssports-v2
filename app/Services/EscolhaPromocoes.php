@@ -26,9 +26,9 @@ class EscolhaPromocoes
 
         return ClientesPromocoes::vigentes()
             ->whereIn('categoria', $categorias)
-            ->paraAfiliado($cliente->codigo_afiliado)
+            ->paraAfiliado($cliente->afiliados_id)
             ->where(fn ($limite) => $limite->whereNull('valor_maximo_deposito')->orWhere('valor_maximo_deposito', '>=', $valor))
-            ->orderByRaw('codigo_afiliado is null')
+            ->orderByRaw('afiliados_id is null')
             ->orderByRaw('categoria = ?', [CategoriaPromocao::PrimeiroDepósito->value])
             ->orderBy('id')
             ->first();

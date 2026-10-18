@@ -548,6 +548,9 @@ contagem e o bônus pago ao indicador.
   Na escolha da promoção de depósito, o sistema DEVE preferir a promoção vigente do afiliado do
   cliente e, sem ela, usar a promoção vigente sem afiliado; clientes sem afiliado só recebem
   promoções sem afiliado.
+  > Alterado pela spec 012 (FR-025, research R-09): a regra é a mesma, mas a ligação passa a ser
+  > `clientes_promocoes.afiliados_id` e `clientes.afiliados_id` (chaves estrangeiras), no lugar do
+  > código em texto.
 - **FR-018h**: As promoções padrão criadas na instalação (spec 006) DEVEM receber os valores padrão
   dos campos novos.
 
@@ -756,6 +759,8 @@ contagem e o bônus pago ao indicador.
   sem chave estrangeira, porque a tabela de afiliados ainda não existe; a spec que criar os
   afiliados DEVE ajustar o tipo e a chave estrangeira dessa coluna (constituição, referências a
   tabelas inexistentes).
+  > Alterado pela spec 012: ajustado; a coluna virou `clientes_promocoes.afiliados_id`, com chave
+  > estrangeira para `afiliados`.
 - **Saque automático**: depende da liberação da API de saques (Payouts) pelo Mercado Pago na conta
   da banca e de saldo nessa conta.
 - **Comissão**: o Mercado Pago desconta a taxa dele antes; a comissão da conta master sai do que

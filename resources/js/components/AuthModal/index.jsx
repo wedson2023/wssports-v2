@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { usePage } from '@inertiajs/react';
+import { router, usePage } from '@inertiajs/react';
 
 import Backdrop from '../Backdrop';
 import Spinner from '../Spinner';
@@ -87,6 +87,13 @@ export default function AuthModal({ aba, codigo_afiliado = '', codigo_indicacao 
             definir_login({ identificacao: '', senha: '' });
             ao_fechar();
             alerta_sucesso('Login realizado com sucesso!');
+
+            // o afiliado entra pela mesma tela e vai para o painel dele (spec 012, FR-021)
+            if (nova.tipo === 'afiliado') {
+                router.visit('/afiliados');
+                return;
+            }
+
             ao_entrar_com_sucesso?.(nova);
         } catch (erro) {
             alerta_erro(erro);

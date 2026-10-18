@@ -36,7 +36,7 @@ class Clientes extends Authenticatable implements JWTSubject
         'cpf',
         'data_nascimento',
         'genero',
-        'codigo_afiliado',
+        'afiliados_id',
         'ativo',
     ];
 
@@ -117,6 +117,14 @@ class Clientes extends Authenticatable implements JWTSubject
     public function indicador(): BelongsTo
     {
         return $this->belongsTo(self::class, 'indicado_por');
+    }
+
+    /**
+     * Afiliado que indicou o cliente pelo link (spec 012); só o cadastro e a gestão o definem.
+     */
+    public function afiliado(): BelongsTo
+    {
+        return $this->belongsTo(Afiliados::class, 'afiliados_id')->withTrashed();
     }
 
     public function rollovers(): HasMany

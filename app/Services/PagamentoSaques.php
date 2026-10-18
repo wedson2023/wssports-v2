@@ -33,7 +33,11 @@ class PagamentoSaques
         'Chave aleatória' => 'PIX_CODE',
     ];
 
-    public function __construct(private SaldoClientes $saldo, private ClienteMercadoPago $mercado_pago) {}
+    public function __construct(
+        private SaldoClientes $saldo,
+        private ClienteMercadoPago $mercado_pago,
+        private ComissoesAfiliados $comissoes,
+    ) {}
 
     public function dar_baixa(Saques $saque, Usuarios $usuario): Saques
     {
@@ -45,6 +49,9 @@ class PagamentoSaques
                 'decidido_em' => now(),
                 'pago_em' => now(),
             ])->save();
+
+            // saque pago desconta a comissão do afiliado no Saldo líquido (spec 012)
+            $this->comissoes->registrar_saque($saque);
 
             return $saque;
         });
@@ -133,7 +140,10 @@ class PagamentoSaques
         $status = collect($transacoes['results'] ?? $transacoes['transactions'] ?? $transacoes)->pluck('status')->filter()->first();
 
         if ($status === 'success') {
-            $saque->forceFill(['situacao' => SituacaoSaque::Pago, 'pago_em' => now()])->save();
+            DB::transaction(function () use ($saque) {
+                $saque->forceFill(['situacao' => SituacaoSaque::Pago, 'pago_em' => now()])->save();
+                $this->comissoes->registrar_saque($saque);
+            });
         } elseif (in_array($status, ['canceled', 'error'], true)) {
             $this->voltar_para_fila($saque, "O Mercado Pago não concluiu o pagamento ({$status}).");
         }
