@@ -33,7 +33,12 @@ class ApostasDashboard
     {
         $contar = 'COUNT(DISTINCT CASE WHEN c.situacao = ? THEN c.id END)';
 
-        $linha = $this->palpites_do_dia($usuario)
+        // todos os palpites, como no antigo: o jogo cancelado cancela o palpite dele ("Jogo
+        // cancelado") e, sem isso, nunca entraria em Cancelados
+        $linha = $this->apostas_do_balcao($usuario, ...$this->alcance->periodo_do_dia())
+            ->join('apostas_palpites as p', 'p.apostas_id', '=', 'a.id')
+            ->where('a.situacao', SituacaoAposta::Ativa->value)
+            ->whereNull('p.deleted_at')
             ->join('confrontos as c', 'c.id', '=', 'p.confrontos_id')
             ->selectRaw('COUNT(DISTINCT c.id) as total')
             ->selectRaw(

@@ -313,3 +313,7 @@ destaque), palpites em comum com a opção em etiqueta e um cartão por bilhete 
 valor, prêmio e "Ver bilhete" — como a lista CLIENTE/VALOR/PRÊMIO do `modals/Combination` antigo. Para
 isso, `CombinacoesRisco` passou a devolver `bilhetes` (contracts/api.md §2.4), montado com
 `JSON_ARRAYAGG` (MySQL 8.4 no local e no servidor).
+
+**Correção (2026-10-20)**: "Situação dos jogos" passou a contar os jogos de todos os palpites das
+apostas ativas do dia (não só os palpites ativos), como no antigo: o jogo cancelado cancela o palpite
+dele ("Jogo cancelado") e, com o filtro, nunca entraria em Cancelados (`ApostasDashboard::situacao_jogos`).
