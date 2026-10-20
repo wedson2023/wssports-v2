@@ -21,7 +21,9 @@ usuários e configurações do vendedor). Esta spec cria **1 tabela**, **3 colun
 
 ## 2. Tabela nova `apostas_combinacoes_risco`
 
-Combinações de risco que já geraram aviso ao Admin (R-11). Uma linha por combinação por dia.
+Combinações de risco novas registradas pelo agendador (R-11), única origem dos avisos do painel e
+do WhatsApp (R-12). Uma linha por combinação; uma chave já registrada hoje ou ontem não é gravada
+de novo.
 
 | Coluna | Tipo | Regra / comentário |
 |---|---|---|
@@ -30,6 +32,8 @@ Combinações de risco que já geraram aviso ao Admin (R-11). Uma linha por comb
 | `chave` | char(40) | `sha1` da assinatura de jogos e opções; única com `dia` |
 | `jogos` | json | Nomes dos jogos no momento do aviso (ex.: `["Flamengo x Vasco", …]`) |
 | `opcoes` | json | Nomes das opções na mesma ordem dos jogos |
+| `codigos` | json | Códigos dos bilhetes da combinação quando surgiu |
+| `usuarios_ids` | json | Ids dos vendedores dos bilhetes, para filtrar os avisos do painel pela rede |
 | `quantidade_bilhetes` | unsignedInteger | Nº de bilhetes quando surgiu |
 | `valor_apostado` | decimal(15,2) | Soma apostada quando surgiu, em reais |
 | `premio` | decimal(15,2) | Prêmio somado quando surgiu, em reais |
@@ -51,7 +55,8 @@ Pendente ──falha (tentativas < 3)──────────────�
 Pendente ──3ª falha──────────────────────────────▶ Falhou
 ```
 
-Model `ApostasCombinacoesRisco` com `SoftDeletes`, casts `jogos`/`opcoes` → array, `dia` → date,
+Model `ApostasCombinacoesRisco` com `SoftDeletes`, casts `jogos`/`opcoes`/`codigos`/`usuarios_ids`
+→ array, `dia` → date,
 valores `decimal:2`, `situacao_whatsapp` → enum.
 
 ## 3. Colunas novas em `configuracoes`

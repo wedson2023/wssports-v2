@@ -71,6 +71,24 @@ paralelo, com cache curto; o botão do Mercado Pago sai do frontend."
   Dashboard aberta, só das combinações da sua rede; e mensagem no WhatsApp (CallMeBot) só para o
   Admin, com o telefone dele cadastrado nas configurações gerais do sistema.
 
+### Session 2026-10-20 (`/speckit-analyze`, recomendações aceitas pelo responsável)
+
+- Q: De onde vem o aviso de combinação nova? → A: Só de um agendador no servidor, a cada minuto. O
+  carregamento ou a atualização da Dashboard (automática ou pelo botão) nunca gera aviso; o painel
+  só mostra os avisos que o agendador registrou. Isso vale para o balão no painel e para o
+  WhatsApp do Admin.
+- Q: Quais avisos o Gerente e o Supervisor recebem no painel? → A: Os das combinações registradas
+  pelo agendador (banca toda, 2 ou mais bilhetes) que têm ao menos um bilhete da rede dele; o
+  Admin recebe todas.
+- Q: Uma combinação de ontem que continua aberta hoje gera aviso de novo? → A: Não. Já avisada
+  ontem ou hoje não avisa outra vez.
+- Q: Canceladas conta pela data da aposta ou do cancelamento? → A: Pela data da aposta (criada no
+  dia e cancelada), como no antigo.
+- Q: Palpite de especial pendente conta em "Apostas por um jogo"? → A: Sim, conta como um jogo.
+- Q: Quem pode retirar seções da Dashboard? → A: A regra geral da API de permissões: cada superior
+  concede ou retira, na sua rede, as permissões que possui (Admin no Supervisor, Supervisor no
+  Gerente, Gerente no Vendedor).
+
 ## Referências do sistema antigo *(Princípios VII e VIII)*
 
 - Backend: `app/Http/Controllers/DashboardController.php` (`index`, `apuradoDia`,
@@ -193,9 +211,12 @@ bilhete com só um jogo ainda em aberto; conferir as duas seções em cada níve
    botão para ver o bilhete.
 6. **Given** a Dashboard aberta com a aba visível, **When** passa 1 minuto, **Then** a Combinação
    de risco é recalculada sozinha, junto com as demais seções.
-7. **Given** um Gerente com a Dashboard aberta, **When** uma combinação nova surge na rede dele,
-   **Then** aparece um balão de aviso com som e a linha nova fica destacada; combinações de outras
-   redes não geram aviso para ele.
+7. **Given** um Gerente com a Dashboard aberta, **When** o agendador registra uma combinação nova
+   com bilhete de vendedor dele, **Then** em até 2 minutos aparece um balão de aviso com som e a
+   linha fica destacada; combinações sem bilhete da rede dele não geram aviso para ele.
+10. **Given** a Dashboard aberta, **When** o usuário recarrega a página ou toca em atualizar,
+    **Then** nenhum aviso de combinação é gerado por isso; só aparecem os registrados pelo
+    agendador depois da última vez que ele viu.
 8. **Given** o telefone e a chave do WhatsApp do Admin cadastrados e o aviso ligado nas
    configurações gerais, **When** surge uma combinação nova em qualquer rede, **Then** o Admin
    recebe uma mensagem no WhatsApp com os jogos, as opções, o número de bilhetes e o prêmio somado,
@@ -325,6 +346,9 @@ conferir que as outras aparecem e que a com erro oferece tentar de novo.
   mensagem só com todas elas, para não lotar o celular do Admin.
 - Combinação que deixa de existir (bilhete cancelado ou jogo encerrado) e volta a aparecer no mesmo
   período: não gera novo aviso.
+- Combinação avisada ontem que continua aberta hoje: não gera novo aviso.
+- Usuário que abre a Dashboard depois de várias combinações novas: vê só as registradas depois da
+  última que já viu; na primeira abertura do dia, nenhuma (só a lista da seção).
 - CallMeBot fora do ar ou chave inválida: a Dashboard funciona normalmente; o envio é tentado de
   novo até 3 vezes e depois desiste, registrando a falha.
 
@@ -386,7 +410,8 @@ conferir que as outras aparecem e que a com erro oferece tentar de novo.
   Apostas por um jogo e rankings) DEVEM considerar só apostas feitas por vendedor; as apostas feitas
   pelo cliente no site entram só na Caixa online.
 - **FR-016**: Entram nos números só apostas ativas (confirmadas); canceladas aparecem só na
-  contagem de Canceladas; pendentes, em análise, recusadas e expiradas não entram.
+  contagem de Canceladas (apostas criadas no dia e canceladas, pela data da aposta, como no
+  antigo); pendentes, em análise, recusadas e expiradas não entram.
 - **FR-017**: Todos os valores em dinheiro DEVEM ser calculados sem ponto flutuante e exibidos em
   reais formatados.
 
@@ -437,7 +462,7 @@ conferir que as outras aparecem e que a com erro oferece tentar de novo.
 **4.5 Apostas por um jogo**
 
 - **FR-030**: A seção DEVE listar até 50 apostas abertas de ontem e hoje que têm exatamente um jogo
-  ainda não decidido (aguardando ou bloqueado), da maior para a menor por prêmio, com apostador,
+  ainda não decidido (aguardando ou bloqueado; palpite de especial pendente conta como um jogo), da maior para a menor por prêmio, com apostador,
   prêmio, barra proporcional e botão para ver o bilhete.
 
 **4.6 a 4.8 Rankings**
@@ -485,15 +510,22 @@ conferir que as outras aparecem e que a com erro oferece tentar de novo.
 **Aviso de combinação de risco nova**
 
 - **FR-045**: Uma combinação é nova quando um conjunto de jogos e opções passa a estar em 2 ou mais
-  apostas abertas (FR-027) pela primeira vez no período da seção. Cada combinação gera aviso uma
-  única vez; novos bilhetes na mesma combinação não geram outro aviso.
-- **FR-046**: Na Dashboard aberta, a combinação nova da rede do usuário DEVE gerar um balão de aviso
-  com som e destacar a linha nova na Combinação de risco. O usuário pode silenciar o som no painel.
-  Quem não pode ver a Combinação de risco não recebe o aviso.
-- **FR-047**: O sistema DEVE verificar combinações novas a cada minuto no servidor, sem depender de
-  alguém com o painel aberto, e enviar ao Admin uma mensagem no WhatsApp pelo CallMeBot com os
-  jogos, as opções, o número de bilhetes, o valor apostado e o prêmio somado, considerando a banca
-  toda.
+  apostas abertas (FR-027) da banca toda pela primeira vez. Cada combinação gera aviso uma única
+  vez, mesmo que continue aberta de um dia para o outro; novos bilhetes na mesma combinação não
+  geram outro aviso.
+- **FR-046**: Um agendador no servidor DEVE verificar a cada minuto as combinações novas (banca
+  toda, sem depender de alguém com o painel aberto) e registrar cada uma com os bilhetes e os
+  vendedores dela. Só esse agendador gera avisos: carregar ou atualizar a Dashboard (automático ou
+  pelo botão) NUNCA gera aviso.
+- **FR-047**: Na Dashboard aberta, o painel DEVE consultar a cada minuto os avisos registrados pelo
+  agendador depois do último que o usuário já viu e, para cada um, mostrar um balão com som e
+  destacar a linha na Combinação de risco. O Admin recebe todos; Supervisor e Gerente, só os que
+  têm ao menos um bilhete de vendedor da rede dele; quem não pode ver a Combinação de risco não
+  recebe. Na primeira abertura do dia, os avisos anteriores ficam marcados como vistos, sem balão.
+  O usuário pode silenciar o som no painel.
+- **FR-047a**: A cada combinação nova registrada, o agendador DEVE enviar ao Admin uma mensagem no
+  WhatsApp pelo CallMeBot com os jogos, as opções, o número de bilhetes, o valor apostado e o
+  prêmio somado (várias no mesmo minuto vão numa mensagem só).
 - **FR-048**: As configurações gerais do sistema DEVEM ter o telefone do WhatsApp do Admin (com
   DDI), a chave do CallMeBot e a opção de ligar ou desligar o aviso, editáveis por quem tem a
   permissão de configurações (`configuracoes.editar`). Sem telefone, sem chave ou com o aviso
@@ -521,9 +553,10 @@ conferir que as outras aparecem e que a com erro oferece tentar de novo.
 - **Configuração do vendedor**: limites geral, duplo e simples e comissão do vendedor.
 - **Depósito e Saque**: movimentos de dinheiro dos clientes, usados no Apurado do Admin e do
   Supervisor e na Caixa online.
-- **Aviso de combinação**: registro de cada combinação de risco que já gerou aviso (jogos e opções
-  que a identificam, quando surgiu, se a mensagem ao Admin foi enviada e quantas tentativas), para
-  não avisar duas vezes.
+- **Aviso de combinação**: registro feito pelo agendador de cada combinação de risco nova (jogos e
+  opções que a identificam, bilhetes e vendedores, quando surgiu, se a mensagem ao Admin foi
+  enviada e quantas tentativas); é a única origem dos avisos do painel e do WhatsApp e impede
+  avisar duas vezes.
 - **Configurações gerais (aviso por WhatsApp)**: telefone do Admin, chave do CallMeBot e opção de
   ligar ou desligar o aviso.
 
@@ -544,8 +577,9 @@ conferir que as outras aparecem e que a com erro oferece tentar de novo.
 - **SC-007**: O peso da tela principal (visitante) não aumenta com a chegada dos gráficos.
 - **SC-008**: Um vendedor consegue ler o Saldo líquido e os limites no celular sem rolar
   horizontalmente.
-- **SC-009**: Uma combinação de risco nova chega ao WhatsApp do Admin em até 2 minutos e aparece no
-  painel aberto em até 1 minuto, sem aviso repetido para a mesma combinação.
+- **SC-009**: Uma combinação de risco nova chega ao WhatsApp do Admin e aparece no painel aberto em
+  até 2 minutos, sem aviso repetido para a mesma combinação e sem aviso gerado por recarregar a
+  página.
 
 ## Assumptions
 
@@ -560,6 +594,10 @@ conferir que as outras aparecem e que a com erro oferece tentar de novo.
 - O seeder que dá as permissões é o mesmo usado nas specs anteriores, sem tirar permissões que os
   usuários já tenham.
 - Esta spec não cria tabelas de caixa; lançamentos, retiradas e o % do gerente são fake.
+- O bloqueio de `/painel` para quem não é usuário do painel é feito na página; os dados ficam
+  protegidos porque toda consulta da Dashboard exige o token e a permissão no servidor.
+- A validação de desempenho (SC-003) usa uma cópia do banco de teste ou apostas geradas à mão até
+  cerca de 5.000 no dia.
 - O telefone e a chave do WhatsApp do Admin são configurados pela API de configurações nesta spec;
   a tela de configurações gerais do painel entra na spec das configurações.
 - O CallMeBot é o mesmo serviço já usado no aviso do deploy (spec 013), mas com telefone e chave

@@ -44,9 +44,14 @@ usuários).
    bilhetes para o gerente A e o Admin; não aparece para o gerente B; seção some para o vendedor.
 2. 👁 → lista dos 3 códigos → cada um abre o bilhete.
 3. Bilhete com só um jogo ainda em aberto → aparece em Apostas por um jogo (até 50, por prêmio).
-4. Com a Dashboard aberta, criar uma combinação nova → em até 1 min balão + som + linha destacada;
-   recarregar a página → não avisa de novo; mais um bilhete na mesma combinação → sem aviso.
-5. `GET /dashboard/combinacoes-risco` com o token do vendedor → 403.
+4. Com a Dashboard aberta e o `schedule:work` rodando, criar uma combinação nova → em até 2 min o
+   agendador grava em `apostas_combinacoes_risco` e o painel mostra balão + som + linha destacada;
+   recarregar a página ou tocar em ⟳ → nenhum aviso; mais um bilhete na mesma combinação → sem
+   aviso; com o agendador parado, criar outra combinação → a linha aparece na seção, mas sem balão.
+5. Gerente B sem bilhete na combinação → não recebe o balão; Admin recebe.
+6. Combinação criada ontem e ainda aberta → depois da meia-noite não gera novo aviso.
+7. `GET /dashboard/combinacoes-risco` e `/dashboard/combinacoes-risco/avisos` com o token do
+   vendedor → 403.
 
 ## 4. Aviso no WhatsApp (US3, FR-045 a FR-049)
 

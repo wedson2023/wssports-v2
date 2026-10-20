@@ -76,7 +76,7 @@ Base comum: `apostas` com `situacao = Ativa` e `created_at` no período.
 | Em aberto / Premiadas / Perdidas | `SUM(valor)` por `resultado` Aguardando / Vencedor / Perdedor |
 | Saídas | `SUM(premio)` das Vencedor + `SUM(valor)` das Devolvido |
 | Comissão do vendedor | `SUM(comissao)` |
-| Canceladas | `COUNT` e `SUM(valor)` com `situacao = Cancelada` no período |
+| Canceladas | `COUNT` e `SUM(valor)` com `situacao = Cancelada` e `created_at` no período (data da aposta, como no antigo) |
 | Depósitos online (Admin/Supervisor) | `depositos` Aprovado com `pago_em` no período: `SUM(valor)`; entram nas Entradas |
 | Saques pagos (Admin/Supervisor) | `saques` Pago com `pago_em` no período: `SUM(valor)`; entram nas Saídas |
 | Comissão do gerente | por gerente: `percentual × (entradas − saídas − comissão)` dos vendedores dele, zero se ≤ 0; percentual fake = `0.00` (R-10) |
@@ -165,10 +165,13 @@ Nenhum fake entra em operação com dinheiro (só exibição).
 - Tabela `apostas_combinacoes_risco` (prefixo da principal `apostas`): uma linha por combinação
   avisada no dia (chave única `dia` + `chave`). Guarda descrição, contagens, situação do envio e
   tentativas (data-model §2).
-- Comando `apostas:avisar_combinacoes_risco`, agendado `everyMinute()->withoutOverlapping(2)`: roda
-  `CombinacoesRisco` para a banca toda (sem cache), grava as chaves novas e manda **uma** mensagem
-  com todas as novas do minuto; falha → `tentativas + 1`, nova tentativa no minuto seguinte, até 3,
-  depois `Falhou`. Sem telefone/chave ou aviso desligado → `Dispensado` (não envia depois).
+- Comando `apostas:avisar_combinacoes_risco`, agendado `everyMinute()->withoutOverlapping(2)`, é a
+  **única origem** dos avisos (painel e WhatsApp; decisão do responsável no `/speckit-analyze`):
+  roda `CombinacoesRisco` para a banca toda (sem cache), grava as chaves que **não existem nem hoje
+  nem ontem** (a combinação usa apostas de ontem e hoje; assim não avisa de novo à meia-noite), com
+  os códigos dos bilhetes e os ids dos vendedores, e manda **uma** mensagem com todas as novas do
+  minuto; falha → `tentativas + 1`, nova tentativa no minuto seguinte, até 3, depois `Falhou`. Sem
+  telefone/chave ou aviso desligado → `Dispensado` (não envia depois; o aviso no painel continua).
 - Envio por `Http::timeout(30)->get('https://api.callmebot.com/whatsapp.php', [phone, text, apikey])`
   num serviço `AvisosWhatsapp`, mesmo serviço usado no deploy (spec 013), com telefone e chave das
   configurações.
@@ -176,16 +179,21 @@ Nenhum fake entra em operação com dinheiro (só exibição).
 
 ## R-12 — Aviso na tela do painel
 
-**Decisão**: a página compara as chaves de cada atualização com as já vistas. Primeira carga do dia
-marca tudo como visto, sem aviso; chave nova → balão (sweetalert2 em toast, já instalado), som curto
-e destaque da linha. As chaves vistas ficam em `localStorage` por usuário e dia (conveniência do
-aparelho; sem ele, só em memória). Silenciar o som também fica no `localStorage`.
+**Decisão** (revisada no `/speckit-analyze`): o painel **não** compara listas. Ele consulta
+`GET /dashboard/combinacoes-risco/avisos?depois_de=<id>` a cada minuto (com a aba visível), que
+devolve os registros de `apostas_combinacoes_risco` com `id` maior que o informado, de ontem e
+hoje: todos para o Admin; para Supervisor e Gerente, só os que têm ao menos um vendedor da rede em
+`usuarios_ids`. Sem `depois_de` (primeira abertura), devolve só o `ultimo_id`, sem avisos. O
+último id visto fica em `localStorage` por usuário (sem ele, só em memória). Para cada aviso: balão
+(sweetalert2 em toast, já instalado), som curto e destaque da linha com a mesma `chave`. Silenciar o
+som também fica no `localStorage`. Essa rota não usa cache e nunca registra nada.
 
-**Rationale**: o "novo" é por rede (a combinação pode existir na banca e só depois na rede do
-gerente); a página já recebe a lista da rede a cada minuto, então não precisa de canal novo.
+**Rationale**: o responsável quer que a mensagem venha de um agendador, não do carregamento da
+tela; recarregar a página ou tocar em atualizar não gera aviso. Agendador a cada minuto + consulta a
+cada minuto = até 2 minutos (SC-009).
 
-**Alternativas**: tempo real por WebSocket/Echo (rejeitado: o painel não usa e a atualização de 1
-min atende a SC-009); push (fora do escopo).
+**Alternativas**: comparar as chaves no navegador a cada atualização (rejeitado pelo responsável:
+o aviso dependeria do carregamento); WebSocket/Echo (o painel não usa); push (fora do escopo).
 
 ## R-13 — Configurações do aviso
 
@@ -219,7 +227,9 @@ saudação do usuário do painel virar link para `/painel`.
   principal (FR-043, SC-007). Sem `react-chartjs-2`: um componente próprio com `useRef` + `useEffect`
   basta e evita outra dependência.
 - Hook `useSecaoDashboard(secao)`: busca, mantém os dados antigos durante a atualização, `atualizar()`
-  manual com `?atualizar=1`, intervalo de 60 s só com `document.visibilityState === 'visible'`.
+  manual com `?atualizar=1`, intervalo de 60 s só com `document.visibilityState === 'visible'`
+  (criado já na fase Base, pois o aviso da US3 depende dele). A atualização automática da
+  Combinação de risco não passa pelo cache, para a lista acompanhar os avisos do agendador.
 - Ver bilhete reutiliza o `TicketModal` existente com `GET /publico/bilhetes/{codigo}`.
 - Nomes das opções (Opções mais apostadas e combinação) vêm prontos do backend (`NomesCotacoes`).
 

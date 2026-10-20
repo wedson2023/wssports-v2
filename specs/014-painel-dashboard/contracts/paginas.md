@@ -72,8 +72,11 @@ Gráfico de rosca + legenda com quantidade (e valor em Apostas), mesmos rótulos
 
 - Colunas: Jogos · Opções · Bilhetes · Valor · Prêmio (barra proporcional ao maior prêmio) · 👁.
 - 👁 abre `CombinationModal` com a lista de códigos; cada código abre o `TicketModal`.
-- Linha nova (chave não vista): destaque por 60 s + balão "Nova combinação de risco" + som (ícone
-  🔔 no título liga/desliga o som, guardado no aparelho).
+- Aviso só do agendador: a cada minuto (aba visível) a página consulta
+  `GET /dashboard/combinacoes-risco/avisos?depois_de=<último id visto>`; cada aviso devolvido gera
+  balão "Nova combinação de risco" + som e destaca por 60 s a linha com a mesma `chave`.
+  Recarregar a página ou tocar em ⟳ não gera aviso. Ícone 🔔 no título liga/desliga o som
+  (guardado no aparelho).
 
 ## 7. Apostas por um jogo
 

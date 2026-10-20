@@ -109,6 +109,38 @@ Até 100 linhas, maior prêmio primeiro.
 }
 ```
 
+### 2.4a `GET /dashboard/combinacoes-risco/avisos` — `dashboard.ver_combinacao_risco`
+
+Avisos registrados **pelo agendador** (R-11, R-12). Sem cache; nunca registra nada. Parâmetro
+`depois_de` (inteiro, opcional): id do último aviso já visto. Considera os registros de ontem e
+hoje; Admin recebe todos; Supervisor e Gerente, só os com ao menos um vendedor da rede em
+`usuarios_ids`.
+
+Sem `depois_de` (primeira abertura): só o marcador, sem avisos.
+
+```json
+{ "data": [], "ultimo_id": 128 }
+```
+
+Com `depois_de=128`:
+
+```json
+{
+  "data": [
+    {
+      "id": 129,
+      "chave": "9f1c…(sha1)",
+      "jogos": ["Flamengo x Vasco", "Bahia x Sport"],
+      "opcoes": ["Casa", "Ambas marcam"],
+      "quantidade_bilhetes": 3,
+      "premio": "2400.00",
+      "registrado_em": "2026-10-20T14:05:00-03:00"
+    }
+  ],
+  "ultimo_id": 129
+}
+```
+
 ### 2.5 `GET /dashboard/apostas-um-jogo` — `dashboard.ver_apostas_um_jogo`
 
 Até 50, maior prêmio primeiro.
@@ -188,7 +220,9 @@ Permissão `configuracoes.editar` (Admin e Supervisor), padrão do `Configuracoe
 ## 4. Comando agendado
 
 `php artisan apostas:avisar_combinacoes_risco` — a cada minuto (`withoutOverlapping(2)`), banca
-toda, sem cache (R-11). Mensagem (texto puro):
+toda, sem cache (R-11). Única origem dos avisos: registra as combinações novas (chave não
+registrada hoje nem ontem) com códigos e vendedores, que alimentam a rota 2.4a, e envia ao Admin.
+Mensagem (texto puro):
 
 ```text
 ⚠️ Combinação de risco nova (2)
@@ -201,5 +235,5 @@ toda, sem cache (R-11). Mensagem (texto puro):
 
 ## 5. Postman
 
-A coleção `docs/postman/wssports_api.postman_collection.json` é regenerada com as 12 rotas novas
+A coleção `docs/postman/wssports_api.postman_collection.json` é regenerada com as 13 rotas novas
 (Constituição).

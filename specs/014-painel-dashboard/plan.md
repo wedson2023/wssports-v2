@@ -15,9 +15,10 @@ sistema antigo, corrigidas e otimizadas:
 - **Seções**: uma rota por seção (`GET /dashboard/<secao>`), cada uma com permissão
   `dashboard.ver_*`, alcance por nível no servidor (`AlcanceDashboard`), somas no banco com bcmath e
   cache de 60 s por usuário.
-- **Risco**: Combinação de risco numa consulta só (assinatura por aposta, `HAVING >= 2`), aviso na
-  tela por comparação de chaves e aviso no WhatsApp do Admin por comando a cada minuto, com a tabela
-  `apostas_combinacoes_risco` para não repetir.
+- **Risco**: Combinação de risco numa consulta só (assinatura por aposta, `HAVING >= 2`). Os avisos
+  de combinação nova vêm **só do agendador** (`apostas:avisar_combinacoes_risco`, a cada minuto),
+  que grava em `apostas_combinacoes_risco` e manda o WhatsApp ao Admin; o painel consulta esses
+  registros (`/dashboard/combinacoes-risco/avisos`) e nunca gera aviso ao carregar ou atualizar.
 - **Caixa online**: apostas de clientes, encerramentos, depósitos e saques, da banca toda.
 - **Fake**: lançamentos, retiradas e % do gerente zerados em `DadosFake`, com selo "em breve".
 - **Frontend**: `PanelShell` (barra e menu no visual do painel antigo), seções independentes com
@@ -72,8 +73,8 @@ vistas e o som ligado/desligado.
 |---|---|
 | Tabelas novas / alteradas | 1 / 1 (`configuracoes`) + 4 índices |
 | Migrations | 3 |
-| Rotas da API novas / web alteradas | 12 / 1 (`/painel`) |
-| Controllers novos | 2 (`DashboardController`, `ConfiguracoesAvisosWhatsappController`) |
+| Rotas da API novas / web alteradas | 13 / 1 (`/painel`) |
+| Controllers novos | 2 (`DashboardController` com 10 ações, `ConfiguracoesAvisosWhatsappController`) |
 | Serviços novos | 7 (`AlcanceDashboard`, `CacheDashboard`, `ApuradoDashboard`, `ApostasDashboard`, `CombinacoesRisco`, `CaixaOnline`, `AvisosWhatsapp`) |
 | Comandos novos | 1 (`apostas:avisar_combinacoes_risco`) |
 | Enums / models novos | 1 (`SituacaoAvisoWhatsapp`) / 1 (`ApostasCombinacoesRisco`) |
@@ -117,7 +118,7 @@ responsável em 2026-10-20. Reavaliado depois da Fase 1: sem violação nova.
 | `app/Models/Configuracoes.php` | `fillable`, `casts` (`encrypted`) e `$hidden` das 3 colunas do aviso | R-13 |
 | `app/Http/Controllers/AutenticacaoController.php` | Ação `eu` (dados do usuário logado) | R-14 |
 | `app/Http/Controllers/PainelController.php` | Renderiza `Dashboard` no lugar de `Panel` | R-15 |
-| `routes/api.php` | 12 rotas novas | contracts/api.md |
+| `routes/api.php` | 13 rotas novas | contracts/api.md |
 | `routes/console.php` | Agenda `apostas:avisar_combinacoes_risco` a cada minuto | R-11 |
 | `database/seeders/DatabaseSeeder.php` | Chama o `DashboardSeeder` | R-09 |
 | `resources/js/hooks/useSessao.js` | No login de usuário, busca `GET /auth/eu` e guarda `nome` e `funcao` | R-14 |
@@ -163,7 +164,7 @@ app/
 │   ├── Controllers/
 │   │   ├── AutenticacaoController.php           # alterado (eu)
 │   │   ├── PainelController.php                 # alterado
-│   │   ├── DashboardController.php              # novo (9 ações)
+│   │   ├── DashboardController.php              # novo (10 ações)
 │   │   └── ConfiguracoesAvisosWhatsappController.php  # novo
 │   ├── Requests/
 │   │   ├── DashboardRequest.php                 # novo (atualizar)
