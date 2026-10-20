@@ -65,7 +65,7 @@ exclusão física; visual do painel da spec 014 com colunas, nomes e ações do 
 | I. Nomes no frontend | Componentes em inglês PascalCase; hook `useUsuariosPainel`; util `permissions.js`; snake_case português | ✅ Pass |
 | II. Idioma | Artefatos, comentários e textos em português | ✅ Pass |
 | III. Componentes | Pasta própria com `index.jsx` e `styles.jsx` | ✅ Pass |
-| IV. Escopo estrito | Arquivos existentes listados abaixo; **aguardando confirmação do responsável** | ⏳ Confirmar |
+| IV. Escopo estrito | Arquivos existentes listados abaixo, confirmados pelo responsável em 2026-10-20 | ✅ Pass |
 | V. Legibilidade | Revisão ao final de cada tarefa | ✅ Pass |
 | VI. Consistência | Permissões em `Funcao.php` com `pode_usar`; cascata no model como `excluir_em_cascata`; restauração como `clientes/{cliente}/restaurar`; visual e componentes da spec 014 | ✅ Pass |
 | VII. Sistema antigo | Arquivos e funcionamento em R-01 e na spec; diferenças aprovadas (Clarifications) | ✅ Pass |
@@ -77,7 +77,8 @@ exclusão física; visual do painel da spec 014 com colunas, nomes e ações do 
 | Sem testes | Nenhum | ✅ Pass |
 | Postman | Regenerado na entrega | ✅ Pass |
 
-**Resultado do gate**: aprovado, pendente a confirmação da lista de arquivos existentes (Princípio IV).
+**Resultado do gate**: aprovado; lista de arquivos existentes (Princípio IV) confirmada pelo
+responsável em 2026-10-20. Reavaliado depois da Fase 1: sem violação nova.
 
 ### Arquivos existentes que serão alterados (Princípio IV)
 
