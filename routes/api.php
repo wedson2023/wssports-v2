@@ -51,6 +51,7 @@ use App\Http\Controllers\ClientesPromocoesController;
 use App\Http\Controllers\ClientesTransacoesController;
 use App\Http\Controllers\ConfiguracoesAfiliadosController;
 use App\Http\Controllers\ConfiguracoesApuracaoController;
+use App\Http\Controllers\ConfiguracoesAvisosWhatsappController;
 use App\Http\Controllers\ConfiguracoesCassinoController;
 use App\Http\Controllers\ConfiguracoesCriarApostaController;
 use App\Http\Controllers\ConfiguracoesEncerramentoController;
@@ -64,6 +65,7 @@ use App\Http\Controllers\ConfrontosLimitesController;
 use App\Http\Controllers\ConfrontosNaoPermitidosController;
 use App\Http\Controllers\ConfrontosResultadosController;
 use App\Http\Controllers\ConfrontosTetoCotacoesController;
+use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\EncerramentoEspeciaisController;
 use App\Http\Controllers\EspeciaisController;
 use App\Http\Controllers\EspeciaisOpcoesController;
@@ -99,6 +101,8 @@ Route::prefix('auth')->group(function () {
     Route::middleware(['auth:api', 'garantir_acesso'])->group(function () {
         Route::post('refresh', [AutenticacaoController::class, 'refresh']);
         Route::post('logout', [AutenticacaoController::class, 'logout']);
+        // dados do usuário logado para o painel (spec 014)
+        Route::get('eu', [AutenticacaoController::class, 'eu']);
     });
 });
 
@@ -480,6 +484,9 @@ Route::middleware(['auth:api', 'garantir_acesso'])->group(function () {
     // regra de comissão padrão do cadastro público de afiliados (spec 012)
     Route::get('configuracoes/afiliados', [ConfiguracoesAfiliadosController::class, 'show']);
     Route::put('configuracoes/afiliados', [ConfiguracoesAfiliadosController::class, 'update']);
+    // aviso de combinação de risco nova no WhatsApp do Admin (spec 014)
+    Route::get('configuracoes/avisos-whatsapp', [ConfiguracoesAvisosWhatsappController::class, 'show']);
+    Route::put('configuracoes/avisos-whatsapp', [ConfiguracoesAvisosWhatsappController::class, 'update']);
 
     Route::post('clientes/{cliente}/acesso-assistido', [AcessosAssistidosController::class, 'store'])
         ->missing(fn () => abort(404, 'Cliente não encontrado.'));
@@ -516,4 +523,19 @@ Route::middleware(['auth:api', 'garantir_acesso'])->group(function () {
     Route::get('cassinos-rodadas/relatorio', [CassinosRodadasController::class, 'relatorio']);
     Route::get('cassinos-sessoes/{sessao}/historico', [CassinosSessoesController::class, 'historico'])
         ->missing(fn () => abort(404, 'Sessão não encontrada.'));
+});
+
+// Dashboard do painel (spec 014): uma rota por seção, com a permissão de cada uma no controller; os
+// avisos de combinação só leem o que o agendador registrou
+Route::middleware(['auth:api', 'garantir_acesso'])->prefix('dashboard')->controller(DashboardController::class)->group(function () {
+    Route::get('apurado', 'apurado');
+    Route::get('situacao-jogos', 'situacao_jogos');
+    Route::get('apostas', 'apostas');
+    Route::get('combinacoes-risco/avisos', 'avisos_combinacoes_risco');
+    Route::get('combinacoes-risco', 'combinacoes_risco');
+    Route::get('apostas-um-jogo', 'apostas_um_jogo');
+    Route::get('vendedores', 'vendedores');
+    Route::get('jogos-mais-apostados', 'jogos_mais_apostados');
+    Route::get('opcoes-mais-apostadas', 'opcoes_mais_apostadas');
+    Route::get('caixa-online', 'caixa_online');
 });

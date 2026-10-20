@@ -3,7 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\LoginRequest;
+use App\Http\Resources\UsuarioLogadoResource;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 
 class AutenticacaoController extends Controller
@@ -40,6 +42,14 @@ class AutenticacaoController extends Controller
     public function refresh(): JsonResponse
     {
         return $this->resposta_token(auth('api')->refresh());
+    }
+
+    /**
+     * Dados do usuário logado: nome, função e seções da Dashboard (spec 014).
+     */
+    public function eu(Request $request): UsuarioLogadoResource
+    {
+        return new UsuarioLogadoResource($request->user());
     }
 
     /**

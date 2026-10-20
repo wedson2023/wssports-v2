@@ -44,7 +44,19 @@ const nome_do_afiliado = async (token) => {
     }
 };
 
-// nome guardado na sessão de cada público; o usuário do painel fica com o login digitado
+// nome e função do usuário do painel (spec 014), para o cabeçalho e o destino depois do login
+const dados_do_usuario = async (token) => {
+    try {
+        const { data } = await api.get('/auth/eu', { headers: { Authorization: `Bearer ${token}` } });
+
+        return { nome: data.data?.nome ?? null, funcao: data.data?.funcao ?? null };
+    } catch {
+        return { nome: null, funcao: null };
+    }
+};
+
+// nome guardado na sessão de cada público; o usuário do painel fica com o nome da API (ou o login
+// digitado, se a consulta falhar)
 const nome_da_sessao = { cliente: nome_do_cliente, afiliado: nome_do_afiliado };
 
 // props da tela que mudam com quem está logado (cotações, limites e saldo do cliente; apostador;
@@ -144,8 +156,10 @@ export const useEstadoSessao = () => {
 
             try {
                 const { data } = await rotas_login[tipo](valor, senha);
-                const nome = nome_da_sessao[tipo] ? await nome_da_sessao[tipo](data.token) : texto;
-                const nova = criar_sessao({ tipo, token: data.token, expira_em: data.expira_em, nome });
+                const usuario = tipo === 'usuario' ? await dados_do_usuario(data.token) : null;
+                const nome = usuario ? (usuario.nome ?? texto) : (nome_da_sessao[tipo] ? await nome_da_sessao[tipo](data.token) : texto);
+                const criada = criar_sessao({ tipo, token: data.token, expira_em: data.expira_em, nome });
+                const nova = usuario?.funcao ? atualizar_sessao({ ...criada, funcao: usuario.funcao }) : criada;
 
                 definir_sessao(nova);
 

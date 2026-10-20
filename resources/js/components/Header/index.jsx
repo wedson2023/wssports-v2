@@ -6,6 +6,12 @@ import { Balance, EnterButton, Greeting, Logo, MenuIcon, Nav, RegisterButton } f
 // colunas do grid depois do logo/ícone de menu: com o botão dia/noite (US8) ganha uma coluna
 const colunas_padrao = { desktop: '100px 100px', mobile: '100px' };
 
+// para onde a saudação leva cada público (o afiliado continua sem link)
+const destino_saudacao = {
+    cliente: { href: '/minha-conta', titulo: 'Minha conta' },
+    usuario: { href: '/painel', titulo: 'Painel' },
+};
+
 // primeiro nome para a saudação do cabeçalho
 const primeiro_nome = (nome) => (nome ?? '').trim().split(/\s+/)[0];
 
@@ -21,12 +27,13 @@ export default function Header({ ao_abrir_menu, extra = null, colunas = colunas_
             {extra}
             {sessao ? (
                 <>
-                    {/* o apostador vai para a tela de créditos ao tocar na saudação, como no antigo (spec 007) */}
+                    {/* o apostador vai para a tela de créditos ao tocar na saudação, como no antigo (spec 007);
+                        o usuário do painel vai para o painel (spec 014) */}
                     <Greeting
-                        as={sessao.tipo === 'cliente' ? Link : 'span'}
-                        href={sessao.tipo === 'cliente' ? '/minha-conta' : undefined}
-                        $link={sessao.tipo === 'cliente'}
-                        title={sessao.tipo === 'cliente' ? 'Minha conta' : (sessao.nome ?? '')}
+                        as={destino_saudacao[sessao.tipo] ? Link : 'span'}
+                        href={destino_saudacao[sessao.tipo]?.href}
+                        $link={Boolean(destino_saudacao[sessao.tipo])}
+                        title={destino_saudacao[sessao.tipo]?.titulo ?? (sessao.nome ?? '')}
                     >
                         Olá{sessao.nome ? `, ${primeiro_nome(sessao.nome)}` : ''}
                         {saldo !== null && <Balance>R$ {formatar_real(para_centavos(saldo))}</Balance>}

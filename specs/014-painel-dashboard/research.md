@@ -230,7 +230,7 @@ saudação do usuário do painel virar link para `/painel`.
   manual com `?atualizar=1`, intervalo de 60 s só com `document.visibilityState === 'visible'`
   (criado já na fase Base, pois o aviso da US3 depende dele). A atualização automática da
   Combinação de risco não passa pelo cache, para a lista acompanhar os avisos do agendador.
-- Ver bilhete reutiliza o `TicketModal` existente com `GET /publico/bilhetes/{codigo}`.
+- Ver bilhete reutiliza o `TicketModal` existente com `GET /publico/apostas/{codigo}`.
 - Nomes das opções (Opções mais apostadas e combinação) vêm prontos do backend (`NomesCotacoes`).
 
 ## R-16 — Dependências

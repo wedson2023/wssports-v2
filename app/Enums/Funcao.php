@@ -197,6 +197,31 @@ enum Funcao: string
     public const PERMISSAO_AFILIADOS_SOB_PEDIDO = 'afiliados.editar_comissao';
 
     /**
+     * Permissões da Dashboard do painel (spec 014): uma por seção, na ordem da tela.
+     */
+    public const PERMISSOES_DASHBOARD = [
+        'dashboard.ver_apurado',
+        'dashboard.ver_situacao_jogos',
+        'dashboard.ver_apostas',
+        'dashboard.ver_combinacao_risco',
+        'dashboard.ver_apostas_um_jogo',
+        'dashboard.ver_vendedores',
+        'dashboard.ver_jogos_mais_apostados',
+        'dashboard.ver_opcoes_mais_apostadas',
+        'dashboard.ver_caixa_online',
+    ];
+
+    /**
+     * Seções da Dashboard que o Vendedor pode ver: só o que ele mesmo fez, sem as de gestão.
+     */
+    public const PERMISSOES_DASHBOARD_VENDEDOR = [
+        'dashboard.ver_apurado',
+        'dashboard.ver_situacao_jogos',
+        'dashboard.ver_apostas',
+        'dashboard.ver_apostas_um_jogo',
+    ];
+
+    /**
      * Nível hierárquico: 1 é o topo (Admin) e 4 a base (Vendedor).
      */
     public function nivel(): int
@@ -242,8 +267,13 @@ enum Funcao: string
      */
     public function permissoes_padrao(): array
     {
+        $permissoes_dashboard = array_values(array_filter(self::PERMISSOES_DASHBOARD, fn (string $permissao) => $this->pode_usar($permissao)));
+
         if ($this === self::Vendedor) {
-            return array_values(array_filter(self::PERMISSOES_APOSTAS, fn (string $permissao) => $this->pode_usar($permissao)));
+            return [
+                ...array_values(array_filter(self::PERMISSOES_APOSTAS, fn (string $permissao) => $this->pode_usar($permissao))),
+                ...$permissoes_dashboard,
+            ];
         }
 
         // os gestores recebem todas as de apostas para poder repassá-las aos vendedores que
@@ -272,6 +302,7 @@ enum Funcao: string
             ...array_values($permissoes_encerramentos),
             ...array_values($permissoes_cassino),
             ...array_values($permissoes_afiliados),
+            ...$permissoes_dashboard,
         ];
     }
 
@@ -291,10 +322,19 @@ enum Funcao: string
      * validar código são só do Vendedor; cancelar, de todos; o resto, de Gerente para cima.
      * Especiais, recursos do site, pagamentos, encerramentos de aposta e cassino são só de Admin e
      * Supervisor (vincular o gateway, só Admin). Afiliados: Vendedor nenhuma; Gerente todas menos
-     * excluir e restaurar.
+     * excluir e restaurar. Dashboard: Admin e Supervisor todas; Gerente todas menos a Caixa online;
+     * Vendedor só as do que ele mesmo fez (PERMISSOES_DASHBOARD_VENDEDOR).
      */
     public function pode_usar(string $permissao): bool
     {
+        if (in_array($permissao, self::PERMISSOES_DASHBOARD, true)) {
+            return match ($this) {
+                self::Admin, self::Supervisor => true,
+                self::Gerente => $permissao !== 'dashboard.ver_caixa_online',
+                self::Vendedor => in_array($permissao, self::PERMISSOES_DASHBOARD_VENDEDOR, true),
+            };
+        }
+
         // vincular o gateway mexe no dinheiro de toda a banca: só o Admin
         if ($permissao === 'gateway_pagamento.vincular') {
             return $this === self::Admin;

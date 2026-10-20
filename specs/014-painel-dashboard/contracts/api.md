@@ -100,6 +100,9 @@ Até 100 linhas, maior prêmio primeiro.
       "opcoes": ["Casa", "Ambas marcam"],
       "quantidade_bilhetes": 3,
       "codigos": ["A1B2C3D4", "E5F6G7H8", "J9K8L7M6"],
+      "bilhetes": [
+        { "codigo": "A1B2C3D4", "apostador": "João", "vendedor": "Agustina", "valor": "10.00", "premio": "800.00" }
+      ],
       "valor_apostado": "30.00",
       "premio": "2400.00",
       "primeiro_jogo_em": "2026-10-20T19:00:00-03:00"

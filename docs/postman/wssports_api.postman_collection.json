@@ -1,7 +1,7 @@
 {
     "info": {
         "name": "WSSports API",
-        "description": "Rotas da API do WSSports (autenticação JWT, gestão de usuários e permissões, área do cliente, gestão de clientes, confrontos e apostas).\n\nVariáveis da coleção:\n- base_url: endereço da API (ex.: http://127.0.0.1:8000/api)\n- token: token do painel, preenchido pelo login e refresh do painel\n- token_cliente: token do cliente, preenchido pelo cadastro, login e refresh da área do cliente\n- usuario_id / permissao: usados nas rotas de usuários e permissões\n- cliente_id / meio_pagamento_id / promocao_id: usados nas rotas de clientes\n- campeonato_id / confronto_id / registro_id / gerente_id: usados nas rotas de confrontos\n- codigo_aposta / palpite_id / confronto_ao_vivo_id: usados nas rotas de apostas\n- codigo_aposta / chave_encerramento / endpoint_push: usados nas rotas da spec 010\n- jogo_cassino / canal_cassino / provedor_cassino / sessao_cassino / acao_cassino / cassino_hall / cassino_chave: usados nas rotas da spec 011 (hall e chave só para simular o callback localmente)\n- token_afiliado / afiliado_id: usados nas rotas de afiliados da spec 012 (token_afiliado é preenchido pelo login, refresh e troca de senha do afiliado)\n\nFluxo: execute 'Login' (painel) e 'Login do cliente'; as demais rotas usam os tokens salvos.",
+        "description": "Rotas da API do WSSports (autenticação JWT, gestão de usuários e permissões, área do cliente, gestão de clientes, confrontos e apostas).\n\nVariáveis da coleção:\n- base_url: endereço da API (ex.: http://127.0.0.1:8000/api)\n- token: token do painel, preenchido pelo login e refresh do painel\n- token_cliente: token do cliente, preenchido pelo cadastro, login e refresh da área do cliente\n- usuario_id / permissao: usados nas rotas de usuários e permissões\n- cliente_id / meio_pagamento_id / promocao_id: usados nas rotas de clientes\n- campeonato_id / confronto_id / registro_id / gerente_id: usados nas rotas de confrontos\n- codigo_aposta / palpite_id / confronto_ao_vivo_id: usados nas rotas de apostas\n- codigo_aposta / chave_encerramento / endpoint_push: usados nas rotas da spec 010\n- jogo_cassino / canal_cassino / provedor_cassino / sessao_cassino / acao_cassino / cassino_hall / cassino_chave: usados nas rotas da spec 011 (hall e chave só para simular o callback localmente)\n- token_afiliado / afiliado_id: usados nas rotas de afiliados da spec 012 (token_afiliado é preenchido pelo login, refresh e troca de senha do afiliado)\n\n- Dashboard (spec 014): as rotas usam o token do painel; atualizar=1 ignora o cache\n\nFluxo: execute 'Login' (painel) e 'Login do cliente'; as demais rotas usam os tokens salvos.",
         "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
     },
     "auth": {
@@ -315,6 +315,33 @@
                             ]
                         },
                         "description": "Invalida o token atual imediatamente (204)."
+                    }
+                },
+                {
+                    "name": "Usuário logado",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/auth/eu",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "auth",
+                                "eu"
+                            ]
+                        },
+                        "description": "Nome, login, função e as seções da Dashboard que o usuário do painel pode ver (spec 014)."
                     }
                 }
             ]
@@ -4555,6 +4582,64 @@
                             "raw": "{\n    \"remover_confronto_cancelado\": true,\n    \"minutos_pagamento_premio\": 5\n}"
                         }
                     }
+                },
+                {
+                    "name": "Configurações dos avisos no WhatsApp",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/configuracoes/avisos-whatsapp",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "configuracoes",
+                                "avisos-whatsapp"
+                            ]
+                        },
+                        "description": "Aviso de combinação de risco nova no WhatsApp do Admin (spec 014). A chave do CallMeBot só aparece como definida e com os 4 últimos caracteres. Permissão configuracoes.editar."
+                    }
+                },
+                {
+                    "name": "Alterar avisos no WhatsApp",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/configuracoes/avisos-whatsapp",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "configuracoes",
+                                "avisos-whatsapp"
+                            ]
+                        },
+                        "description": "Liga/desliga o aviso, telefone com DDI (só dígitos) e chave do CallMeBot; chave ausente mantém a atual. Ligar sem telefone ou chave → 422. Permissão configuracoes.editar.",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"aviso_combinacao_whatsapp\": true,\n    \"telefone_whatsapp_admin\": \"5582999999999\",\n    \"chave_callmebot\": \"123456\"\n}"
+                        }
+                    }
                 }
             ],
             "description": "Logo e texto das regras da banca (configuracoes.editar: Admin e Supervisor)."
@@ -8162,6 +8247,361 @@
                             ]
                         },
                         "description": "configuracoes.editar."
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Dashboard do painel (spec 014)",
+            "description": "Seções da Dashboard (contracts/api.md §2). Cada rota exige a permissão dashboard.ver_<seção> e respeita a rede do usuário; cache de 60 s por usuário (atualizar=1 recalcula).",
+            "item": [
+                {
+                    "name": "Apurado do dia",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/dashboard/apurado?atualizar=0",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "dashboard",
+                                "apurado"
+                            ],
+                            "query": [
+                                {
+                                    "key": "atualizar",
+                                    "value": "0",
+                                    "description": "1 ignora o cache de 60 s",
+                                    "disabled": true
+                                }
+                            ]
+                        },
+                        "description": "Entradas, saídas, comissões, limites (Vendedor), depósitos online e saques pagos (Admin/Supervisor), lançamentos/retiradas/comissão do gerente fake e saldo líquido. Permissão dashboard.ver_apurado."
+                    }
+                },
+                {
+                    "name": "Situação dos jogos",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/dashboard/situacao-jogos?atualizar=0",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "dashboard",
+                                "situacao-jogos"
+                            ],
+                            "query": [
+                                {
+                                    "key": "atualizar",
+                                    "value": "0",
+                                    "description": "1 ignora o cache de 60 s",
+                                    "disabled": true
+                                }
+                            ]
+                        },
+                        "description": "Jogos distintos das apostas do dia por situação. Permissão dashboard.ver_situacao_jogos."
+                    }
+                },
+                {
+                    "name": "Apostas",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/dashboard/apostas?atualizar=0",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "dashboard",
+                                "apostas"
+                            ],
+                            "query": [
+                                {
+                                    "key": "atualizar",
+                                    "value": "0",
+                                    "description": "1 ignora o cache de 60 s",
+                                    "disabled": true
+                                }
+                            ]
+                        },
+                        "description": "Quantidade e valor de total, abertas, premiadas, perdidas e canceladas. Permissão dashboard.ver_apostas."
+                    }
+                },
+                {
+                    "name": "Combinação de risco",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/dashboard/combinacoes-risco?atualizar=0",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "dashboard",
+                                "combinacoes-risco"
+                            ],
+                            "query": [
+                                {
+                                    "key": "atualizar",
+                                    "value": "0",
+                                    "description": "1 ignora o cache de 60 s",
+                                    "disabled": true
+                                }
+                            ]
+                        },
+                        "description": "Combinações de jogos e opções em 2 ou mais apostas abertas de ontem e hoje (até 100). Permissão dashboard.ver_combinacao_risco."
+                    }
+                },
+                {
+                    "name": "Avisos de combinação",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/dashboard/combinacoes-risco/avisos?depois_de=0",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "dashboard",
+                                "combinacoes-risco",
+                                "avisos"
+                            ],
+                            "query": [
+                                {
+                                    "key": "depois_de",
+                                    "value": "0"
+                                }
+                            ]
+                        },
+                        "description": "Avisos registrados pelo agendador depois de depois_de (sem cache, nunca registra nada); sem depois_de devolve só o ultimo_id. Permissão dashboard.ver_combinacao_risco."
+                    }
+                },
+                {
+                    "name": "Apostas por um jogo",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/dashboard/apostas-um-jogo?atualizar=0",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "dashboard",
+                                "apostas-um-jogo"
+                            ],
+                            "query": [
+                                {
+                                    "key": "atualizar",
+                                    "value": "0",
+                                    "description": "1 ignora o cache de 60 s",
+                                    "disabled": true
+                                }
+                            ]
+                        },
+                        "description": "Até 50 apostas abertas que dependem de um único jogo, por prêmio. Permissão dashboard.ver_apostas_um_jogo."
+                    }
+                },
+                {
+                    "name": "Vendedores",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/dashboard/vendedores?atualizar=0",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "dashboard",
+                                "vendedores"
+                            ],
+                            "query": [
+                                {
+                                    "key": "atualizar",
+                                    "value": "0",
+                                    "description": "1 ignora o cache de 60 s",
+                                    "disabled": true
+                                }
+                            ]
+                        },
+                        "description": "Os 10 vendedores da rede com mais entradas no dia. Permissão dashboard.ver_vendedores."
+                    }
+                },
+                {
+                    "name": "Jogos mais apostados",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/dashboard/jogos-mais-apostados?atualizar=0",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "dashboard",
+                                "jogos-mais-apostados"
+                            ],
+                            "query": [
+                                {
+                                    "key": "atualizar",
+                                    "value": "0",
+                                    "description": "1 ignora o cache de 60 s",
+                                    "disabled": true
+                                }
+                            ]
+                        },
+                        "description": "Os 10 jogos com mais apostas no dia. Permissão dashboard.ver_jogos_mais_apostados."
+                    }
+                },
+                {
+                    "name": "Opções mais apostadas",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/dashboard/opcoes-mais-apostadas?atualizar=0",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "dashboard",
+                                "opcoes-mais-apostadas"
+                            ],
+                            "query": [
+                                {
+                                    "key": "atualizar",
+                                    "value": "0",
+                                    "description": "1 ignora o cache de 60 s",
+                                    "disabled": true
+                                }
+                            ]
+                        },
+                        "description": "As 10 opções mais apostadas no dia. Permissão dashboard.ver_opcoes_mais_apostadas."
+                    }
+                },
+                {
+                    "name": "Caixa online",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/dashboard/caixa-online?atualizar=0",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "dashboard",
+                                "caixa-online"
+                            ],
+                            "query": [
+                                {
+                                    "key": "atualizar",
+                                    "value": "0",
+                                    "description": "1 ignora o cache de 60 s",
+                                    "disabled": true
+                                }
+                            ]
+                        },
+                        "description": "Apostas dos clientes no site, encerramentos, depósitos e saques do dia (banca toda). Permissão dashboard.ver_caixa_online."
                     }
                 }
             ]
