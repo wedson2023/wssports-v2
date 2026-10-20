@@ -69,4 +69,5 @@ Ativo ──excluir (cascata, mesmo deleted_at)──▶ Lixeira ──restaurar
 
 `resources/js/utils/permissions.js`: `{ chave: { grupo, nome, descricao } }` para todas as permissões
 de `Funcao.php`, e a ordem dos grupos (Usuários, Clientes, Confrontos e cotações, Apostas, Especiais,
-Site e configurações, Pagamentos, Cassino, Afiliados, Dashboard).
+Site e configurações, Pagamentos, Cassino, Afiliados, Dashboard). Só textos: **quais** permissões
+aparecem vem do servidor (`disponiveis`, contracts/api §9), sem regra de função no frontend.

@@ -47,6 +47,14 @@ modal de permissões agrupadas no lugar das 'travas' do antigo e Lixeira só com
   da rede dele? → A: Sim, a aba "Regras da rede", com confirmação mostrando quantos vendedores serão
   alterados antes de gravar (alcance supervisão da API existente).
 
+### Session 2026-10-20 (`/speckit-analyze`, recomendações aceitas pelo responsável)
+
+- Login só com letras sem acento, números, ponto, hífen ou sublinhado (novos cadastros).
+- A lista de supervisores mostra as quantidades de gerentes e de vendedores.
+- As permissões que podem ser concedidas a um usuário vêm do servidor (a regra fica num lugar só).
+- O seletor de superior tem busca (sem limite fixo de itens) e mostra "(inativo)".
+- A confirmação de desativar um supervisor conta gerentes e vendedores abaixo dele.
+
 ## Referências do sistema antigo *(Princípios VII e VIII)*
 
 - Telas: `resources/js/screens/adm/register/supervisor`, `register/manager` e `register/seller`
@@ -280,8 +288,8 @@ O gestor desativa ou exclui um usuário (e a equipe abaixo dele) e restaura excl
   paginação (padrão 15, máximo 100 por página), abas Ativos e Lixeira e o botão "Novo <função>".
 - **FR-006**: As colunas DEVEM ser ID, Nome, Login, Telefone, Ativo, Data de criação, Alterado em e
   Ação; Vendedores com Comissão (1/2/3 jogos do pré-jogo) e Gerente; Gerentes com Vendedores
-  (quantidade de vendedores ativos) e Supervisor; Supervisores com Gerentes (quantidade). A coluna do
-  superior só aparece para quem está acima dele.
+  (quantidade de vendedores ativos) e Supervisor; Supervisores com Gerentes e Vendedores
+  (quantidades). A coluna do superior só aparece para quem está acima dele.
 - **FR-007**: As ações por linha DEVEM ser editar, permissões, ativar/desativar e excluir; na Lixeira,
   só restaurar. Ações destrutivas pedem confirmação.
 - **FR-008**: No celular, as listas DEVEM virar cartões com as mesmas informações e ações.
@@ -294,7 +302,10 @@ O gestor desativa ou exclui um usuário (e a equipe abaixo dele) e restaura excl
   e estar na sua rede; o Gerente cadastra vendedor sempre na equipe dele.
 - **FR-010**: O modal DEVE ter Nome, Login, Senha, Confirme a senha, Superior (quando aplicável),
   Telefone com máscara, Endereço e, na edição, Ativo. O login é único (sem diferenciar maiúsculas,
-  incluindo excluídos e afiliados), sem espaço, e não pode ser alterado depois.
+  incluindo excluídos e afiliados), só com letras sem acento, números, ponto, hífen ou sublinhado
+  (sem espaço), e não pode ser alterado depois; a regra vale para os cadastros novos (logins já
+  existentes não são revalidados). No seletor de superior, o superior inativo aparece com
+  "(inativo)" e pode ser escolhido.
 - **FR-011**: Na edição, senha em branco DEVE manter a atual; a troca de superior DEVE aceitar só
   superior da função certa e da rede de quem edita.
 - **FR-012**: O cadastro de vendedor DEVE mostrar as comissões de 1, 2 e 3 jogos. Quando informadas,

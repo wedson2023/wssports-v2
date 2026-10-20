@@ -16,6 +16,7 @@ Acrescenta `permissoes`: nomes das permissões que o usuário tem e pode usar.
 ## 2. `GET /usuarios` (alterada)
 
 Query: `funcao`, `ativo`, `busca`, `por_pagina` (1–100, padrão 15), `pagina`. Exige `usuarios.listar`.
+O seletor de superior do modal usa esta rota com `funcao` e `busca` (paginada), sem lista fixa.
 Cada item ganha `superior`, `comissoes` (vendedor), `quantidade_vendedores` (gerente, supervisor) e
 `quantidade_gerentes` (supervisor) — data-model §4.
 
@@ -36,6 +37,8 @@ Exige `usuarios.cadastrar_{funcao}` (que a função de quem cadastra possa usar)
 
 - `funcao`: abaixo da de quem cadastra (data-model §2), senão 422 "Você não pode cadastrar usuários com
   a função X.".
+- `login`: `regex:/^[A-Za-z0-9._-]+$/` ("O login deve ter só letras sem acento, números, ponto, hífen
+  ou sublinhado, sem espaços."), além de único.
 - `usuarios_id`: obrigatório fora da função imediata ("Informe o superior."), proibido na imediata;
   inválido → "O superior informado é inválido para a função deste usuário.".
 - `comissao_*`: só Vendedor; `numeric|between:0,100`, 2 casas.
@@ -65,8 +68,18 @@ Configuração de um vendedor da rede (formato de `UsuariosConfiguracoesResource
 
 ## 9. Permissões por usuário (sem mudança de rota)
 
-`GET/POST/DELETE /usuarios/{usuario}/permissoes` (spec 001): o `POST` passa a recusar também a
-permissão que a função do alvo não pode usar (422 "Esta permissão não vale para a função do usuário.").
+`GET/POST/DELETE /usuarios/{usuario}/permissoes` (spec 001):
+
+- o `POST` passa a recusar também a permissão que a função do alvo não pode usar (422 "Esta permissão
+  não vale para a função do usuário.");
+- as três respostas passam a trazer `disponiveis`: as permissões que quem edita possui **e** a função
+  do alvo pode usar (`Funcao::pode_usar`), que são as chaves que o painel mostra (a regra fica só no
+  servidor).
+
+```json
+{ "permissoes": ["usuarios.listar", "apostas.cancelar"],
+  "disponiveis": ["usuarios.listar", "usuarios.consultar", "apostas.cancelar", "..."] }
+```
 
 ## 10. Postman
 

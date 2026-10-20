@@ -29,7 +29,7 @@ Grupo aparece com `usuarios.listar`; subitem pela função do usuário logado. V
 - Colunas por função (FR-006); Comissão e Gerente só em vendedores; Vendedores em gerentes;
   Gerentes e Vendedores em supervisores; coluna do superior só para quem está acima dele.
 - Ações: ✎ editar, 🔑 permissões, ⏻ ativar/desativar (confirmação "Isso também vai desativar N
-  usuários abaixo dele."), 🗑 excluir (confirmação); Lixeira: ↺ restaurar. Cada ação só com a
+  usuários abaixo dele.", N = vendedores do gerente ou gerentes + vendedores do supervisor), 🗑 excluir (confirmação); Lixeira: ↺ restaurar. Cada ação só com a
   permissão (R-08).
 - Celular (≤ 900 px): cartões com nome, login, função do superior, ativo e ações.
 - Estados: carregando (esqueleto), vazio ("Nenhum usuário encontrado."), erro com tentar de novo.
@@ -44,8 +44,9 @@ Abas por função (cadastro só mostra Dados; Permissões só na edição):
 | Gerente | Dados · Regras da equipe · Permissões |
 | Supervisor | Dados · Regras da rede · Permissões |
 
-- **Dados**: Nome, Login (só leitura na edição), Senha, Confirme a senha, Superior (select, quando
-  aplicável), Telefone (máscara), Endereço, Ativo (edição). No cadastro de vendedor, Comissão 1, 2 e
+- **Dados**: Nome, Login (só leitura na edição; letras sem acento, números, ponto, hífen ou
+  sublinhado), Senha, Confirme a senha, Superior (campo com busca paginada, "(inativo)" ao lado do
+  nome, quando aplicável), Telefone (máscara), Endereço, Ativo (edição). No cadastro de vendedor, Comissão 1, 2 e
   3 jogos.
 - **Comissões**: duas grades (Pré-jogo e Ao vivo) de 1 a 12 jogos, em %, e Comissão por prêmio.
 - **Limites e regras**: grupos Limites (geral, duplo, simples), Apostas (realizar, cancelar e tempo,
@@ -66,8 +67,8 @@ Usuários                         [Marcar todas] [Desmarcar todas]
 Apostas ...
 ```
 
-Só as permissões que quem edita tem e a função do alvo pode usar; cada chave grava na hora (volta em
-erro).
+Só as permissões que quem edita tem e a função do alvo pode usar, vindas do servidor em `disponiveis`
+(contracts/api §9); cada chave grava na hora (volta em erro).
 
 ## 5. Componentes e hooks novos
 
