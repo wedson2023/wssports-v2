@@ -94,6 +94,13 @@ export default function AuthModal({ aba, codigo_afiliado = '', codigo_indicacao 
                 return;
             }
 
+            // Admin, Supervisor e Gerente vão direto para o painel; o Vendedor fica na tela de
+            // apostas (spec 014, FR-003)
+            if (nova.tipo === 'usuario' && nova.funcao && nova.funcao !== 'Vendedor') {
+                router.visit('/painel');
+                return;
+            }
+
             ao_entrar_com_sucesso?.(nova);
         } catch (erro) {
             alerta_erro(erro);

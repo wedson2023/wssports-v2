@@ -44,6 +44,10 @@ Schedule::command('confrontos_ao_vivo:conferir')->everyMinute()->runInBackground
 Schedule::command('apostas:expirar_pendentes')->everyMinute()->withoutOverlapping(2);
 Schedule::command('apostas:recusar_analises_presas')->everyMinute()->withoutOverlapping(2);
 
+// combinação de risco (spec 014): registra as combinações novas e avisa o Admin no WhatsApp; é a
+// única origem dos avisos do painel
+Schedule::command('apostas:avisar_combinacoes_risco')->everyMinute()->withoutOverlapping(2);
+
 // pagamentos (spec 007): renova o token da conta do Mercado Pago perto de vencer
 Schedule::command('mercado_pago:renovar_token')->dailyAt('03:00')->withoutOverlapping(10);
 

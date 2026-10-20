@@ -102,7 +102,18 @@ class Configuracoes extends Model
         // regra de comissão padrão do cadastro público de afiliados (spec 012)
         'afiliados_tipo_ganho_padrao',
         'afiliados_percentual_padrao',
+        // aviso de combinação de risco nova no WhatsApp do Admin (spec 014)
+        'aviso_combinacao_whatsapp',
+        'telefone_whatsapp_admin',
+        'chave_callmebot',
     ];
+
+    /**
+     * A chave do CallMeBot nunca sai nas respostas (spec 014, FR-048).
+     *
+     * @var list<string>
+     */
+    protected $hidden = ['chave_callmebot'];
 
     /**
      * @return array<string, string>
@@ -166,6 +177,9 @@ class Configuracoes extends Model
             // afiliados (spec 012)
             'afiliados_tipo_ganho_padrao' => TipoGanhoAfiliado::class,
             'afiliados_percentual_padrao' => 'decimal:2',
+            // aviso de combinação de risco (spec 014)
+            'aviso_combinacao_whatsapp' => 'boolean',
+            'chave_callmebot' => 'encrypted',
         ];
     }
 

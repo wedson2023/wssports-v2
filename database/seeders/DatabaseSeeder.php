@@ -39,5 +39,6 @@ class DatabaseSeeder extends Seeder
         $this->call(ClientesPromocoesSeeder::class);
         $this->call(AvisosSeeder::class);
         $this->call(BannersSeeder::class);
+        $this->call(DashboardSeeder::class);
     }
 }
