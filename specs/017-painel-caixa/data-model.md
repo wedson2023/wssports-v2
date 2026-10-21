@@ -21,7 +21,7 @@ editada. Desfazer = preencher `desfeita_por`/`motivo_desfazer` e aplicar o soft 
 | `periodo_fim` | dateTime | > `periodo_inicio`; ≤ agora | Fim do período da prestação: data e hora até onde o caixa foi fechado |
 | `saldo_anterior` | decimal(15,2) | pode ser negativo | Diferença deixada pela prestação anterior (apurado − recebido), já incluída no valor apurado |
 | `valor_apurado` | decimal(15,2) | pode ser negativo (banca deve ao vendedor) | Saldo de caixa do vendedor no fim do período, calculado na prestação |
-| `valor_recebido` | decimal(15,2) | ≥ −999999999999.99; duas casas | Valor efetivamente recebido do vendedor (negativo quando a banca pagou ao vendedor) |
+| `valor_recebido` | decimal(15,2) | duas casas; pode ser negativo (a banca pagou ao vendedor) | Valor efetivamente recebido do vendedor (negativo quando a banca pagou ao vendedor) |
 | `diferenca` | decimal(15,2) | = apurado − recebido | Diferença que fica para a próxima prestação (saldo anterior da próxima) |
 | `lote` | char(36), nullable | UUID; igual em todas as prestações do mesmo lote | Identificador da prestação em lote feita pela linha do gerente; vazio na prestação individual |
 | `prestado_por` | foreignId → `usuarios` | quem confirmou com a senha | Usuário do painel que fez a prestação de contas |

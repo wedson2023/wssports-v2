@@ -97,7 +97,7 @@ class UsuariosConfiguracoes extends Model
     /**
      * @var list<string>
      */
-    protected $fillable = [...self::CAMPOS, 'usuarios_id'];
+    protected $fillable = [...self::CAMPOS, 'usuarios_id', 'percentual_comissao_gerente'];
 
     /**
      * @return array<string, string>
@@ -133,6 +133,7 @@ class UsuariosConfiguracoes extends Model
             'desconto_criar_aposta' => 'decimal:2',
             'quantidade_minima_criar_aposta' => 'integer',
             'quantidade_maxima_criar_aposta' => 'integer',
+            'percentual_comissao_gerente' => 'decimal:2',
             ...array_fill_keys([...self::COMISSOES_PRE_JOGO, ...self::COMISSOES_AO_VIVO], 'decimal:2'),
         ];
     }

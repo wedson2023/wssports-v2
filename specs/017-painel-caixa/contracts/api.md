@@ -137,7 +137,7 @@ Só Admin e Supervisor com `caixa.ver_clientes` (o Gerente recebe 403 mesmo com 
 ```
 
 ### 4.2 `GET /caixa/clientes?de&ate&busca&ordenar=nome|entradas|resultado&direcao&page&por_pagina`
-Clientes com movimento no período: `data: [{ id, nome, login, apostas, entradas, saidas,
+Busca por nome, telefone ou e-mail (o cliente não tem login). Clientes com movimento no período: `data: [{ id, nome, telefone, email, situacao, apostas, entradas, saidas,
 encerramentos, resultado_cassino, bonus_convertidos, depositos, saques, liquido }]`.
 
 ## 5. Exportação (`CaixaExportacaoController`)

@@ -284,8 +284,8 @@ conferir os dois clientes na lista; como Gerente, conferir que a aba não aparec
 2. **Given** o período "Hoje", **When** o usuário compara com a Caixa online da Dashboard, **Then**
    os valores são os mesmos.
 3. **Given** a aba Clientes, **When** a lista aparece, **Then** cada linha mostra o cliente (nome e
-   login), apostas, entradas, saídas, encerramentos, depósitos, saques e líquido, com busca por nome
-   ou login, só os clientes com movimento no período, e paginação.
+   telefone ou e-mail), apostas, entradas, saídas, encerramentos, depósitos, saques e líquido, com busca
+   por nome, telefone ou e-mail (o cliente não tem login), só os clientes com movimento no período, e paginação.
 4. **Given** apostas pagas com saldo de promoção, **When** o caixa é calculado, **Then** elas não
    contam nas Entradas.
 5. **Given** um Gerente ou Vendedor, **When** abre Caixa, **Then** a aba Clientes não aparece e o
@@ -434,7 +434,8 @@ a tela.
   decididas no intervalo (prêmios e devoluções pela data da decisão, mesmo de apostas feitas antes)
   − estornos de apostas já prestadas e canceladas no intervalo + Suprimentos − Retiradas; sem
   prestação anterior, desde o primeiro movimento dele. Assim nenhum valor fica fora de caixa nem é
-  contado duas vezes.
+  contado duas vezes. Inclui também as correções de resultado de apostas já prestadas (re-apuração),
+  que aparecem no resumo da prestação como "Ajustes de apostas anteriores".
 - **FR-009a**: Os cartões e as listas por período (FR-006) continuam com a regra da Dashboard (apostas
   pela data em que foram feitas, com o grupo "Em aberto"); a regra pela data da decisão vale para o
   saldo de caixa e para a prestação de contas.
@@ -492,7 +493,8 @@ a tela.
   indicação na tela, sem criar lançamento automático.
 - **FR-021**: Na linha de um gerente, a prestação DEVE valer para todos os vendedores dele com
   movimento, mostrando o valor de cada um e o total, e gravar todas juntas ou nenhuma; os vendedores
-  sem movimento são pulados e a tela informa quantos.
+  sem movimento são pulados e a tela informa quantos. No lote, o valor recebido é o apurado de cada
+  vendedor; para registrar um valor recebido diferente, presta-se aquele vendedor sozinho.
 - **FR-022**: Duas prestações do mesmo vendedor ao mesmo tempo NÃO DEVEM gerar períodos sobrepostos:
   a segunda é recusada com mensagem e a tela é atualizada.
 - **FR-022a**: Só a última prestação de contas de cada vendedor DEVE poder ser desfeita, por quem a
@@ -510,9 +512,10 @@ a tela.
   sem saldo de promoção), Em aberto, Premiadas, Perdidas, Saídas, Encerramentos, Depósitos
   aprovados, Saques pagos e Saldo líquido (Entradas − Saídas − Encerramentos; depósitos e saques são
   informativos).
-- **FR-024**: A aba Clientes DEVE listar os clientes com movimento no período (nome, login, apostas,
-  entradas, saídas, encerramentos, depósitos, saques e líquido), com busca por nome ou login e
-  paginação (padrão 20, máximo 100).
+- **FR-024**: A aba Clientes DEVE listar os clientes com movimento no período (nome, telefone ou
+  e-mail, apostas, entradas, saídas, encerramentos, depósitos, saques e líquido), com busca por nome,
+  telefone ou e-mail (a tabela de clientes não tem login),
+  ordenação por nome (padrão), entradas ou resultado e paginação (padrão 20, máximo 100).
 - **FR-025**: A aba Clientes DEVE mostrar também, no período (Clarifications 2026-10-21):
   - **Cassino**: entradas (valor apostado nas rodadas com saldo real), saídas (ganhos pagos), resultado
     (entradas − saídas) e comissão dos provedores, com as mesmas regras do relatório do cassino

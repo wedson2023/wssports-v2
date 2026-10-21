@@ -25,7 +25,10 @@ em relação ao antigo aprovadas na spec ("Referências do sistema antigo").
 - Personalizado abre dois campos de data com rótulo em cima ("De", "Até") e **Aplicar**; erro no
   campo quando "De" > "Até", período > 1 ano ou data futura.
 - Abaixo, o texto do período em vigor: "21/10/2026" ou "14/10/2026 a 21/10/2026".
-- Celular: atalhos numa linha rolável; Personalizado abre os campos embaixo, em largura total.
+- Atalhos em balões do mesmo tamanho, numa linha só (no celular, rolável na horizontal);
+  Personalizado abre os campos embaixo.
+- Celular: as abas Rede/Clientes e Todas/Pré-jogo/Ao vivo dividem a largura toda (ajuste aprovado
+  pelo responsável em 2026-10-21).
 
 ## 3. Aba Rede
 
@@ -53,19 +56,22 @@ Grid: 4 colunas no desktop, 2 no celular; esqueleto enquanto carrega.
 - Colunas do vendedor: Nome (login embaixo, selo "inativo"/"excluído"), Apostas, Entradas,
   Lançamentos, Retiradas, Limites ("4.800 / 5.000 / 4.900" com dica "geral / duplo / simples"),
   Comissão, Saídas, **Líquido**, **Saldo de caixa**, ações.
-- Colunas de gerente e supervisor: Nome, Apostas, Entradas, Em aberto, Premiadas, Perdidas,
-  Comissão vendedor, Comissão gerente, Saídas, Lançamentos, Retiradas, **Líquido**, **Saldo de
-  caixa**, Recebido no período, ações. Clicar no nome desce para o nível abaixo (cursor e seta
+- Colunas de gerente e supervisor: Nome, Apostas, Entradas, Comissão vendedor, Comissão gerente,
+  Saídas, Lançamentos, Retiradas, Recebido, **Líquido**, **Saldo de caixa**, ações. Em aberto,
+  Premiadas e Perdidas (valores e quantidades) e o % do gerente ficam só nos detalhes da linha (pedido
+  do responsável em 2026-10-21). Clicar no nome desce para o nível abaixo (cursor e seta
   `chevron_right`).
+- Cada linha tem o botão de expandir (`expand_more`), que mostra todas as informações em pares
+  rótulo/valor; tocar na linha (fora dos botões) também expande.
 - Cores: líquido e saldo positivos em verde, negativos em vermelho, zero em cinza (nos dois temas).
 - Ações (`ActionsMenu`, só as de `acoes` da linha):
   - Vendedor: Lançamento (`redo`), Prestar contas (`get_app`), Transações (`compare_arrows`),
     Ajustar limite (`attach_money`), Gráfico (`insert_chart_outlined`), Baixar planilha
     (`table_view`).
   - Gerente: Prestar contas de todos (`get_app`), Comissão do gerente (`pie_chart`), Baixar planilha.
-- Celular (até 900 px): cada linha vira um cartão com nome, Líquido e Saldo de caixa em destaque e as
-  ações; tocar em "ver mais" expande as demais colunas em pares rótulo/valor; tocar no nome (gestor)
-  desce de nível.
+- Celular (até 900 px), como a lista de usuários: tabela só com as colunas principais (nome com o
+  login embaixo e um valor: Saldo de caixa em Todas, Líquido nas outras abas), o menu de três
+  pontinhos e o botão de expandir; tocar na linha também expande as demais colunas; tocar no nome (gestor) desce de nível.
 - Vazio: "Nenhum movimento neste período. Experimente outro período." Erro: mensagem e "Tentar
   novamente". Paginação (`Pagination`) embaixo.
 
@@ -116,7 +122,7 @@ enquanto grava; erros do servidor no campo ou num aviso no topo do corpo.
   Encerramentos, Saldo líquido), **Cassino** (Entradas, Saídas, Resultado, Comissão dos provedores),
   **Bônus** (Concedidos — dica "não é dinheiro de verdade" —, Convertidos), **Movimento** (Depósitos,
   Saques) e **Resultado do site** (destaque, verde/vermelho/cinza, dica com a fórmula).
-- Lista (`CashTable`): Cliente (nome e login), Apostas, Entradas, Saídas, Encerramentos, Resultado
+- Lista (`CashTable`): Cliente (nome, com o e-mail ou o telefone embaixo), Apostas, Entradas, Saídas, Encerramentos, Resultado
   cassino, Bônus convertidos, Depósitos, Saques, **Líquido**; busca e ordenação (Nome, Entradas,
-  Resultado); sem ações por linha; no celular, cartões como na Rede.
+  Resultado); sem ações por linha; no celular, só Nome e Líquido, com o botão de expandir.
 - Botão **Baixar planilha** do escopo Clientes.

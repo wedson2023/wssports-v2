@@ -41,4 +41,12 @@ class PainelController extends Controller
     {
         return Inertia::render('PanelQuotes');
     }
+
+    /**
+     * Tela "Caixa" (spec 017); aba, tipo, período e foco vêm na query string.
+     */
+    public function caixa(): Response
+    {
+        return Inertia::render('PanelCash');
+    }
 }

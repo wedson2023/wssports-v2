@@ -14,6 +14,7 @@ export const grupos_permissoes = [
     'Cassino',
     'Afiliados',
     'Dashboard',
+    'Caixa',
 ];
 
 // grupo das permissões sem texto cadastrado aqui (aparecem com o próprio nome)
@@ -121,6 +122,15 @@ export const permissoes = {
     'dashboard.ver_jogos_mais_apostados': { grupo: 'Dashboard', nome: 'Jogos mais apostados', descricao: 'Vê os jogos mais apostados.' },
     'dashboard.ver_opcoes_mais_apostadas': { grupo: 'Dashboard', nome: 'Opções mais apostadas', descricao: 'Vê as opções mais apostadas.' },
     'dashboard.ver_caixa_online': { grupo: 'Dashboard', nome: 'Caixa online', descricao: 'Vê o caixa das apostas online.' },
+
+    // Caixa (spec 017)
+    'caixa.ver': { grupo: 'Caixa', nome: 'Ver caixa', descricao: 'Vê o caixa da rede (o vendedor, só o próprio).' },
+    'caixa.ver_clientes': { grupo: 'Caixa', nome: 'Caixa clientes', descricao: 'Vê o caixa das apostas online, cassino e bônus dos clientes.' },
+    'caixa.lancar': { grupo: 'Caixa', nome: 'Fazer lançamentos', descricao: 'Registra suprimentos e retiradas no caixa dos vendedores.' },
+    'caixa.excluir_lancamento': { grupo: 'Caixa', nome: 'Excluir lançamentos', descricao: 'Exclui lançamentos que ainda não foram prestados.' },
+    'caixa.prestar_contas': { grupo: 'Caixa', nome: 'Prestar contas', descricao: 'Dá baixa no caixa dos vendedores e desfaz a última prestação.' },
+    'caixa.exportar': { grupo: 'Caixa', nome: 'Baixar planilha', descricao: 'Exporta o caixa do período em Excel.' },
+    'caixa.editar_comissao_gerente': { grupo: 'Caixa', nome: 'Comissão do gerente', descricao: 'Define o percentual da comissão dos gerentes.' },
 };
 
 // texto de uma permissão; sem cadastro, o próprio nome no grupo "Outras"

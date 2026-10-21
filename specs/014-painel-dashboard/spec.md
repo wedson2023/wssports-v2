@@ -432,6 +432,10 @@ conferir que as outras aparecem e que a com erro oferece tentar de novo.
   gerente sobre o líquido dos vendedores dele (entradas − saídas − comissão do vendedor), zero
   quando esse líquido for negativo ou zero, somada por gerente da rede. O percentual é dado fake
   zerado (0%) até a spec de caixa, então o cartão mostra R$ 0,00 com o selo "em breve".
+
+> Alterado pela spec 017 (FR-034): lançamentos, retiradas e o percentual da comissão do gerente
+> passaram a ser reais (suprimentos e retiradas do caixa no dia e o percentual de cada gerente,
+> definido na tela Caixa); sem o selo "em breve". Os dados fake correspondentes foram removidos.
 - **FR-023**: O Saldo líquido DEVE ser: Entradas − Saídas − Comissão do vendedor − Comissão do
   gerente + Lançamentos − Retiradas (para o Vendedor, sem comissão do gerente).
 - **FR-024**: O Apurado DEVE ter um gráfico de barras comparando Entradas, Saídas, Comissões e

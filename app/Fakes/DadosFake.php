@@ -76,29 +76,6 @@ class DadosFake
     }
 
     /**
-     * FAKE — lançamentos (suprimentos) e retiradas do caixa do dia na Dashboard (spec 014), sempre
-     * zerados e marcados "em breve" na tela. Substituído pela spec de caixa.
-     *
-     * @return array{lancamentos: string, retiradas: string}
-     */
-    public static function caixa_usuario(): array
-    {
-        return [
-            'lancamentos' => '0.00',
-            'retiradas' => '0.00',
-        ];
-    }
-
-    /**
-     * FAKE — percentual da comissão do gerente sobre o líquido dos vendedores dele (spec 014),
-     * sempre 0%. Substituído pela spec de caixa.
-     */
-    public static function percentual_comissao_gerente(): string
-    {
-        return '0.00';
-    }
-
-    /**
      * FAKE — ícones do aplicativo (PWA). Substituídos pela spec de configurações visuais.
      *
      * @return list<array{src: string, sizes: string, type: string}>

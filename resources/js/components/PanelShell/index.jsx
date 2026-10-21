@@ -18,8 +18,12 @@ const permissoes_cotacoes = [
     'confrontos_teto_cotacoes.editar',
 ];
 
+// permissões que dão acesso à tela "Caixa" (spec 017): a da rede ou a dos clientes
+const permissoes_caixa = ['caixa.ver', 'caixa.ver_clientes'];
+
 // itens do menu do painel: Dashboard (spec 014), o grupo Usuários (spec 015) com os subitens por
-// função, como no menu "Usuários" do antigo, e Cotações (spec 016); cada um diz quem pode vê-lo
+// função, como no menu "Usuários" do antigo, Cotações (spec 016) e Caixa (spec 017); cada um diz
+// quem pode vê-lo
 const itens_menu = [
     { chave: 'dashboard', rotulo: 'Dashboard', icone: 'bar_chart', href: '/painel', visivel: (usuario) => usuario.secoes.length > 0 },
     {
@@ -39,6 +43,13 @@ const itens_menu = [
         icone: 'price_change',
         href: '/painel/cotacoes',
         visivel: (usuario) => permissoes_cotacoes.some((permissao) => usuario.permissoes.includes(permissao)),
+    },
+    {
+        chave: 'caixa',
+        rotulo: 'Caixa',
+        icone: 'point_of_sale',
+        href: '/painel/caixa',
+        visivel: (usuario) => permissoes_caixa.some((permissao) => usuario.permissoes.includes(permissao)),
     },
 ];
 

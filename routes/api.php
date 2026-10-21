@@ -32,6 +32,11 @@ use App\Http\Controllers\AreaClienteSaquesController;
 use App\Http\Controllers\AutenticacaoController;
 use App\Http\Controllers\AvisosController;
 use App\Http\Controllers\BannersController;
+use App\Http\Controllers\CaixaClientesController;
+use App\Http\Controllers\CaixaController;
+use App\Http\Controllers\CaixaExportacaoController;
+use App\Http\Controllers\CaixaLancamentosController;
+use App\Http\Controllers\CaixaPrestacoesController;
 use App\Http\Controllers\CampeonatosController;
 use App\Http\Controllers\CampeonatosNaoPermitidosController;
 use App\Http\Controllers\CancelamentoApostasController;
@@ -565,4 +570,34 @@ Route::middleware(['auth:api', 'garantir_acesso'])->prefix('dashboard')->control
     Route::get('jogos-mais-apostados', 'jogos_mais_apostados');
     Route::get('opcoes-mais-apostadas', 'opcoes_mais_apostadas');
     Route::get('caixa-online', 'caixa_online');
+});
+
+// Caixa do painel (spec 017): caixa da rede, lançamentos, prestação de contas, Caixa clientes e
+// planilha; cada controller confere a permissão e o alcance. Os vendedores inativos e excluídos
+// continuam alcançáveis para baixar o que devem (FR-014a)
+Route::middleware(['auth:api', 'garantir_acesso'])->prefix('caixa')->group(function () {
+    $usuario_nao_encontrado = fn () => abort(404, 'Usuário não encontrado.');
+
+    Route::get('resumo', [CaixaController::class, 'resumo']);
+    Route::get('usuarios', [CaixaController::class, 'usuarios']);
+    Route::get('vendedores/{usuario}/grafico', [CaixaController::class, 'grafico'])->withTrashed()->missing($usuario_nao_encontrado);
+    Route::post('vendedores/{usuario}/limites', [CaixaController::class, 'limites'])->withTrashed()->missing($usuario_nao_encontrado);
+    Route::put('gerentes/{usuario}/comissao', [CaixaController::class, 'comissao_gerente'])->withTrashed()->missing($usuario_nao_encontrado);
+
+    Route::get('vendedores/{usuario}/transacoes', [CaixaLancamentosController::class, 'transacoes'])->withTrashed()->missing($usuario_nao_encontrado);
+    Route::post('vendedores/{usuario}/lancamentos', [CaixaLancamentosController::class, 'store'])->withTrashed()->missing($usuario_nao_encontrado);
+    Route::delete('lancamentos/{lancamento}', [CaixaLancamentosController::class, 'destroy'])
+        ->missing(fn () => abort(404, 'Lançamento não encontrado.'));
+
+    Route::get('vendedores/{usuario}/prestacao', [CaixaPrestacoesController::class, 'resumo_vendedor'])->withTrashed()->missing($usuario_nao_encontrado);
+    Route::post('vendedores/{usuario}/prestacoes', [CaixaPrestacoesController::class, 'store_vendedor'])->withTrashed()->missing($usuario_nao_encontrado);
+    Route::get('gerentes/{usuario}/prestacao', [CaixaPrestacoesController::class, 'resumo_gerente'])->withTrashed()->missing($usuario_nao_encontrado);
+    Route::post('gerentes/{usuario}/prestacoes', [CaixaPrestacoesController::class, 'store_gerente'])->withTrashed()->missing($usuario_nao_encontrado);
+    Route::post('prestacoes/{prestacao}/desfazer', [CaixaPrestacoesController::class, 'desfazer'])
+        ->missing(fn () => abort(404, 'Prestação de contas não encontrada.'));
+
+    Route::get('clientes/resumo', [CaixaClientesController::class, 'resumo']);
+    Route::get('clientes', [CaixaClientesController::class, 'index']);
+
+    Route::get('exportar', CaixaExportacaoController::class);
 });
