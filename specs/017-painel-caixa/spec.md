@@ -51,6 +51,24 @@ specs 014, 015 e 016, responsiva com prioridade ao celular."
   do antigo: o Caixa clientes mostra também o cassino dos clientes (entradas, saídas e resultado das
   rodadas) e os bônus (concedidos e convertidos em saldo real).
 
+### Session 2026-10-21 (`/speckit-clarify`)
+
+- Q: Quando alguém registra uma prestação de contas errada, deve existir uma forma de desfazê-la?
+  → A: Sim, só a última prestação de cada vendedor, por quem a fez ou um superior dele com a
+  permissão de prestar contas, com senha e motivo; a prestação é excluída logicamente (guarda quem
+  desfez, quando e o motivo) e os lançamentos dela voltam a ficar abertos (FR-022a).
+- Q: A comissão do gerente é só um valor mostrado no caixa, ou o sistema também registra que ela foi
+  paga ao gerente? → A: Só mostrada, como no antigo: aparece nos cartões e nas linhas e desconta do
+  líquido da rede; o pagamento ao gerente acontece fora do sistema (FR-007).
+- Q: Num período de vários dias, a comissão do gerente é calculada sobre o líquido do período
+  inteiro ou somando a de cada dia? → A: Sobre o líquido do período inteiro, como no antigo: um dia
+  de prejuízo abate o lucro dos outros; a tela avisa que a soma de dias separados pode não bater com
+  o período (FR-007).
+- Q: O dinheiro que o gerente recebe nas prestações é repassado ao supervisor e ao Admin pelo
+  sistema? → A: Não; o repasse fica fora do sistema. Para consulta, as linhas de gerente e de
+  supervisor mostram "Saldo de caixa" (soma dos saldos de caixa dos vendedores abaixo) e "Recebido
+  no período" (soma dos valores recebidos nas prestações do período) (FR-011).
+
 ## Referências do sistema antigo *(Princípios VII e VIII)*
 
 - Backend: `app/Http/Controllers/CaixaController.php` (`caixaAdmin`, `caixaGerentes`,
@@ -229,9 +247,13 @@ saldo; prestar contas e conferir que o suprimento não pode mais ser excluído.
 4. **Given** um lançamento ainda não incluído em prestação de contas, **When** o usuário com a
    permissão escolhe excluir e confirma, **Then** o lançamento sai dos valores e do saldo, e o
    histórico guarda quem excluiu e quando.
-5. **Given** um lançamento já incluído numa prestação de contas, ou uma prestação de contas,
-   **When** o usuário olha o histórico, **Then** não há a opção de excluir.
-6. **Given** um valor zero, negativo ou com mais de duas casas, **When** o usuário tenta gravar,
+5. **Given** um lançamento já incluído numa prestação de contas, **When** o usuário olha o
+   histórico, **Then** não há a opção de excluir.
+6. **Given** a última prestação de contas do vendedor e um usuário que pode desfazê-la (FR-022a),
+   **When** ele escolhe "Desfazer prestação", informa o motivo e a senha, **Then** a prestação fica
+   marcada como "desfeita" no histórico, os lançamentos dela voltam a ser excluíveis e o saldo de
+   caixa volta ao valor de antes; nas prestações anteriores, a opção não aparece.
+7. **Given** um valor zero, negativo ou com mais de duas casas, **When** o usuário tenta gravar,
    **Then** o campo mostra o erro e nada é gravado.
 
 ---
@@ -339,6 +361,8 @@ a tela.
 - Aposta devolvida: o valor devolvido entra em Saídas, como na Dashboard.
 - Duas pessoas prestando contas do mesmo vendedor ao mesmo tempo: só a primeira grava; a segunda
   recebe "O caixa deste vendedor mudou; confira e tente de novo." e a tela é atualizada.
+- Desfazer uma prestação com lançamentos ou outra prestação feitos depois dela: só a última pode ser
+  desfeita; lançamentos posteriores continuam valendo no saldo de caixa.
 - Lançamento com data/hora anterior à última prestação de contas: recusado ("Data anterior à última
   prestação de contas.").
 - Vendedor que muda de gerente: o caixa e o histórico seguem o vendedor; a comissão do gerente do
@@ -385,7 +409,11 @@ a tela.
   premiadas + valores devolvidos; Comissão do vendedor = comissão gravada em cada aposta.
 - **FR-007**: A Comissão do gerente DEVE ser o percentual do gerente sobre o líquido dos vendedores
   dele no período (Entradas − Saídas − Comissão do vendedor), zero quando esse líquido for ≤ 0, e
-  somada por gerente nos níveis de cima.
+  somada por gerente nos níveis de cima. O líquido usado é o do período inteiro escolhido (não a
+  soma da comissão de cada dia), e o cartão DEVE ter a dica "calculada sobre o período inteiro; a
+  soma de dias separados pode ser diferente". Ela é só informativa: desconta do líquido da rede, mas não
+  entra no saldo de caixa nem na prestação de contas dos vendedores, e o sistema não registra o
+  pagamento dela ao gerente.
 - **FR-008**: O Líquido DEVE ser Entradas − Saídas − Comissão do vendedor − Comissão do gerente (para
   o Vendedor, sem a comissão do gerente).
 - **FR-009**: O Saldo de caixa do vendedor DEVE ser o que ele deve desde a última prestação de contas
@@ -407,7 +435,11 @@ a tela.
 - **FR-011**: A lista de vendedores DEVE mostrar por linha: nome, login, apostas, entradas,
   lançamentos, retiradas, limites (geral / duplo / simples), comissão, saídas, líquido e saldo de
   caixa; a de supervisores e gerentes: nome, apostas, entradas, em aberto, premiadas, perdidas,
-  comissão do vendedor, comissão do gerente, saídas, lançamentos, retiradas e líquido.
+  comissão do vendedor, comissão do gerente, saídas, lançamentos, retiradas, líquido, saldo de
+  caixa (soma dos saldos de caixa dos vendedores abaixo, só na aba Todas) e recebido no período
+  (soma dos valores recebidos nas prestações de contas feitas no período, desconsiderando as
+  desfeitas). Gerente e supervisor não têm prestação de contas própria: o repasse do dinheiro a eles
+  e deles para cima fica fora do sistema.
 - **FR-012**: As listas DEVEM ter busca por nome ou login, ordenação por nome (padrão) ou por
   entradas, líquido ou saldo de caixa, e paginação (padrão 20, máximo 100).
 - **FR-013**: Cada linha DEVE ter o menu de ações (três pontinhos) só com as ações que o usuário pode
@@ -421,7 +453,8 @@ a tela.
   prestação do vendedor) e observação opcional (até 500 caracteres); o registro guarda quem lançou.
 - **FR-015**: O usuário com a permissão DEVE poder excluir um lançamento ainda não incluído em
   prestação de contas, com confirmação; a exclusão é lógica e guarda quem excluiu e quando.
-  Prestações de contas e lançamentos já prestados NÃO DEVEM poder ser excluídos.
+  Lançamentos já prestados NÃO DEVEM poder ser excluídos; prestações só podem ser desfeitas pela
+  regra do FR-022a.
 - **FR-016**: O histórico de Transações do vendedor DEVE listar suprimentos, retiradas e prestações
   (tipo, valor, data/hora, observação, quem registrou e, nos excluídos, quem excluiu), do mais novo
   para o mais antigo, com filtro por tipo e período, paginado (padrão 20, máximo 100).
@@ -446,6 +479,13 @@ a tela.
   sem movimento são pulados e a tela informa quantos.
 - **FR-022**: Duas prestações do mesmo vendedor ao mesmo tempo NÃO DEVEM gerar períodos sobrepostos:
   a segunda é recusada com mensagem e a tela é atualizada.
+- **FR-022a**: Só a última prestação de contas de cada vendedor DEVE poder ser desfeita, por quem a
+  fez ou por um superior dele na rede que tenha a permissão de prestar contas, com a senha do
+  usuário e um motivo obrigatório (até 500 caracteres). Desfazer é exclusão lógica: guarda quem
+  desfez, quando e o motivo; os lançamentos incluídos nela voltam a ficar abertos, o saldo anterior
+  volta a ser o da prestação anterior e o saldo de caixa volta a contar a partir dela. A prestação
+  desfeita continua no histórico, marcada como "desfeita", com o motivo. Uma prestação feita em lote
+  pelo gerente é desfeita vendedor a vendedor.
 
 **Caixa clientes**
 
@@ -530,7 +570,8 @@ a tela.
   observação, quem lançou, a prestação em que foi incluído (quando já prestado) e quem excluiu.
 - **Prestação de contas**: fechamento do caixa de um vendedor: período (início e fim), saldo
   anterior, valor apurado, valor recebido, diferença que fica para a próxima, quem fez, observação,
-  se foi feita em lote pelo gerente e os lançamentos incluídos.
+  se foi feita em lote pelo gerente, os lançamentos incluídos e, quando desfeita, quem desfez,
+  quando e o motivo.
 - **Comissão do gerente**: percentual de cada gerente sobre o líquido dos vendedores dele.
 - **Caixa clientes**: valores das apostas online, encerramentos, cassino, bônus, depósitos e saques
   dos clientes do site num período, no total e por cliente.
@@ -544,7 +585,8 @@ a tela.
 - **SC-002**: Em 100% das conferências manuais, os valores do período "Hoje" no Caixa são iguais aos
   do Apurado e da Caixa online da Dashboard, e a planilha exportada bate com a tela.
 - **SC-003**: Em 100% das conferências, a soma das linhas de um nível é igual aos cartões do nível de
-  cima para o mesmo período e tipo.
+  cima para o mesmo período e tipo (a comissão do gerente é somada por gerente, cada uma sobre o
+  período inteiro).
 - **SC-004**: Um usuário nunca vê nem altera o caixa de fora da rede dele em nenhum dos testes,
   inclusive por acesso direto.
 - **SC-005**: Nenhum centavo diverge entre o valor apurado de uma prestação e a soma dos movimentos
@@ -568,7 +610,8 @@ a tela.
 - A Caixa online da Dashboard continua só com as apostas esportivas, depósitos e saques do dia
   (spec 014); cassino e bônus aparecem só no Caixa clientes desta spec.
 - O Gerente não tem caixa próprio: o caixa dele é a soma dos vendedores dele, e a prestação "do
-  gerente" é a dos vendedores dele em lote, como no antigo.
+  gerente" é a dos vendedores dele em lote, como no antigo; o repasse ao supervisor e ao Admin fica
+  fora do sistema (Clarifications 2026-10-21).
 - O percentual da comissão do gerente vale para qualquer período consultado (não há histórico de
   percentuais); valores já prestados ficam gravados na prestação.
 - Os lançamentos do antigo não são migrados; o caixa do v2 começa do zero.
