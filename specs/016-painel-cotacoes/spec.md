@@ -42,7 +42,18 @@ celular), usando os padrões das specs 014 e 015."
   mostra cada parcela.
 - Q: O cadeado por cotação do antigo entra? → A: Sim, nesta spec. O superior pode trancar uma cotação
   para os níveis abaixo dele na rede: com o cadeado fechado, quem está abaixo não altera a
-  porcentagem daquela cotação (FR-019 a FR-019c). É a única regra nova no servidor desta spec.
+  porcentagem daquela cotação (FR-019 a FR-019c). Com o histórico de alterações (FR-018a, decidido
+  no `/speckit-clarify`), são as únicas regras novas no servidor desta spec.
+
+### Session 2026-10-21 (`/speckit-clarify`)
+
+- Q: Quando o Admin ou um Supervisor tranca uma cotação, a trava vale para toda a rede dele ou só
+  para o usuário que está editando e quem está abaixo desse usuário? → A: Só para o usuário editado
+  e quem está abaixo dele, como no antigo (o cadeado é posto na tela de um usuário escolhido).
+- Q: O sistema deve guardar um histórico das alterações de cotação (quem mudou, quando, de qual valor
+  para qual)? → A: Sim, histórico simples: cada gravação e cada trancar/destrancar registram quem,
+  quando, a camada, o alvo e as cotações com o valor antes e depois; em Regras ativas, cada regra
+  tem "ver histórico" (FR-018a). Sem tela própria de auditoria.
 
 ## Referências do sistema antigo *(Princípios VII e VIII)*
 
@@ -228,6 +239,9 @@ Regras ativas e conferir as quatro linhas, os filtros por camada e o atalho para
 - Superior que tranca uma cotação depois de o usuário abaixo já ter um ajuste nela: o ajuste
   continua valendo, só não pode mais ser alterado.
 - Usuário que muda de superior: passa a obedecer os cadeados da nova rede.
+- "Aplicar a todas" que muda dezenas de cotações: entra no histórico como uma alteração só, com todas
+  as cotações alteradas dentro dela.
+- Usuário autor de uma alteração que depois foi excluído: o histórico continua mostrando o nome dele.
 - Celular: a grade vira uma lista de mercados que abrem e fecham, e a prévia fica numa faixa fixa
   embaixo que expande ao tocar.
 
@@ -292,7 +306,8 @@ Regras ativas e conferir as quatro linhas, os filtros por camada e o atalho para
   jogos futuros e selo das regras visíveis ao usuário, com busca por nome, filtro por país (escolhido
   de lista, com bandeira) e filtro "só com ajuste", paginada (padrão 20, máximo 100).
 - **FR-014**: Ao abrir um campeonato, o usuário DEVE escolher o alvo de lista (Todos, Clientes ou os
-  vendedores de um usuário da rede, conforme FR-003) e editar a grade daquele alvo.
+  vendedores de um usuário da rede, conforme FR-003) e editar a grade daquele alvo; a regra do
+  campeonato vale para pré-jogo e ao vivo juntos (spec 003), e a tela DEVE dizer isso.
 
 **Camada Jogos e Tetos (P3)**
 
@@ -310,18 +325,28 @@ Regras ativas e conferir as quatro linhas, os filtros por camada e o atalho para
 - **FR-018**: A aba Regras ativas DEVE listar todas as regras que o usuário pode ver (camada, a quem se
   aplica, alvo, tipo, quantidade de cotações ajustadas, faixa de valores e data da última
   alteração), com filtro por camada, paginada, e atalho para editar cada uma na aba certa.
+- **FR-018a**: Toda gravação de porcentagem, valor do jogo ou teto, e todo trancar/destrancar, DEVE
+  registrar no histórico: quem fez, quando, a camada, a quem se aplica (público, campeonato ou
+  jogo), o alvo, o tipo (pré-jogo ou ao vivo) e cada cotação alterada com o valor antes e depois.
+  Em Regras ativas, cada regra DEVE ter "ver histórico", que abre, num modal, a lista das alterações
+  daquela regra, da mais nova para a mais antiga, paginada, mostrando antes → depois de cada
+  cotação. Cada usuário só vê o histórico das regras que pode ver; o histórico não pode ser
+  alterado nem apagado pela tela.
 
 **Cadeado por cotação (do antigo)**
 
 - **FR-019**: Admin e Supervisor com a permissão da camada DEVEM poder trancar e destrancar cada
-  cotação (o Gerente não tranca: abaixo dele só há vendedores, que não editam cotações), separadamente no pré-jogo e no ao vivo, com um cadeado ao
-  lado do campo. O cadeado vale para todos os usuários abaixo de quem trancou, na rede dele.
+  cotação de um usuário da rede que estão editando (o Gerente não tranca: abaixo dele só há
+  vendedores, que não editam cotações), separadamente no pré-jogo e no ao vivo, com um cadeado ao
+  lado do campo. O cadeado vale para o usuário editado e para todos abaixo dele, não para o resto
+  da rede de quem trancou (Clarifications 2026-10-21, `/speckit-clarify`).
 - **FR-019a**: Com a cotação trancada por um superior, o usuário abaixo DEVE ver o campo só para
   leitura, com o cadeado fechado e a indicação de quem trancou, e o servidor DEVE recusar a
   alteração daquela cotação (inclusive por "aplicar a todas", que pula as trancadas e informa
   quantas pulou).
 - **FR-019b**: O cadeado DEVE valer para as porcentagens dos usuários da rede (aba Público) e para as
-  porcentagens de campeonato com alvo Vendedores da rede; não se aplica a Clientes do site, a alvo
+  porcentagens de campeonato com alvo Vendedores da rede (a regra do campeonato vale para pré-jogo e
+  ao vivo juntos, então o cadeado dela também); não se aplica a Clientes do site, a alvo
   Todos, ao valor do jogo nem ao teto, que já são só de Admin e Supervisor.
 - **FR-019c**: Só quem trancou, ou um superior dele, DEVE poder destrancar. Trancar ou destrancar
   NÃO DEVE mudar o valor da cotação; a cotação trancada mantém o ajuste que tinha.
@@ -353,8 +378,11 @@ Regras ativas e conferir as quatro linhas, os filtros por camada e o atalho para
 - **Alvo**: a quem a regra de campeonato ou de jogo se aplica: Todos, Clientes ou os vendedores de um
   usuário da rede.
 - **Mercado**: grupo de cotações exibido junto (Vencedor, Dupla chance, Gols mais/menos etc.).
-- **Cadeado de cotação**: trava de uma cotação (pré-jogo ou ao vivo) posta por um usuário do painel,
-  que impede os usuários abaixo dele de alterar a porcentagem daquela cotação.
+- **Cadeado de cotação**: trava de uma cotação (pré-jogo ou ao vivo) posta por Admin ou Supervisor
+  na tela de um usuário da rede, que impede esse usuário e os que estão abaixo dele de alterar a
+  porcentagem daquela cotação; guarda quem trancou e para quem vale.
+- **Histórico de cotação**: registro de cada alteração de uma regra (quem, quando, camada, a quem se
+  aplica, alvo, tipo e cotações com valor antes e depois), e de cada trancar/destrancar.
 - **Prévia**: cálculo de exemplo de uma cotação de um jogo real com todas as camadas que valem para o
   público escolhido.
 
@@ -375,11 +403,14 @@ Regras ativas e conferir as quatro linhas, os filtros por camada e o atalho para
   comum, e salvar dá retorno em até 1 segundo.
 - **SC-007**: Nenhuma alteração é perdida sem aviso: em 100% dos testes de sair da tela com
   alterações pendentes, a confirmação aparece.
+- **SC-008**: Em 100% das conferências, toda alteração salva aparece no histórico da regra com o
+  autor, a data e os valores antes e depois corretos.
 
 ## Assumptions
 
 - O cálculo, as tabelas, a faixa de valores e as rotas de consulta e alteração de cada camada são
-  os da spec 003 e não mudam nesta spec; a única regra nova no servidor é o cadeado por cotação.
+  os da spec 003 e não mudam nesta spec; as únicas regras novas no servidor são o cadeado por
+  cotação e o histórico de alterações.
 - As permissões de cada camada já existem (spec 003) e já são distribuídas por função; esta spec não
   cria permissão nova: trancar e destrancar usam a permissão da camada (quem pode editar a camada
   pode trancar para baixo).
