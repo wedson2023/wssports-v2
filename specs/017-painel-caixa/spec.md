@@ -287,7 +287,9 @@ conferir os dois clientes na lista; como Gerente, conferir que a aba não aparec
 6. **Given** rodadas de cassino e bônus no período, **When** a aba Clientes abre, **Then** mostra os
    blocos Cassino (entradas, saídas, resultado e comissão dos provedores) e Bônus (concedidos e
    convertidos), e o Resultado do site (esportes + cassino − comissão dos provedores − bônus
-   convertidos), com os valores do cassino iguais aos do relatório do cassino para o mesmo período.
+   convertidos), com os valores do cassino iguais aos do relatório do cassino para o mesmo período
+   quando não houver rodadas jogadas com saldo de promoção (o Caixa clientes conta só o saldo real;
+   o relatório do cassino conta todas as carteiras).
 
 ---
 
