@@ -9,14 +9,21 @@ use Closure;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
+/**
+ * Cadastro de usuário do painel (spec 001, alterado pela spec 015): qualquer função abaixo de quem
+ * cadastra; fora da função imediatamente abaixo, o superior é escolhido na rede de quem cadastra; o
+ * vendedor pode vir com as comissões de 1, 2 e 3 jogos.
+ */
 class StoreUsuariosRequest extends FormRequest
 {
+    private const REGRA_COMISSAO = ['sometimes', 'nullable', 'numeric', 'between:0,100', 'regex:/^\d+(\.\d{1,2})?$/'];
+
     /**
      * Determine if the user is authorized to make this request.
      */
     public function authorize(): bool
     {
-        // a permissão de cadastrar é checada pelo middleware do controller
+        // a permissão de cadastrar a função é checada no controller
         return true;
     }
 
@@ -34,15 +41,23 @@ class StoreUsuariosRequest extends FormRequest
      */
     public function rules(): array
     {
+        $funcao = Funcao::tryFrom((string) $this->input('funcao'));
+        $comissao = $funcao === Funcao::Vendedor ? self::REGRA_COMISSAO : ['prohibited'];
+
         return [
             'nome' => ['required', 'string', 'max:255'],
             'funcao' => ['required', Rule::enum(Funcao::class), $this->regra_funcao_permitida()],
-            'login' => ['required', 'string', 'max:255', $this->regra_login_unico()],
+            'login' => ['required', 'string', 'max:255', 'regex:/^[A-Za-z0-9._-]+$/', $this->regra_login_unico()],
             'password' => ['required', 'string', 'min:6'],
             'telefone' => ['nullable', 'string', 'max:20'],
             'endereco' => ['nullable', 'string', 'max:255'],
-            'usuarios_id' => ['prohibited'],
+            'usuarios_id' => $this->exige_superior($funcao)
+                ? ['required', 'integer', $this->regra_superior_valido($funcao)]
+                : ['prohibited'],
             'ativo' => ['prohibited'],
+            'comissao_1' => $comissao,
+            'comissao_2' => $comissao,
+            'comissao_3' => $comissao,
         ];
     }
 
@@ -60,6 +75,7 @@ class StoreUsuariosRequest extends FormRequest
             'login.required' => 'O login é obrigatório.',
             'login.string' => 'O login deve ser um texto.',
             'login.max' => 'O login deve ter no máximo 255 caracteres.',
+            'login.regex' => 'O login deve ter só letras sem acento, números, ponto, hífen ou sublinhado, sem espaços.',
             'password.required' => 'A senha é obrigatória.',
             'password.string' => 'A senha deve ser um texto.',
             'password.min' => 'A senha deve ter no mínimo 6 caracteres.',
@@ -67,23 +83,56 @@ class StoreUsuariosRequest extends FormRequest
             'telefone.max' => 'O telefone deve ter no máximo 20 caracteres.',
             'endereco.string' => 'O endereço deve ser um texto.',
             'endereco.max' => 'O endereço deve ter no máximo 255 caracteres.',
-            'usuarios_id.prohibited' => 'O superior não pode ser informado no cadastro.',
+            'usuarios_id.required' => 'Informe o superior.',
+            'usuarios_id.integer' => 'O superior informado é inválido.',
+            'usuarios_id.prohibited' => 'O superior não pode ser informado para esta função: o usuário fica na sua equipe.',
             'ativo.prohibited' => 'A situação não pode ser informada no cadastro.',
+            'comissao_*.numeric' => 'A comissão deve ser um número.',
+            'comissao_*.between' => 'A comissão deve ser de 0 a 100%.',
+            'comissao_*.regex' => 'A comissão deve ter até 2 casas decimais.',
+            'comissao_*.prohibited' => 'As comissões só podem ser informadas no cadastro de vendedor.',
         ];
     }
 
     /**
-     * Quem cadastra só pode criar a função imediatamente abaixo da sua.
+     * O superior é escolhido quando a função cadastrada não é a imediatamente abaixo de quem cadastra.
+     */
+    public function exige_superior(?Funcao $funcao): bool
+    {
+        return $funcao !== null && $funcao !== $this->user()->funcao()?->funcao_abaixo();
+    }
+
+    /**
+     * Quem cadastra só pode criar funções abaixo da sua.
      */
     private function regra_funcao_permitida(): Closure
     {
         return function (string $atributo, mixed $valor, Closure $falhar) {
-            $funcao_permitida = $this->user()->funcao()?->funcao_abaixo();
+            $propria = $this->user()->funcao();
+            $pedida = Funcao::tryFrom((string) $valor);
 
-            if ($funcao_permitida === null) {
+            if ($propria === null || $propria->funcao_abaixo() === null) {
                 $falhar('Sua função não permite cadastrar usuários.');
-            } elseif ($valor !== $funcao_permitida->value) {
-                $falhar("Você só pode cadastrar usuários com a função {$funcao_permitida->value}.");
+            } elseif ($pedida === null || $pedida->nivel() <= $propria->nivel()) {
+                $falhar("Você não pode cadastrar usuários com a função {$valor}.");
+            }
+        };
+    }
+
+    /**
+     * Superior da função logo acima da cadastrada e na rede de quem cadastra.
+     */
+    private function regra_superior_valido(?Funcao $funcao): Closure
+    {
+        return function (string $atributo, mixed $valor, Closure $falhar) use ($funcao) {
+            $superior = Usuarios::find($valor);
+
+            $valido = $superior !== null
+                && $superior->funcao() === $funcao?->funcao_acima()
+                && $this->user()->gerencia($superior);
+
+            if (! $valido) {
+                $falhar('O superior informado é inválido para a função deste usuário.');
             }
         };
     }

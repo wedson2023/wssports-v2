@@ -26,6 +26,10 @@ Route::get('minha-conta', [MinhaContaController::class, 'index'])->name('minha_c
 Route::get('mercado-pago/retorno', [RetornoMercadoPagoController::class, 'index'])->name('mercado_pago.retorno');
 // tela do Admin com o botão de vínculo do Mercado Pago
 Route::get('painel', [PainelController::class, 'index'])->name('painel');
+// listas de usuários do painel (spec 015)
+Route::get('painel/supervisores', [PainelController::class, 'supervisores'])->name('painel.supervisores');
+Route::get('painel/gerentes', [PainelController::class, 'gerentes'])->name('painel.gerentes');
+Route::get('painel/vendedores', [PainelController::class, 'vendedores'])->name('painel.vendedores');
 // afiliados (spec 012): página pública de cadastro e painel do afiliado
 Route::get('cadastro-afiliado', [AfiliadosPaginasController::class, 'cadastro'])->name('cadastro_afiliado');
 Route::get('afiliados', [AfiliadosPaginasController::class, 'painel'])->name('afiliados');

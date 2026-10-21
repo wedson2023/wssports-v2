@@ -25,7 +25,7 @@ Usuários: `admin`, um supervisor, dois gerentes com vendedores (no servidor de 
 2. Supervisor: Gerentes e Vendedores, só da rede dele.
 3. Gerente: só Vendedores, os dele. Vendedor: sem "Usuários"; `/painel/vendedores` volta à Dashboard.
 4. Colunas: Comissão 5/7/10 nos vendedores, quantidade de vendedores nos gerentes, de gerentes e
-   vendedores nos supervisores; busca por nome e login; paginação; celular em cartões.
+   vendedores nos supervisores; busca por nome e login; paginação; celular com colunas principais e menu de três pontinhos.
 
 ## 3. Cadastro e edição (US2)
 

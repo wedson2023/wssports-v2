@@ -108,6 +108,12 @@ Route::prefix('auth')->group(function () {
 
 // gestão de usuários: exige token válido e usuário ativo
 Route::middleware(['auth:api', 'garantir_acesso'])->group(function () {
+    // Lixeira de usuários (spec 015): antes do apiResource, para não cair em usuarios/{usuario}
+    Route::get('usuarios/excluidos', [UsuariosController::class, 'excluidos']);
+    Route::post('usuarios/{usuario}/restaurar', [UsuariosController::class, 'restaurar'])
+        ->withTrashed()
+        ->missing(fn () => abort(404, 'Usuário não encontrado.'));
+
     Route::apiResource('usuarios', UsuariosController::class)
         ->missing(fn () => abort(404, 'Usuário não encontrado.'));
 
@@ -380,6 +386,9 @@ Route::middleware(['auth:api', 'garantir_acesso'])->group(function () {
 
     // configurações dos vendedores (por alcance) e dos visitantes
     Route::get('usuarios-configuracoes', [UsuariosConfiguracoesController::class, 'index']);
+    // configuração de um vendedor da rede (spec 015)
+    Route::get('usuarios-configuracoes/{usuario}', [UsuariosConfiguracoesController::class, 'show'])
+        ->missing(fn () => abort(404, 'Usuário não encontrado.'));
     Route::patch('usuarios-configuracoes', [UsuariosConfiguracoesController::class, 'update']);
     Route::get('visitantes-configuracoes', [VisitantesConfiguracoesController::class, 'show']);
     Route::put('visitantes-configuracoes', [VisitantesConfiguracoesController::class, 'update']);

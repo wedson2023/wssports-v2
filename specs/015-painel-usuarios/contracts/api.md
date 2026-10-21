@@ -15,7 +15,7 @@ Acrescenta `permissoes`: nomes das permissões que o usuário tem e pode usar.
 
 ## 2. `GET /usuarios` (alterada)
 
-Query: `funcao`, `ativo`, `busca`, `por_pagina` (1–100, padrão 15), `pagina`. Exige `usuarios.listar`.
+Query: `funcao`, `ativo`, `busca`, `por_pagina` (1–100, padrão 15), `page` (padrão das listagens do projeto). Exige `usuarios.listar`.
 O seletor de superior do modal usa esta rota com `funcao` e `busca` (paginada), sem lista fixa.
 Cada item ganha `superior`, `comissoes` (vendedor), `quantidade_vendedores` (gerente, supervisor) e
 `quantidade_gerentes` (supervisor) — data-model §4.

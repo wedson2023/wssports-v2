@@ -193,6 +193,38 @@ class Usuarios extends Authenticatable implements JWTSubject
     }
 
     /**
+     * Restaura este usuário e os da sub-hierarquia excluídos junto com ele (mesmo instante de
+     * exclusão, gravado pela exclusão em cascata); devolve quantos voltaram (spec 015).
+     */
+    public function restaurar_em_cascata(): int
+    {
+        $excluido_em = $this->deleted_at;
+
+        return DB::transaction(fn () => static::onlyTrashed()
+            ->whereIn('id', [$this->id, ...$this->ids_sub_hierarquia_com_excluidos()])
+            ->where('deleted_at', $excluido_em)
+            ->restore());
+    }
+
+    /**
+     * Ids de toda a sub-hierarquia, inclusive os excluídos logicamente (para a Lixeira).
+     *
+     * @return list<int>
+     */
+    public function ids_sub_hierarquia_com_excluidos(): array
+    {
+        $ids_encontrados = [];
+        $ids_nivel_atual = [$this->id];
+
+        while ($ids_nivel_atual !== []) {
+            $ids_nivel_atual = static::withTrashed()->whereIn('usuarios_id', $ids_nivel_atual)->pluck('id')->all();
+            $ids_encontrados = [...$ids_encontrados, ...$ids_nivel_atual];
+        }
+
+        return $ids_encontrados;
+    }
+
+    /**
      * Dá ao usuário as permissões padrão da sua função que o cadastrante também possui,
      * para que ninguém repasse uma permissão que não tem.
      */

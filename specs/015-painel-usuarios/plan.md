@@ -52,7 +52,7 @@ exclusão física; visual do painel da spec 014 com colunas, nomes e ações do 
 | Migrations | 1 (dados: permissões) |
 | Rotas da API novas / alteradas | 3 / 6 |
 | Rotas web novas | 3 |
-| Componentes novos / páginas novas | 10 / 1 |
+| Componentes novos / páginas novas | 12 / 1 |
 | Hooks / utils novos | 1 / 1 |
 
 ## Constitution Check
@@ -72,6 +72,9 @@ exclusão física; visual do painel da spec 014 com colunas, nomes e ações do 
 | VIII. Fidelidade visual | Mesmas colunas, nomes e ações; visual do painel aprovado; chaves no lugar das travas aprovadas | ✅ Pass |
 | IX. Dados fake | Nenhum | ✅ Pass |
 | Stack | Nenhuma dependência nova | ✅ Pass |
+| Tamanho dos modais (v3.6.0) | `UserFormModal`: altura do conteúdo no cadastro (só Dados) e fixa desde a abertura na edição (várias abas que carregam); `PermissionsModal`: fixa desde a abertura (lista longa que chega depois); 100% no celular; cabeçalho, abas (`PanelTabs`) e rodapé sem encolher, só o corpo rola | ✅ Pass |
+| Cabeçalho dos modais (v3.7.0) | `UserFormModal` e `PermissionsModal` usam `ModalHeader` (ícone sem fundo na cor do tema, título e descrição do modal) | ✅ Pass |
+| Campos de itens existentes (v3.7.0) | "Esportes permitidos" em `BettingRulesFields` escolhidos da lista do site (`esportes` do `SportsBar`, sem Cassino, Ao vivo e Especiais); nada digitado à mão | ✅ Pass |
 | Timestamps / soft delete / comentários | Sem tabela/coluna nova; restauração lógica; sem exclusão física | ✅ Pass |
 | Paginação ≤ 100 | Padrão 15, máximo 100 | ✅ Pass |
 | Sem testes | Nenhum | ✅ Pass |
@@ -131,6 +134,8 @@ resources/js/
 │   ├── PanelShell/                                    # alterado
 │   ├── UsersTable/ · PanelTabs/ · Pagination/ · UserFormModal/ · CommissionFields/
 │   ├── BettingRulesFields/ · PermissionsPanel/ · PermissionsModal/ · ToggleSwitch/   # novos
+│   ├── ActionsMenu/                                   # novo (três pontinhos das ações no celular)
+│   ├── ModalHeader/                                   # novo (cabeçalho padrão dos modais)
 ├── hooks/useUsuariosPainel.js                         # novo
 └── utils/permissions.js                               # novo
 docs/postman/wssports_api.postman_collection.json      # regenerada

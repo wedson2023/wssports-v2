@@ -16,17 +16,43 @@ enum Funcao: string
     case Vendedor = 'Vendedor';
 
     /**
-     * Todas as permissões de gestão de usuários existentes no sistema.
+     * Todas as permissões de gestão de usuários existentes no sistema. Cadastrar, editar e excluir
+     * são por função alvo (spec 015); as demais valem para qualquer usuário da rede.
      */
     public const PERMISSOES_GESTAO = [
         'usuarios.listar',
         'usuarios.consultar',
-        'usuarios.cadastrar',
-        'usuarios.editar',
+        'usuarios.cadastrar_supervisor',
+        'usuarios.cadastrar_gerente',
+        'usuarios.cadastrar_vendedor',
+        'usuarios.editar_supervisor',
+        'usuarios.editar_gerente',
+        'usuarios.editar_vendedor',
         'usuarios.alterar_situacao',
-        'usuarios.excluir',
+        'usuarios.excluir_supervisor',
+        'usuarios.excluir_gerente',
+        'usuarios.excluir_vendedor',
         'usuarios.gerenciar_permissoes',
     ];
+
+    /**
+     * Permissões de cadastrar, editar e excluir por função alvo (spec 015).
+     *
+     * @var array<string, list<string>>
+     */
+    public const PERMISSOES_USUARIOS_POR_FUNCAO = [
+        'Supervisor' => ['usuarios.cadastrar_supervisor', 'usuarios.editar_supervisor', 'usuarios.excluir_supervisor'],
+        'Gerente' => ['usuarios.cadastrar_gerente', 'usuarios.editar_gerente', 'usuarios.excluir_gerente'],
+        'Vendedor' => ['usuarios.cadastrar_vendedor', 'usuarios.editar_vendedor', 'usuarios.excluir_vendedor'],
+    ];
+
+    /**
+     * Nome da permissão de uma ação (cadastrar, editar ou excluir) sobre a função alvo.
+     */
+    public static function permissao_usuarios(string $acao, self $alvo): string
+    {
+        return 'usuarios.'.$acao.'_'.mb_strtolower($alvo->value);
+    }
 
     /**
      * Todas as permissões de gestão de clientes e promoções existentes no sistema.
@@ -293,7 +319,7 @@ enum Funcao: string
         );
 
         return [
-            ...self::PERMISSOES_GESTAO,
+            ...array_values(array_filter(self::PERMISSOES_GESTAO, fn (string $permissao) => $this->pode_usar($permissao))),
             ...array_values($permissoes_clientes),
             ...array_values($permissoes_confrontos),
             ...$permissoes_apostas,
@@ -323,10 +349,23 @@ enum Funcao: string
      * Especiais, recursos do site, pagamentos, encerramentos de aposta e cassino são só de Admin e
      * Supervisor (vincular o gateway, só Admin). Afiliados: Vendedor nenhuma; Gerente todas menos
      * excluir e restaurar. Dashboard: Admin e Supervisor todas; Gerente todas menos a Caixa online;
-     * Vendedor só as do que ele mesmo fez (PERMISSOES_DASHBOARD_VENDEDOR).
+     * Vendedor só as do que ele mesmo fez (PERMISSOES_DASHBOARD_VENDEDOR). Usuários (spec 015):
+     * cadastrar, editar e excluir só sobre funções abaixo (o Vendedor nunca cadastra vendedor); as
+     * demais de usuários, de Gerente para cima.
      */
     public function pode_usar(string $permissao): bool
     {
+        // usuários: cadastrar/editar/excluir só de funções abaixo; as gerais, só de quem tem rede
+        if (in_array($permissao, self::PERMISSOES_GESTAO, true)) {
+            foreach (self::PERMISSOES_USUARIOS_POR_FUNCAO as $alvo => $permissoes) {
+                if (in_array($permissao, $permissoes, true)) {
+                    return self::from($alvo)->nivel() > $this->nivel();
+                }
+            }
+
+            return $this !== self::Vendedor;
+        }
+
         if (in_array($permissao, self::PERMISSOES_DASHBOARD, true)) {
             return match ($this) {
                 self::Admin, self::Supervisor => true,

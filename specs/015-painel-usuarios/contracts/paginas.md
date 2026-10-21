@@ -31,7 +31,10 @@ Grupo aparece com `usuarios.listar`; subitem pela função do usuário logado. V
 - Ações: ✎ editar, 🔑 permissões, ⏻ ativar/desativar (confirmação "Isso também vai desativar N
   usuários abaixo dele.", N = vendedores do gerente ou gerentes + vendedores do supervisor), 🗑 excluir (confirmação); Lixeira: ↺ restaurar. Cada ação só com a
   permissão (R-08).
-- Celular (≤ 900 px): cartões com nome, login, função do superior, ativo e ações.
+- Celular (≤ 900 px): tabela só com nome (login embaixo, cortados com reticências), ativo e o menu
+  de três pontinhos (`ActionsMenu`) com as ações; barra em uma linha (busca na lupa, novo só ícone).
+- Modais: tamanho conforme a Constituição v3.6.0 (altura do conteúdo no cadastro, fixa na edição e nas permissões), borda em degradê cinza → branco e cabeçalho
+  `ModalHeader` com ícone, título e descrição (v3.5.0).
 - Estados: carregando (esqueleto), vazio ("Nenhum usuário encontrado."), erro com tentar de novo.
 
 ## 3. Modal de cadastro/edição (`UserFormModal`)
@@ -45,7 +48,7 @@ Abas por função (cadastro só mostra Dados; Permissões só na edição):
 | Supervisor | Dados · Regras da rede · Permissões |
 
 - **Dados**: Nome, Login (só leitura na edição; letras sem acento, números, ponto, hífen ou
-  sublinhado), Senha, Confirme a senha, Superior (campo com busca paginada, "(inativo)" ao lado do
+  sublinhado), Senha, Confirme a senha, Superior (lista com todos os da rede, "(inativo)" ao lado do
   nome, quando aplicável), Telefone (máscara), Endereço, Ativo (edição). No cadastro de vendedor, Comissão 1, 2 e
   3 jogos.
 - **Comissões**: duas grades (Pré-jogo e Ao vivo) de 1 a 12 jogos, em %, e Comissão por prêmio.
@@ -75,7 +78,9 @@ Só as permissões que quem edita tem e a função do alvo pode usar, vindas do 
 | Nome | Pasta | Papel |
 |---|---|---|
 | `PanelUsers` | `pages/PanelUsers` | página das três listas |
-| `UsersTable` | `components/UsersTable` | tabela/cartões e ações |
+| `UsersTable` | `components/UsersTable` | tabela e ações |
+| `ActionsMenu` | `components/ActionsMenu` | três pontinhos com as ações no celular |
+| `ModalHeader` | `components/ModalHeader` | cabeçalho dos modais (ícone, título, descrição) |
 | `PanelTabs` | `components/PanelTabs` | abas (Ativos/Lixeira e abas dos modais) |
 | `Pagination` | `components/Pagination` | paginação |
 | `UserFormModal` | `components/UserFormModal` | cadastro e edição |

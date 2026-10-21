@@ -9,7 +9,8 @@ use Illuminate\Foundation\Http\FormRequest;
 class UpdateUsuariosRequest extends FormRequest
 {
     /**
-     * Campos de dados cadastrais; alterá-los exige a permissão usuarios.editar.
+     * Campos de dados cadastrais; alterá-los exige a permissão usuarios.editar_<função do alvo>
+     * (spec 015).
      */
     public const CAMPOS_DADOS = ['nome', 'password', 'telefone', 'endereco', 'usuarios_id'];
 

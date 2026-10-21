@@ -34,6 +34,32 @@ class ConfiguracoesVendedores
     }
 
     /**
+     * Comissões informadas no cadastro do vendedor (spec 015): 1, 2 e 3 jogos no pré-jogo e no ao
+     * vivo e a de 3 jogos nas faixas 4 a 12. Sem as três, fica a cópia do colega.
+     */
+    public function aplicar_comissoes_cadastro(Usuarios $vendedor, ?string $um, ?string $dois, ?string $tres): void
+    {
+        if ($um === null || $dois === null || $tres === null) {
+            return;
+        }
+
+        $por_faixa = fn (int $faixa) => match ($faixa) {
+            1 => $um,
+            2 => $dois,
+            default => $tres,
+        };
+
+        $campos = [];
+
+        foreach (range(1, count(UsuariosConfiguracoes::COMISSOES_PRE_JOGO)) as $faixa) {
+            $campos["comissao_pre_jogo_{$faixa}"] = $por_faixa($faixa);
+            $campos["comissao_ao_vivo_{$faixa}"] = $por_faixa($faixa);
+        }
+
+        UsuariosConfiguracoes::where('usuarios_id', $vendedor->id)->update($campos);
+    }
+
+    /**
      * Grava só os campos enviados em todos os vendedores do alcance e devolve quantos foram
      * alterados.
      *

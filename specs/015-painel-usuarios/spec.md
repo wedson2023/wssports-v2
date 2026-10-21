@@ -55,6 +55,26 @@ modal de permissões agrupadas no lugar das 'travas' do antigo e Lixeira só com
 - O seletor de superior tem busca (sem limite fixo de itens) e mostra "(inativo)".
 - A confirmação de desativar um supervisor conta gerentes e vendedores abaixo dele.
 
+### Session 2026-10-21 (ajustes visuais pedidos pelo responsável após testar)
+
+- Painel de permissões: busca, contador "N de M permissões ativas", grupos que abrem e fecham com
+  ícone, contagem colorida e chave "Todas" (no lugar dos botões Marcar/Desmarcar todas), linha
+  inteira clicável e cores com contraste nos dois temas.
+- Ações da tabela no computador: botões com a cor de cada ação (editar azul, permissões amarelo,
+  ativar/desativar verde/cinza, excluir vermelho, restaurar verde).
+- Celular: a lista continua em tabela, só com nome (login embaixo), ativo e os três pontinhos que
+  abrem o menu de ações (ao clicar, ou ao passar o mouse); textos longos cortados com reticências
+  (substitui os cartões do FR-008).
+- Barra da lista no celular em uma linha: título cortado, busca na lupa que abre o campo e botão de
+  novo só com o ícone.
+- Modais com tamanho conforme a Constituição v3.6.0 (altura do conteúdo no cadastro, fixa na edição e nas permissões), borda em degradê cinza → branco e cabeçalho com
+- "Esportes permitidos": escolhidos entre os esportes do site (marcar e desmarcar), sem digitar à
+  mão (Constituição v3.7.0).
+- Regras de sim/não do vendedor numa lista "Sim / Não" (no lugar das chaves).
+- Superior escolhido numa lista com todos os da rede (sem digitar), permitindo mover o usuário para
+  outro gerente ou supervisor na edição.
+  ícone, título e descrição de para que serve o modal (Constituição v3.5.0).
+
 ## Referências do sistema antigo *(Princípios VII e VIII)*
 
 - Telas: `resources/js/screens/adm/register/supervisor`, `register/manager` e `register/seller`
@@ -292,7 +312,8 @@ O gestor desativa ou exclui um usuário (e a equipe abaixo dele) e restaura excl
   (quantidades). A coluna do superior só aparece para quem está acima dele.
 - **FR-007**: As ações por linha DEVEM ser editar, permissões, ativar/desativar e excluir; na Lixeira,
   só restaurar. Ações destrutivas pedem confirmação.
-- **FR-008**: No celular, as listas DEVEM virar cartões com as mesmas informações e ações.
+- **FR-008**: No celular, as listas DEVEM mostrar só as colunas principais (nome com o login embaixo e
+  ativo), com textos longos cortados, e as ações num menu de três pontinhos (Clarifications 2026-10-21).
 
 **Cadastro e edição**
 

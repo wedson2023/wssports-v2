@@ -60,7 +60,7 @@ Ativo ──excluir (cascata, mesmo deleted_at)──▶ Lixeira ──restaurar
 | Campo | Quando | Valor |
 |---|---|---|
 | `superior` | sempre que carregado | `{id, nome}` ou null |
-| `comissoes` | vendedor | `{"1": "5.00", "2": "7.00", "3": "10.00"}` (pré-jogo) |
+| `comissoes` | vendedor | `["5.00", "7.00", "10.00"]` (1, 2 e 3 jogos do pré-jogo) |
 | `quantidade_vendedores` | gerente e supervisor | vendedores ativos e não excluídos abaixo |
 | `quantidade_gerentes` | supervisor | gerentes ativos e não excluídos abaixo |
 | `deleted_at` | Lixeira | quando foi excluído |

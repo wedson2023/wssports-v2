@@ -142,6 +142,48 @@ export const MenuItem = styled(Link)`
 `;
 
 // área que rola (as seções da Dashboard)
+// grupo do menu com subitens (Links "items" do antigo)
+export const GroupButton = styled.button`
+    display: grid;
+    grid-template-columns: 24px 1fr 24px;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    padding: 14px 16px;
+    border: none;
+    border-left: solid 4px ${({ theme, $ativo }) => ($ativo ? theme.principal : 'transparent')};
+    background: transparent;
+    color: ${({ theme }) => theme.texto_principal};
+    font: inherit;
+    font-size: 0.9em;
+    font-weight: 500;
+    text-align: left;
+    cursor: pointer;
+
+    i:first-child {
+        color: ${({ theme }) => theme.principal};
+    }
+
+    &:hover {
+        background-color: ${({ theme }) => theme.superficie_titulo};
+    }
+`;
+
+export const SubItem = styled(Link)`
+    display: block;
+    padding: 10px 16px 10px 54px;
+    border-left: solid 4px ${({ theme, $ativo }) => ($ativo ? theme.principal : 'transparent')};
+    background-color: ${({ theme, $ativo }) => ($ativo ? theme.superficie_titulo : 'transparent')};
+    color: ${({ theme, $ativo }) => ($ativo ? theme.texto_principal : theme.texto_secundario)};
+    font-size: 0.85em;
+    text-decoration: none;
+
+    &:hover {
+        background-color: ${({ theme }) => theme.superficie_titulo};
+        color: ${({ theme }) => theme.texto_principal};
+    }
+`;
+
 export const Content = styled.main`
     flex: 1;
     min-width: 0;

@@ -30,6 +30,11 @@ class UsuarioLogadoResource extends JsonResource
             'login' => $this->login,
             'funcao' => $this->funcao()?->value,
             'secoes' => array_values(array_map(fn (string $permissao) => substr($permissao, strlen(self::PREFIXO_SECAO)), $secoes)),
+            // permissões que o usuário tem e pode usar: o painel mostra menu e botões por elas (spec 015)
+            'permissoes' => $this->getAllPermissions()
+                ->pluck('name')
+                ->filter(fn (string $permissao) => Funcao::usuario_pode($this->resource, $permissao))
+                ->values(),
         ];
     }
 }

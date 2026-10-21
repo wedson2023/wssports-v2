@@ -29,11 +29,12 @@ class PermissoesUsuariosController extends Controller implements HasMiddleware
     {
         $this->garantir_gerencia($request, $usuario);
 
-        return $this->resposta_permissoes($usuario);
+        return $this->resposta_permissoes($request->user(), $usuario);
     }
 
     /**
-     * Dá uma permissão ao subordinado; só é possível repassar o que o solicitante possui.
+     * Dá uma permissão ao subordinado; só é possível repassar o que o solicitante possui e o que a
+     * função do subordinado pode usar (spec 015).
      */
     public function store(PermissaoUsuarioRequest $request, Usuarios $usuario): JsonResponse
     {
@@ -47,9 +48,15 @@ class PermissoesUsuariosController extends Controller implements HasMiddleware
             'Você só pode conceder permissões que possui.'
         );
 
+        abort_unless(
+            (bool) $usuario->funcao()?->pode_usar($permissao),
+            422,
+            'Esta permissão não vale para a função do usuário.'
+        );
+
         $usuario->givePermissionTo($permissao);
 
-        return $this->resposta_permissoes($usuario);
+        return $this->resposta_permissoes($request->user(), $usuario);
     }
 
     /**
@@ -69,13 +76,23 @@ class PermissoesUsuariosController extends Controller implements HasMiddleware
 
         $usuario->revokePermissionTo($permissao);
 
-        return $this->resposta_permissoes($usuario);
+        return $this->resposta_permissoes($request->user(), $usuario);
     }
 
-    private function resposta_permissoes(Usuarios $usuario): JsonResponse
+    /**
+     * Permissões do usuário e as disponíveis para quem edita: as que ele possui e que a função do
+     * usuário pode usar (spec 015) — o painel mostra só essas, sem regra de função no frontend.
+     */
+    private function resposta_permissoes(Usuarios $solicitante, Usuarios $usuario): JsonResponse
     {
+        $funcao = $usuario->funcao();
+
         return response()->json([
             'permissoes' => $usuario->getPermissionNames()->values(),
+            'disponiveis' => $solicitante->getAllPermissions()
+                ->pluck('name')
+                ->filter(fn (string $permissao) => (bool) $funcao?->pode_usar($permissao))
+                ->values(),
         ]);
     }
 }
