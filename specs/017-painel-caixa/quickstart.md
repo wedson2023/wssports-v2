@@ -47,6 +47,8 @@ npm run build                # ou npm run dev
 1. G1 → V1 → Lançamento: Suprimento R$ 50,00 agora; Retirada R$ 20,00 agora.
 2. Saldo de caixa de V1 sobe R$ 30,00; cartões Lançamentos/Retiradas mostram os valores.
 3. Lançar com data futura → erro; valor 0 → erro.
+4a. Desativar V2 (com saldo): o modal de lançamento mostra só Retirada; via API, Suprimento → 422
+    "Vendedor inativo ou excluído não recebe suprimento."; retirada e prestação de contas funcionam.
 4. Transações → excluir a retirada → saldo volta; o item aparece riscado com "excluído por G1".
 
 ## 5. Prestação de contas (US2, FR-017 a FR-022a)
@@ -67,7 +69,9 @@ npm run build                # ou npm run dev
 
 ## 6. Limites e gráfico (US5, US6)
 
-1. G1 → V1 → Adicionar limite: +500 no geral → a linha mostra o novo limite; o Apurado de V1 também.
+1. G1 → V1 → Ajustar limite: +500 no geral → a linha mostra o novo limite; o Apurado de V1 também.
+   Depois −200 no geral → o limite cai 200; um ajuste que deixaria o limite abaixo de zero é recusado
+   sem gravar nada.
 2. V1 → Gráfico: barras "1" e "2" com uma aposta cada.
 
 ## 7. Caixa clientes (US4, FR-023 a FR-026)

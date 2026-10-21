@@ -52,7 +52,7 @@ vendedores). Para o Vendedor: 403. `ordenar=nome|entradas|liquido|saldo_caixa` (
     "lancamentos": "...", "retiradas": "...", "liquido": "...", "saldo_caixa": "...",
     "recebido_periodo": null, "percentual_comissao_gerente": null,
     "limites": { "geral": "4800.00", "duplo": "5000.00", "simples": "4900.00" },
-    "acoes": ["lancar", "prestar_contas", "transacoes", "adicionar_limite", "grafico", "exportar"]
+    "acoes": ["lancar", "prestar_contas", "transacoes", "ajustar_limite", "grafico", "exportar"]
   }],
   "links": {}, "meta": {}
 }
@@ -65,7 +65,7 @@ que o servidor recusaria. No gerente: `prestar_contas`, `comissao_gerente`, `exp
 
 ### 1.4 `POST /caixa/vendedores/{usuario}/limites`
 `usuarios_configuracoes.editar` + alcance. Corpo: `{ "geral": "500.00", "duplo": "0.00", "simples": "0.00" }`
-(valores a somar, ≥ 0, ao menos um > 0). Resposta: `{ "limites": { "geral", "duplo", "simples" } }`.
+(valores a somar ou subtrair, com até duas casas, ao menos um diferente de zero; 422 se algum limite ficaria negativo, sem gravar nenhum). Resposta: `{ "limites": { "geral", "duplo", "simples" } }`.
 
 ### 1.5 `PUT /caixa/gerentes/{usuario}/comissao`
 `caixa.editar_comissao_gerente` + alcance. Corpo: `{ "percentual": "10.00" }` (0 a 100, duas casas).
@@ -90,7 +90,7 @@ antigo (por data/hora):
 
 ### 2.2 `POST /caixa/vendedores/{usuario}/lancamentos`
 `caixa.lancar` + alcance. Corpo: `{ "tipo": "Suprimento|Retirada", "valor": "50.00", "ocorrido_em": "ISO", "observacao": "" }`.
-422: valor ≤ 0 ou com mais de duas casas; data futura; "Data anterior à última prestação de contas.".
+422: valor ≤ 0 ou com mais de duas casas; data futura; "Data anterior à última prestação de contas."; "Vendedor inativo ou excluído não recebe suprimento." (FR-014a). Vendedores inativos e excluídos são aceitos em todas as rotas `{usuario}` do caixa (retirada, prestação, desfazer, transações).
 201 com o lançamento.
 
 ### 2.3 `DELETE /caixa/lancamentos/{lancamento}`

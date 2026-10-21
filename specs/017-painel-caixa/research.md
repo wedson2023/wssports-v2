@@ -109,7 +109,7 @@
   `usuarios_configuracoes`, a tabela de configurações por usuário que já existe (registro criado com
   `firstOrCreate` para o gerente, como faz `ConfiguracoesVendedores`). Rota
   `PUT /caixa/gerentes/{usuario}/comissao` com `caixa.editar_comissao_gerente`.
-- **Limites**: `POST /caixa/vendedores/{usuario}/limites` soma valores aos limites (com
+- **Limites**: `POST /caixa/vendedores/{usuario}/limites` soma valores positivos ou negativos aos limites, recusando o que deixaria algum abaixo de zero (com
   `lockForUpdate`, porque as apostas consomem os limites ao mesmo tempo, como em `CriacaoApostas`),
   exigindo `usuarios_configuracoes.editar`, a permissão que já edita essas configurações.
 - **Alternatives considered**: coluna na tabela `usuarios` (mistura cadastro com regra financeira);

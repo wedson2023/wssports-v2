@@ -78,7 +78,7 @@ Suprimentos e retiradas no caixa de um vendedor (FR-014 a FR-016).
 | `caixa.exportar` | ✓ | ✓ | ✓ | — |
 | `caixa.editar_comissao_gerente` | ✓ | ✓ | — | — |
 
-"—" = a função não pode usar, mesmo recebendo (`pode_usar`). "Adicionar limite" usa a permissão
+"—" = a função não pode usar, mesmo recebendo (`pode_usar`). "Ajustar limite" usa a permissão
 existente `usuarios_configuracoes.editar`.
 
 ## Entidades calculadas (não gravadas)

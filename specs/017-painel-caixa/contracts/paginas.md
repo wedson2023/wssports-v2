@@ -60,7 +60,7 @@ Grid: 4 colunas no desktop, 2 no celular; esqueleto enquanto carrega.
 - Cores: líquido e saldo positivos em verde, negativos em vermelho, zero em cinza (nos dois temas).
 - Ações (`ActionsMenu`, só as de `acoes` da linha):
   - Vendedor: Lançamento (`redo`), Prestar contas (`get_app`), Transações (`compare_arrows`),
-    Adicionar limite (`attach_money`), Gráfico (`insert_chart_outlined`), Baixar planilha
+    Ajustar limite (`attach_money`), Gráfico (`insert_chart_outlined`), Baixar planilha
     (`table_view`).
   - Gerente: Prestar contas de todos (`get_app`), Comissão do gerente (`pie_chart`), Baixar planilha.
 - Celular (até 900 px): cada linha vira um cartão com nome, Líquido e Saldo de caixa em destaque e as
@@ -81,6 +81,8 @@ enquanto grava; erros do servidor no campo ou num aviso no topo do corpo.
 - **`CashEntryModal`** ("Lançamento", `redo`, descrição "Suprimento entregue ao vendedor ou retirada
   do caixa dele."): tipo (dois botões: Suprimento / Retirada, com a explicação de cada um), Valor
   (campo de reais do painel), Data e hora (padrão agora), Observação (até 500, contador). **Lançar**.
+  Para vendedor inativo ou excluído, só Retirada, com o aviso "Vendedor inativo: só é possível
+  recolher o que ele deve." (FR-014a).
 - **`SettlementModal`** ("Prestar contas", `get_app`):
   - Vendedor: "Até" (data e hora, padrão agora); quadro do resumo (saldo anterior, entradas,
     comissão, saídas, suprimentos, retiradas, ajustes, **valor apurado** em destaque com cor; "a
@@ -97,8 +99,9 @@ enquanto grava; erros do servidor no campo ou num aviso no topo do corpo.
   cor), valor, data/hora, observação e quem registrou; excluídos e desfeitos riscados com "excluído
   por {nome}" / "desfeita por {nome}: {motivo}"; ações por item: Excluir (lançamento aberto) e
   Desfazer (última prestação), conforme `pode_excluir`/`pode_desfazer`; paginação.
-- **`SellerLimitsModal`** ("Adicionar limite", `attach_money`): limites atuais (geral, duplo, simples)
-  e um campo "somar" para cada; prévia do novo valor; **Salvar**.
+- **`SellerLimitsModal`** ("Ajustar limite", `attach_money`): limites atuais (geral, duplo, simples)
+  e um campo "somar ou subtrair" para cada (negativo reduz); prévia do novo valor, com erro no campo
+  quando ficaria abaixo de zero; **Salvar**.
 - **`ManagerCommissionModal`** ("Comissão do gerente", `pie_chart`): Percentual (0 a 100, sufixo %),
   explicação "sobre o líquido dos vendedores dele no período; zero quando não houver lucro";
   **Salvar**.

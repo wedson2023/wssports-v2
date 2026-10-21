@@ -68,6 +68,12 @@ specs 014, 015 e 016, responsiva com prioridade ao celular."
   sistema? → A: Não; o repasse fica fora do sistema. Para consulta, as linhas de gerente e de
   supervisor mostram "Saldo de caixa" (soma dos saldos de caixa dos vendedores abaixo) e "Recebido
   no período" (soma dos valores recebidos nas prestações do período) (FR-011).
+- Q: O ajuste de limite do vendedor no Caixa deve só somar, ou também reduzir e definir um valor
+  exato? → A: Somar ou subtrair: o campo aceita valor negativo, o limite nunca fica abaixo de zero e
+  a tela mostra a prévia do novo valor; não há "definir valor exato" (FR-028).
+- Q: Um vendedor desativado ou excluído que ainda tem saldo de caixa pode receber lançamentos e
+  prestação de contas? → A: Pode prestar contas e lançar retiradas; suprimento é recusado; o caixa
+  dele continua na lista enquanto houver saldo (FR-014a).
 
 ## Referências do sistema antigo *(Princípios VII e VIII)*
 
@@ -315,8 +321,10 @@ limite na linha.
 2. **Given** o líquido dos vendedores de um gerente no período ≤ 0, **When** a comissão é calculada,
    **Then** ela é R$ 0,00.
 3. **Given** a linha de um vendedor e a permissão de editar as configurações dele, **When** o usuário
-   escolhe "Adicionar limite", **Then** abre um modal com os limites atuais (geral, duplo, simples) e
-   o valor a somar em cada um, e ao salvar a linha mostra os novos limites.
+   escolhe "Ajustar limite", **Then** abre um modal com os limites atuais (geral, duplo, simples) e
+   o valor a somar ou subtrair em cada um (negativo reduz), com a prévia do novo valor, e ao salvar
+   a linha mostra os novos limites; um ajuste que deixaria um limite abaixo de zero é recusado no
+   próprio campo.
 4. **Given** a Dashboard, **When** ela é aberta depois desta spec, **Then** Lançamentos, Retiradas e
    Comissão do gerente do Apurado mostram os valores reais do dia, sem o selo "em breve".
 
@@ -370,7 +378,9 @@ a tela.
 - Vendedor que muda de gerente: o caixa e o histórico seguem o vendedor; a comissão do gerente do
   período é calculada pelo gerente atual do vendedor.
 - Vendedor inativo ou excluído: continua na lista enquanto tiver movimento ou saldo de caixa no
-  período, marcado como "inativo" ou "excluído"; sem saldo e sem movimento, não aparece.
+  período, marcado como "inativo" ou "excluído"; sem saldo e sem movimento, não aparece. Ele ainda
+  pode receber retiradas e prestação de contas (para baixar o que deve), mas não suprimento
+  (FR-014a).
 - Permissão retirada com a tela aberta: a próxima ação é recusada com a mensagem do servidor e o
   item some ao recarregar.
 - Sessão expirada: leva ao login como no restante do painel.
@@ -445,7 +455,7 @@ a tela.
 - **FR-012**: As listas DEVEM ter busca por nome ou login, ordenação por nome (padrão) ou por
   entradas, líquido ou saldo de caixa, e paginação (padrão 20, máximo 100).
 - **FR-013**: Cada linha DEVE ter o menu de ações (três pontinhos) só com as ações que o usuário pode
-  usar: no vendedor — Lançamento, Prestar contas, Transações, Adicionar limite, Gráfico e Baixar
+  usar: no vendedor — Lançamento, Prestar contas, Transações, Ajustar limite, Gráfico e Baixar
   planilha; no gerente — Prestar contas (todos os vendedores), Comissão do gerente e Baixar planilha.
 
 **Lançamentos**
@@ -453,6 +463,10 @@ a tela.
 - **FR-014**: O usuário com a permissão DEVE poder registrar no caixa de um vendedor um Suprimento ou
   uma Retirada com valor (maior que zero, duas casas), data/hora (não futura e não anterior à última
   prestação do vendedor) e observação opcional (até 500 caracteres); o registro guarda quem lançou.
+- **FR-014a**: Para vendedor inativo ou excluído, o caixa DEVE continuar aceitando retiradas,
+  prestação de contas (individual e no lote do gerente) e desfazer a última prestação, e DEVE
+  recusar suprimento com "Vendedor inativo ou excluído não recebe suprimento."; o modal de
+  lançamento desses vendedores mostra só a opção Retirada.
 - **FR-015**: O usuário com a permissão DEVE poder excluir um lançamento ainda não incluído em
   prestação de contas, com confirmação; a exclusão é lógica e guarda quem excluiu e quando.
   Lançamentos já prestados NÃO DEVEM poder ser excluídos; prestações só podem ser desfeitas pela
@@ -517,9 +531,12 @@ a tela.
 - **FR-027**: Cada gerente DEVE ter um percentual de comissão (0 a 100, duas casas, padrão 0)
   editável na linha dele por quem tem a permissão; o percentual vale para os cálculos de qualquer
   período consultado, e as prestações já feitas guardam os valores do momento.
-- **FR-028**: "Adicionar limite" DEVE somar o valor informado aos limites geral, duplo e/ou simples
-  do vendedor (os mesmos das configurações dele, consumidos pelas apostas), mostrando os atuais,
-  usando a permissão de editar as configurações do usuário que já existe.
+- **FR-028**: "Ajustar limite" DEVE somar ao limite geral, duplo e/ou simples do vendedor (os mesmos
+  das configurações dele, consumidos pelas apostas) o valor informado em cada um, positivo para
+  aumentar e negativo para reduzir, mostrando os atuais e a prévia do novo valor; o servidor DEVE
+  recusar o ajuste que deixaria algum limite abaixo de zero no momento da gravação ("O limite
+  {nome} ficaria negativo; o disponível agora é R$ X."), sem gravar nenhum dos três. Não há opção
+  de definir um valor exato. Usa a permissão de editar as configurações do usuário que já existe.
 
 **Gráfico e exportação**
 

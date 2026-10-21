@@ -15,7 +15,7 @@ Cria o caixa do painel, backend e frontend, e troca os dados fake de caixa da Da
   re-apuração.
 - **Lançamentos e prestação de contas**: tabelas `caixa_lancamentos` e `caixa_prestacoes_contas`;
   prestar com resumo e senha, em lote pelo gerente (tudo ou nada), desfazer só a última, com motivo.
-- **Comissão do gerente** (coluna em `usuarios_configuracoes`) e **adicionar limite** ao vendedor.
+- **Comissão do gerente** (coluna em `usuarios_configuracoes`) e **ajustar limite** do vendedor (somar ou subtrair).
 - **Caixa clientes** (`CaixaClientes`): esportes (reaproveita `CaixaOnline` com período), cassino
   com saldo real (somas do `RelatorioCassino`), bônus, depósitos, saques, resultado do site e lista
   por cliente.
