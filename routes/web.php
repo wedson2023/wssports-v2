@@ -30,6 +30,8 @@ Route::get('painel', [PainelController::class, 'index'])->name('painel');
 Route::get('painel/supervisores', [PainelController::class, 'supervisores'])->name('painel.supervisores');
 Route::get('painel/gerentes', [PainelController::class, 'gerentes'])->name('painel.gerentes');
 Route::get('painel/vendedores', [PainelController::class, 'vendedores'])->name('painel.vendedores');
+// cotações do painel (spec 016)
+Route::get('painel/cotacoes', [PainelController::class, 'cotacoes'])->name('painel.cotacoes');
 // afiliados (spec 012): página pública de cadastro e painel do afiliado
 Route::get('cadastro-afiliado', [AfiliadosPaginasController::class, 'cadastro'])->name('cadastro_afiliado');
 Route::get('afiliados', [AfiliadosPaginasController::class, 'painel'])->name('afiliados');

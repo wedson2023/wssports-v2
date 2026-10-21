@@ -68,12 +68,12 @@ modal de permissões agrupadas no lugar das 'travas' do antigo e Lixeira só com
 - Barra da lista no celular em uma linha: título cortado, busca na lupa que abre o campo e botão de
   novo só com o ícone.
 - Modais com tamanho conforme a Constituição v3.6.0 (altura do conteúdo no cadastro, fixa na edição e nas permissões), borda em degradê cinza → branco e cabeçalho com
+  ícone, título e descrição de para que serve o modal (Constituição v3.5.0).
 - "Esportes permitidos": escolhidos entre os esportes do site (marcar e desmarcar), sem digitar à
   mão (Constituição v3.7.0).
 - Regras de sim/não do vendedor numa lista "Sim / Não" (no lugar das chaves).
 - Superior escolhido numa lista com todos os da rede (sem digitar), permitindo mover o usuário para
   outro gerente ou supervisor na edição.
-  ícone, título e descrição de para que serve o modal (Constituição v3.5.0).
 
 ## Referências do sistema antigo *(Princípios VII e VIII)*
 

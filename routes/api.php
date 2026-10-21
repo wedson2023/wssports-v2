@@ -65,6 +65,7 @@ use App\Http\Controllers\ConfrontosLimitesController;
 use App\Http\Controllers\ConfrontosNaoPermitidosController;
 use App\Http\Controllers\ConfrontosResultadosController;
 use App\Http\Controllers\ConfrontosTetoCotacoesController;
+use App\Http\Controllers\CotacoesPainelController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\EncerramentoEspeciaisController;
 use App\Http\Controllers\EspeciaisController;
@@ -383,6 +384,23 @@ Route::middleware(['auth:api', 'garantir_acesso'])->group(function () {
         ->missing($confronto_nao_encontrado);
     Route::get('confrontos-teto-cotacoes', [ConfrontosTetoCotacoesController::class, 'show']);
     Route::patch('confrontos-teto-cotacoes', [ConfrontosTetoCotacoesController::class, 'update']);
+
+    // tela "Cotações" do painel (spec 016): consultas, prévia, Regras ativas, histórico e cadeados
+    Route::prefix('cotacoes')->controller(CotacoesPainelController::class)->group(function () use ($usuario_nao_encontrado) {
+        Route::get('nomes', 'nomes');
+        Route::get('publicos', 'publicos');
+        Route::get('clientes', 'clientes');
+        Route::get('usuarios/{usuario}', 'usuario')->missing($usuario_nao_encontrado);
+        Route::get('previa', 'previa');
+        Route::get('previa/jogos', 'previa_jogos');
+        Route::get('paises', 'paises');
+        Route::get('campeonatos', 'campeonatos');
+        Route::get('confrontos', 'confrontos');
+        Route::get('regras-ativas', 'regras_ativas');
+        Route::get('historico', 'historico');
+        Route::post('cadeados', 'trancar');
+        Route::delete('cadeados', 'destrancar');
+    });
 
     // configurações dos vendedores (por alcance) e dos visitantes
     Route::get('usuarios-configuracoes', [UsuariosConfiguracoesController::class, 'index']);

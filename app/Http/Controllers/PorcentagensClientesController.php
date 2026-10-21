@@ -6,10 +6,12 @@ use App\Http\Controllers\Concerns\GarantirPermissaoCliente;
 use App\Http\Requests\RegrasCotacaoRequest;
 use App\Models\PorcentagensClientes;
 use App\Models\PorcentagensClientesAoVivo;
+use App\Services\HistoricoCotacoes;
 use App\Services\RegrasCotacao;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controllers\HasMiddleware;
+use Illuminate\Support\Facades\DB;
 
 /**
  * Porcentagens de ajuste dos clientes do site (pré-jogo e ao vivo): a regra geral (sem cliente,
@@ -38,14 +40,23 @@ class PorcentagensClientesController extends Controller implements HasMiddleware
         return response()->json($this->dados($filtros['clientes_id'] ?? null));
     }
 
-    public function update(RegrasCotacaoRequest $request, RegrasCotacao $regras): JsonResponse
+    public function update(RegrasCotacaoRequest $request, RegrasCotacao $regras, HistoricoCotacoes $historico): JsonResponse
     {
         $clientes_id = $request->validated('clientes_id');
         $model = $request->validated('tipo') === 'ao_vivo' ? PorcentagensClientesAoVivo::class : PorcentagensClientes::class;
 
         $registro = $model::firstOrNew(['clientes_id' => $clientes_id]);
-        $registro->valores = $regras->aplicar($registro->valores ?? [], $request->validated('valores'), $request->validated('todos'));
-        $registro->save();
+        $antes = $registro->valores ?? [];
+        $registro->valores = $regras->aplicar($antes, $request->validated('valores'), $request->validated('todos'));
+
+        // gravação e histórico juntos (spec 016, FR-018a)
+        DB::transaction(function () use ($registro, $request, $antes, $clientes_id, $historico) {
+            $registro->save();
+            $historico->registrar($request->user(), 'clientes', HistoricoCotacoes::ALTERAR, [
+                'tipo' => $request->validated('tipo'),
+                'clientes_id' => $clientes_id,
+            ], $antes, $registro->valores);
+        });
 
         return response()->json($this->dados($clientes_id));
     }

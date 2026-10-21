@@ -9,8 +9,17 @@ import {
     Body, Buttons, Content, Drawer, DrawerHeader, GroupButton, Greeting, MenuIcon, MenuItem, Logo, Main, SubItem, TextButton, TitleBar, TitleText, Top,
 } from './styles';
 
-// itens do menu do painel: Dashboard (spec 014) e o grupo Usuários (spec 015) com os subitens por
-// função, como no menu "Usuários" do antigo; cada um diz quem pode vê-lo
+// permissões que dão acesso à tela "Cotações" (spec 016): qualquer uma das camadas
+const permissoes_cotacoes = [
+    'porcentagens_vendedores.editar',
+    'porcentagens_clientes.editar',
+    'porcentagens_campeonatos.editar',
+    'porcentagens_confrontos.editar',
+    'confrontos_teto_cotacoes.editar',
+];
+
+// itens do menu do painel: Dashboard (spec 014), o grupo Usuários (spec 015) com os subitens por
+// função, como no menu "Usuários" do antigo, e Cotações (spec 016); cada um diz quem pode vê-lo
 const itens_menu = [
     { chave: 'dashboard', rotulo: 'Dashboard', icone: 'bar_chart', href: '/painel', visivel: (usuario) => usuario.secoes.length > 0 },
     {
@@ -23,6 +32,13 @@ const itens_menu = [
             { chave: 'gerentes', rotulo: 'Gerentes', href: '/painel/gerentes', funcoes: ['Admin', 'Supervisor'] },
             { chave: 'vendedores', rotulo: 'Vendedores', href: '/painel/vendedores', funcoes: ['Admin', 'Supervisor', 'Gerente'] },
         ],
+    },
+    {
+        chave: 'cotacoes',
+        rotulo: 'Cotações',
+        icone: 'price_change',
+        href: '/painel/cotacoes',
+        visivel: (usuario) => permissoes_cotacoes.some((permissao) => usuario.permissoes.includes(permissao)),
     },
 ];
 

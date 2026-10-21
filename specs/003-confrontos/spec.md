@@ -478,6 +478,12 @@ recusa.
 9. **Given** um usuário do painel sem a permissão da ação (incluindo qualquer Vendedor), **When**
    ele tenta consultar ou alterar, **Then** a operação é recusada por falta de permissão.
 
+> Alterado pela spec 016 (FR-018a, FR-019 a FR-019c): toda gravação de porcentagem, valor do jogo ou
+> teto registra um histórico (autor, data e valor antes e depois de cada código); Admin e Supervisor
+> podem trancar uma cotação na tela de um usuário da rede, e ele e quem está abaixo dele não alteram
+> mais aquela porcentagem (nas porcentagens do usuário e nas de campeonato com alvo Vendedores). O
+> valor do jogo passa a ser recusado depois do início do jogo. O cálculo da cotação não mudou.
+
 ---
 
 ### User Story 9 - Alimentar um campeonato manualmente (Priority: P3)

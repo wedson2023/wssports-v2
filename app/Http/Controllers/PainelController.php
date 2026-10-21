@@ -33,4 +33,12 @@ class PainelController extends Controller
     {
         return Inertia::render('PanelUsers', ['funcao' => 'Vendedor']);
     }
+
+    /**
+     * Tela "Cotações" (spec 016); a aba vem na query string (?aba=).
+     */
+    public function cotacoes(): Response
+    {
+        return Inertia::render('PanelQuotes');
+    }
 }
