@@ -11,7 +11,8 @@ e clientes, de campeonato, valor do jogo e teto), sem mudar o cálculo do site, 
 
 - **Consultas novas** (`CotacoesPainelController`, prefixo `/cotacoes`): nomes das cotações, públicos
   editáveis, clientes, porcentagens de um usuário com a soma dos superiores e os cadeados, países,
-  campeonatos e jogos com o resumo das regras, prévia (partes do cálculo), Regras ativas e histórico.
+  campeonatos e jogos com o resumo das regras, prévia (partes do cálculo e jogos para trocar),
+  Regras ativas e histórico.
 - **Cadeado por cotação** (do antigo): tabela `porcentagens_cadeados`; Admin e Supervisor trancam um
   código na tela de um usuário; vale para ele e quem está abaixo; respeitado na gravação das
   porcentagens de vendedores e de campeonatos com alvo Vendedores.
@@ -52,7 +53,7 @@ painel (specs 014 e 015) e regras de modais, cabeçalho e campos da constituiç�
 | Item | Quantidade |
 |---|---|
 | Migrations | 2 (tabelas novas) |
-| Rotas da API novas / alteradas | 12 / 5 (só gravação) |
+| Rotas da API novas / alteradas | 13 / 5 (só gravação) |
 | Rotas web novas | 1 |
 | Services novos / alterados | 2 (`CadeadosCotacoes`, `HistoricoCotacoes`) / 1 (`CalculoCotacoes::detalhar`) |
 | Componentes novos / páginas novas | 10 / 1 |
@@ -68,7 +69,7 @@ painel (specs 014 e 015) e regras de modais, cabeçalho e campos da constituiç�
 | I. Nomes no frontend | Componentes em inglês PascalCase (`QuoteGrid`, `QuotePreview`...); hooks `useGradeCotacoes`, `useNomesCotacoes`, `useListaCotacoes`; util `quotes.js`; variáveis e props snake_case em português | ✅ Pass |
 | II. Idioma | Artefatos, comentários, mensagens e textos em português | ✅ Pass |
 | III. Componentes | Cada componente em pasta própria com `index.jsx` e `styles.jsx` | ✅ Pass |
-| IV. Escopo estrito | Arquivos existentes listados abaixo, aguardando confirmação do responsável | ⏳ Confirmar |
+| IV. Escopo estrito | Arquivos existentes listados abaixo, confirmados pelo responsável em 2026-10-21 | ✅ Pass |
 | V. Legibilidade | Revisão ao final de cada tarefa | ✅ Pass |
 | VI. Consistência | Rotas de gravação e alcance da spec 003 reaproveitados; permissões existentes; visual, `PanelTabs`, `Pagination`, `ActionsMenu`, `ModalHeader` e padrão de grupos do painel de permissões (spec 015); nomes de cotação de `NomesCotacoes` e grupos de `market_groups.js` | ✅ Pass |
 | VII. Sistema antigo | `price`, `price-sellers`, `championships-price`, `matches-price` e `bloquear-porcentagem-cotacao` analisados (R-01 e spec) | ✅ Pass |
@@ -84,10 +85,10 @@ painel (specs 014 e 015) e regras de modais, cabeçalho e campos da constituiç�
 | Cabeçalho dos modais (v3.7.0) | Todos os modais com `ModalHeader` (ícone sem fundo, título e descrição) | ✅ Pass |
 | Campos de itens existentes (v3.7.0) | Público, cliente, alvo, usuário, país, campeonato e jogo escolhidos de lista; nada digitado à mão além dos valores | ✅ Pass |
 | Sem testes | Nenhum arquivo, tarefa ou dependência de teste | ✅ Pass |
-| Postman | Regenerado na entrega (12 rotas novas e 5 alteradas) | ✅ Pass |
+| Postman | Regenerado na entrega (13 rotas novas e 5 alteradas) | ✅ Pass |
 
-**Resultado do gate**: aprovado, condicionado à confirmação da lista de arquivos existentes
-(Princípio IV). Reavaliado depois da Fase 1: sem violação nova.
+**Resultado do gate**: aprovado; lista de arquivos existentes (Princípio IV) confirmada pelo
+responsável em 2026-10-21. Reavaliado depois da Fase 1: sem violação nova.
 
 ### Arquivos existentes que serão alterados (Princípio IV)
 
@@ -96,11 +97,11 @@ painel (specs 014 e 015) e regras de modais, cabeçalho e campos da constituiç�
 | `app/Http/Controllers/PorcentagensVendedoresController.php` | Respeitar cadeados (422 / `pulados`) e gravar histórico | R-04, R-05 |
 | `app/Http/Controllers/PorcentagensCampeonatosController.php` | Respeitar cadeados no alvo Vendedores e gravar histórico | R-04, R-05 |
 | `app/Http/Controllers/PorcentagensClientesController.php` | Gravar histórico | R-05 |
-| `app/Http/Controllers/PorcentagensConfrontosController.php` | Gravar histórico | R-05 |
+| `app/Http/Controllers/PorcentagensConfrontosController.php` | Gravar histórico e recusar jogo que já começou | R-05, caso de borda da spec |
 | `app/Http/Controllers/ConfrontosTetoCotacoesController.php` | Gravar histórico | R-05 |
 | `app/Services/CalculoCotacoes.php` | Método público `detalhar()` com as partes do cálculo (sem mudar `ajustar()`) | R-03 |
 | `app/Http/Controllers/PainelController.php` | Ação `cotacoes` | R-09 |
-| `routes/api.php`, `routes/web.php` | 12 rotas de API e 1 página | contracts |
+| `routes/api.php`, `routes/web.php` | 13 rotas de API e 1 página | contracts |
 | `resources/js/components/PanelShell/index.jsx` | Item "Cotações" no menu | R-10 |
 | `docs/postman/wssports_api.postman_collection.json` | Regenerada | Constituição |
 | `specs/003-confrontos/spec.md` | Nota "Alterado pela spec 016" (cadeado e histórico nas rotas de cotação) | coerência dos artefatos |

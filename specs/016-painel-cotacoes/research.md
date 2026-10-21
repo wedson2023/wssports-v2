@@ -53,7 +53,9 @@ usuário escolhido e a função de baixo.
   frontend a leitura das camadas (duas fontes da verdade).
 - **Jogo de exemplo**: o primeiro jogo de pré-jogo futuro do campeonato aberto (aba Campeonatos), o
   próprio jogo (aba Jogos) ou o próximo jogo do dia com a cotação em foco disponível (Público e
-  Tetos); o usuário pode trocar pelo seletor de jogo da prévia.
+  Tetos); o usuário pode trocar pelo seletor de jogo da prévia, que lista os próximos 20 jogos de
+  pré-jogo por `GET /cotacoes/previa/jogos` (qualquer permissão de cotação, sem depender da
+  permissão de jogos).
 
 ## R-04 — Cadeado por cotação
 

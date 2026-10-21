@@ -111,6 +111,99 @@ class CalculoCotacoes
     }
 
     /**
+     * Partes do cálculo de cada código de um jogo para a prévia da tela de cotações (spec 016, R-03):
+     * cotação do provedor, porcentagem do próprio público, dos superiores (vendedor) ou da regra geral
+     * (cliente específico), do campeonato, valor do jogo, teto e máximo do ao vivo. A soma final é
+     * feita na tela com a mesma regra de aplicar(), já com os valores ainda não salvos.
+     *
+     * @param  list<string>  $codigos
+     * @param  array{camada?: string, alvo?: AlvoRegra, usuarios_id?: int|null}  $excluir  regra de campeonato
+     *                                                                                    ou jogo em edição, fora das parcelas
+     * @return array<string, array<string, float|null>>
+     */
+    public function detalhar(Publico $publico, string $tipo, object $item, array $codigos, array $excluir = []): array
+    {
+        $ao_vivo = $tipo === self::AO_VIVO;
+        [$proprias, $acima] = $this->porcentagens_publico_separadas($publico, $ao_vivo);
+
+        $campeonato = $this->somar($this->sem_regra_em_edicao(
+            $this->filtrar_alvos(PorcentagensCampeonatos::query()->where('campeonatos_id', $item->campeonatos_id), $publico),
+            $excluir,
+            'campeonatos',
+        )->pluck('valores'));
+
+        // o valor fixo por confronto não se aplica ao ao vivo
+        $jogo = $ao_vivo ? [] : $this->somar($this->sem_regra_em_edicao(
+            $this->filtrar_alvos(PorcentagensConfrontos::query()->where('confrontos_id', $item->confrontos_id), $publico),
+            $excluir,
+            'confrontos',
+        )->pluck('valores'));
+
+        $tetos = ConfrontosTetoCotacoes::atual()->tetos ?? [];
+        $maximo_ao_vivo = $ao_vivo ? $this->cotacao_maxima_ao_vivo($publico) : null;
+        $partes = [];
+
+        foreach ($codigos as $codigo) {
+            $partes[$codigo] = [
+                'provedor' => (float) ($item->cotacoes[$codigo] ?? 0),
+                'publico' => (float) ($proprias[$codigo] ?? 0),
+                'superiores' => (float) ($acima[$codigo] ?? 0),
+                'campeonato' => (float) ($campeonato[$codigo] ?? 0),
+                'jogo' => (float) ($jogo[$codigo] ?? 0),
+                'teto' => isset($tetos[$codigo]) ? (float) $tetos[$codigo] : null,
+                'maximo_ao_vivo' => $maximo_ao_vivo,
+            ];
+        }
+
+        return $partes;
+    }
+
+    /**
+     * Porcentagens do público separadas em [próprias, de cima]: no painel, as do usuário e a soma dos
+     * superiores; no site, a do cliente (ou a geral, para visitante) e a geral somada à do cliente.
+     *
+     * @return array{0: array<string, float>, 1: array<string, float>}
+     */
+    private function porcentagens_publico_separadas(Publico $publico, bool $ao_vivo): array
+    {
+        if ($publico->e_site()) {
+            $model = $ao_vivo ? PorcentagensClientesAoVivo::class : PorcentagensClientes::class;
+            $geral = $this->somar(collect([$model::whereNull('clientes_id')->value('valores')]));
+
+            if (! $publico->e_cliente()) {
+                return [$geral, []];
+            }
+
+            return [$this->somar(collect([$model::where('clientes_id', $publico->cliente->id)->value('valores')])), $geral];
+        }
+
+        $model = $ao_vivo ? PorcentagensVendedoresAoVivo::class : PorcentagensVendedores::class;
+        $id = $publico->usuario->id;
+        $regras = $model::whereIn('usuarios_id', $publico->ids_hierarquia_acima())->get(['usuarios_id', 'valores']);
+
+        return [
+            $this->somar($regras->where('usuarios_id', $id)->pluck('valores')),
+            $this->somar($regras->where('usuarios_id', '!=', $id)->pluck('valores')),
+        ];
+    }
+
+    /**
+     * Tira da consulta a regra que está sendo editada (mesma camada, alvo e dono), para a tela somar
+     * os valores pendentes no lugar dela.
+     *
+     * @param  array{camada?: string, alvo?: AlvoRegra, usuarios_id?: int|null}  $excluir
+     */
+    private function sem_regra_em_edicao(Builder $consulta, array $excluir, string $camada): Builder
+    {
+        if (($excluir['camada'] ?? null) !== $camada || ! isset($excluir['alvo'])) {
+            return $consulta;
+        }
+
+        return $consulta->whereNot(fn (Builder $c) => $c->where('alvo', $excluir['alvo'])
+            ->where('chave_usuario', $excluir['usuarios_id'] ?? 0));
+    }
+
+    /**
      * Regra do cálculo para uma cotação: zerada continua zerada; senão base + base × porcentagem
      * ÷ 100 + valor fixo, limitada ao teto e à cotação máxima, nunca menor que 1,00, em 2 casas.
      */

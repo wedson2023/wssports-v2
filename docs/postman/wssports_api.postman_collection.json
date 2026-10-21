@@ -2894,7 +2894,7 @@
                             "mode": "raw",
                             "raw": "{\n    \"tipo\": \"pre_jogo\",\n    \"valores\": {\n        \"odd1\": -5,\n        \"jogador\": -2\n    }\n}"
                         },
-                        "description": "porcentagens_vendedores.editar. tipo: pre_jogo ou ao_vivo; valores (só os códigos alterados) ou todos (os 324 códigos); −100 a 100; 0 remove o código."
+                        "description": "porcentagens_vendedores.editar. tipo: pre_jogo ou ao_vivo; valores (só os códigos alterados) ou todos (os 324 códigos); −100 a 100; 0 remove o código. Spec 016: grava histórico; código trancado por um superior em valores → 422 (valores.odd1 \"A cotação Casa está trancada por ...\"); em todos, os trancados são pulados e a resposta traz pulados."
                     }
                 },
                 {
@@ -2956,7 +2956,7 @@
                             "mode": "raw",
                             "raw": "{\n    \"tipo\": \"pre_jogo\",\n    \"clientes_id\": null,\n    \"todos\": -10\n}"
                         },
-                        "description": "porcentagens_clientes.editar. A regra de um cliente soma com a geral."
+                        "description": "porcentagens_clientes.editar. A regra de um cliente soma com a geral. Spec 016: grava histórico."
                     }
                 },
                 {
@@ -3014,7 +3014,7 @@
                             "mode": "raw",
                             "raw": "{\n    \"alvo\": \"Vendedores\",\n    \"usuarios_id\": null,\n    \"valores\": {\n        \"odd1\": -1\n    }\n}"
                         },
-                        "description": "porcentagens_campeonatos.editar. alvo Clientes e Todos só Admin e Supervisor."
+                        "description": "porcentagens_campeonatos.editar. alvo Clientes e Todos só Admin e Supervisor. Spec 016: grava histórico; no alvo Vendedores, código trancado → 422 e todos pula os trancados (pulados)."
                     }
                 },
                 {
@@ -3072,7 +3072,7 @@
                             "mode": "raw",
                             "raw": "{\n    \"alvo\": \"Clientes\",\n    \"cotacoes\": {\n        \"odd1\": 1.95\n    }\n}"
                         },
-                        "description": "porcentagens_confrontos.editar. Guarda a diferença para a cotação do provedor; 422 se o código estiver indisponível."
+                        "description": "porcentagens_confrontos.editar. Guarda a diferença para a cotação do provedor; 422 se o código estiver indisponível. Spec 016: grava histórico; jogo que já começou → 422 (confronto \"O jogo já começou; o valor do jogo vale só antes do início.\")."
                     }
                 },
                 {
@@ -3128,7 +3128,7 @@
                             "mode": "raw",
                             "raw": "{\n    \"valores\": {\n        \"odd1\": 250\n    }\n}"
                         },
-                        "description": "confrontos_teto_cotacoes.editar. Tetos ≥ 1,00; 0 remove."
+                        "description": "confrontos_teto_cotacoes.editar. Tetos ≥ 1,00; 0 remove. Spec 016: grava histórico."
                     }
                 },
                 {
@@ -8690,6 +8690,583 @@
                             ]
                         },
                         "description": "Apostas dos clientes no site, encerramentos, depósitos e saques do dia (banca toda). Permissão dashboard.ver_caixa_online."
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Cotações do painel (spec 016)",
+            "description": "Consultas da tela \"Cotações\": nomes, públicos, porcentagens de um usuário, listas com o resumo das regras, prévia do cálculo, Regras ativas, histórico e cadeado por cotação. A gravação das regras continua nas rotas de \"Confrontos (público e painel)\".",
+            "item": [
+                {
+                    "name": "Nomes das cotações",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/cotacoes/nomes",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "cotacoes",
+                                "nomes"
+                            ]
+                        },
+                        "description": "{ nomes: { odd1: \"Casa\", ..., jogador: \"Jogador\" } } (324 códigos). Qualquer permissão de cotação (porcentagens_vendedores, porcentagens_clientes, porcentagens_campeonatos, porcentagens_confrontos ou confrontos_teto_cotacoes .editar)."
+                    }
+                },
+                {
+                    "name": "Públicos editáveis",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/cotacoes/publicos?busca=&por_pagina=50",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "cotacoes",
+                                "publicos"
+                            ],
+                            "query": [
+                                {
+                                    "key": "busca",
+                                    "value": "",
+                                    "description": "nome ou login",
+                                    "disabled": true
+                                },
+                                {
+                                    "key": "por_pagina",
+                                    "value": "50",
+                                    "description": "até 100",
+                                    "disabled": true
+                                }
+                            ]
+                        },
+                        "description": "Usuários cujas porcentagens o solicitante edita (ele e a rede; Admin e Supervisor: todos), ativos, paginado. porcentagens_vendedores.editar."
+                    }
+                },
+                {
+                    "name": "Buscar clientes",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/cotacoes/clientes?busca=maria&por_pagina=20",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "cotacoes",
+                                "clientes"
+                            ],
+                            "query": [
+                                {
+                                    "key": "busca",
+                                    "value": "maria",
+                                    "description": "nome, telefone ou e-mail",
+                                    "disabled": false
+                                },
+                                {
+                                    "key": "por_pagina",
+                                    "value": "20",
+                                    "description": "até 100",
+                                    "disabled": true
+                                }
+                            ]
+                        },
+                        "description": "Clientes por nome, telefone ou e-mail, para a regra de um cliente específico. porcentagens_clientes.editar."
+                    }
+                },
+                {
+                    "name": "Porcentagens de um usuário (tela)",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/cotacoes/usuarios/{{usuario_id}}?campeonatos_id={{campeonato_id}}",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "cotacoes",
+                                "usuarios",
+                                "{{usuario_id}}"
+                            ],
+                            "query": [
+                                {
+                                    "key": "campeonatos_id",
+                                    "value": "{{campeonato_id}}",
+                                    "description": "cadeados da regra de campeonato com alvo Vendedores deste usuário",
+                                    "disabled": true
+                                }
+                            ]
+                        },
+                        "description": "pre_jogo, ao_vivo, superiores (soma dos superiores por tipo), cadeados que valem para ele e, com campeonatos_id, cadeados_campeonato. porcentagens_vendedores.editar + alcance."
+                    }
+                },
+                {
+                    "name": "Prévia do cálculo",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/cotacoes/previa?publico=clientes&publico_id=&tipo=pre_jogo&confrontos_id=&campeonatos_id=&camada=&alvo=&alvo_usuarios_id=",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "cotacoes",
+                                "previa"
+                            ],
+                            "query": [
+                                {
+                                    "key": "publico",
+                                    "value": "clientes",
+                                    "description": "clientes, cliente ou usuario",
+                                    "disabled": false
+                                },
+                                {
+                                    "key": "publico_id",
+                                    "value": "",
+                                    "description": "id do cliente ou do usuário",
+                                    "disabled": true
+                                },
+                                {
+                                    "key": "tipo",
+                                    "value": "pre_jogo",
+                                    "description": "pre_jogo ou ao_vivo",
+                                    "disabled": false
+                                },
+                                {
+                                    "key": "confrontos_id",
+                                    "value": "",
+                                    "description": "jogo da prévia",
+                                    "disabled": true
+                                },
+                                {
+                                    "key": "campeonatos_id",
+                                    "value": "",
+                                    "description": "campeonato do jogo de exemplo",
+                                    "disabled": true
+                                },
+                                {
+                                    "key": "camada",
+                                    "value": "",
+                                    "description": "campeonatos ou confrontos (regra em edição)",
+                                    "disabled": true
+                                },
+                                {
+                                    "key": "alvo",
+                                    "value": "",
+                                    "description": "Todos, Clientes ou Vendedores",
+                                    "disabled": true
+                                },
+                                {
+                                    "key": "alvo_usuarios_id",
+                                    "value": "",
+                                    "description": "dono do alvo Vendedores",
+                                    "disabled": true
+                                }
+                            ]
+                        },
+                        "description": "Partes do cálculo de cada código de um jogo (provedor, publico, superiores, campeonato, jogo, teto, maximo_ao_vivo). Sem confrontos_id, usa o próximo jogo do pré-jogo (do campeonato, se informado). camada + alvo + alvo_usuarios_id tiram a regra em edição das parcelas. Qualquer permissão de cotação (porcentagens_vendedores, porcentagens_clientes, porcentagens_campeonatos, porcentagens_confrontos ou confrontos_teto_cotacoes .editar)."
+                    }
+                },
+                {
+                    "name": "Jogos para a prévia",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/cotacoes/previa/jogos?busca=",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "cotacoes",
+                                "previa",
+                                "jogos"
+                            ],
+                            "query": [
+                                {
+                                    "key": "busca",
+                                    "value": "",
+                                    "description": "time",
+                                    "disabled": true
+                                }
+                            ]
+                        },
+                        "description": "Próximos 20 jogos do pré-jogo para \"Trocar jogo\". Qualquer permissão de cotação (porcentagens_vendedores, porcentagens_clientes, porcentagens_campeonatos, porcentagens_confrontos ou confrontos_teto_cotacoes .editar)."
+                    }
+                },
+                {
+                    "name": "Países dos campeonatos",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/cotacoes/paises",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "cotacoes",
+                                "paises"
+                            ]
+                        },
+                        "description": "{ paises: [{ pais, bandeira }] }. porcentagens_campeonatos.editar."
+                    }
+                },
+                {
+                    "name": "Campeonatos com o resumo das regras",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/cotacoes/campeonatos?busca=&pais=&com_ajuste=1&por_pagina=20",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "cotacoes",
+                                "campeonatos"
+                            ],
+                            "query": [
+                                {
+                                    "key": "busca",
+                                    "value": "",
+                                    "description": "nome",
+                                    "disabled": true
+                                },
+                                {
+                                    "key": "pais",
+                                    "value": "",
+                                    "description": "país",
+                                    "disabled": true
+                                },
+                                {
+                                    "key": "com_ajuste",
+                                    "value": "1",
+                                    "description": "só com alguma regra",
+                                    "disabled": true
+                                },
+                                {
+                                    "key": "por_pagina",
+                                    "value": "20",
+                                    "description": "até 100",
+                                    "disabled": true
+                                }
+                            ]
+                        },
+                        "description": "Nome, país, bandeira, jogos futuros e resumo das regras visíveis (quantidade, alvos, mínimo, máximo); favoritos primeiro. porcentagens_campeonatos.editar."
+                    }
+                },
+                {
+                    "name": "Jogos com o resumo das regras",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/cotacoes/confrontos?dia=hoje&busca=&campeonatos_id=&com_ajuste=1&por_pagina=20",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "cotacoes",
+                                "confrontos"
+                            ],
+                            "query": [
+                                {
+                                    "key": "dia",
+                                    "value": "hoje",
+                                    "description": "hoje, amanha ou depois_de_amanha",
+                                    "disabled": false
+                                },
+                                {
+                                    "key": "busca",
+                                    "value": "",
+                                    "description": "time",
+                                    "disabled": true
+                                },
+                                {
+                                    "key": "campeonatos_id",
+                                    "value": "",
+                                    "description": "campeonato",
+                                    "disabled": true
+                                },
+                                {
+                                    "key": "com_ajuste",
+                                    "value": "1",
+                                    "description": "só com regra",
+                                    "disabled": true
+                                },
+                                {
+                                    "key": "por_pagina",
+                                    "value": "20",
+                                    "description": "até 100",
+                                    "disabled": true
+                                }
+                            ]
+                        },
+                        "description": "Pré-jogo de agora até depois de amanhã (Brasília), com o resumo do valor do jogo. porcentagens_confrontos.editar."
+                    }
+                },
+                {
+                    "name": "Regras ativas",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/cotacoes/regras-ativas?camada=&por_pagina=20",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "cotacoes",
+                                "regras-ativas"
+                            ],
+                            "query": [
+                                {
+                                    "key": "camada",
+                                    "value": "",
+                                    "description": "vendedores, clientes, campeonatos, confrontos ou tetos",
+                                    "disabled": true
+                                },
+                                {
+                                    "key": "por_pagina",
+                                    "value": "20",
+                                    "description": "até 100",
+                                    "disabled": true
+                                }
+                            ]
+                        },
+                        "description": "Todas as regras com algum código ajustado que o solicitante vê (cada camada pela sua permissão e alcance), mais nova primeiro."
+                    }
+                },
+                {
+                    "name": "Histórico de uma regra",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/cotacoes/historico?camada=vendedores&usuarios_id={{usuario_id}}&clientes_id=&campeonatos_id=&confrontos_id=&tipo=pre_jogo&alvo=",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "cotacoes",
+                                "historico"
+                            ],
+                            "query": [
+                                {
+                                    "key": "camada",
+                                    "value": "vendedores",
+                                    "description": "vendedores, clientes, campeonatos, confrontos ou tetos",
+                                    "disabled": false
+                                },
+                                {
+                                    "key": "usuarios_id",
+                                    "value": "{{usuario_id}}",
+                                    "description": "dono (vendedores) ou dono do alvo Vendedores",
+                                    "disabled": true
+                                },
+                                {
+                                    "key": "clientes_id",
+                                    "value": "",
+                                    "description": "cliente (sem = regra geral dos clientes)",
+                                    "disabled": true
+                                },
+                                {
+                                    "key": "campeonatos_id",
+                                    "value": "",
+                                    "description": "campeonato",
+                                    "disabled": true
+                                },
+                                {
+                                    "key": "confrontos_id",
+                                    "value": "",
+                                    "description": "jogo",
+                                    "disabled": true
+                                },
+                                {
+                                    "key": "tipo",
+                                    "value": "pre_jogo",
+                                    "description": "pre_jogo ou ao_vivo",
+                                    "disabled": true
+                                },
+                                {
+                                    "key": "alvo",
+                                    "value": "",
+                                    "description": "Todos, Clientes ou Vendedores",
+                                    "disabled": true
+                                }
+                            ]
+                        },
+                        "description": "Alterações e trancar/destrancar de uma regra, mais nova primeiro: autor, data, tipo, alvo e { codigo: { antes, depois } }. Permissão da camada + alcance."
+                    }
+                },
+                {
+                    "name": "Trancar cotações",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/cotacoes/cadeados",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "cotacoes",
+                                "cadeados"
+                            ]
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"camada\": \"vendedores\",\n    \"usuarios_id\": \"{{usuario_id}}\",\n    \"tipo\": \"pre_jogo\",\n    \"codigos\": [\n        \"odd1\"\n    ]\n}"
+                        },
+                        "description": "Admin ou Supervisor com a permissão da camada tranca códigos na tela de um usuário da rede: ele e quem está abaixo não alteram mais esses códigos. camada vendedores exige tipo; campeonatos exige campeonatos_id. Gerente → 403."
+                    }
+                },
+                {
+                    "name": "Destrancar cotações",
+                    "request": {
+                        "method": "DELETE",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/cotacoes/cadeados",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "cotacoes",
+                                "cadeados"
+                            ]
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"camada\": \"vendedores\",\n    \"usuarios_id\": \"{{usuario_id}}\",\n    \"tipo\": \"pre_jogo\",\n    \"codigos\": [\n        \"odd1\"\n    ]\n}"
+                        },
+                        "description": "Destranca os cadeados do próprio autor ou de quem está abaixo dele; os de um superior são ignorados e contados em nao_destrancados."
                     }
                 }
             ]

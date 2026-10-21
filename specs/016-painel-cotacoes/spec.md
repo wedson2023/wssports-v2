@@ -229,7 +229,7 @@ Regras ativas e conferir as quatro linhas, os filtros por camada e o atalho para
 - Permissão retirada com a tela aberta: a próxima gravação é recusada com a mensagem do servidor, e
   a aba some ao recarregar.
 - Usuário da rede inativo ou excluído: não aparece na lista de públicos, mas as regras dele continuam
-  em Regras ativas, marcadas como "usuário inativo".
+  em Regras ativas, marcadas como "usuário inativo" ou "usuário excluído".
 - Jogo que começou ou terminou com a tela aberta: a gravação do valor do jogo é recusada com a
   mensagem do servidor.
 - Sessão expirada: leva ao login como no restante do painel, sem perder a confirmação de alterações
@@ -346,8 +346,9 @@ Regras ativas e conferir as quatro linhas, os filtros por camada e o atalho para
   quantas pulou).
 - **FR-019b**: O cadeado DEVE valer para as porcentagens dos usuários da rede (aba Público) e para as
   porcentagens de campeonato com alvo Vendedores da rede (a regra do campeonato vale para pré-jogo e
-  ao vivo juntos, então o cadeado dela também); não se aplica a Clientes do site, a alvo
-  Todos, ao valor do jogo nem ao teto, que já são só de Admin e Supervisor.
+  ao vivo juntos, então o cadeado dela também). Não se aplica a Clientes do site, a alvo Todos
+  nem ao teto (só Admin e Supervisor editam) e, por decisão de escopo, não se aplica ao valor do
+  jogo, mesmo que o Gerente o edite para a rede dele.
 - **FR-019c**: Só quem trancou, ou um superior dele, DEVE poder destrancar. Trancar ou destrancar
   NÃO DEVE mudar o valor da cotação; a cotação trancada mantém o ajuste que tinha.
 

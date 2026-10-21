@@ -8,10 +8,13 @@ use App\Http\Requests\PorcentagensConfrontosRequest;
 use App\Models\Confrontos;
 use App\Models\PorcentagensConfrontos;
 use App\Services\AlcanceHierarquia;
+use App\Services\HistoricoCotacoes;
 use App\Services\RegrasCotacao;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controllers\HasMiddleware;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 
 /**
  * Cotação de um confronto do pré-jogo: o usuário informa a cotação desejada e o sistema guarda a
@@ -35,8 +38,13 @@ class PorcentagensConfrontosController extends Controller implements HasMiddlewa
         return response()->json($this->dados($request, $confronto));
     }
 
-    public function update(PorcentagensConfrontosRequest $request, Confrontos $confronto, RegrasCotacao $regras): JsonResponse
+    public function update(PorcentagensConfrontosRequest $request, Confrontos $confronto, RegrasCotacao $regras, HistoricoCotacoes $historico): JsonResponse
     {
+        // o valor do jogo vale só antes do início (spec 016, caso de borda)
+        if ($confronto->data_inicio->lessThanOrEqualTo(now())) {
+            throw ValidationException::withMessages(['confronto' => 'O jogo já começou; o valor do jogo vale só antes do início.']);
+        }
+
         $alvo = AlvoRegra::from($request->validated('alvo'));
         $dono = $this->alcance->garantir_alvo($request->user(), $alvo, $request->validated('usuarios_id'));
         $diferencas = $regras->diferencas_confronto($confronto, $request->validated('cotacoes'));
@@ -46,10 +54,20 @@ class PorcentagensConfrontosController extends Controller implements HasMiddlewa
             'alvo' => $alvo,
             'usuarios_id' => $dono?->id,
         ]);
+        $antes = $registro->trashed() ? [] : ($registro->valores ?? []);
         // informar a própria cotação do provedor zera (remove) o valor fixo do código
         $registro->valores = $regras->aplicar($registro->valores ?? [], $diferencas, null);
         $registro->deleted_at = null;
-        $registro->save();
+
+        // gravação e histórico juntos (spec 016, FR-018a)
+        DB::transaction(function () use ($registro, $request, $antes, $alvo, $dono, $confronto, $historico) {
+            $registro->save();
+            $historico->registrar($request->user(), 'confrontos', HistoricoCotacoes::ALTERAR, [
+                'alvo' => $alvo,
+                'alvo_usuarios_id' => $dono?->id,
+                'confrontos_id' => $confronto->id,
+            ], $antes, $registro->valores);
+        });
 
         return response()->json($this->dados($request, $confronto));
     }

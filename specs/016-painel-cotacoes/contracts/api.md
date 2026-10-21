@@ -18,11 +18,12 @@ a rede; Admin e Supervisor: todos), ativos, agrupados no frontend por função.
 `data: [{ id, nome, login, funcao, superior: {id, nome}|null }]`, paginado (por_pagina até 100).
 
 ### 3. `GET /cotacoes/clientes?busca=`
-`porcentagens_clientes.editar`. Busca por nome, login ou telefone. `data: [{ id, nome, login,
-telefone }]`, paginado.
+`porcentagens_clientes.editar`. Busca por nome, telefone ou e-mail. `data: [{ id, nome, telefone,
+email }]`, paginado.
 
 ### 4. `GET /cotacoes/usuarios/{usuario}`
-`porcentagens_vendedores.editar` + `garantir_dono`. Resposta:
+`porcentagens_vendedores.editar` + `garantir_dono`. Com `?campeonatos_id=`, traz também
+`cadeados_campeonato` (cadeados da regra de campeonato com alvo Vendedores deste usuário). Resposta:
 ```json
 {
   "usuarios_id": 7,
@@ -43,16 +44,17 @@ Permissão `porcentagens_campeonatos.editar`. `{ "paises": [{ "pais": "Brasil", 
 
 ### 6. `GET /cotacoes/campeonatos?busca=&pais=&com_ajuste=1`
 `porcentagens_campeonatos.editar`. `data: [{ id, nome, pais, bandeira, jogos_futuros, resumo:
-{ quantidade, alvos: ["Clientes"], minimo: -5, maximo: 3 } | null }]`, ordenado por favorito e nome.
+{ quantidade, alvos: ["Clientes"], minimo: -5, maximo: 3 } | null }]`, ordenado pelos favoritos
+primeiro e depois pelo nome.
 `resumo` só com as regras visíveis ao solicitante (`ids_donos_visiveis`).
 
 ### 7. `GET /cotacoes/confrontos?busca=&campeonatos_id=&dia=hoje|amanha|depois_de_amanha&com_ajuste=1`
 `porcentagens_confrontos.editar`. Só pré-jogo de hoje a depois de amanhã (Brasília).
 `data: [{ id, time_casa, time_fora, data_inicio, campeonato: {id, nome, pais, bandeira}, resumo }]`.
 
-### 8. `GET /cotacoes/previa?confrontos_id=&publico=clientes|cliente|usuario&publico_id=&tipo=pre_jogo|ao_vivo&alvo=&alvo_usuarios_id=`
-Permissão de cotação. Sem `confrontos_id`, escolhe o próximo jogo de pré-jogo (R-03). O público
-segue a tela em edição; `alvo`/`alvo_usuarios_id` indicam a regra de campeonato ou jogo em edição.
+### 8. `GET /cotacoes/previa?confrontos_id=&campeonatos_id=&publico=clientes|cliente|usuario&publico_id=&tipo=pre_jogo|ao_vivo&camada=campeonatos|confrontos&alvo=&alvo_usuarios_id=`
+Permissão de cotação. Sem `confrontos_id`, escolhe o próximo jogo de pré-jogo (R-03). Com `campeonatos_id`, o próximo jogo daquele campeonato. O público
+segue a tela em edição; `camada` + `alvo`/`alvo_usuarios_id` indicam a regra de campeonato ou jogo em edição.
 ```json
 {
   "confronto": { "id": 10, "time_casa": "A", "time_fora": "B", "data_inicio": "...", "campeonatos_id": 3 },
@@ -64,6 +66,11 @@ segue a tela em edição; `alvo`/`alvo_usuarios_id` indicam a regra de campeonat
 ```
 `publico`/`campeonato`/`jogo` já excluem a regra que está sendo editada quando ela é informada, para o
 frontend somar os valores pendentes no lugar dela.
+
+### 8b. `GET /cotacoes/previa/jogos?busca=`
+Permissão de cotação. Próximos 20 jogos de pré-jogo (a partir de agora, Brasília) para o "Trocar
+jogo" da prévia, com busca por time: `data: [{ id, time_casa, time_fora, data_inicio, campeonato:
+{ id, nome } }]`. Não depende da permissão de jogos.
 
 ### 9. `GET /cotacoes/regras-ativas?camada=vendedores|clientes|campeonatos|confrontos|tetos`
 Permissão de cotação; cada camada só com a sua permissão e o alcance. `data: [{ camada, referencia:
@@ -93,7 +100,7 @@ Admin ou Supervisor com a permissão da camada (`porcentagens_vendedores.editar`
 | `PATCH /porcentagens-vendedores/{usuario}` | `valores` com código trancado → 422 `valores.{codigo}` "A cotação {nome} está trancada por {autor}."; `todos` pula os trancados e responde `pulados`; grava histórico |
 | `PATCH /porcentagens-campeonatos/{campeonato}` | Idem para alvo Vendedores (cadeado da camada `campeonatos`); grava histórico |
 | `PATCH /porcentagens-clientes` | Grava histórico |
-| `PATCH /porcentagens-confrontos/{confronto}` | Grava histórico |
+| `PATCH /porcentagens-confrontos/{confronto}` | Grava histórico; jogo que já começou → 422 `confronto` "O jogo já começou; o valor do jogo vale só antes do início." |
 | `PATCH /confrontos-teto-cotacoes` | Grava histórico |
 
 As consultas (`GET`) dessas rotas não mudam.
@@ -104,5 +111,5 @@ As consultas (`GET`) dessas rotas não mudam.
 
 ## Postman
 
-`docs/postman/wssports_api.postman_collection.json` regenerada com as 12 rotas novas (pasta
+`docs/postman/wssports_api.postman_collection.json` regenerada com as 13 rotas novas (pasta
 "Cotações do painel") e os exemplos novos das 5 alteradas.

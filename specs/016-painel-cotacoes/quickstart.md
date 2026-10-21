@@ -56,7 +56,9 @@ npm run build                # ou npm run dev
 1. Jogos → Hoje → abrir um jogo com "Casa" 2,00 → informar 1,95 para Clientes: aparece "Provedor
    2,00 · −0,05"; Salvar; site mostra 1,95 (sem outras regras).
 2. Opção sem cotação no provedor: campo desabilitado "indisponível".
-3. Tetos (Admin): "Casa" 1,50 → prévia "limitada ao teto"; valor 0,50 → erro "mínimo 1,00".
+3. Via API, gravar o valor de um jogo que já começou → 422 "O jogo já começou; o valor do jogo vale só antes do início."
+4. Admin salva uma regra de jogo com alvo Todos → aparece a confirmação "Esta regra vai valer para visitantes, clientes e todos os vendedores."
+5. Tetos (Admin): "Casa" 1,50 → prévia "limitada ao teto"; valor 0,50 → erro "mínimo 1,00".
 
 ## 6. Regras ativas e histórico (US4, FR-018a)
 
