@@ -1,14 +1,26 @@
 <!--
 Sync Impact Report
-- Version change: 3.2.0 → 3.3.0 (MINOR: regra nova em Stack e Restrições Técnicas)
+- Version change: 3.6.0 → 3.7.0 (MINOR: regra nova e regra alterada em Stack e Restrições Técnicas)
 - Princípios modificados: nenhum
 - Princípios adicionados: nenhum
 - Seções alteradas:
-  - Stack e Restrições Técnicas: nova regra "Comentários de colunas" — toda coluna criada ou
-    alterada por migration do projeto DEVE ter `->comment()` em português explicando o uso
-    (dispensadas `id()`, `timestamps()`, `softDeletes()`, `rememberToken()` e tabelas de pacotes)
-- Impacto: nenhuma feature com plan.md em andamento; as colunas já existentes ficam sem
-  comentário até a spec que as documentar (intenção adiada para `/speckit-specify`)
+  - Stack e Restrições Técnicas: nova regra "Campos de itens existentes" — itens que já existem
+    no sistema são escolhidos de uma lista, nunca digitados à mão
+  - Stack e Restrições Técnicas: "Cabeçalho dos modais do painel" — ícone sem fundo, só o ícone
+    na cor principal
+- Emendas anteriores do mesmo dia (2026-10-21, spec 015):
+  - v3.6.0: "Tamanho dos modais" reescrita — altura do conteúdo no computador (limitada a 90dvh,
+    sem espaço vazio); altura fixa desde a abertura só quando o tamanho já é conhecido; celular
+    100% da tela
+  - v3.5.0: "Cabeçalho dos modais do painel" — `ModalHeader` com ícone, título, descrição e fechar
+  - v3.4.0: "Tamanho dos modais" — primeira versão, com altura sempre fixa
+- Motivo (v3.7.0): pedido do responsável em 2026-10-21 ao ver "Esportes permitidos" com nomes
+  digitados e repetidos ("TÊNIS DE MESA" e "TENIS DE MESA") e o ícone com fundo vermelho no
+  cabeçalho dos modais
+- Impacto: spec 015 (`ModalHeader` sem fundo no ícone; `BettingRulesFields` com os esportes da
+  lista do site; plan.md atualizado). Modais e campos de specs anteriores (ex.: CombinationModal
+  da spec 014; configurações de clientes e visitantes com esportes permitidos) passam a seguir as
+  regras quando forem alterados
 - Seções adicionadas: nenhuma
 - Seções removidas: nenhuma
 - TODOs pendentes: nenhum
@@ -290,6 +302,28 @@ trocado de forma controlada e que nenhum dado inventado chegue a operações rea
     no nome PODEM ficar em cache.
   - Configurações (tema, banners, textos) DEVEM vir do servidor a cada carga, para que mudar uma
     configuração não exija publicar uma versão.
+- Tamanho dos modais:
+  - Largura no computador: fixa e limitada à tela (ex.: `width: min(760px, calc(100vw - 32px))`).
+  - Altura no computador: a do conteúdo (`height: auto`), limitada à tela
+    (`max-height: 90dvh`), mesmo que isso faça o modal crescer; o modal NÃO DEVE sobrar com espaço
+    vazio embaixo do conteúdo.
+  - Quando o tamanho já é conhecido (conteúdo longo, várias abas que mudam de tamanho, lista que
+    chega depois do carregamento), o modal DEVE abrir direto na altura fixa (ex.:
+    `height: min(680px, 90dvh)`), para não encolher durante o carregamento e expandir depois.
+  - No celular (breakpoint `mobile`): ocupar 100% da largura e da altura da tela (`100dvh`).
+  - Cabeçalho, abas e rodapé NÃO DEVEM encolher (`flex-shrink: 0`); só o corpo rola
+    (`flex: 1; min-height: 0; overflow-y: auto`), e o carregamento aparece dentro do corpo.
+- Cabeçalho dos modais do painel: todo modal do painel DEVE usar o componente compartilhado
+  `ModalHeader`, com:
+  - um ícone (Material Icons) à esquerda, só o ícone, na cor principal do tema e sem fundo;
+  - o título ao lado do ícone;
+  - abaixo do título, um texto menor explicando para que serve o modal (ex.: "Preencha os dados
+    para cadastrar um novo vendedor na sua rede.");
+  - o botão de fechar à direita.
+- Campos de itens existentes: todo campo que guarda itens que já existem no sistema (ex.:
+  esportes permitidos, funções, superiores) DEVE ser preenchido escolhendo de uma lista do que
+  existe (seleção, chips de marcar, busca com resultados); NÃO DEVE aceitar texto digitado à mão
+  para esses itens.
 
 **Rationale**: timestamps padronizados garantem rastreabilidade de quando cada registro foi
 criado e alterado, e o soft delete preserva o histórico e permite recuperar dados excluídos,
@@ -298,7 +332,12 @@ banco, para quem consulta direto pelo cliente SQL ou por relatórios, sem depend
 paginação limitada mantém o tempo de resposta e o consumo
 de memória previsíveis mesmo com grandes volumes de dados. A regra de atualização evita usuários
 presos em versões antigas, problema do sistema antigo, que dependia de versão manual no service
-worker e de limpar o cache.
+worker e de limpar o cache. A altura dos modais acompanha o conteúdo para não sobrar espaço vazio,
+e a altura fixa nos casos já conhecidos evita que eles pulem de tamanho enquanto carregam; como
+só o corpo rola, um conteúdo longo não empurra nem esconde as abas e os botões. O cabeçalho padrão com
+ícone e descrição deixa claro, ao abrir, em que modal o usuário está e o que ele faz. Escolher de
+uma lista evita nomes escritos de jeitos diferentes para o mesmo item (ex.: "TÊNIS DE MESA" e
+"TENIS DE MESA") e itens que não existem.
 
 ## Fluxo de Desenvolvimento
 
@@ -343,4 +382,4 @@ worker e de limpar o cache.
 - A conformidade DEVE ser verificada em todo plano (Constitution Check), em toda lista de
   tarefas e em toda revisão de código.
 
-**Version**: 3.3.0 | **Ratified**: 2026-09-25 | **Last Amended**: 2026-10-13
+**Version**: 3.7.0 | **Ratified**: 2026-09-25 | **Last Amended**: 2026-10-21

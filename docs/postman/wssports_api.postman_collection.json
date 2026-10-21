@@ -397,7 +397,7 @@
                                 }
                             ]
                         },
-                        "description": "Lista a sub-hierarquia de quem está autenticado. Permissão: usuarios.listar."
+                        "description": "Lista a rede de quem pede (funcao, ativo, busca, por_pagina, page). Spec 015: superior, comissoes (vendedor) e quantidade_vendedores/quantidade_gerentes."
                     }
                 },
                 {
@@ -416,7 +416,7 @@
                         ],
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \"nome\": \"Novo Supervisor\",\n    \"funcao\": \"Supervisor\",\n    \"login\": \"novo.supervisor\",\n    \"password\": \"segredo1\",\n    \"telefone\": \"(69) 99999-0000\",\n    \"endereco\": \"Rua B, 20\"\n}"
+                            "raw": "{\n    \"nome\": \"Carlos Mendes\",\n    \"login\": \"carlos.mendes\",\n    \"password\": \"123456\",\n    \"funcao\": \"Vendedor\",\n    \"usuarios_id\": 3,\n    \"telefone\": \"(82) 99999-0000\",\n    \"comissao_1\": \"5.00\",\n    \"comissao_2\": \"7.00\",\n    \"comissao_3\": \"10.00\"\n}"
                         },
                         "url": {
                             "raw": "{{base_url}}/usuarios",
@@ -427,7 +427,7 @@
                                 "usuarios"
                             ]
                         },
-                        "description": "Cadastra a função imediatamente abaixo da de quem está autenticado (Admin → Supervisor, Supervisor → Gerente, Gerente → Vendedor). Permissão: usuarios.cadastrar."
+                        "description": "Cadastra um usuário de qualquer função abaixo de quem cadastra (spec 015). usuarios_id (superior) é obrigatório fora da função imediatamente abaixo; comissao_1..3 só para Vendedor (4 a 12 e ao vivo recebem as mesmas). Exige usuarios.cadastrar_<funcao>."
                     }
                 },
                 {
@@ -567,6 +567,94 @@
                             ]
                         },
                         "description": "Exclusão lógica (soft delete) do usuário e de toda a sua sub-hierarquia (204). Permissão: usuarios.excluir."
+                    }
+                },
+                {
+                    "name": "Lixeira de usuários",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/usuarios/excluidos?funcao=Vendedor",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "usuarios",
+                                "excluidos"
+                            ],
+                            "query": [
+                                {
+                                    "key": "funcao",
+                                    "value": "Vendedor"
+                                }
+                            ]
+                        },
+                        "description": "Excluídos da rede (spec 015), com os mesmos filtros e paginação da lista. Exige usuarios.listar."
+                    }
+                },
+                {
+                    "name": "Restaurar usuário",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/usuarios/{{usuario_id}}/restaurar",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "usuarios",
+                                "{{usuario_id}}",
+                                "restaurar"
+                            ]
+                        },
+                        "description": "Restaura o usuário e os excluídos junto com ele (spec 015). Exige usuarios.excluir_<funcao>; 422 \"Restaure antes o superior.\" quando o superior ainda está excluído."
+                    }
+                },
+                {
+                    "name": "Configuração do vendedor",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/usuarios-configuracoes/{{usuario_id}}",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "usuarios-configuracoes",
+                                "{{usuario_id}}"
+                            ]
+                        },
+                        "description": "Comissões, limites e regras de um vendedor da rede (spec 015). Exige usuarios.consultar."
                     }
                 }
             ]

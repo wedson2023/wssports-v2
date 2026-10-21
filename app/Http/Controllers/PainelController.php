@@ -15,4 +15,22 @@ class PainelController extends Controller
     {
         return Inertia::render('Dashboard');
     }
+
+    /**
+     * Listas de usuários do painel (spec 015); quem pode ver cada uma é conferido na API.
+     */
+    public function supervisores(): Response
+    {
+        return Inertia::render('PanelUsers', ['funcao' => 'Supervisor']);
+    }
+
+    public function gerentes(): Response
+    {
+        return Inertia::render('PanelUsers', ['funcao' => 'Gerente']);
+    }
+
+    public function vendedores(): Response
+    {
+        return Inertia::render('PanelUsers', ['funcao' => 'Vendedor']);
+    }
 }

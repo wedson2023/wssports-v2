@@ -386,3 +386,8 @@ exclusão passa a ser recusada para ele; devolver a permissão e conferir que vo
 - As regras de cascata, hierarquia estrita, cadastro somente do nível imediatamente abaixo e
   bloqueio do próprio registro seguem as decisões tomadas pelo responsável na versão anterior
   desta spec.
+  > Alterado pela spec 015 (FR-004a, FR-009, research R-02 e R-03): o cadastro aceita qualquer função
+  > abaixo de quem cadastra, escolhendo o superior na sua rede quando a função não é a imediatamente
+  > abaixo; e as permissões `usuarios.cadastrar`, `usuarios.editar` e `usuarios.excluir` foram
+  > divididas por função alvo (`usuarios.<acao>_supervisor|gerente|vendedor`), cada função usando só
+  > as de funções abaixo dela. A Lixeira ganhou listagem de excluídos e restauração em cascata.

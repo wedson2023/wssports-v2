@@ -27,7 +27,9 @@ class UsuariosConfiguracoesController extends Controller implements HasMiddlewar
     public static function middleware(): array
     {
         return [
-            self::permissao_cliente('usuarios_configuracoes.editar'),
+            self::permissao_cliente('usuarios_configuracoes.editar', except: ['show']),
+            // consultar um vendedor só lê: as abas aparecem só para leitura sem a de editar (spec 015)
+            self::permissao_cliente('usuarios.consultar', only: ['show']),
         ];
     }
 
@@ -70,6 +72,21 @@ class UsuariosConfiguracoesController extends Controller implements HasMiddlewar
             ->withQueryString();
 
         return UsuariosConfiguracoesResource::collection($configuracoes);
+    }
+
+    /**
+     * Configuração de um vendedor da rede de quem pede (spec 015); quem ainda não tem linha a
+     * recebe com os valores padrão.
+     */
+    public function show(Request $request, Usuarios $usuario): UsuariosConfiguracoesResource
+    {
+        abort_unless(
+            $usuario->funcao() === Funcao::Vendedor && $request->user()->gerencia($usuario),
+            404,
+            'Usuário não encontrado.',
+        );
+
+        return new UsuariosConfiguracoesResource(UsuariosConfiguracoes::do_vendedor($usuario->id)->load('usuario'));
     }
 
     public function update(UsuariosConfiguracoesRequest $request): JsonResponse
