@@ -32,6 +32,7 @@ class PapeisPermissoesSeeder extends Seeder
             ...Funcao::PERMISSOES_ENCERRAMENTOS,
             ...Funcao::PERMISSOES_CASSINO,
             ...Funcao::PERMISSOES_AFILIADOS,
+            ...Funcao::PERMISSOES_CAIXA,
         ];
 
         foreach ($permissoes as $permissao) {

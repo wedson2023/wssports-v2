@@ -189,6 +189,21 @@
             "key": "afiliado_id",
             "value": "1",
             "type": "string"
+        },
+        {
+            "key": "vendedor_id",
+            "value": "4",
+            "type": "string"
+        },
+        {
+            "key": "lancamento_id",
+            "value": "1",
+            "type": "string"
+        },
+        {
+            "key": "prestacao_id",
+            "value": "1",
+            "type": "string"
         }
     ],
     "item": [
@@ -9267,6 +9282,636 @@
                             "raw": "{\n    \"camada\": \"vendedores\",\n    \"usuarios_id\": \"{{usuario_id}}\",\n    \"tipo\": \"pre_jogo\",\n    \"codigos\": [\n        \"odd1\"\n    ]\n}"
                         },
                         "description": "Destranca os cadeados do próprio autor ou de quem está abaixo dele; os de um superior são ignorados e contados em nao_destrancados."
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Caixa do painel (spec 017)",
+            "description": "Caixa da rede (resumo, lista do nível abaixo, gráfico, limites e comissão do gerente), lançamentos, prestação de contas (individual, em lote e desfazer), Caixa clientes e planilha. O Dashboard (GET /dashboard/apurado) passou a trazer lançamentos, retiradas e comissão do gerente reais.",
+            "item": [
+                {
+                    "name": "Resumo do caixa",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/caixa/resumo?de=2026-10-01&ate=2026-10-21&tipo=todas&usuarios_id=",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "caixa",
+                                "resumo"
+                            ],
+                            "query": [
+                                {
+                                    "key": "de",
+                                    "value": "2026-10-01"
+                                },
+                                {
+                                    "key": "ate",
+                                    "value": "2026-10-21"
+                                },
+                                {
+                                    "key": "tipo",
+                                    "value": "todas"
+                                },
+                                {
+                                    "key": "usuarios_id",
+                                    "value": ""
+                                }
+                            ]
+                        },
+                        "description": "caixa.ver. Cartões do foco (vazio = o próprio; Admin = banca) no período e tipo, com a trilha. Fora da rede → 403. lancamentos, retiradas e saldo_caixa = null fora de tipo=todas."
+                    }
+                },
+                {
+                    "name": "Lista do nível abaixo",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/caixa/usuarios?de=2026-10-01&ate=2026-10-21&tipo=todas&usuarios_id=&busca=&ordenar=nome&direcao=asc&page=1&por_pagina=20",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "caixa",
+                                "usuarios"
+                            ],
+                            "query": [
+                                {
+                                    "key": "de",
+                                    "value": "2026-10-01"
+                                },
+                                {
+                                    "key": "ate",
+                                    "value": "2026-10-21"
+                                },
+                                {
+                                    "key": "tipo",
+                                    "value": "todas"
+                                },
+                                {
+                                    "key": "usuarios_id",
+                                    "value": ""
+                                },
+                                {
+                                    "key": "busca",
+                                    "value": ""
+                                },
+                                {
+                                    "key": "ordenar",
+                                    "value": "nome"
+                                },
+                                {
+                                    "key": "direcao",
+                                    "value": "asc"
+                                },
+                                {
+                                    "key": "page",
+                                    "value": "1"
+                                },
+                                {
+                                    "key": "por_pagina",
+                                    "value": "20"
+                                }
+                            ]
+                        },
+                        "description": "caixa.ver. Admin → supervisores; Supervisor → gerentes; Gerente → vendedores; Vendedor → 403. Busca por nome ou login; ordenar=nome|entradas|liquido|saldo_caixa; cada linha traz as ações permitidas (acoes)."
+                    }
+                },
+                {
+                    "name": "Gráfico do vendedor",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/caixa/vendedores/{{vendedor_id}}/grafico?de=2026-10-01&ate=2026-10-21",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "caixa",
+                                "vendedores",
+                                "{{vendedor_id}}",
+                                "grafico"
+                            ],
+                            "query": [
+                                {
+                                    "key": "de",
+                                    "value": "2026-10-01"
+                                },
+                                {
+                                    "key": "ate",
+                                    "value": "2026-10-21"
+                                }
+                            ]
+                        },
+                        "description": "caixa.ver + alcance. Quantidade de apostas do período por número de palpites (1 a 10 e \"Mais de 10\")."
+                    }
+                },
+                {
+                    "name": "Ajustar limites do vendedor",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/caixa/vendedores/{{vendedor_id}}/limites",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "caixa",
+                                "vendedores",
+                                "{{vendedor_id}}",
+                                "limites"
+                            ]
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"geral\": \"500.00\",\n    \"duplo\": \"0\",\n    \"simples\": \"-100.00\"\n}"
+                        },
+                        "description": "usuarios_configuracoes.editar + alcance. Soma (positivo) ou subtrai (negativo) dos limites; nenhum pode ficar abaixo de zero → 422 \"O limite geral ficaria negativo; o disponível agora é R$ X.\" sem gravar nenhum."
+                    }
+                },
+                {
+                    "name": "Comissão do gerente",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/caixa/gerentes/{{gerente_id}}/comissao",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "caixa",
+                                "gerentes",
+                                "{{gerente_id}}",
+                                "comissao"
+                            ]
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"percentual\": \"10.00\"\n}"
+                        },
+                        "description": "caixa.editar_comissao_gerente (Admin e Supervisor) + alcance. Percentual de 0 a 100 sobre o líquido dos vendedores do gerente no período."
+                    }
+                },
+                {
+                    "name": "Transações do vendedor",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/caixa/vendedores/{{vendedor_id}}/transacoes?tipo=todos&page=1",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "caixa",
+                                "vendedores",
+                                "{{vendedor_id}}",
+                                "transacoes"
+                            ],
+                            "query": [
+                                {
+                                    "key": "tipo",
+                                    "value": "todos"
+                                },
+                                {
+                                    "key": "page",
+                                    "value": "1"
+                                }
+                            ]
+                        },
+                        "description": "caixa.ver (o Vendedor só o próprio). Lançamentos e prestações (inclusive excluídos e desfeitos), do mais novo ao mais antigo; tipo=todos|suprimento|retirada|prestacao; período opcional; pode_excluir/pode_desfazer em cada item."
+                    }
+                },
+                {
+                    "name": "Lançar suprimento ou retirada",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/caixa/vendedores/{{vendedor_id}}/lancamentos",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "caixa",
+                                "vendedores",
+                                "{{vendedor_id}}",
+                                "lancamentos"
+                            ]
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"tipo\": \"Suprimento\",\n    \"valor\": \"50.00\",\n    \"ocorrido_em\": \"2026-10-21T15:30\",\n    \"observacao\": null\n}"
+                        },
+                        "description": "caixa.lancar + alcance. 201. 422: valor ≤ 0; data futura; \"Data anterior à última prestação de contas.\"; \"Vendedor inativo ou excluído não recebe suprimento.\". ocorrido_em no horário de Brasília."
+                    }
+                },
+                {
+                    "name": "Excluir lançamento",
+                    "request": {
+                        "method": "DELETE",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/caixa/lancamentos/{{lancamento_id}}",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "caixa",
+                                "lancamentos",
+                                "{{lancamento_id}}"
+                            ]
+                        },
+                        "description": "caixa.excluir_lancamento + alcance. 204. Já prestado → 422 \"Este lançamento já entrou numa prestação de contas e não pode ser excluído.\"."
+                    }
+                },
+                {
+                    "name": "Resumo da prestação do vendedor",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/caixa/vendedores/{{vendedor_id}}/prestacao?ate=",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "caixa",
+                                "vendedores",
+                                "{{vendedor_id}}",
+                                "prestacao"
+                            ],
+                            "query": [
+                                {
+                                    "key": "ate",
+                                    "value": ""
+                                }
+                            ]
+                        },
+                        "description": "caixa.prestar_contas + alcance. Resumo desde a última prestação até ate (padrão agora): saldo anterior, entradas, comissão, saídas, suprimentos, retiradas, ajustes, valor apurado e apostas em aberto."
+                    }
+                },
+                {
+                    "name": "Prestar contas do vendedor",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/caixa/vendedores/{{vendedor_id}}/prestacoes",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "caixa",
+                                "vendedores",
+                                "{{vendedor_id}}",
+                                "prestacoes"
+                            ]
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"ate\": \"2026-10-21T18:00\",\n    \"valor_recebido\": \"200.00\",\n    \"observacao\": null,\n    \"senha\": \"senha-do-usuario\"\n}"
+                        },
+                        "description": "caixa.prestar_contas + alcance. 201. valor_recebido vazio = o apurado; a diferença fica para a próxima. 422: \"Senha incorreta.\"; data não posterior à última; \"Nenhum movimento a prestar no período.\". 409: \"O caixa deste vendedor mudou; confira e tente de novo.\"."
+                    }
+                },
+                {
+                    "name": "Resumo do lote do gerente",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/caixa/gerentes/{{gerente_id}}/prestacao?ate=",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "caixa",
+                                "gerentes",
+                                "{{gerente_id}}",
+                                "prestacao"
+                            ],
+                            "query": [
+                                {
+                                    "key": "ate",
+                                    "value": ""
+                                }
+                            ]
+                        },
+                        "description": "caixa.prestar_contas + alcance. Vendedores do gerente com o valor apurado de cada um, o total e quantos serão pulados."
+                    }
+                },
+                {
+                    "name": "Prestar contas de todos (lote)",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/caixa/gerentes/{{gerente_id}}/prestacoes",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "caixa",
+                                "gerentes",
+                                "{{gerente_id}}",
+                                "prestacoes"
+                            ]
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"ate\": \"2026-10-21T18:00\",\n    \"observacao\": null,\n    \"senha\": \"senha-do-usuario\"\n}"
+                        },
+                        "description": "caixa.prestar_contas + alcance. Tudo ou nada; valor recebido = apurado de cada vendedor; os sem movimento são pulados. 201: { lote, prestacoes, pulados, total }."
+                    }
+                },
+                {
+                    "name": "Desfazer prestação",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/caixa/prestacoes/{{prestacao_id}}/desfazer",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "caixa",
+                                "prestacoes",
+                                "{{prestacao_id}}",
+                                "desfazer"
+                            ]
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"motivo\": \"Valor digitado errado\",\n    \"senha\": \"senha-do-usuario\"\n}"
+                        },
+                        "description": "caixa.prestar_contas; quem fez a prestação ou um superior dele. Só a última do vendedor → senão 422 \"Só a última prestação de contas do vendedor pode ser desfeita.\". Os lançamentos dela voltam a ficar abertos."
+                    }
+                },
+                {
+                    "name": "Resumo do Caixa clientes",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/caixa/clientes/resumo?de=2026-10-01&ate=2026-10-21",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "caixa",
+                                "clientes",
+                                "resumo"
+                            ],
+                            "query": [
+                                {
+                                    "key": "de",
+                                    "value": "2026-10-01"
+                                },
+                                {
+                                    "key": "ate",
+                                    "value": "2026-10-21"
+                                }
+                            ]
+                        },
+                        "description": "caixa.ver_clientes, só Admin e Supervisor (Gerente → 403). Esportes (como a Caixa online), cassino com saldo real, bônus, depósitos, saques e resultado do site."
+                    }
+                },
+                {
+                    "name": "Lista do Caixa clientes",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/caixa/clientes?de=2026-10-01&ate=2026-10-21&busca=&ordenar=nome&direcao=asc&page=1",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "caixa",
+                                "clientes"
+                            ],
+                            "query": [
+                                {
+                                    "key": "de",
+                                    "value": "2026-10-01"
+                                },
+                                {
+                                    "key": "ate",
+                                    "value": "2026-10-21"
+                                },
+                                {
+                                    "key": "busca",
+                                    "value": ""
+                                },
+                                {
+                                    "key": "ordenar",
+                                    "value": "nome"
+                                },
+                                {
+                                    "key": "direcao",
+                                    "value": "asc"
+                                },
+                                {
+                                    "key": "page",
+                                    "value": "1"
+                                }
+                            ]
+                        },
+                        "description": "caixa.ver_clientes, só Admin e Supervisor. Clientes com movimento no período; busca por nome, telefone ou e-mail; ordenar=nome|entradas|resultado."
+                    }
+                },
+                {
+                    "name": "Baixar planilha",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/caixa/exportar?escopo=rede&de=2026-10-01&ate=2026-10-21&tipo=todas&usuarios_id=",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "caixa",
+                                "exportar"
+                            ],
+                            "query": [
+                                {
+                                    "key": "escopo",
+                                    "value": "rede"
+                                },
+                                {
+                                    "key": "de",
+                                    "value": "2026-10-01"
+                                },
+                                {
+                                    "key": "ate",
+                                    "value": "2026-10-21"
+                                },
+                                {
+                                    "key": "tipo",
+                                    "value": "todas"
+                                },
+                                {
+                                    "key": "usuarios_id",
+                                    "value": ""
+                                }
+                            ]
+                        },
+                        "description": "caixa.exportar (+ caixa.ver_clientes e Admin/Supervisor no escopo clientes). Devolve o .xlsx (escopo rede: o foco e o nível abaixo; no vendedor, só ele)."
                     }
                 }
             ]

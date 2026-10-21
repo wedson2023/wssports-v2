@@ -6,6 +6,7 @@ use App\Enums\EfeitoAcaoCassino;
 use App\Models\Configuracoes;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Query\Builder;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -92,6 +93,48 @@ class RelatorioCassino
             'ggr_desde_prestacao' => $desde ? bcsub((string) ($desde->entradas ?? '0'), (string) ($desde->saidas ?? '0'), 2) : null,
             'data_prestacao_contas' => $prestacao?->toDateString(),
         ];
+    }
+
+    /**
+     * Somas do cassino num intervalo para o Caixa clientes (spec 017, R-06), com as mesmas regras do
+     * relatório: entradas, saídas, resultado (GGR) e comissão de cada provedor. Opcionalmente só de
+     * uma carteira e, com os ids, também por cliente.
+     *
+     * @param  list<int>|null  $ids_clientes
+     * @return array{total: array<string, string>, por_cliente: array<int, array<string, string>>}
+     */
+    public function somas_periodo(Carbon $inicio, Carbon $fim, ?string $carteira = null, ?array $ids_clientes = null): array
+    {
+        $por_cliente = $ids_clientes !== null;
+        $agrupar = $por_cliente ? ['r.clientes_id', ...self::AGRUPAMENTOS['provedor']] : self::AGRUPAMENTOS['provedor'];
+
+        $linhas = $this->somas($this->base($inicio->toDateTimeString(), $fim->toDateTimeString(), null))
+            ->when($carteira, fn (Builder $c) => $c->where('r.carteira', $carteira))
+            ->when($por_cliente, fn (Builder $c) => $c->whereIn('r.clientes_id', $ids_clientes)->addSelect('r.clientes_id'))
+            ->addSelect(self::COLUNAS['provedor'])
+            ->groupBy($agrupar)
+            ->get();
+
+        $vazio = ['entradas' => '0.00', 'saidas' => '0.00', 'resultado' => '0.00', 'comissao_provedores' => '0.00'];
+        $resultado = ['total' => $vazio, 'por_cliente' => []];
+
+        foreach ($linhas as $linha) {
+            $item = $this->item($linha, 'provedor');
+            $somar = fn (array $atual) => [
+                'entradas' => bcadd($atual['entradas'], $item['entradas'], 2),
+                'saidas' => bcadd($atual['saidas'], $item['saidas'], 2),
+                'resultado' => bcadd($atual['resultado'], $item['ggr'], 2),
+                'comissao_provedores' => bcadd($atual['comissao_provedores'], $item['comissao'], 2),
+            ];
+
+            $resultado['total'] = $somar($resultado['total']);
+
+            if ($por_cliente) {
+                $resultado['por_cliente'][$linha->clientes_id] = $somar($resultado['por_cliente'][$linha->clientes_id] ?? $vazio);
+            }
+        }
+
+        return $resultado;
     }
 
     private function base(string $inicio, string $fim, ?int $provedor): Builder

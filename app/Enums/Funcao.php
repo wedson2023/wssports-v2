@@ -248,6 +248,29 @@ enum Funcao: string
     ];
 
     /**
+     * Permissões do caixa do painel (spec 017): consultar a rede e os clientes, lançar, excluir
+     * lançamento, prestar contas, exportar e editar a comissão do gerente.
+     */
+    public const PERMISSOES_CAIXA = [
+        'caixa.ver',
+        'caixa.ver_clientes',
+        'caixa.lancar',
+        'caixa.excluir_lancamento',
+        'caixa.prestar_contas',
+        'caixa.exportar',
+        'caixa.editar_comissao_gerente',
+    ];
+
+    /**
+     * Permissões do caixa que o Gerente não pode usar: o caixa dos clientes é da banca toda e a
+     * comissão do gerente é definida pelos superiores dele.
+     */
+    public const PERMISSOES_CAIXA_RESTRITAS_GERENTE = [
+        'caixa.ver_clientes',
+        'caixa.editar_comissao_gerente',
+    ];
+
+    /**
      * Nível hierárquico: 1 é o topo (Admin) e 4 a base (Vendedor).
      */
     public function nivel(): int
@@ -294,11 +317,13 @@ enum Funcao: string
     public function permissoes_padrao(): array
     {
         $permissoes_dashboard = array_values(array_filter(self::PERMISSOES_DASHBOARD, fn (string $permissao) => $this->pode_usar($permissao)));
+        $permissoes_caixa = array_values(array_filter(self::PERMISSOES_CAIXA, fn (string $permissao) => $this->pode_usar($permissao)));
 
         if ($this === self::Vendedor) {
             return [
                 ...array_values(array_filter(self::PERMISSOES_APOSTAS, fn (string $permissao) => $this->pode_usar($permissao))),
                 ...$permissoes_dashboard,
+                ...$permissoes_caixa,
             ];
         }
 
@@ -329,6 +354,7 @@ enum Funcao: string
             ...array_values($permissoes_cassino),
             ...array_values($permissoes_afiliados),
             ...$permissoes_dashboard,
+            ...$permissoes_caixa,
         ];
     }
 
@@ -351,7 +377,8 @@ enum Funcao: string
      * excluir e restaurar. Dashboard: Admin e Supervisor todas; Gerente todas menos a Caixa online;
      * Vendedor só as do que ele mesmo fez (PERMISSOES_DASHBOARD_VENDEDOR). Usuários (spec 015):
      * cadastrar, editar e excluir só sobre funções abaixo (o Vendedor nunca cadastra vendedor); as
-     * demais de usuários, de Gerente para cima.
+     * demais de usuários, de Gerente para cima. Caixa (spec 017): Admin e Supervisor todas; Gerente
+     * todas menos ver o caixa dos clientes e editar a comissão do gerente; Vendedor só ver o próprio.
      */
     public function pode_usar(string $permissao): bool
     {
@@ -371,6 +398,14 @@ enum Funcao: string
                 self::Admin, self::Supervisor => true,
                 self::Gerente => $permissao !== 'dashboard.ver_caixa_online',
                 self::Vendedor => in_array($permissao, self::PERMISSOES_DASHBOARD_VENDEDOR, true),
+            };
+        }
+
+        if (in_array($permissao, self::PERMISSOES_CAIXA, true)) {
+            return match ($this) {
+                self::Admin, self::Supervisor => true,
+                self::Gerente => ! in_array($permissao, self::PERMISSOES_CAIXA_RESTRITAS_GERENTE, true),
+                self::Vendedor => $permissao === 'caixa.ver',
             };
         }
 
