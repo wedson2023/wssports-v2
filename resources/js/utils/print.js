@@ -39,13 +39,15 @@ const palpite_com_bloco_html = (comprovante, palpite) => {
         : '');
 };
 
-// comprovante do bilhete como o print_ticket do sistema antigo (impressão pelo navegador)
-const comprovante_html = (comprovante) => {
+// comprovante do bilhete como o print_ticket do sistema antigo (impressão pelo navegador); a 2ª via
+// (painel, spec 018) leva a marca "2ª via" abaixo do nome do sistema
+const comprovante_html = (comprovante, { segunda_via = false } = {}) => {
     const vendedor_paga = para_centavos(comprovante.premio_liquido) !== para_centavos(comprovante.total_a_pagar);
 
     return [
         '<div style="width:93%; box-sizing:border-box; padding:5px 3.5%; font-family:arial; background:#fff;">',
         `<p align="center"><strong>${escapar(comprovante.nome_sistema)}</strong></p>`,
+        segunda_via ? '<p align="center" style="font-size:0.8em; margin:0 0 5px;"><strong>2ª via</strong></p>' : '',
         linha('Código', comprovante.codigo.toUpperCase()),
         linha('Cliente', comprovante.nome),
         linha('Vendedor', comprovante.vendedor),
@@ -85,7 +87,7 @@ const imprimir_html = (titulo, corpo) => {
     setTimeout(() => quadro.remove(), tempo_remocao_ms);
 };
 
-export const imprimir_bilhete = (comprovante) => imprimir_html(comprovante.codigo.toUpperCase(), comprovante_html(comprovante));
+export const imprimir_bilhete = (comprovante, opcoes = {}) => imprimir_html(comprovante.codigo.toUpperCase(), comprovante_html(comprovante, opcoes));
 
 // colunas da tabela no navegador, em duas linhas por jogo, como o table_html do sistema antigo
 const colunas_tabela = [

@@ -68,11 +68,15 @@ const texto_bloco = (comprovante, palpite, colunas) => {
 };
 
 // bilhete cadastrado ou validado pelo vendedor
-export const texto_bilhete = (comprovante, largura) => {
+// a 2ª via (painel, spec 018) leva a linha "2a via" abaixo do nome do sistema
+export const texto_bilhete = (comprovante, largura, { segunda_via = false } = {}) => {
     const colunas = colunas_da_largura(largura);
     const vendedor_paga = para_centavos(comprovante.premio_liquido) !== para_centavos(comprovante.total_a_pagar);
 
     let texto = `${LINHA}${CENTRALIZAR}${NEGRITO}${DUPLO}${sem_acentos(comprovante.nome_sistema)}${LINHA}${LINHA}${INICIAR}`;
+
+    if (segunda_via) texto += `${CENTRALIZAR}${NEGRITO}2a via${LINHA}${INICIAR}`;
+
     texto += `${tracejado(colunas)}${LINHA}${INICIAR}`;
     texto += `${linha_rotulo_valor('Codigo', comprovante.codigo.toUpperCase(), colunas)}${LINHA}${INICIAR}`;
     texto += `${linha_rotulo_valor('Cliente', comprovante.nome ?? '', colunas)}${LINHA}${INICIAR}`;

@@ -1,7 +1,7 @@
 {
     "info": {
         "name": "WSSports API",
-        "description": "Rotas da API do WSSports (autenticação JWT, gestão de usuários e permissões, área do cliente, gestão de clientes, confrontos e apostas).\n\nVariáveis da coleção:\n- base_url: endereço da API (ex.: http://127.0.0.1:8000/api)\n- token: token do painel, preenchido pelo login e refresh do painel\n- token_cliente: token do cliente, preenchido pelo cadastro, login e refresh da área do cliente\n- usuario_id / permissao: usados nas rotas de usuários e permissões\n- cliente_id / meio_pagamento_id / promocao_id: usados nas rotas de clientes\n- campeonato_id / confronto_id / registro_id / gerente_id: usados nas rotas de confrontos\n- codigo_aposta / palpite_id / confronto_ao_vivo_id: usados nas rotas de apostas\n- codigo_aposta / chave_encerramento / endpoint_push: usados nas rotas da spec 010\n- jogo_cassino / canal_cassino / provedor_cassino / sessao_cassino / acao_cassino / cassino_hall / cassino_chave: usados nas rotas da spec 011 (hall e chave só para simular o callback localmente)\n- token_afiliado / afiliado_id: usados nas rotas de afiliados da spec 012 (token_afiliado é preenchido pelo login, refresh e troca de senha do afiliado)\n\n- Dashboard (spec 014): as rotas usam o token do painel; atualizar=1 ignora o cache\n\nFluxo: execute 'Login' (painel) e 'Login do cliente'; as demais rotas usam os tokens salvos.",
+        "description": "Rotas da API do WSSports (autenticação JWT, gestão de usuários e permissões, área do cliente, gestão de clientes, confrontos e apostas).\n\nVariáveis da coleção:\n- base_url: endereço da API (ex.: http://127.0.0.1:8000/api)\n- token: token do painel, preenchido pelo login e refresh do painel\n- token_cliente: token do cliente, preenchido pelo cadastro, login e refresh da área do cliente\n- usuario_id / permissao: usados nas rotas de usuários e permissões\n- cliente_id / meio_pagamento_id / promocao_id: usados nas rotas de clientes\n- campeonato_id / confronto_id / registro_id / gerente_id: usados nas rotas de confrontos\n- codigo_aposta / palpite_id / confronto_ao_vivo_id: usados nas rotas de apostas\n- codigo_aposta / chave_encerramento / endpoint_push: usados nas rotas da spec 010\n- jogo_cassino / canal_cassino / provedor_cassino / sessao_cassino / acao_cassino / cassino_hall / cassino_chave: usados nas rotas da spec 011 (hall e chave só para simular o callback localmente)\n- token_afiliado / afiliado_id: usados nas rotas de afiliados da spec 012 (token_afiliado é preenchido pelo login, refresh e troca de senha do afiliado)\n\n- Dashboard (spec 014): as rotas usam o token do painel; atualizar=1 ignora o cache\n- Apostas do painel (spec 018): as rotas usam o token do painel e o codigo_aposta\n\nFluxo: execute 'Login' (painel) e 'Login do cliente'; as demais rotas usam os tokens salvos.",
         "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
     },
     "auth": {
@@ -9912,6 +9912,376 @@
                             ]
                         },
                         "description": "caixa.exportar (+ caixa.ver_clientes e Admin/Supervisor no escopo clientes). Devolve o .xlsx (escopo rede: o foco e o nível abaixo; no vendedor, só ele)."
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Apostas do painel (spec 018)",
+            "item": [
+                {
+                    "name": "Lista de apostas",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/apostas?de=2026-10-01&ate=2026-10-22&aba=todas&busca=&todo_periodo=&resultado=&usuarios_id=&forma_pagamento=&premio_minimo=&page=1&por_pagina=20",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "apostas"
+                            ],
+                            "query": [
+                                {
+                                    "key": "de",
+                                    "value": "2026-10-01"
+                                },
+                                {
+                                    "key": "ate",
+                                    "value": "2026-10-22"
+                                },
+                                {
+                                    "key": "aba",
+                                    "value": "todas"
+                                },
+                                {
+                                    "key": "busca",
+                                    "value": ""
+                                },
+                                {
+                                    "key": "todo_periodo",
+                                    "value": ""
+                                },
+                                {
+                                    "key": "resultado",
+                                    "value": ""
+                                },
+                                {
+                                    "key": "usuarios_id",
+                                    "value": ""
+                                },
+                                {
+                                    "key": "forma_pagamento",
+                                    "value": ""
+                                },
+                                {
+                                    "key": "premio_minimo",
+                                    "value": ""
+                                },
+                                {
+                                    "key": "page",
+                                    "value": "1"
+                                },
+                                {
+                                    "key": "por_pagina",
+                                    "value": "20"
+                                }
+                            ]
+                        },
+                        "description": "apostas.listar. Apostas da rede no período (pela data em que foram feitas), da mais nova para a mais antiga. aba=todas|pre_jogo|ao_vivo|canceladas; busca = código (qualquer data) ou nome do cliente (no período, salvo todo_periodo=1); resultado=Aguardando|Vencedor|Perdedor|Devolvido|Encerrada; usuarios_id = vendedor da rede (fora dela → 403); forma_pagamento=Dinheiro|Saldo|Promoção esportes; premio_minimo em reais. Apostas do site só para Admin e Supervisor. Paginação padrão 20, máximo 100."
+                    }
+                },
+                {
+                    "name": "Totais do filtro",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/apostas/resumo?de=2026-10-01&ate=2026-10-22&aba=todas&busca=&todo_periodo=&resultado=&usuarios_id=&forma_pagamento=&premio_minimo=",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "apostas",
+                                "resumo"
+                            ],
+                            "query": [
+                                {
+                                    "key": "de",
+                                    "value": "2026-10-01"
+                                },
+                                {
+                                    "key": "ate",
+                                    "value": "2026-10-22"
+                                },
+                                {
+                                    "key": "aba",
+                                    "value": "todas"
+                                },
+                                {
+                                    "key": "busca",
+                                    "value": ""
+                                },
+                                {
+                                    "key": "todo_periodo",
+                                    "value": ""
+                                },
+                                {
+                                    "key": "resultado",
+                                    "value": ""
+                                },
+                                {
+                                    "key": "usuarios_id",
+                                    "value": ""
+                                },
+                                {
+                                    "key": "forma_pagamento",
+                                    "value": ""
+                                },
+                                {
+                                    "key": "premio_minimo",
+                                    "value": ""
+                                }
+                            ]
+                        },
+                        "description": "apostas.listar. Totais de todas as apostas do filtro: apostas, entradas, comissao, saidas (regra do Caixa), abertas, em_aberto e encerramentos (só Admin e Supervisor); na aba canceladas, apostas e valor_cancelado. Traz também limite_planilha (50000)."
+                    }
+                },
+                {
+                    "name": "Vendedores para o filtro",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/apostas/vendedores?busca=",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "apostas",
+                                "vendedores"
+                            ],
+                            "query": [
+                                {
+                                    "key": "busca",
+                                    "value": ""
+                                }
+                            ]
+                        },
+                        "description": "apostas.listar. Até 20 vendedores da rede (inclusive excluídos) por nome ou login. Vendedor → 403."
+                    }
+                },
+                {
+                    "name": "Premiados do período",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/apostas/premiados?de=2026-10-01&ate=2026-10-22&aba=todas&usuarios_id=",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "apostas",
+                                "premiados"
+                            ],
+                            "query": [
+                                {
+                                    "key": "de",
+                                    "value": "2026-10-01"
+                                },
+                                {
+                                    "key": "ate",
+                                    "value": "2026-10-22"
+                                },
+                                {
+                                    "key": "aba",
+                                    "value": "todas"
+                                },
+                                {
+                                    "key": "usuarios_id",
+                                    "value": ""
+                                }
+                            ]
+                        },
+                        "description": "apostas.exportar; só Admin, Supervisor e Gerente (Vendedor → 403). Até 23 apostas premiadas do período, da maior para a menor, com nome_sistema e url_logo para a imagem."
+                    }
+                },
+                {
+                    "name": "Planilha das apostas",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/apostas/exportacao?de=2026-10-01&ate=2026-10-22&aba=todas&busca=&todo_periodo=&resultado=&usuarios_id=&forma_pagamento=&premio_minimo=",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "apostas",
+                                "exportacao"
+                            ],
+                            "query": [
+                                {
+                                    "key": "de",
+                                    "value": "2026-10-01"
+                                },
+                                {
+                                    "key": "ate",
+                                    "value": "2026-10-22"
+                                },
+                                {
+                                    "key": "aba",
+                                    "value": "todas"
+                                },
+                                {
+                                    "key": "busca",
+                                    "value": ""
+                                },
+                                {
+                                    "key": "todo_periodo",
+                                    "value": ""
+                                },
+                                {
+                                    "key": "resultado",
+                                    "value": ""
+                                },
+                                {
+                                    "key": "usuarios_id",
+                                    "value": ""
+                                },
+                                {
+                                    "key": "forma_pagamento",
+                                    "value": ""
+                                },
+                                {
+                                    "key": "premio_minimo",
+                                    "value": ""
+                                }
+                            ]
+                        },
+                        "description": "apostas.exportar. Download .xlsx (apostas-{de}-{ate}.xlsx) com período, filtros, totais e uma linha por aposta do filtro. Mais de 50.000 apostas → 422."
+                    }
+                },
+                {
+                    "name": "Bilhete no painel",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/apostas/{{codigo_aposta}}",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "apostas",
+                                "{{codigo_aposta}}"
+                            ],
+                            "query": []
+                        },
+                        "description": "apostas.listar. Comprovante com comissão e motivo do cancelamento de cada palpite, mais o bloco painel { cancelada_em, cancelada_por, acoes: cancelar|editar_palpites|imprimir_segunda_via }. Fora do alcance ou situação não listada → 404."
+                    }
+                },
+                {
+                    "name": "2ª via do bilhete",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/apostas/{{codigo_aposta}}/segunda-via",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "apostas",
+                                "{{codigo_aposta}}",
+                                "segunda-via"
+                            ],
+                            "query": []
+                        },
+                        "description": "apostas.imprimir_segunda_via. Comprovante para imprimir a 2ª via; só de aposta ativa aguardando resultado (senão 422 \"A 2ª via só pode ser impressa em apostas aguardando resultado.\"). Fora do alcance → 404."
+                    }
+                },
+                {
+                    "name": "Restaurar aposta cancelada",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/apostas/{{codigo_aposta}}/restaurar",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "apostas",
+                                "{{codigo_aposta}}",
+                                "restaurar"
+                            ]
+                        },
+                        "description": "apostas.restaurar (Admin, Supervisor e Gerente, na própria rede; apostas do site só Admin e Supervisor). A aposta cancelada volta a Ativa; o valor sai de novo do limite do vendedor ou do saldo do cliente (com o rollover). Com jogo iniciado, exige apostas.cancelar_iniciada e a aposta é apurada de novo. 422: não cancelada, encerramento parcial, sem limite ou sem saldo. Resposta { data: ComprovanteApostaResource }."
                     }
                 }
             ]

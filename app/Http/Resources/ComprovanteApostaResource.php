@@ -167,6 +167,8 @@ class ComprovanteApostaResource extends JsonResource
             'apostas_blocos_id' => $palpite->apostas_blocos_id,
             'situacao' => $palpite->situacao->value,
             'resultado' => $palpite->resultado->value,
+            // motivo do cancelamento automático do palpite (spec 018); null quando cancelado por um usuário
+            'motivo_cancelamento' => $palpite->motivo_cancelamento?->value,
             'campeonato' => $palpite->campeonato?->nome,
             'time_casa' => $palpite->confronto?->time_casa,
             'time_fora' => $palpite->confronto?->time_fora,
@@ -242,6 +244,8 @@ class ComprovanteApostaResource extends JsonResource
             'apostas_blocos_id' => null,
             'situacao' => $palpite->situacao->value,
             'resultado' => $palpite->resultado->value,
+            // motivo do cancelamento automático do palpite (spec 018); null quando cancelado por um usuário
+            'motivo_cancelamento' => $palpite->motivo_cancelamento?->value,
             'campeonato' => $palpite->especial?->nome,
             'time_casa' => 'Vencedor',
             'time_fora' => $palpite->especial?->nome,

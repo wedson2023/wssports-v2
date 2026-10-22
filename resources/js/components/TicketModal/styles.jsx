@@ -21,6 +21,14 @@ export const Container = styled.div`
     visibility: ${({ $visivel }) => ($visivel ? 'visible' : 'hidden')};
     color: #333;
 
+    /* no painel (spec 018) o bilhete fica maior, para os palpites terem mais espaço de rolagem */
+    ${({ $painel }) => $painel && `
+        width: min(640px, calc(100vw - 32px));
+        height: 92vh;
+        height: 92dvh;
+        margin-left: calc(min(640px, calc(100vw - 32px)) / -2);
+    `}
+
     ${mobile} {
         width: 100%;
         margin-left: -50%;
@@ -127,12 +135,111 @@ export const Hunches = styled.div`
     }
 `;
 
+// palpite cancelado apagado; o botão de restaurar (painel) continua visível
+// palpite cancelado apagado; o rodapé com o botão de restaurar (painel) continua visível
 export const Hunch = styled.div`
     padding: 5px 0;
-    opacity: ${({ $cancelado }) => ($cancelado ? 0.2 : 1)};
+
+    > *:not(footer) {
+        opacity: ${({ $cancelado }) => ($cancelado ? 0.2 : 1)};
+    }
 
     & + div {
         border-top: solid thin #ccc;
+    }
+`;
+
+// rodapé do palpite (painel, spec 018): a ação fica alinhada à direita, abaixo das informações
+export const HunchActions = styled.footer`
+    display: flex;
+    justify-content: flex-end;
+    padding-top: 4px;
+`;
+
+// cancelar (vermelho) ou restaurar (verde) o palpite: ícone com texto, sem caixa em volta; compacto
+// (só o ícone) ao lado da cotação, dentro do bloco Criar Aposta
+export const HunchAction = styled.button`
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    min-height: ${({ $compacto }) => ($compacto ? '24px' : '32px')};
+    margin-left: ${({ $compacto }) => ($compacto ? '6px' : '0')};
+    padding: ${({ $compacto }) => ($compacto ? '0' : '0 8px')};
+    border: none;
+    border-radius: 4px;
+    background: transparent;
+    color: ${({ $restaurar }) => ($restaurar ? '#2e7d32' : '#c62828')};
+    font: inherit;
+    font-size: 0.8em;
+    font-weight: 500;
+    vertical-align: middle;
+    cursor: pointer;
+
+    i {
+        font-size: 18px;
+    }
+
+    &:hover:not(:disabled) {
+        background-color: ${({ $restaurar }) => ($restaurar ? '#e8f5e9' : '#ffebee')};
+    }
+
+    &:disabled {
+        opacity: 0.5;
+        cursor: default;
+    }
+`;
+
+// ícones de ação do bilhete no painel, logo abaixo do ModalHeader
+export const PanelTools = styled.div`
+    flex-shrink: 0;
+    display: flex;
+    justify-content: flex-end;
+    padding: 8px 10px;
+    border-bottom: solid thin #ccc;
+`;
+
+// faixa da aposta cancelada (painel)
+export const Banner = styled.p`
+    margin: 0 0 8px;
+    padding: 8px 10px;
+    border-radius: 0.3em;
+    background-color: #eee;
+    color: #555;
+    font-size: 0.85em;
+    text-align: center;
+`;
+
+// rodapé com "Cancelar aposta" ou "Restaurar aposta" (painel); não encolhe
+export const Footer = styled.footer`
+    flex-shrink: 0;
+    display: flex;
+    justify-content: flex-end;
+    padding: 10px;
+    border-top: solid thin #ccc;
+`;
+
+export const CancelButton = styled.button`
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    min-height: 40px;
+    padding: 0 16px;
+    border: none;
+    border-radius: 4px;
+    background-color: ${({ $restaurar }) => ($restaurar ? '#2e7d32' : '#c62828')};
+    color: #fff;
+    font: inherit;
+    font-weight: bold;
+    cursor: pointer;
+
+    &:disabled {
+        opacity: 0.6;
+        cursor: default;
+    }
+
+    ${mobile} {
+        width: 100%;
     }
 `;
 

@@ -81,6 +81,10 @@ export const permissoes = {
     'apostas.cancelar': { grupo: 'Apostas', nome: 'Cancelar apostas', descricao: 'Cancela apostas antes do jogo começar.' },
     'apostas.cancelar_iniciada': { grupo: 'Apostas', nome: 'Cancelar aposta iniciada', descricao: 'Cancela apostas com jogo já começado.' },
     'apostas.editar': { grupo: 'Apostas', nome: 'Editar bilhete', descricao: 'Cancela ou restaura palpites de um bilhete.' },
+    'apostas.listar': { grupo: 'Apostas', nome: 'Ver apostas', descricao: 'Abre a lista de apostas da rede e o bilhete.' },
+    'apostas.exportar': { grupo: 'Apostas', nome: 'Baixar apostas', descricao: 'Baixa a planilha e gera a imagem dos premiados.' },
+    'apostas.imprimir_segunda_via': { grupo: 'Apostas', nome: 'Imprimir 2ª via', descricao: 'Imprime a 2ª via de apostas aguardando resultado.' },
+    'apostas.restaurar': { grupo: 'Apostas', nome: 'Restaurar aposta', descricao: 'Volta a ativar uma aposta cancelada.' },
     'apostas_encerramentos.listar': { grupo: 'Apostas', nome: 'Ver encerramentos', descricao: 'Lista os cash outs dos clientes.' },
 
     // Especiais

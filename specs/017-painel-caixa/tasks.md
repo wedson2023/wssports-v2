@@ -298,3 +298,9 @@ só; lista no padrão da lista de usuários (no celular, nome, um valor principa
 botão de expandir; no computador, mais colunas, com Em aberto, Premiadas e Perdidas só nos detalhes);
 planilha formatada (títulos em fundo escuro, bordas, linhas alternadas, total destacado, filtro,
 painel congelado e Líquido, Saldo de caixa e Resultado do cassino em verde, vermelho ou cinza).
+
+**Correção (2026-10-22, durante a spec 018)**: ao trocar da aba Clientes para Rede, a tela ficava
+branca. O resumo de Clientes continuava na tela enquanto o da Rede carregava, e os cartões da Rede
+liam `totais.apostas` inexistente. Agora os cartões só usam dados no formato da aba atual; até
+chegarem, mostram o esqueleto de carregamento (`resources/js/pages/PanelCash/index.jsx`). Conferido
+no Chrome sem janela, sem erro de página.

@@ -18,12 +18,28 @@ class AlcanceApostas
 
     public function garantir_pode_cancelar(Usuarios $usuario, Apostas $aposta): void
     {
-        abort_unless($this->alcanca($usuario, $aposta, vendedor_alcanca_proprias: true), 404, self::NAO_ENCONTRADA);
+        abort_unless($this->pode_cancelar($usuario, $aposta), 404, self::NAO_ENCONTRADA);
     }
 
     public function garantir_pode_editar(Usuarios $usuario, Apostas $aposta): void
     {
-        abort_unless($this->alcanca($usuario, $aposta, vendedor_alcanca_proprias: false), 404, self::NAO_ENCONTRADA);
+        abort_unless($this->pode_editar($usuario, $aposta), 404, self::NAO_ENCONTRADA);
+    }
+
+    /**
+     * Mesmo alcance de garantir_pode_cancelar, como sim/não (ações da lista do painel, spec 018).
+     */
+    public function pode_cancelar(Usuarios $usuario, Apostas $aposta): bool
+    {
+        return $this->alcanca($usuario, $aposta, vendedor_alcanca_proprias: true);
+    }
+
+    /**
+     * Mesmo alcance de garantir_pode_editar, como sim/não (ações do bilhete do painel, spec 018).
+     */
+    public function pode_editar(Usuarios $usuario, Apostas $aposta): bool
+    {
+        return $this->alcanca($usuario, $aposta, vendedor_alcanca_proprias: false);
     }
 
     private function alcanca(Usuarios $usuario, Apostas $aposta, bool $vendedor_alcanca_proprias): bool

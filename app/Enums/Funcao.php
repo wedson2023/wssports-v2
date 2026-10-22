@@ -110,8 +110,9 @@ enum Funcao: string
     ];
 
     /**
-     * Todas as permissões de apostas: apostar e validar código (só Vendedor), cancelar (todos)
-     * e cancelar com jogo iniciado e editar palpites (só Gerente, Supervisor e Admin).
+     * Todas as permissões de apostas: apostar e validar código (só Vendedor); cancelar, listar,
+     * exportar e imprimir 2ª via (todos, spec 018); cancelar com jogo iniciado, editar palpites e
+     * restaurar aposta cancelada (só Gerente, Supervisor e Admin).
      */
     public const PERMISSOES_APOSTAS = [
         'apostas.criar',
@@ -119,6 +120,21 @@ enum Funcao: string
         'apostas.cancelar',
         'apostas.cancelar_iniciada',
         'apostas.editar',
+        'apostas.listar',
+        'apostas.exportar',
+        'apostas.imprimir_segunda_via',
+        'apostas.restaurar',
+    ];
+
+    /**
+     * Permissões de apostas que todas as funções usam: o vendedor cancela, consulta, exporta e
+     * imprime a 2ª via das próprias apostas; os níveis de cima, das da rede.
+     */
+    public const PERMISSOES_APOSTAS_TODOS = [
+        'apostas.cancelar',
+        'apostas.listar',
+        'apostas.exportar',
+        'apostas.imprimir_segunda_via',
     ];
 
     /**
@@ -371,7 +387,8 @@ enum Funcao: string
      * Se a função pode usar a permissão: Vendedor não acessa a gestão de clientes nem a de
      * confrontos; Gerente não usa as permissões de clientes restritas (excluir, restaurar e
      * estorno) e, das de confrontos, só as de PERMISSOES_CONFRONTOS_GERENTE. Nas apostas, criar e
-     * validar código são só do Vendedor; cancelar, de todos; o resto, de Gerente para cima.
+     * validar código são só do Vendedor; cancelar, listar, exportar e imprimir 2ª via, de todos
+     * (PERMISSOES_APOSTAS_TODOS); o resto, de Gerente para cima.
      * Especiais, recursos do site, pagamentos, encerramentos de aposta e cassino são só de Admin e
      * Supervisor (vincular o gateway, só Admin). Afiliados: Vendedor nenhuma; Gerente todas menos
      * excluir e restaurar. Dashboard: Admin e Supervisor todas; Gerente todas menos a Caixa online;
@@ -428,7 +445,7 @@ enum Funcao: string
 
         if (in_array($permissao, self::PERMISSOES_APOSTAS, true)) {
             return match (true) {
-                $permissao === 'apostas.cancelar' => true,
+                in_array($permissao, self::PERMISSOES_APOSTAS_TODOS, true) => true,
                 in_array($permissao, self::PERMISSOES_APOSTAS_VENDEDOR, true) => $this === self::Vendedor,
                 default => $this !== self::Vendedor,
             };

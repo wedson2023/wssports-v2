@@ -78,18 +78,20 @@ export default function useImpressao() {
         }
     }, []);
 
-    const imprimir_bilhete = useCallback(async (comprovante) => {
+    // opcoes.segunda_via (painel, spec 018): marca "2ª via" no comprovante; no modo APP, o último
+    // segmento do endereço diz ao aplicativo que é 2ª via, como no sistema antigo
+    const imprimir_bilhete = useCallback(async (comprovante, opcoes = {}) => {
         if (!e_mobile) {
-            imprimir_bilhete_navegador(comprovante);
+            imprimir_bilhete_navegador(comprovante, opcoes);
             return;
         }
 
         if (preferencias.modo === 'APP') {
-            window.location.href = `app://${window.location.host}/${comprovante.codigo}/${preferencias.largura}/false`;
+            window.location.href = `app://${window.location.host}/${comprovante.codigo}/${preferencias.largura}/${opcoes.segunda_via ? 'true' : 'false'}`;
             return;
         }
 
-        await imprimir_bluetooth(texto_bilhete(comprovante, preferencias.largura));
+        await imprimir_bluetooth(texto_bilhete(comprovante, preferencias.largura, opcoes));
     }, [e_mobile, preferencias, imprimir_bluetooth]);
 
     // a tabela no celular vai sempre para o Bluetooth, qualquer que seja o modo (como no antigo)

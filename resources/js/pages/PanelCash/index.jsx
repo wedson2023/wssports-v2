@@ -161,6 +161,8 @@ const acoes_linha = {
     grafico: { icone: 'insert_chart_outlined', titulo: 'Gráfico', tom: '#8e24aa' },
     comissao_gerente: { icone: 'pie_chart', titulo: 'Comissão do gerente', tom: '#f9a825' },
     exportar: { icone: 'table_view', titulo: 'Baixar planilha', tom: '#00897b' },
+    // atalho para a lista de apostas do vendedor (spec 018, FR-025)
+    ver_apostas: { icone: 'receipt_long', titulo: 'Ver apostas', tom: '#1e88e5' },
 };
 
 // aviso curto no canto, sem bloquear a tela
@@ -287,14 +289,27 @@ export default function PanelCash() {
         }
     };
 
+    // apostas do vendedor com o período e o tipo do caixa (spec 018); só no frontend: as ações da API não mudam
+    const ver_apostas = (linha) => router.visit(`/painel/apostas?${new URLSearchParams({
+        usuarios_id: linha.id, vendedor: linha.nome, de: filtros.periodo.de, ate: filtros.periodo.ate, aba: filtros.tipo,
+    })}`);
+
     // itens do menu de três pontinhos de uma linha da Rede
-    const acoes_da_linha = (linha) => linha.acoes.map((chave) => ({
+    const acoes_da_linha = (linha) => [
+        ...linha.acoes,
+        ...(funcao_lista === 'Vendedor' && pode('apostas.listar') ? ['ver_apostas'] : []),
+    ].map((chave) => ({
         chave,
         ...acoes_linha[chave],
         titulo: chave === 'prestar_contas' && funcao_lista === 'Gerente' ? 'Prestar contas de todos' : acoes_linha[chave].titulo,
         ao_clicar: () => {
             if (chave === 'exportar') {
                 exportar(linha.id, `linha-${linha.id}`);
+                return;
+            }
+
+            if (chave === 'ver_apostas') {
+                ver_apostas(linha);
                 return;
             }
 
@@ -306,14 +321,18 @@ export default function PanelCash() {
     const valor_de = (caminho) => caminho.reduce((atual, parte) => atual?.[parte], resumo);
 
     const cartoes = () => {
-        if (caixa.resumo.carregando && !resumo) {
+        // ao trocar de aba, o resumo da aba anterior continua até chegar o novo: os cartões só usam
+        // dados no formato da aba atual (a Rede tem totais; Clientes, esportes)
+        const dados_da_aba = aba === 'clientes' ? Boolean(resumo?.esportes) : Boolean(totais);
+
+        if (caixa.resumo.carregando && !dados_da_aba) {
             return <Skeleton>{Array.from({ length: 8 }, (_, indice) => <span key={indice} />)}</Skeleton>;
         }
 
-        if (caixa.resumo.erro && !resumo) {
+        if (!dados_da_aba) {
             return (
                 <Error>
-                    {caixa.resumo.erro.response?.data?.message ?? 'Não foi possível carregar o caixa.'}
+                    {caixa.resumo.erro?.response?.data?.message ?? 'Não foi possível carregar o caixa.'}
                     <Retry type="button" onClick={caixa.recarregar}>Tentar novamente</Retry>
                 </Error>
             );
