@@ -75,6 +75,18 @@ sobre créditos (não existe no v2), 'login' e 'saldo anterior' (não existem no
 - Q: Antecipar pendentes também pede a senha de quem faz a ação? → A: Sim, senha além da confirmação
   com o aviso, como no ajuste de saldo (FR-019).
 
+### Session 2026-10-22 (`/speckit-analyze`, recomendações aceitas pelo responsável)
+
+- A lista de arquivos existentes do plan.md foi confirmada (Princípio IV).
+- A Caixa online da Dashboard (spec 014) não muda: continua mostrando ao Supervisor a banca toda.
+- O Supervisor passa a ver e agir só sobre os afiliados dos gerentes da rede dele (FR-003d).
+- O seletor de clientes das Cotações (spec 016) e a lista de Encerramentos (spec 010) também
+  respeitam a rede (FR-003a).
+- O Gerente, que hoje pode cancelar ou editar qualquer aposta de cliente (spec 004), passa a poder só
+  nas dos clientes da rede dele; ele continua sem a lista de apostas de clientes (FR-003c).
+- No saldo líquido, o depósito com estorno parcial conta só a parte não estornada (FR-006).
+- O público "Sem interagir há N dias" inclui quem nunca apostou nem depositou (FR-031).
+
 ## Referências do sistema antigo *(Princípios VII e VIII)*
 
 - Backend (`wssports.bet`, `main` `408cf730`): `app/Http/Controllers/CreditosController.php`
@@ -434,7 +446,8 @@ cliente.
 - **FR-003a**: O mesmo alcance DEVE valer no servidor para tudo o que já existe sobre clientes no
   painel, mudando o que foi construído nas specs 002 e 007: listar, excluídos, ver, editar, alterar
   situação, excluir, restaurar, extrato, ajuste de saldo, configurações, meios de pagamento, acesso
-  assistido e a fila de saques (o Supervisor só vê e decide os saques dos clientes da rede dele).
+  assistido e a fila de saques (o Supervisor só vê e decide os saques dos clientes da rede dele),
+  além do seletor de clientes das Cotações (spec 016) e da lista de Encerramentos (spec 010).
   Qualquer consulta ou ação sobre um cliente fora da rede DEVE ser respondida como cliente
   inexistente ("Cliente não encontrado."), sem revelar que ele existe.
 - **FR-003b**: Ao editar um cliente, Supervisor e Gerente só PODEM escolher um afiliado da rede deles
@@ -443,16 +456,19 @@ cliente.
 - **FR-003c**: O mesmo alcance DEVE valer para o Supervisor no Caixa clientes (spec 017: totais,
   lista por cliente e planilha) e nas apostas de clientes da tela Apostas (spec 018: lista, totais,
   bilhete, premiados, planilha, cancelar e restaurar): ele vê e age só sobre os clientes da rede dele;
-  o Admin continua vendo a banca toda. O Gerente continua sem o Caixa clientes e sem as apostas de
-  clientes, como hoje. Com isso, para o mesmo período, os números do Supervisor batem entre Clientes,
-  Caixa clientes e Apostas.
+  o Admin continua vendo a banca toda. O Gerente continua sem o Caixa clientes e sem a lista de
+  apostas de clientes, como hoje; cancelar ou editar uma aposta de cliente (pelo código, spec 004)
+  passa a valer para ele só nas dos clientes da rede dele. Com isso, para o mesmo período, os números
+  do Supervisor batem entre Clientes, Caixa clientes e Apostas. A Caixa online da Dashboard (spec
+  014) não muda.
 - **FR-003d**: O gerente responsável DEVE passar a ser obrigatório no afiliado (muda a spec 012): no
   cadastro pelo painel (o Gerente continua sendo ele mesmo; Admin e Supervisor escolhem de uma lista
   de gerentes da rede deles), na edição (não pode ser retirado) e na aprovação do cadastro público
   (o afiliado que se cadastra pelo site fica "Em análise" sem gerente e só é aprovado com um gerente
   escolhido). Os afiliados que já existem sem gerente DEVEM aparecer em destaque na lista de
   afiliados do Admin ("Sem gerente responsável"), para ele escolher um; enquanto isso, os clientes
-  deles ficam só para o Admin.
+  deles ficam só para o Admin. O Supervisor passa a ver e agir só sobre os afiliados dos gerentes da
+  rede dele (o Admin vê todos); o Gerente continua vendo só os dele.
 
 **Cadastros**
 
@@ -465,7 +481,8 @@ cliente.
 - **FR-006**: O saldo líquido DEVE ser, desde o cadastro do cliente: depósitos pagos + créditos
   manuais na carteira real − saques pagos − débitos manuais na carteira real (o antigo somava o
   "Depósito manual"), calculado no servidor em reais com duas casas, sem ponto flutuante; verde se
-  positivo, cinza se zero, vermelho se negativo. Depósitos estornados não contam, e ajustes nas
+  positivo, cinza se zero, vermelho se negativo. Depósitos estornados não contam (no estorno
+  parcial, conta só a parte não estornada), e ajustes nas
   carteiras promocionais (esportes e cassino) não entram. O critério Depósitos do Ranking continua
   contando só os depósitos pagos (FR-028).
 - **FR-007**: A busca DEVE usar a regra atual da API (nome por trecho; telefone, CPF e e-mail por
@@ -587,7 +604,8 @@ cliente.
 
 - **FR-031**: A tela DEVE ter o botão de notificação (sino) para quem tem a permissão nova
   `clientes.enviar_notificacao`, abrindo um modal com: público (Todos os inscritos; Por ID, com os
-  clientes escolhidos por busca; Sem apostar nem depositar há N dias, N de 1 a 365), título (até 50
+  clientes escolhidos por busca; Sem interagir há N dias, isto é, sem apostar nem depositar nesse
+  tempo, incluindo quem nunca apostou nem depositou, N de 1 a 365), título (até 50
   caracteres), mensagem (até 150 caracteres) e a contagem de inscritos que serão alcançados,
   atualizada ao mudar o público.
 - **FR-032**: O envio DEVE usar as notificações push da spec 010 (inscrições do aparelho do cliente),

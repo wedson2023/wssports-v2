@@ -109,7 +109,7 @@ Painel lateral (tela cheia no celular), com **Aplicar** e **Limpar filtros**:
 - `ModalHeader` `notifications`, "Enviar notificação", "Aviso no celular dos clientes inscritos.";
   linha "N envios restantes hoje" e, para o Admin, "Limite por dia: [ 3 ] Salvar".
 - Público (chips): **Todos os inscritos** · Por ID (`ClientPicker`, busca com resultados, até 500) ·
-  Sem interagir há [N] dias; título (contador 0/50); mensagem (contador 0/150); prévia da notificação.
+  Sem interagir há [N] dias (sem apostar nem depositar; inclui quem nunca apostou nem depositou); título (contador 0/50); mensagem (contador 0/150); prévia da notificação.
 - "Alcançados: N" atualizado ao mudar o público; **Enviar** desabilitado com zero alcançados ou sem
   envios restantes ("Limite de envios de hoje atingido."); confirmação "Enviar para N clientes?";
   sucesso: "Notificação enviada para N clientes."

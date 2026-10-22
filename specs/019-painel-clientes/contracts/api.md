@@ -137,7 +137,7 @@ Só Admin (`clientes.enviar_notificacao` + função Admin). `{ "limite": 5 }` (1
   obrigatório.").
 - `POST /afiliados/{afiliado}/aprovar`: `usuarios_id` obrigatório se o afiliado não tem gerente.
 - `GET /afiliados` e `/afiliados/excluidos`: filtro `sem_gerente=1`; item com `sem_gerente`;
-  Supervisor só vê os afiliados dos gerentes da rede (R-04, para confirmar).
+  Supervisor só vê os afiliados dos gerentes da rede (R-04, confirmado em 2026-10-22).
 
 ## 8. Caixa clientes e Apostas — alcance do Supervisor (FR-003c)
 

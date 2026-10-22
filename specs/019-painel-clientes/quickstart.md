@@ -95,5 +95,7 @@ Massa mínima:
 ## 10. Visual e desempenho
 
 1. 360 px: sem rolagem horizontal; cartões; filtros e detalhe em tela cheia.
-2. Com 100.000 clientes (seeder local), abrir Cadastros e trocar filtro em até 2 s (SC-008).
+2. Com 100.000 clientes gerados só no ambiente local (`php artisan tinker` →
+   `App\Models\Clientes::factory()->count(100000)->create()`), abrir Cadastros e trocar filtro em até
+   2 s (SC-008).
 3. Postman: rotas novas e alteradas presentes.

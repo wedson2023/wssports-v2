@@ -92,9 +92,9 @@
   aposta de cliente passa a valer só para os da rede dele.
 - **Alternatives considered**: deixar Cotações e Encerramentos de fora (o Supervisor continuaria
   vendo clientes de fora da rede nesses pontos, contrariando o FR-003a).
-- **Para confirmar com o responsável (Princípio IV)**: a Caixa online da Dashboard (spec 014)
-  também mostra ao Supervisor os clientes da banca toda. Proposta: **não** mudar nesta spec (a
-  Dashboard é a visão do dia da banca e não foi citada no FR-003c); registrar como pendência.
+- **Confirmado pelo responsável (P-1, 2026-10-22)**: a Caixa online da Dashboard (spec 014) não muda
+  e continua mostrando ao Supervisor a banca toda. Também confirmados o alcance nas Cotações e nos
+  Encerramentos e a regra do Gerente nas apostas de clientes (só as da rede).
 
 ## R-04 — Afiliados: gerente obrigatório e alcance do Supervisor (FR-003d)
 
@@ -118,9 +118,8 @@
 - **Alternatives considered**: manter o Supervisor vendo todos os afiliados (incoerente com o
   FR-003b); migração que preenche gerente automaticamente nos afiliados antigos (sem regra segura de
   escolha: o Admin decide pelo filtro "Sem gerente responsável").
-- **Para confirmar com o responsável (Princípio IV)**: a restrição do Supervisor em
-  `GarantirAlcanceAfiliado` muda o comportamento da spec 012 além do que o FR-003d diz
-  explicitamente.
+- **Confirmado pelo responsável (P-2, 2026-10-22)**: a restrição do Supervisor em
+  `GarantirAlcanceAfiliado` entra (FR-003d).
 
 ## R-05 — Lista de Cadastros: saldo líquido e filtros novos
 
@@ -129,7 +128,7 @@
   que passa a ter:
   - `addSelect('saldo_liquido')` por subconsultas: depósitos pagos `SUM(valor - valor_estornado)` com
     situação `Aprovado` ou `Estornado` (a mesma de `ListagemAfiliados::subconsulta_total_depositado`)
-    \+ créditos manuais na carteira `Saldo` (`clientes_transacoes` origem `Ajuste manual`, tipo
+    (no estorno parcial, conta só a parte não estornada) + créditos manuais na carteira `Saldo` (`clientes_transacoes` origem `Ajuste manual`, tipo
     `Crédito`) − saques `Pago` − débitos manuais na carteira `Saldo`; resultado com `CAST(... AS
     DECIMAL(15,2))` e formatado em string com duas casas no resource (FR-006);
   - filtros novos validados no `listar`:
@@ -156,7 +155,9 @@
 
 - **Decision**:
   - `ClientesTransacoesRequest` ganha `senha` `required` com a `regra_senha` de
-    `Concerns/ConfirmacaoCaixa` (o trait é reaproveitado como está; mensagem "Senha incorreta.");
+    `Concerns/ConfirmacaoCaixa` (o trait é reaproveitado como está, apesar do nome de Caixa: é a
+    confirmação das operações de dinheiro do painel, e um segundo trait com a mesma regra seria
+    duplicação; mensagem "Senha incorreta.");
     a validação acontece antes de qualquer gravação;
   - antecipação: `AntecipacaoPendentes` (service novo):
     - `pendentes(Clientes): array` — apostas do cliente com `liquidacao_pendente = true` e
@@ -180,7 +181,9 @@
 
 ## R-07 — Saques: filtros, cartões e máscara
 
-- **Decision**: `SaquesController::index` ganha `busca` (nome por trecho ou ID do cliente) e
+- **Decision**: a consulta da fila sai do `SaquesController` para o service novo `ListagemSaques`
+  (`consulta(Usuarios, array $filtros)` e `resumo(...)`), usado pela lista, pelos cartões e pela
+  planilha. `SaquesController::index` ganha `busca` (nome por trecho ou ID do cliente) e
   `de`/`ate` (data do pedido, Brasília, até 366 dias) além de `situacao`, e o alcance (R-03);
   `GET /saques/resumo` (novo) devolve `pendentes` e `processando` (quantidade e valor, sem período)
   e, com período, `pagos` (por `pago_em`). `SaquesResource` passa a mascarar o telefone sem
@@ -235,8 +238,8 @@
     `clientes_notificacoes` para ligar cada aviso ao envio;
   - `NotificacoesManuais` (service novo): `publico(Usuarios, array $publico): Builder` (clientes
     ativos, não excluídos, no alcance, com inscrição com `receber_avisos_banca = true`; "Por ID" com
-    `whereIn` dos ids escolhidos; "sem interagir há N dias" = sem aposta, rodada de cassino nem
-    depósito pago depois de agora − N dias); `contar`; `restantes_hoje()`; `enviar(Usuarios,
+    `whereIn` dos ids escolhidos; "Sem interagir há N dias" = sem aposta, rodada de cassino nem
+    depósito pago depois de agora − N dias, incluindo quem nunca apostou nem depositou); `contar`; `restantes_hoje()`; `enviar(Usuarios,
     dados)`: numa transação com `lockForUpdate` na linha de `configuracoes`, confere o limite do dia
     (envios com `alcancados > 0` desde o início do dia em Brasília), grava o envio e dispara o job
     `EnviarNotificacoesManuais` (fila das notificações), que registra um `ClientesNotificacoes` por
@@ -244,8 +247,8 @@
     somando `entregues` e `falhas` no envio;
   - limite: coluna nova `configuracoes.limite_notificacoes_manuais_dia` (padrão 3, de 1 a 50), lida e
     alterada pelo Admin no próprio modal (`PUT /clientes/notificacoes/limite`, só Admin);
-  - site: `NotificationSettingsModal` ganha o item "Avisos da banca"; `AreaClienteNotificacoesController`
-    / `InscricoesNotificacoes` aceitam `receber_avisos_banca`.
+  - site: `NotificationSettingsModal` ganha o item "Avisos da banca"; a lista de preferências de
+    `InscricoesNotificacoes` e o `InscricaoNotificacaoResource` passam a ter `receber_avisos_banca`.
 - **Rationale**: reaproveita o Web Push e as inscrições da spec 010 (sem serviço externo); o cliente
   continua podendo desligar; o limite com trava evita dois envios passando juntos (caso de borda).
 - **Alternatives considered**: tópico único para todos (o Web Push não tem tópicos); enviar na
@@ -314,6 +317,9 @@
   pedido).
 
 ## R-16 — Dados fake e testes
+
+- Massa para conferir o SC-008: gerar clientes pelo `Database\Factories\ClientesFactory` no Tinker
+  (`Clientes::factory()->count(100000)->create()`), só no ambiente local, nunca em produção.
 
 - Nenhum dado fake (Princípio IX). Sem testes automatizados; validação pelo
   [quickstart.md](quickstart.md).

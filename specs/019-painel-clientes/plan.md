@@ -68,7 +68,7 @@ da constituição.
 | Migrations | 5 (2 tabelas, 1 de colunas, 1 de índices, 1 de dados) |
 | Rotas da API novas / alteradas | 10 / ~20 (alcance e campos novos) |
 | Rotas web novas | 1 (`/painel/clientes`) |
-| Services novos / alterados | 6 (`AlcanceClientes`, `AntecipacaoPendentes`, `RankingClientes`, `ExportacaoClientes`, `NotificacoesManuais`, `FiltrosClientes`) / 10 (ver lista abaixo) |
+| Services novos / alterados | 7 (`AlcanceClientes`, `FiltrosClientes`, `ListagemSaques`, `AntecipacaoPendentes`, `RankingClientes`, `ExportacaoClientes`, `NotificacoesManuais`) / 12 (ver lista abaixo) |
 | Controllers novos | 4 (`ClientesPendentesController`, `ClientesRankingController`, `ClientesExportacaoController`, `ClientesNotificacoesController`) |
 | Jobs / Enums novos | 1 (`EnviarNotificacoesManuais`) / 1 (`PublicoNotificacao`) |
 | Componentes novos / páginas novas | 16 (R-13) / 1 (`PanelClients`) |
@@ -84,7 +84,7 @@ da constituição.
 | I. Nomes no frontend | Componentes em inglês PascalCase (`PanelClients`, `ClientsTable`, `ClientDrawer` etc.); hook `useClientesPainel`; variáveis e props snake_case em português | ✅ Pass |
 | II. Idioma | Artefatos, comentários, mensagens e textos em português | ✅ Pass |
 | III. Componentes | Cada componente em pasta própria com `index.jsx` e `styles.jsx` | ✅ Pass |
-| IV. Escopo estrito | Arquivos existentes listados abaixo; o alcance nas specs 002, 007, 012, 017 e 018 foi autorizado pelo responsável (Clarifications); **a lista completa e os pontos P-1 e P-2 aguardam confirmação** | ⚠️ Aguardando confirmação |
+| IV. Escopo estrito | Arquivos existentes listados abaixo, confirmados pelo responsável em 2026-10-22 (com P-1 e P-2); o alcance nas specs 002, 007, 010, 012, 016, 017 e 018 foi autorizado (Clarifications) | ✅ Pass |
 | V. Legibilidade | Revisão ao final de cada tarefa | ✅ Pass |
 | VI. Consistência | Permissões em `Funcao.php` + migration de dados (specs 017/018); alcance em service + trait de controller (como `GarantirAlcanceAfiliado`/`GarantirAlcanceCaixa`); senha pelo `ConfirmacaoCaixa`; planilha pelo `PlanilhaPainel`; push pelo `NotificacoesPush`; componentes do painel reaproveitados | ✅ Pass |
 | VII. Sistema antigo | `CreditosController`, `CadastroController@destroy`, telas `credits`, `modals/filter`, `modals/push-notification` analisados na `main` `408cf730` (R-01); diferenças aprovadas em Clarifications | ✅ Pass |
@@ -102,13 +102,13 @@ da constituição.
 | Sem testes | Nenhum arquivo, tarefa ou dependência de teste | ✅ Pass |
 | Postman | Regenerado na entrega | ✅ Pass |
 
-**Resultado do gate**: sem violação; o Princípio IV fica pendente da confirmação da lista abaixo e
-dos pontos:
+**Resultado do gate**: aprovado. Decisões confirmadas pelo responsável depois do `/speckit-analyze`
+(2026-10-22), registradas em Clarifications:
 
-- **P-1** (R-03): a Caixa online da Dashboard (spec 014) continua mostrando ao Supervisor a banca
-  toda? Proposta: sim, não muda nesta spec.
-- **P-2** (R-04): o Supervisor passa a ver só os afiliados dos gerentes da rede dele
-  (`GarantirAlcanceAfiliado`)? Proposta: sim, para o FR-003b funcionar.
+- **P-1** (R-03): a Caixa online da Dashboard (spec 014) não muda.
+- **P-2** (R-04): o Supervisor passa a ver só os afiliados dos gerentes da rede dele.
+- O seletor de clientes das Cotações e a lista de Encerramentos respeitam a rede; o Gerente só cancela
+  ou edita apostas de clientes da rede dele.
 
 Reavaliado depois da Fase 1: sem violação nova.
 
@@ -122,13 +122,13 @@ Reavaliado depois da Fase 1: sem violação nova.
 | `app/Models/Configuracoes.php`, `ClientesInscricoesNotificacoes.php`, `ClientesNotificacoes.php` | Campos novos no `fillable`/`casts`; relação com o envio | data-model §2 |
 | `app/Http/Controllers/ClientesController.php` | Alcance, saldo líquido, filtros novos (via `FiltrosClientes`) | R-02, R-05 |
 | `app/Http/Controllers/ClientesTransacoesController.php`, `ClientesConfiguracoesController.php`, `ClientesMeiosPagamentoController.php`, `AcessosAssistidosController.php` | Garantir o cliente no alcance | R-03 |
-| `app/Http/Controllers/SaquesController.php` | Alcance, busca, período, `resumo` | R-07 |
+| `app/Http/Controllers/SaquesController.php` | Alcance, busca, período, `resumo`; a consulta passa para o service novo `ListagemSaques` | R-07 |
 | `app/Http/Controllers/CotacoesPainelController.php` (`clientes`), `PorcentagensClientesController.php`, `ApostasEncerramentosController.php` | Alcance | R-03 |
 | `app/Http/Controllers/CaixaClientesController.php`, `app/Services/CaixaClientes.php`, `CaixaOnline.php`, `RelatorioCassino.php`, `ExportacaoCaixa.php` | Subconsulta opcional do alcance (sem ela, igual a hoje); campo de entradas do cassino por cliente | R-03, R-08 |
 | `app/Services/ListagemApostas.php`, `AlcanceApostas.php`, `app/Http/Requests/ApostasFiltrosRequest.php` | Apostas do site pela rede; filtro `clientes_id` | R-03, R-11 |
 | `app/Services/LiquidacaoApostas.php` | `liquidar(..., ignorar_janela, autor)` opcionais | R-06 |
 | `app/Services/LiquidacaoEncerramentos.php` | Método público `creditar_encerramento($id, $autor)` extraído do privado | R-06 |
-| `app/Services/NotificacoesPush.php`, `InscricoesNotificacoes.php`, `app/Http/Controllers/AreaClienteNotificacoesController.php` (ou request) | Tag/URL do aviso da banca; preferência `receber_avisos_banca` | R-10 |
+| `app/Services/NotificacoesPush.php`, `app/Services/InscricoesNotificacoes.php`, `app/Http/Resources/InscricaoNotificacaoResource.php` | Tag/URL do aviso da banca; preferência `receber_avisos_banca` na lista de preferências e na resposta | R-10 |
 | `app/Http/Resources/ClientesResource.php`, `SaquesResource.php`, `AfiliadosResource.php` | `saldo_liquido`; telefone mascarado e saldo; `sem_gerente` | R-05, R-07, R-04 |
 | `app/Http/Requests/ClientesTransacoesRequest.php`, `UpdateClientesRequest.php` | `senha`; afiliado da rede | R-06, R-15 |
 | `app/Http/Requests/StoreAfiliadosRequest.php`, `UpdateAfiliadosRequest.php`, `AprovarAfiliadoRequest.php`, `Concerns/DadosAfiliado.php`, `app/Services/CadastroAfiliados.php`, `ListagemAfiliados.php`, `app/Http/Controllers/AfiliadosController.php` (validar `sem_gerente`), `app/Http/Controllers/Concerns/GarantirAlcanceAfiliado.php` | Gerente obrigatório e da rede; filtro `sem_gerente`; alcance do Supervisor (P-2) | R-04 |
@@ -138,7 +138,7 @@ Reavaliado depois da Fase 1: sem violação nova.
 | `resources/js/components/NotificationSettingsModal/index.jsx` | Item "Avisos da banca" | R-10 |
 | `resources/js/utils/permissions.js` | Nomes e descrições das 4 permissões | R-12 |
 | `docs/postman/wssports_api.postman_collection.json` | Regenerada | Constituição |
-| `specs/002-clientes/spec.md`, `007-painel-cliente-pagamentos/spec.md`, `012-afiliados/spec.md`, `017-painel-caixa/spec.md`, `018-painel-apostas/spec.md` | Nota "Alterado pela spec 019" nos requisitos de alcance, gerente do afiliado e ajuste com senha | coerência dos artefatos |
+| `specs/002-clientes/spec.md`, `004-apostas/spec.md`, `007-painel-cliente-pagamentos/spec.md`, `012-afiliados/spec.md`, `017-painel-caixa/spec.md`, `018-painel-apostas/spec.md` | Nota "Alterado pela spec 019" nos requisitos de alcance, gerente do afiliado e ajuste com senha | coerência dos artefatos |
 
 ## Project Structure
 
@@ -160,7 +160,7 @@ app/
 ├── Enums/PublicoNotificacao.php                                               # novo
 ├── Models/{ClientesAntecipacoes,ClientesNotificacoesEnvios}.php                # novos
 ├── Jobs/EnviarNotificacoesManuais.php                                         # novo
-├── Services/{AlcanceClientes,FiltrosClientes,AntecipacaoPendentes,RankingClientes,ExportacaoClientes,NotificacoesManuais}.php  # novos
+├── Services/{AlcanceClientes,FiltrosClientes,ListagemSaques,AntecipacaoPendentes,RankingClientes,ExportacaoClientes,NotificacoesManuais}.php  # novos
 ├── Services/{CaixaClientes,CaixaOnline,RelatorioCassino,ExportacaoCaixa,ListagemApostas,AlcanceApostas,LiquidacaoApostas,LiquidacaoEncerramentos,NotificacoesPush,InscricoesNotificacoes,CadastroAfiliados,ListagemAfiliados}.php  # alterados
 └── Http/
     ├── Controllers/{ClientesPendentesController,ClientesRankingController,ClientesExportacaoController,ClientesNotificacoesController}.php  # novos
