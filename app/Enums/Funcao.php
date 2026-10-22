@@ -111,8 +111,8 @@ enum Funcao: string
 
     /**
      * Todas as permissões de apostas: apostar e validar código (só Vendedor); cancelar, listar,
-     * exportar e imprimir 2ª via (todos, spec 018); cancelar com jogo iniciado e editar palpites
-     * (só Gerente, Supervisor e Admin).
+     * exportar e imprimir 2ª via (todos, spec 018); cancelar com jogo iniciado, editar palpites e
+     * restaurar aposta cancelada (só Gerente, Supervisor e Admin).
      */
     public const PERMISSOES_APOSTAS = [
         'apostas.criar',
@@ -123,6 +123,7 @@ enum Funcao: string
         'apostas.listar',
         'apostas.exportar',
         'apostas.imprimir_segunda_via',
+        'apostas.restaurar',
     ];
 
     /**

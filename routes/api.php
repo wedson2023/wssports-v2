@@ -93,6 +93,7 @@ use App\Http\Controllers\PublicoNotificacoesController;
 use App\Http\Controllers\PublicoConfrontosController;
 use App\Http\Controllers\PublicoConfrontosDetalheController;
 use App\Http\Controllers\PublicoEspeciaisController;
+use App\Http\Controllers\RestauracaoApostasController;
 use App\Http\Controllers\SaquesController;
 use App\Http\Controllers\TabelaJogosController;
 use App\Http\Controllers\UsuariosConfiguracoesController;
@@ -446,6 +447,8 @@ Route::middleware(['auth:api', 'garantir_acesso'])->group(function () {
     Route::post('apostas/pendentes/{codigo}/validar', [ValidacaoApostasController::class, 'store']);
 
     Route::post('apostas/{codigo}/cancelar', [CancelamentoApostasController::class, 'store']);
+    // restaurar aposta cancelada (spec 018): Admin, Supervisor e Gerente
+    Route::post('apostas/{codigo}/restaurar', [RestauracaoApostasController::class, 'store']);
 
     Route::post('apostas/{codigo}/palpites/{palpite}/cancelar', [ApostasPalpitesController::class, 'cancelar'])
         ->whereNumber('palpite');

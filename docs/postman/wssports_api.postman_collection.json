@@ -10255,6 +10255,34 @@
                         },
                         "description": "apostas.imprimir_segunda_via. Comprovante para imprimir a 2ª via; só de aposta ativa aguardando resultado (senão 422 \"A 2ª via só pode ser impressa em apostas aguardando resultado.\"). Fora do alcance → 404."
                     }
+                },
+                {
+                    "name": "Restaurar aposta cancelada",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/apostas/{{codigo_aposta}}/restaurar",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "apostas",
+                                "{{codigo_aposta}}",
+                                "restaurar"
+                            ]
+                        },
+                        "description": "apostas.restaurar (Admin, Supervisor e Gerente, na própria rede; apostas do site só Admin e Supervisor). A aposta cancelada volta a Ativa; o valor sai de novo do limite do vendedor ou do saldo do cliente (com o rollover). Com jogo iniciado, exige apostas.cancelar_iniciada e a aposta é apurada de novo. 422: não cancelada, encerramento parcial, sem limite ou sem saldo. Resposta { data: ComprovanteApostaResource }."
+                    }
                 }
             ]
         }

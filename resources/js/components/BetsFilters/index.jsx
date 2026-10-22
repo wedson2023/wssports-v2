@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import CashModal, { Button, Error, Field, GhostButton, Input, Label, ler_valor, valor_para_campo } from '../CashModal';
 import SellerPicker from '../SellerPicker';
 import useTelaMobile from '../../hooks/useTelaMobile';
-import { Chip, Chips, Group, GroupTitle, Panel } from './styles';
+import { Chip, Chips, ClearButton, Group, GroupTitle, Panel, PrizeRow } from './styles';
 
 // opções dos filtros (contracts/paginas §3); os valores são os da API
 export const opcoes_resultado = [
@@ -128,15 +128,24 @@ export default function BetsFilters({ aberto, filtros, aba, e_vendedor, token, a
             </Group>
             <Field>
                 <Label htmlFor="filtro_premio">Prêmio mínimo (R$)</Label>
-                <Input
-                    id="filtro_premio"
-                    inputMode="decimal"
-                    value={texto_premio}
-                    placeholder="0,00"
-                    onChange={(evento) => definir_texto_premio(evento.target.value)}
-                    onBlur={() => !e_mobile && aplicar_premio()}
-                    onKeyDown={(evento) => evento.key === 'Enter' && !e_mobile && aplicar_premio()}
-                />
+                <PrizeRow>
+                    <Input
+                        id="filtro_premio"
+                        inputMode="decimal"
+                        value={texto_premio}
+                        placeholder="0,00"
+                        onChange={(evento) => definir_texto_premio(evento.target.value)}
+                        onBlur={() => !e_mobile && aplicar_premio()}
+                        onKeyDown={(evento) => evento.key === 'Enter' && !e_mobile && aplicar_premio()}
+                    />
+                    {/* no computador, o limpar fica alinhado ao campo, na mesma linha */}
+                    {!e_mobile && (
+                        <ClearButton type="button" onClick={limpar}>
+                            <i className="material-icons" aria-hidden="true">filter_alt_off</i>
+                            Limpar filtros
+                        </ClearButton>
+                    )}
+                </PrizeRow>
                 {erro_premio && <Error role="alert">{erro_premio}</Error>}
             </Field>
         </>
@@ -167,7 +176,6 @@ export default function BetsFilters({ aberto, filtros, aba, e_vendedor, token, a
     return (
         <Panel aria-label="Filtros">
             {campos}
-            <GhostButton type="button" onClick={limpar}>Limpar filtros</GhostButton>
         </Panel>
     );
 }

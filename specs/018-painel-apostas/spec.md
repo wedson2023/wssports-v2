@@ -45,7 +45,7 @@ painel no padrão das specs 014, 015, 016 e 017, responsiva com prioridade ao ce
 
 - Q: A aba Canceladas é só de consulta, ou traz o "restaurar" da lixeira do antigo? → A: Só
   consulta. O v2 não restaura aposta cancelada; uma aposta cancelada por engano é refeita (US3,
-  cenário 5).
+  cenário 5). **Alterado depois da implementação (ver a sessão "Restaurar aposta" abaixo).**
 - Q: Quais níveis veem as apostas dos clientes do site? → A: Só Admin e Supervisor, como o Caixa
   clientes (spec 017); a regra de cancelamento atual não muda (FR-003).
 - Q: Quais situações entram na lista? → A: Só as efetivadas, como no antigo: Ativa, e Cancelada na
@@ -77,6 +77,28 @@ painel no padrão das specs 014, 015, 016 e 017, responsiva com prioridade ao ce
   (FR-014; o site também passa a mostrar o motivo).
 - As Saídas e os Encerramentos dos totais ficam com a regra e a base de data explicadas no FR-012;
   os premiados seguem a aba e o vendedor filtrados (FR-020).
+
+### Session 2026-10-22 (ajuste pedido pelo responsável depois da implementação)
+
+- O ícone de cancelar/restaurar palpite no canto do palpite não ficou bom → passou a ser um botão de
+  texto ("Cancelar palpite" / "Restaurar palpite") alinhado à direita no rodapé de cada palpite, e o
+  bilhete aberto pelo painel ficou maior (92% da altura da tela, até 640 px de largura) para os
+  palpites terem mais espaço de rolagem (contracts/paginas §6).
+- Até 400 px de largura: as abas ficam com a mesma largura, numa linha só, com rolagem para o lado,
+  e o "Baixar planilha" desce para a segunda linha, à esquerda, ao lado do Atualizar (contracts/paginas
+  §1 e §2).
+- No computador, a busca fica à direita das abas (depois: abas na largura dos balões do período e
+  busca na largura do grupo de ferramentas, alinhadas em grade), e o "Limpar filtros"
+  fica alinhado ao campo Prêmio mínimo, com borda e texto na cor de destaque (contracts/paginas §1 e
+  §3).
+
+### Session 2026-10-22 (Restaurar aposta, pedido do responsável depois da implementação)
+
+- Q: A aba Canceladas deve permitir restaurar a aposta? → A: Sim (muda a resposta da primeira
+  sessão). Q: Quem restaura? → A: Admin, Supervisor e Gerente com `apostas.restaurar`. Q: E com jogo
+  já iniciado? → A: Só com `apostas.cancelar_iniciada`, e a aposta é apurada de novo. Q: E sem
+  limite ou saldo? → A: Recusa. Acrescentado na implementação: apostas do site só para Admin e
+  Supervisor (FR-003) e recusa de aposta com encerramento parcial (FR-019a).
 
 ## Referências do sistema antigo *(Princípios VII e VIII)*
 
@@ -238,7 +260,7 @@ prêmio recalculado.
    cancela ou restaura um palpite, **Then** o bilhete mostra o palpite cancelado ou restaurado e o
    prêmio, a cotação total e a comissão recalculados pelas regras atuais.
 5. **Given** a aba Canceladas, **When** ela aparece, **Then** cada linha mostra também quando e por
-   quem a aposta foi cancelada, sem ação de restaurar (a aba é só de consulta).
+   quem a aposta foi cancelada e, para quem pode, a ação "Restaurar aposta" (FR-019a).
 
 ---
 
@@ -421,8 +443,17 @@ linhas e os totais batem com a tela.
 - **FR-018**: O bilhete DEVE ter, por palpite, as ações cancelar e restaurar palpite para quem tem a
   permissão de editar apostas, usando as regras que já existem no v2 sem mudá-las, e mostrar o
   bilhete atualizado (prêmio, cotação total e comissão recalculados).
-- **FR-019**: Depois de cancelar a aposta ou editar um palpite, a lista, os cartões e o bilhete
-  DEVEM ser atualizados sem recarregar a página.
+- **FR-019**: Depois de cancelar ou restaurar a aposta ou editar um palpite, a lista, os cartões e o
+  bilhete DEVEM ser atualizados sem recarregar a página.
+- **FR-019a**: Uma aposta cancelada DEVE poder ser restaurada (voltar a Ativa) pela lista (aba
+  Canceladas) e pelo bilhete, com confirmação, por Admin, Supervisor e Gerente com a permissão
+  `apostas.restaurar`, na própria rede; apostas do site, só Admin e Supervisor. Com algum jogo já
+  iniciado, só quem tem `apostas.cancelar_iniciada`, e a aposta é apurada de novo. O valor volta a
+  sair do limite do vendedor (simples ou duplo e geral) ou da mesma carteira do cliente (com o
+  rollover somado de novo); sem limite ou saldo suficiente, a restauração é recusada ("O vendedor não
+  tem limite para restaurar esta aposta." / "O cliente não tem saldo para restaurar esta aposta.") e
+  nada muda. Aposta com encerramento parcial não pode ser restaurada. A aposta guarda quem restaurou,
+  quando, o IP e o navegador.
 
 **Premiados e exportação**
 

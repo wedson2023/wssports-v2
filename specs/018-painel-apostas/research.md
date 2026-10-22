@@ -196,6 +196,22 @@
   `/painel/apostas?usuarios_id=&de=&ate=&aba=` com o tipo do Caixa (`todas`, `pre_jogo`, `ao_vivo`).
   É só no frontend: as `acoes` da API do Caixa não mudam.
 
+## R-13 — Restaurar aposta cancelada (pedido depois da implementação)
+
+- **Decision**: service `RestauracaoApostas`, inverso exato do `CancelamentoApostas::devolver`, na
+  mesma ordem de bloqueio (aposta → vendedor ou cliente → rollovers): cliente, `SaldoClientes::debitar`
+  do valor que continua valendo, na carteira da forma de pagamento, origem `Aposta`, e
+  `RolloverClientes::somar`; vendedor, abate de novo `limite_simples`/`limite_duplo` e `limite_geral`,
+  recusando se algum ficaria negativo. Alcance de edição (`AlcanceApostas::pode_editar`), aposta do
+  site só para Admin e Supervisor, jogo iniciado só com `apostas.cancelar_iniciada`
+  (`CancelamentoApostas::tem_jogo_iniciado`, que passou a ser público para não duplicar a regra) e
+  `ApuracaoApostas::apurar_aposta` depois de gravar quando havia jogo iniciado. Aposta com
+  encerramento parcial é recusada (o cancelamento devolveu só a parte que valia; somar de novo não
+  refaz o mesmo estado). Colunas de auditoria em `apostas` (data-model §6). O saldo de caixa do
+  vendedor (spec 017) se ajusta sozinho, porque é calculado pela situação atual das apostas.
+- **Alternatives considered**: usar `apostas_historico` (exige um palpite por linha); limpar os dados
+  do cancelamento (perde o histórico).
+
 ## R-12 — Dados fake
 
 Nenhum. Todos os dados vêm do backend existente ou desta spec.

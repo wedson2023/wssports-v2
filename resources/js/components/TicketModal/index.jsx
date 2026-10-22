@@ -11,7 +11,7 @@ import { formatar_real, para_centavos } from '../../utils/money';
 import { compartilhar_texto } from '../../utils/share';
 import { useTheme } from 'styled-components';
 import {
-    Banner, CancelButton, Container, Data, Footer, Header, Hunch, HunchAction, Hunches, Icon, Icons, Label, PanelTools, Row, Status, Teams, Title,
+    Banner, CancelButton, Container, Data, Footer, Header, Hunch, HunchAction, HunchActions, Hunches, Icon, Icons, Label, PanelTools, Row, Status, Teams, Title,
 } from './styles';
 
 const real = (valor) => `R$ ${formatar_real(para_centavos(valor))}`;
@@ -62,28 +62,32 @@ const linhas_andamento = (palpite) => (
 
 const texto_palpite = (palpite) => (palpite.jogador ? `${palpite.jogador} (${palpite.jogador_tipo})` : palpite.mercado);
 
-// cancelar ou restaurar o palpite (painel, spec 018), só para quem pode editar o bilhete
-const acao_palpite = (palpite, edicao) => {
+// cancelar ou restaurar o palpite (painel, spec 018), só para quem pode editar o bilhete: botão de
+// texto no rodapé do palpite; compacto (só o ícone) ao lado da cotação, dentro do bloco Criar Aposta
+const acao_palpite = (palpite, edicao, compacto = false) => {
     if (!edicao) return null;
 
     const cancelado = palpite.situacao === 'Cancelado';
+    const texto = cancelado ? 'Restaurar palpite' : 'Cancelar palpite';
 
     return (
         <HunchAction
             type="button"
-            title={cancelado ? 'Restaurar este palpite' : 'Cancelar este palpite'}
-            aria-label={cancelado ? `Restaurar o palpite ${texto_palpite(palpite)}` : `Cancelar o palpite ${texto_palpite(palpite)}`}
+            $restaurar={cancelado}
+            $compacto={compacto}
+            title={texto}
+            aria-label={`${texto} ${texto_palpite(palpite)}`}
             disabled={edicao.ocupado}
             onClick={() => (cancelado ? edicao.ao_restaurar(palpite) : edicao.ao_cancelar(palpite))}
         >
-            <i className="material-icons" aria-hidden="true">{cancelado ? 'refresh' : 'delete_outline'}</i>
+            <i className="material-icons" aria-hidden="true">{cancelado ? 'restore' : 'delete_outline'}</i>
+            {!compacto && texto}
         </HunchAction>
     );
 };
 
 const linha_palpite = (palpite, edicao) => (
     <Hunch $cancelado={palpite.situacao === 'Cancelado'}>
-        {acao_palpite(palpite, edicao)}
         <Teams>{palpite.time_casa} x {palpite.time_fora}</Teams>
         <Row><Label>Horário:</Label><span>{formatar_data_hora(palpite.data_inicio)}</span></Row>
         <Row><Label>Campeonato:</Label><span>{palpite.campeonato}</span></Row>
@@ -96,6 +100,7 @@ const linha_palpite = (palpite, edicao) => (
             <Status $situacao={situacao_palpite(palpite)}>{situacao_palpite(palpite)}</Status>
         </Row>
         {palpite.situacao === 'Cancelado' && <Row><Label>Motivo:</Label><span>{motivo_cancelamento(palpite)}</span></Row>}
+        {edicao && <HunchActions>{acao_palpite(palpite, edicao)}</HunchActions>}
     </Hunch>
 );
 
@@ -118,7 +123,7 @@ const linha_bloco = (bloco, palpites, edicao) => {
                     </Label>
                     <span>
                         {Number(palpite.cotacao).toFixed(2)}
-                        {acao_palpite(palpite, edicao)}
+                        {acao_palpite(palpite, edicao, true)}
                     </span>
                 </Row>
             ))}
@@ -135,10 +140,11 @@ const linha_bloco = (bloco, palpites, edicao) => {
 // comprovante do bilhete consultado pelo código (FR-044, data-model.md seção 4). No painel (spec 018),
 // `painel` traz a data e o autor do cancelamento e as ações permitidas ({ cancelada_em,
 // cancelada_por, acoes }); com ele, o cabeçalho é o ModalHeader do painel, o rodapé mostra comissão,
-// forma de pagamento e "Vendedor paga", e aparecem imprimir 2ª via, cancelar a aposta e cancelar ou
-// restaurar palpites. Sem `painel`, o bilhete do site e da Dashboard fica como era
+// forma de pagamento e "Vendedor paga", e aparecem imprimir 2ª via, cancelar ou restaurar a aposta e
+// cancelar ou restaurar palpites. Sem `painel`, o bilhete do site e da Dashboard fica como era
 export default function TicketModal({
-    comprovante, ao_fechar, painel = null, ocupado = false, ao_imprimir = null, ao_cancelar_aposta = null, ao_cancelar_palpite = null, ao_restaurar_palpite = null,
+    comprovante, ao_fechar, painel = null, ocupado = false, ao_imprimir = null, ao_cancelar_aposta = null, ao_restaurar_aposta = null, ao_cancelar_palpite = null,
+    ao_restaurar_palpite = null,
 }) {
     const e_mobile = useTelaMobile();
     const tema = useTheme();
@@ -159,7 +165,7 @@ export default function TicketModal({
 
     return (
         <>
-            <Container $visivel={visivel}>
+            <Container $visivel={visivel} $painel={Boolean(painel)}>
                 {painel ? (
                     <>
                         <ModalHeader
@@ -227,6 +233,14 @@ export default function TicketModal({
                         <CancelButton type="button" disabled={ocupado} onClick={ao_cancelar_aposta}>
                             <i className="material-icons" aria-hidden="true">delete</i>
                             Cancelar aposta
+                        </CancelButton>
+                    </Footer>
+                )}
+                {comprovante && acoes.includes('restaurar') && ao_restaurar_aposta && (
+                    <Footer>
+                        <CancelButton type="button" $restaurar disabled={ocupado} onClick={ao_restaurar_aposta}>
+                            <i className="material-icons" aria-hidden="true">restore</i>
+                            Restaurar aposta
                         </CancelButton>
                     </Footer>
                 )}

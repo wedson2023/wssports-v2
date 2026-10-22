@@ -2,8 +2,8 @@
 
 **Spec**: [spec.md](spec.md) · **Research**: [research.md](research.md)
 
-Esta spec **não cria tabelas nem colunas**. Ela lê as tabelas das specs 004, 008, 009 e 010 e acrescenta
-as permissões (o índice que a lista usa já existe).
+Esta spec **não cria tabelas**. Ela lê as tabelas das specs 004, 008, 009 e 010, acrescenta as
+permissões (o índice que a lista usa já existe) e, para a restauração, quatro colunas em `apostas` (§6).
 
 ## 1. Tabelas lidas
 
@@ -56,9 +56,23 @@ Situações listadas: `Ativa` (Todas, Pré-jogo, Ao vivo) e `Cancelada` (Cancela
 | `apostas.listar` | Ver a tela Apostas, a lista, o bilhete e o filtro de vendedores | ✅ | ✅ | ✅ | ✅ (só as próprias) |
 | `apostas.exportar` | Baixar planilha; premiados (só Gerente para cima) | ✅ | ✅ | ✅ | ✅ (só planilha) |
 | `apostas.imprimir_segunda_via` | Imprimir a 2ª via de aposta aguardando resultado | ✅ | ✅ | ✅ | ✅ |
+| `apostas.restaurar` | Restaurar aposta cancelada (FR-019a) | ✅ | ✅ | ✅ | — |
 
 Migration de dados: `2026_10_24_000001_criar_permissoes_apostas_painel.php`, no padrão da
 `2026_10_23_000004_criar_permissoes_caixa.php` (cria as três e dá aos usuários existentes as que a
-função recebe por padrão).
+função recebe por padrão); `apostas.restaurar` em `2026_10_24_000003_criar_permissao_restaurar_apostas.php`.
+
+## 6. Colunas novas em `apostas` (restauração, FR-019a)
+
+Migration `2026_10_24_000002_add_restauracao_apostas_table.php`, depois de `user_agent_cancelamento`:
+
+| Coluna | Tipo | Comentário |
+|---|---|---|
+| `restaurada_em` | timestamp nulo | Quando a aposta cancelada foi restaurada (voltou a Ativa) pela última vez |
+| `restaurada_por` | FK `usuarios` nula | Usuário do painel que restaurou a aposta cancelada |
+| `ip_restauracao` | string(45) nula | IP de quem restaurou a aposta |
+| `user_agent_restauracao` | string nula | Navegador de quem restaurou a aposta (até 255 caracteres) |
+
+Os dados do último cancelamento continuam gravados (histórico).
 
 Continuam valendo, sem mudança: `apostas.cancelar`, `apostas.cancelar_iniciada` e `apostas.editar`.

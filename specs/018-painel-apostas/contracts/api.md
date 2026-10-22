@@ -94,7 +94,16 @@ O registro das rotas fixas (`resumo`, `exportacao`, `premiados`, `vendedores`) v
 resultado → 422 "A 2ª via só pode ser impressa em apostas aguardando resultado.". Resposta:
 `{ "data": ComprovanteApostaResource }` para impressão.
 
-### 2.3 Ações existentes (sem mudança)
+### 2.3 `POST /apostas/{codigo}/restaurar` (`RestauracaoApostasController`, R-13)
+`apostas.restaurar` (Admin, Supervisor e Gerente; Vendedor → 403). Alcance de edição; aposta do site
+só para Admin e Supervisor (senão 404 "Aposta não encontrada."). 422: "Só apostas canceladas podem
+ser restauradas.", "Não é possível restaurar uma aposta com encerramento parcial.", "Não é possível
+restaurar depois do início de um jogo." (sem `apostas.cancelar_iniciada`), "O vendedor não tem limite
+para restaurar esta aposta.", "O cliente não tem saldo para restaurar esta aposta.". Resposta
+`{ data: ComprovanteApostaResource }`. A ação `restaurar` aparece em `acoes` da linha (1.1) e em
+`painel.acoes` do bilhete (2.1) quando permitida.
+
+### 2.4 Ações existentes (sem mudança)
 - `POST /apostas/{codigo}/cancelar` (spec 004) → `{ data: ComprovanteApostaResource }`.
 - `POST /apostas/{codigo}/palpites/{palpite}/cancelar` e `/restaurar` → `{ data: ComprovanteApostaResource }`.
 

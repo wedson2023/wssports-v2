@@ -118,9 +118,10 @@ class CancelamentoApostas
     }
 
     /**
-     * Algum jogo da aposta já começou (palpite do ao vivo conta como iniciado).
+     * Algum jogo da aposta já começou (palpite do ao vivo conta como iniciado). Também usado pela
+     * restauração da aposta cancelada (spec 018).
      */
-    private function tem_jogo_iniciado(Apostas $aposta): bool
+    public function tem_jogo_iniciado(Apostas $aposta): bool
     {
         return $aposta->palpites()->whereNotNull('confrontos_ao_vivo_id')->exists()
             || DB::table('apostas_palpites as ap')

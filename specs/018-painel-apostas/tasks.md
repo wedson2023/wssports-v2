@@ -289,3 +289,54 @@ e o atalho "Ver apostas" a partir do Caixa.
 (`ListagemApostas::consulta`), usada pela lista, pelos totais, pela planilha e pelos premiados, e as
 expressões de prêmio e de jogos ficam num lugar só (`EXPRESSAO_PREMIO` e `com_colunas_da_lista`). Não
 encontrei outra refatoração necessária.
+
+**Ajuste pedido pelo responsável depois da implementação (2026-10-22)**: no bilhete do painel, a
+ação de cada palpite virou um botão de texto ("Cancelar palpite" em vermelho, "Restaurar palpite" em
+verde) alinhado à direita no rodapé do palpite (no bloco Criar Aposta, só o ícone ao lado da
+cotação). O modal do painel ficou com 92% da altura e até 640 px de largura
+(`components/TicketModal/{index,styles}.jsx`). Conferido no Chrome sem janela em 1366 e 360 px; o
+bilhete do site não muda.
+
+**Segundo ajuste pedido pelo responsável (2026-10-22)**: até 400 px, as abas Todas, Pré-jogo, Ao vivo e
+Canceladas ficam com a mesma largura (120 px) numa linha só, com rolagem para o lado; Filtros e
+Premiados dividem a primeira linha das ferramentas, e Baixar planilha desce para a segunda linha, à
+esquerda, ao lado do Atualizar (`pages/PanelBets/{index,styles}.jsx`). Conferido no Chrome sem janela
+em 380 px.
+
+**Terceiro ajuste pedido pelo responsável (2026-10-22)**: no computador, a busca fica à direita das
+abas, ocupando o resto da linha (no celular continua acima das abas), e a caixa passou a se chamar
+"Todo o período", com a explicação na dica. O "Limpar filtros" do painel de filtros fica na linha
+do Prêmio mínimo, alinhado ao campo, com borda e texto na cor de destaque do tema
+(`pages/PanelBets/{index,styles}.jsx`, `components/BetsFilters/{index,styles}.jsx`). Conferido no
+Chrome sem janela em 1366 e 380 px.
+
+**Quarto ajuste pedido pelo responsável (2026-10-22)**: o topo da tela virou uma grade no computador.
+As abas ficam na mesma largura dos balões do período, divididas por igual; a busca fica na mesma
+largura do grupo de ferramentas; o painel de filtros e as etiquetas ocupam a largura toda entre as
+duas linhas (`pages/PanelBets/{index,styles}.jsx`; os estilos `Header` e `TabsRow` saíram, e entraram
+`Top` e `Area`). Medido no Chrome sem janela em 1366 px: abas e balões de 214 a 758 px; busca e
+ferramentas de 942 a 1352 px. Em 380 px, a ordem do celular continua a mesma.
+
+## Phase 9: Restaurar aposta cancelada (pedido do responsável depois da implementação, FR-019a)
+
+- [X] T050 Criar `database/migrations/2026_10_24_000002_add_restauracao_apostas_table.php` com `restaurada_em`, `restaurada_por` (FK `usuarios`), `ip_restauracao` e `user_agent_restauracao`, todas com `->comment()` (data-model §6)
+- [X] T051 Criar `database/migrations/2026_10_24_000003_criar_permissao_restaurar_apostas.php` e acrescentar `apostas.restaurar` em `Funcao::PERMISSOES_APOSTAS` (`app/Enums/Funcao.php`) e em `resources/js/utils/permissions.js`
+- [X] T052 Criar `app/Services/RestauracaoApostas.php` (R-13) e tornar público `CancelamentoApostas::tem_jogo_iniciado` (`app/Services/CancelamentoApostas.php`)
+- [X] T053 Criar `app/Http/Controllers/RestauracaoApostasController.php` e a rota `POST apostas/{codigo}/restaurar` em `routes/api.php`
+- [X] T054 Em `app/Services/ListagemApostas.php`, a ação `restaurar` em `acoes_da_linha` e `acoes_do_bilhete`
+- [X] T055 Em `resources/js/pages/PanelBets/index.jsx` e `resources/js/components/TicketModal/{index,styles}.jsx`, "Restaurar aposta" no menu da linha (aba Canceladas) e no rodapé do bilhete cancelado, com confirmação
+- [X] T056 Acrescentar "Restaurar aposta cancelada" em `docs/postman/wssports_api.postman_collection.json`
+
+**Validação da restauração** (API em transação desfeita):
+
+- Vendedor → 403.
+- Sem limite → 422, e a aposta continua cancelada.
+- Gerente restaura e o limite geral é abatido de novo (1000 → 980); como havia jogo encerrado, a
+  aposta foi apurada de novo (Perdedor).
+- Restaurar de novo → 422.
+- Aposta do site: Gerente → 404; Admin restaura e o saldo é debitado de novo (6,10 → 16,10 → 6,10).
+- Cliente sem saldo → 422.
+- Bilhete e linha mostram `restaurar` só na cancelada e para quem pode.
+
+No Chrome sem janela, o bilhete cancelado aberto pelo Gerente mostra "Restaurar aposta". `migrate`
+sem erro; Pint sem pendências.

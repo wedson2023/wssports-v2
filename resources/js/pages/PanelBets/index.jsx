@@ -22,7 +22,7 @@ import { alerta_atencao, alerta_erro, confirmar } from '../../utils/alerts';
 import { formatar_valor } from '../../utils/charts';
 import { compartilhar_texto } from '../../utils/share';
 import {
-    Cards, Check, Error, FullTabs, Header, HeaderActions, Loading, Retry, Search, SearchBox, SearchRow, Section, Skeleton, Tool,
+    Area, Cards, Check, Error, FullTabs, HeaderActions, Loading, Retry, Search, SearchBox, SearchRow, Section, Skeleton, Tool, Top,
 } from './styles';
 
 // espera depois da última tecla antes de buscar
@@ -40,6 +40,7 @@ const acoes_linha = {
     ver: { icone: 'remove_red_eye', titulo: 'Ver bilhete', tom: '#1e88e5' },
     compartilhar: { icone: 'share', titulo: 'Compartilhar', tom: '#43a047' },
     cancelar: { icone: 'delete', titulo: 'Cancelar aposta', tom: '#e53935' },
+    restaurar: { icone: 'restore', titulo: 'Restaurar aposta', tom: '#43a047' },
 };
 
 // busca de 8 letras ou números: pode ser o código de uma aposta (vale em qualquer data)
@@ -145,6 +146,15 @@ export default function PanelBets() {
         await executar(() => api.post(`/apostas/${encodeURIComponent(codigo)}/cancelar`, {}, autorizacao), 'Aposta cancelada.', codigo);
     };
 
+    // restaurar a aposta cancelada (R-13): o valor sai de novo do limite do vendedor ou do saldo do cliente
+    const restaurar_aposta = async (codigo, do_site) => {
+        const origem = do_site ? 'do saldo do cliente' : 'do limite do vendedor';
+
+        if (!(await confirmar(`Restaurar a aposta ${codigo.toUpperCase()}? Ela volta a valer e o valor sai de novo ${origem}.`, '#43a047'))) return;
+
+        await executar(() => api.post(`/apostas/${encodeURIComponent(codigo)}/restaurar`, {}, autorizacao), 'Aposta restaurada.', codigo);
+    };
+
     const editar_palpite = async (palpite, acao) => {
         const codigo = bilhete.comprovante.codigo;
         const texto = acao === 'cancelar' ? 'Cancelar este palpite? O prêmio e a comissão serão recalculados.' : 'Restaurar este palpite? O prêmio e a comissão serão recalculados.';
@@ -198,6 +208,7 @@ export default function PanelBets() {
         'ver',
         'compartilhar',
         ...(linha.acoes.includes('cancelar') ? ['cancelar'] : []),
+        ...(linha.acoes.includes('restaurar') ? ['restaurar'] : []),
     ].map((chave) => ({
         chave,
         ...acoes_linha[chave],
@@ -205,6 +216,7 @@ export default function PanelBets() {
             if (chave === 'ver') abrir_bilhete(linha.codigo);
             if (chave === 'compartilhar') compartilhar(linha.codigo);
             if (chave === 'cancelar') cancelar_aposta(linha.codigo, linha.origem === 'site');
+            if (chave === 'restaurar') restaurar_aposta(linha.codigo, linha.origem === 'site');
         },
     }));
 
@@ -217,6 +229,20 @@ export default function PanelBets() {
     ].filter(Boolean);
 
     const quantidade_filtros = etiquetas.length;
+
+    // filtros: no computador, painel dentro da grade do topo; no celular, modal
+    const painel_filtros = filtros_abertos && !e_mobile;
+    const filtros_tela = (
+        <BetsFilters
+            aberto={filtros_abertos}
+            filtros={filtros}
+            aba={filtros.aba}
+            e_vendedor={e_vendedor}
+            token={token}
+            ao_aplicar={(mudanca) => mudar(mudanca)}
+            ao_fechar={() => definir_filtros_abertos(false)}
+        />
+    );
     const totais = resumo.dados?.totais;
     const canceladas = filtros.aba === 'canceladas';
 
@@ -262,72 +288,75 @@ export default function PanelBets() {
             <Head title={nome_sistema} />
             <PanelShell usuario={logado} titulo={`Apostas · total ${lista.total.toLocaleString('pt-BR')}`}>
                 <Section>
-                    <Header>
-                        <PeriodFilter periodo={filtros.periodo} ao_mudar={(periodo) => mudar({ periodo })} />
-                        <HeaderActions>
-                            <Tool type="button" aria-expanded={filtros_abertos} onClick={() => definir_filtros_abertos((aberto) => !aberto)}>
-                                <i className="material-icons" aria-hidden="true">filter_list</i>
-                                {quantidade_filtros ? `Filtros (${quantidade_filtros})` : 'Filtros'}
-                            </Tool>
-                            {pode('apostas.exportar') && !e_vendedor && (
-                                <Tool type="button" onClick={() => definir_premiados_abertos(true)}>
-                                    <i className="material-icons" aria-hidden="true">emoji_events</i>
-                                    Premiados
+                    {/* topo em grade: no computador, os balões do período e as abas na coluna da esquerda
+                        (abas na largura dos balões) e as ferramentas e a busca na da direita (busca na
+                        largura das ferramentas); no celular, uma coluna só */}
+                    <Top $com_filtros={painel_filtros} $com_etiquetas={etiquetas.length > 0}>
+                        <Area $area="periodo">
+                            <PeriodFilter periodo={filtros.periodo} ao_mudar={(periodo) => mudar({ periodo })} />
+                        </Area>
+                        <Area $area="ferramentas">
+                            <HeaderActions>
+                                <Tool type="button" aria-expanded={filtros_abertos} onClick={() => definir_filtros_abertos((aberto) => !aberto)}>
+                                    <i className="material-icons" aria-hidden="true">filter_list</i>
+                                    {quantidade_filtros ? `Filtros (${quantidade_filtros})` : 'Filtros'}
                                 </Tool>
-                            )}
-                            {pode('apostas.exportar') && (
-                                <Tool type="button" disabled={exportando} onClick={exportar}>
-                                    {exportando ? <Spinner tamanho={18} cor="currentColor" /> : <i className="material-icons" aria-hidden="true">table_view</i>}
-                                    Baixar planilha
+                                {pode('apostas.exportar') && !e_vendedor && (
+                                    <Tool type="button" onClick={() => definir_premiados_abertos(true)}>
+                                        <i className="material-icons" aria-hidden="true">emoji_events</i>
+                                        Premiados
+                                    </Tool>
+                                )}
+                                {pode('apostas.exportar') && (
+                                    <Tool type="button" $quebra disabled={exportando} onClick={exportar}>
+                                        {exportando ? <Spinner tamanho={18} cor="currentColor" /> : <i className="material-icons" aria-hidden="true">table_view</i>}
+                                        Baixar planilha
+                                    </Tool>
+                                )}
+                                <Tool type="button" title="Atualizar" aria-label="Atualizar" $compacto onClick={recarregar}>
+                                    <i className="material-icons" aria-hidden="true">refresh</i>
                                 </Tool>
-                            )}
-                            <Tool type="button" title="Atualizar" aria-label="Atualizar" $compacto onClick={recarregar}>
-                                <i className="material-icons" aria-hidden="true">refresh</i>
-                            </Tool>
-                        </HeaderActions>
-                    </Header>
-
-                    <SearchRow>
-                        <SearchBox>
-                            <i className="material-icons" aria-hidden="true">search</i>
-                            <Search
-                                type="search"
-                                value={busca}
-                                placeholder="Código ou nome do cliente"
-                                aria-label="Buscar por código ou nome do cliente"
-                                onChange={(evento) => buscar(evento.target.value)}
-                                onKeyDown={(evento) => {
-                                    if (evento.key !== 'Enter') return;
-
-                                    window.clearTimeout(espera.current);
-                                    mudar({ busca });
-                                }}
-                            />
-                        </SearchBox>
-                        {busca.trim() && (
-                            <Check>
-                                <input type="checkbox" checked={filtros.todo_periodo} onChange={(evento) => mudar({ todo_periodo: evento.target.checked })} />
-                                {parece_codigo(busca) ? 'Nome em todo o período (o código vale em qualquer data)' : 'Buscar em todo o período'}
-                            </Check>
+                            </HeaderActions>
+                        </Area>
+                        {painel_filtros && <Area $area="filtros">{filtros_tela}</Area>}
+                        {etiquetas.length > 0 && (
+                            <Area $area="etiquetas">
+                                <ActiveFilters etiquetas={etiquetas} ao_remover={(chave) => mudar({ [chave]: null })} />
+                            </Area>
                         )}
-                    </SearchRow>
+                        <Area $area="abas">
+                            <FullTabs><PanelTabs abas={abas} ativa={filtros.aba} ao_trocar={(aba) => mudar({ aba })} /></FullTabs>
+                        </Area>
+                        <Area $area="busca">
+                            <SearchRow>
+                                <SearchBox>
+                                    <i className="material-icons" aria-hidden="true">search</i>
+                                    <Search
+                                        type="search"
+                                        value={busca}
+                                        placeholder="Código ou nome do cliente"
+                                        aria-label="Buscar por código ou nome do cliente"
+                                        onChange={(evento) => buscar(evento.target.value)}
+                                        onKeyDown={(evento) => {
+                                            if (evento.key !== 'Enter') return;
 
-                    <BetsFilters
-                        aberto={filtros_abertos}
-                        filtros={filtros}
-                        aba={filtros.aba}
-                        e_vendedor={e_vendedor}
-                        token={token}
-                        ao_aplicar={(mudanca) => mudar(mudanca)}
-                        ao_fechar={() => definir_filtros_abertos(false)}
-                    />
+                                            window.clearTimeout(espera.current);
+                                            mudar({ busca });
+                                        }}
+                                    />
+                                </SearchBox>
+                                {busca.trim() && (
+                                    <Check title={parece_codigo(busca) ? 'Procura o nome em todo o período; o código já vale em qualquer data.' : 'Procura o nome em todo o período, não só no período escolhido.'}>
+                                        <input type="checkbox" checked={filtros.todo_periodo} onChange={(evento) => mudar({ todo_periodo: evento.target.checked })} />
+                                        Todo o período
+                                    </Check>
+                                )}
+                            </SearchRow>
+                        </Area>
+                    </Top>
 
-                    <ActiveFilters
-                        etiquetas={etiquetas}
-                        ao_remover={(chave) => mudar({ [chave]: null })}
-                    />
-
-                    <FullTabs><PanelTabs abas={abas} ativa={filtros.aba} ao_trocar={(aba) => mudar({ aba })} /></FullTabs>
+                    {/* no celular os filtros abrem num modal, fora da grade */}
+                    {e_mobile && filtros_tela}
 
                     {cartoes()}
 
@@ -351,6 +380,7 @@ export default function PanelBets() {
                 ao_fechar={() => definir_bilhete(null)}
                 ao_imprimir={imprimir_segunda_via}
                 ao_cancelar_aposta={() => cancelar_aposta(bilhete.comprovante.codigo, bilhete.comprovante.vendedor === 'Cliente')}
+                ao_restaurar_aposta={() => restaurar_aposta(bilhete.comprovante.codigo, bilhete.comprovante.vendedor === 'Cliente')}
                 ao_cancelar_palpite={(palpite) => editar_palpite(palpite, 'cancelar')}
                 ao_restaurar_palpite={(palpite) => editar_palpite(palpite, 'restaurar')}
             />

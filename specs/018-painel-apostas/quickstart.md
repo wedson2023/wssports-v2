@@ -74,7 +74,10 @@ npm run build                # ou npm run dev
    recalculados; a linha e os cartões atualizam.
 4. Usuário sem `apostas.cancelar`: a ação não aparece; `POST /api/apostas/{codigo}/cancelar` → 403.
 5. Duas abas cancelando a mesma aposta: a segunda recebe "Esta aposta já foi cancelada.".
-6. Aba Canceladas: nenhuma ação de restaurar.
+6. Restaurar (FR-019a): Gerente restaura uma aposta cancelada da rede (limite abatido de novo; com jogo
+   encerrado, a aposta volta apurada); restaurar de novo → 422; Vendedor → 403; sem limite → 422 e
+   continua cancelada; aposta do site: Gerente → 404, Admin restaura e debita o saldo; cliente sem
+   saldo → 422.
 
 ## 7. Atalho do Caixa (US4, FR-025)
 

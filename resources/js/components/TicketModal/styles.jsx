@@ -21,6 +21,14 @@ export const Container = styled.div`
     visibility: ${({ $visivel }) => ($visivel ? 'visible' : 'hidden')};
     color: #333;
 
+    /* no painel (spec 018) o bilhete fica maior, para os palpites terem mais espaço de rolagem */
+    ${({ $painel }) => $painel && `
+        width: min(640px, calc(100vw - 32px));
+        height: 92vh;
+        height: 92dvh;
+        margin-left: calc(min(640px, calc(100vw - 32px)) / -2);
+    `}
+
     ${mobile} {
         width: 100%;
         margin-left: -50%;
@@ -128,11 +136,11 @@ export const Hunches = styled.div`
 `;
 
 // palpite cancelado apagado; o botão de restaurar (painel) continua visível
+// palpite cancelado apagado; o rodapé com o botão de restaurar (painel) continua visível
 export const Hunch = styled.div`
-    position: relative;
     padding: 5px 0;
 
-    > *:not(button) {
+    > *:not(footer) {
         opacity: ${({ $cancelado }) => ($cancelado ? 0.2 : 1)};
     }
 
@@ -141,39 +149,43 @@ export const Hunch = styled.div`
     }
 `;
 
-// cancelar ou restaurar o palpite (painel, spec 018), no canto do palpite
+// rodapé do palpite (painel, spec 018): a ação fica alinhada à direita, abaixo das informações
+export const HunchActions = styled.footer`
+    display: flex;
+    justify-content: flex-end;
+    padding-top: 4px;
+`;
+
+// cancelar (vermelho) ou restaurar (verde) o palpite: ícone com texto, sem caixa em volta; compacto
+// (só o ícone) ao lado da cotação, dentro do bloco Criar Aposta
 export const HunchAction = styled.button`
-    position: absolute;
-    top: 6px;
-    right: 0;
     display: inline-flex;
     align-items: center;
-    justify-content: center;
-    width: 32px;
-    height: 32px;
-    padding: 0;
-    border: solid 2px green;
-    border-radius: 0.3em;
+    gap: 4px;
+    min-height: ${({ $compacto }) => ($compacto ? '24px' : '32px')};
+    margin-left: ${({ $compacto }) => ($compacto ? '6px' : '0')};
+    padding: ${({ $compacto }) => ($compacto ? '0' : '0 8px')};
+    border: none;
+    border-radius: 4px;
     background: transparent;
-    color: green;
+    color: ${({ $restaurar }) => ($restaurar ? '#2e7d32' : '#c62828')};
+    font: inherit;
+    font-size: 0.8em;
+    font-weight: 500;
+    vertical-align: middle;
     cursor: pointer;
 
     i {
         font-size: 18px;
     }
 
+    &:hover:not(:disabled) {
+        background-color: ${({ $restaurar }) => ($restaurar ? '#e8f5e9' : '#ffebee')};
+    }
+
     &:disabled {
         opacity: 0.5;
         cursor: default;
-    }
-
-    /* dentro do bloco Criar Aposta, ao lado da cotação do palpite */
-    span > & {
-        position: static;
-        width: 26px;
-        height: 26px;
-        margin-left: 8px;
-        vertical-align: middle;
     }
 `;
 
@@ -197,7 +209,7 @@ export const Banner = styled.p`
     text-align: center;
 `;
 
-// rodapé com "Cancelar aposta" (painel); não encolhe
+// rodapé com "Cancelar aposta" ou "Restaurar aposta" (painel); não encolhe
 export const Footer = styled.footer`
     flex-shrink: 0;
     display: flex;
@@ -215,7 +227,7 @@ export const CancelButton = styled.button`
     padding: 0 16px;
     border: none;
     border-radius: 4px;
-    background-color: #c62828;
+    background-color: ${({ $restaurar }) => ($restaurar ? '#2e7d32' : '#c62828')};
     color: #fff;
     font: inherit;
     font-weight: bold;

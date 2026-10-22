@@ -7,6 +7,9 @@ const pulsar = keyframes`
     100% { opacity: 0.4; }
 `;
 
+// telas bem estreitas (até 400 px): abas com rolagem lateral e ferramentas em duas linhas
+const estreita = '@media screen and (max-width: 400px)';
+
 // borda dos campos: no tema claro um cinza mais forte, para os campos aparecerem no fundo branco
 const borda_campo = ({ theme }) => (theme.modo === 'escuro' ? '#3a3a3a' : '#a8a8a8');
 
@@ -33,17 +36,44 @@ export const Section = styled.section`
 `;
 
 // período à esquerda e as ferramentas à direita
-export const Header = styled.div`
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    flex-wrap: wrap;
-    gap: 10px;
+// topo da tela em grade (contracts/paginas §1): no computador, período e abas na coluna da esquerda,
+// ferramentas e busca na da direita, e o painel de filtros e as etiquetas na largura toda entre as
+// duas linhas; no celular, uma coluna só, com a busca acima das abas
+const areas_computador = ({ $com_filtros, $com_etiquetas }) => [
+    '"periodo . ferramentas"',
+    $com_filtros && '"filtros filtros filtros"',
+    $com_etiquetas && '"etiquetas etiquetas etiquetas"',
+    '"abas . busca"',
+].filter(Boolean).join(' ');
+
+const areas_celular = ({ $com_etiquetas }) => ['"periodo"', '"ferramentas"', $com_etiquetas && '"etiquetas"', '"busca"', '"abas"']
+    .filter(Boolean)
+    .join(' ');
+
+export const Top = styled.div`
+    display: grid;
+    grid-template-columns: max-content minmax(0, 1fr) max-content;
+    grid-template-areas: ${areas_computador};
+    align-items: start;
+    gap: 14px 16px;
+
+    ${mobile} {
+        grid-template-columns: minmax(0, 1fr);
+        grid-template-areas: ${areas_celular};
+        gap: 12px;
+    }
 `;
 
+export const Area = styled.div`
+    grid-area: ${({ $area }) => $area};
+    min-width: 0;
+`;
+
+// no computador, os botões ficam à direita, na largura do grupo
 export const HeaderActions = styled.div`
     display: flex;
     flex-wrap: wrap;
+    justify-content: flex-end;
     gap: 8px;
 
     ${mobile} {
@@ -85,6 +115,12 @@ export const Tool = styled.button`
     ${mobile} {
         flex: ${({ $compacto }) => ($compacto ? '0 0 44px' : '1')};
         padding: ${({ $compacto }) => ($compacto ? '0' : '0 14px')};
+    }
+
+    /* até 400 px: Filtros e Premiados dividem a primeira linha; Baixar planilha ($quebra) desce para a
+       segunda linha, à esquerda, ao lado do Atualizar */
+    ${estreita} {
+        flex: ${({ $compacto, $quebra }) => ($compacto ? '0 0 44px' : ($quebra ? '1 1 calc(100% - 52px)' : '1 1 calc(50% - 4px)'))};
     }
 `;
 
@@ -136,19 +172,33 @@ export const Retry = styled.button`
     cursor: pointer;
 `;
 
-// no celular as abas (Todas, Pré-jogo, Ao vivo e Canceladas) dividem a largura toda
+// as abas (Todas, Pré-jogo, Ao vivo e Canceladas) dividem a largura da área, por igual: no computador,
+// a largura dos balões do período; no celular, a tela toda. Até 400 px ficam todas da mesma largura,
+// numa linha só, e a faixa rola para o lado
 export const FullTabs = styled.div`
+    [role='tab'] {
+        flex: 1 1 0;
+        justify-content: center;
+    }
+
     ${mobile} {
         [role='tab'] {
-            flex: 1 1 0;
-            justify-content: center;
             padding: 10px 6px;
+        }
+    }
+
+    ${estreita} {
+        [role='tab'] {
+            flex: 0 0 120px;
+            white-space: nowrap;
         }
     }
 `;
 
-// busca por código ou nome do cliente e a opção "Buscar em todo o período"
+// busca por código ou nome do cliente e a opção "Todo o período"
 export const SearchRow = styled.div`
+    flex: 1;
+    min-width: 0;
     display: flex;
     align-items: center;
     flex-wrap: wrap;
@@ -161,7 +211,6 @@ export const SearchBox = styled.label`
     align-items: center;
     gap: 8px;
     min-width: 220px;
-    max-width: 520px;
     min-height: 44px;
     padding: 0 10px;
     border: solid 1px ${borda_campo};
@@ -175,7 +224,6 @@ export const SearchBox = styled.label`
 
     ${mobile} {
         min-width: 0;
-        max-width: none;
         width: 100%;
         flex-basis: 100%;
     }

@@ -217,14 +217,19 @@ class ListagemApostas
 
     /**
      * Ações de uma linha da lista: ver sempre; cancelar com a permissão, o alcance de cancelamento
-     * e a aposta ainda cancelável. As regras de tempo e de jogo iniciado ficam no
-     * CancelamentoApostas, que decide ao cancelar.
+     * e a aposta ainda cancelável; restaurar a cancelada com a permissão e o alcance de edição. As
+     * regras de tempo, jogo iniciado e saldo ficam no CancelamentoApostas e no RestauracaoApostas,
+     * que decidem ao executar.
      *
      * @return list<string>
      */
     public function acoes_da_linha(Usuarios $usuario, Apostas $aposta): array
     {
-        return $this->pode_cancelar($usuario, $aposta) ? ['ver', 'cancelar'] : ['ver'];
+        return array_keys(array_filter([
+            'ver' => true,
+            'cancelar' => $this->pode_cancelar($usuario, $aposta),
+            'restaurar' => $this->pode_restaurar($usuario, $aposta),
+        ]));
     }
 
     /**
@@ -259,6 +264,7 @@ class ListagemApostas
                 && Funcao::usuario_pode($usuario, 'apostas.editar')
                 && $this->alcance_apostas->pode_editar($usuario, $aposta),
             'imprimir_segunda_via' => $aguardando && Funcao::usuario_pode($usuario, 'apostas.imprimir_segunda_via'),
+            'restaurar' => $this->pode_restaurar($usuario, $aposta),
         ]));
     }
 
@@ -321,6 +327,18 @@ class ListagemApostas
                 $condicao->orWhereNotNull('apostas.clientes_id');
             }
         });
+    }
+
+    /**
+     * Aposta cancelada, sem encerramento parcial, com a permissão de restaurar (Gerente para cima)
+     * e o alcance de edição (spec 018, R-13).
+     */
+    private function pode_restaurar(Usuarios $usuario, Apostas $aposta): bool
+    {
+        return $aposta->situacao === SituacaoAposta::Cancelada
+            && bccomp((string) ($aposta->fracao_restante ?? '1'), '1', 10) === 0
+            && Funcao::usuario_pode($usuario, 'apostas.restaurar')
+            && $this->alcance_apostas->pode_editar($usuario, $aposta);
     }
 
     private function pode_cancelar(Usuarios $usuario, Apostas $aposta): bool

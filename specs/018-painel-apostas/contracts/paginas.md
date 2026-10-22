@@ -16,7 +16,14 @@ antigo").
   **Filtros** (`filter_list`, com a quantidade de filtros ativos), **Premiados** (`emoji_events`,
   Gerente para cima com `apostas.exportar`), **Baixar planilha** (`table_view`, com
   `apostas.exportar`) e atualizar (`refresh`).
-- Com busca por nome, a caixa "Buscar em todo o período" aparece ao lado da busca.
+- Topo em grade no computador: na coluna da esquerda, os balões do período e, embaixo, as abas, na
+  mesma largura dos balões e divididas por igual; na da direita, as ferramentas e, embaixo, a busca, na
+  mesma largura do grupo de ferramentas; o painel de filtros e as etiquetas ocupam a largura toda
+  entre as duas linhas. No celular, uma coluna só, com a busca acima das abas.
+  Com texto na busca, a caixa "Todo o período" aparece ao lado dela (a dica explica que o código já
+  vale em qualquer data).
+- Até 400 px: Filtros e Premiados dividem a primeira linha; Baixar planilha desce para a segunda
+  linha, à esquerda, ao lado do Atualizar.
 - Estado na URL: `aba`, `de`, `ate`, `busca`, `todo_periodo`, `resultado`, `usuarios_id`,
   `vendedor` (nome, só para a etiqueta), `forma_pagamento`, `premio_minimo`, `page` (recarregar,
   voltar e o atalho do Caixa mantêm a lista).
@@ -25,7 +32,8 @@ antigo").
 
 `PanelTabs`: **Todas** (`receipt_long`), **Pré-jogo** (`schedule`), **Ao vivo**
 (`play_circle_outline`), **Canceladas** (`delete_outline`). Trocar de aba volta para a página 1 e
-mantém o período e os filtros. No celular, as abas dividem a largura toda (como no Caixa).
+mantém o período e os filtros. No celular, as abas dividem a largura toda (como no Caixa); até
+400 px, ficam todas com a mesma largura (120 px), numa linha só, e a faixa rola para o lado.
 
 ## 3. Filtros (`BetsFilters`)
 
@@ -37,7 +45,9 @@ mantém o período e os filtros. No celular, as abas dividem a largura toda (com
     aparece para o Vendedor;
   - **Forma de pagamento**: chips Dinheiro, Saldo, Promoção esportes;
   - **Prêmio mínimo**: campo de valor em reais do painel (`useCampoValor`).
-  - Botões **Limpar** e **Aplicar** (no computador, cada mudança já aplica).
+  - No computador, cada mudança já aplica, e **Limpar filtros** fica na mesma linha do Prêmio
+    mínimo, alinhado ao campo, com borda e texto na cor de destaque do tema; no celular, os botões
+    **Limpar** e **Aplicar** ficam no rodapé do modal.
 - Abaixo do cabeçalho, as etiquetas dos filtros ativos (ex.: "Vendedor: Vendedor C ✕",
   "Prêmio ≥ R$ 100,00 ✕"); tocar no ✕ remove o filtro e recarrega.
 
@@ -58,7 +68,7 @@ Canceladas: **Canceladas** (quantidade) e **Valor cancelado**. Celular: duas col
   (azul), Encerrada (roxo), Cancelada (cinza), legível nos dois temas.
 - Tocar na linha abre o bilhete; a coluna AÇÃO tem o `ActionsMenu` com **Ver bilhete**
   (`remove_red_eye`), **Compartilhar** (`share`) e, quando permitido, **Cancelar aposta**
-  (`delete`).
+  (`delete`) ou, na aba Canceladas, **Restaurar aposta** (`restore`, verde), quando permitido.
 - Celular: cada aposta vira um cartão com código e situação no topo, cliente, valor e prêmio em
   destaque, e "ver mais" com vendedor, comissão, jogos e horário; o menu de três pontinhos no canto.
 - Estados: esqueleto ao carregar; vazio com "Nenhuma aposta encontrada. Troque o período ou os
@@ -77,10 +87,17 @@ Canceladas: **Canceladas** (quantidade) e **Valor cancelado**. Celular: duas col
   só tem o botão de fechar. No site, o cabeçalho continua o atual.
 - Palpite cancelado riscado, com o motivo ("Jogo cancelado", "Empate anula aposta" ou, sem motivo
   gravado, "Cancelado no bilhete").
+- Rodapé (só com `restaurar`, na aposta cancelada): botão **Restaurar aposta** (verde), com confirmação
+  "Restaurar a aposta {CÓDIGO}? Ela volta a valer e o valor sai de novo do limite do vendedor (ou do
+  saldo do cliente)." (FR-019a).
 - Rodapé (só com `cancelar`): botão **Cancelar aposta** (vermelho), com confirmação "Cancelar a
   aposta AB3K9XQZ? O valor volta para o limite do vendedor (ou para o saldo do cliente)."
-- Por palpite (só com `editar_palpites`): ícone `delete_outline` (cancelar) ou `refresh`
-  (restaurar), com confirmação; o bilhete é atualizado com o prêmio recalculado.
+- Por palpite (só com `editar_palpites`): no rodapé do palpite, alinhado à direita, o botão de texto
+  "Cancelar palpite" (ícone `delete_outline`, vermelho) ou "Restaurar palpite" (ícone `restore`,
+  verde), sem caixa em volta; dentro do bloco Criar Aposta, só o ícone, ao lado da cotação do
+  palpite. Com confirmação; o bilhete é atualizado com o prêmio recalculado.
+- Tamanho no painel: `min(640px, 100vw − 32px)` de largura e 92% da altura da tela, para os palpites
+  terem mais espaço de rolagem; no celular, tela cheia; no site, o tamanho de antes.
 - Depois de qualquer ação: mensagem de sucesso, bilhete, linha e cartões atualizados, sem perder a
   página nem os filtros.
 

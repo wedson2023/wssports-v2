@@ -321,14 +321,18 @@ export default function PanelCash() {
     const valor_de = (caminho) => caminho.reduce((atual, parte) => atual?.[parte], resumo);
 
     const cartoes = () => {
-        if (caixa.resumo.carregando && !resumo) {
+        // ao trocar de aba, o resumo da aba anterior continua até chegar o novo: os cartões só usam
+        // dados no formato da aba atual (a Rede tem totais; Clientes, esportes)
+        const dados_da_aba = aba === 'clientes' ? Boolean(resumo?.esportes) : Boolean(totais);
+
+        if (caixa.resumo.carregando && !dados_da_aba) {
             return <Skeleton>{Array.from({ length: 8 }, (_, indice) => <span key={indice} />)}</Skeleton>;
         }
 
-        if (caixa.resumo.erro && !resumo) {
+        if (!dados_da_aba) {
             return (
                 <Error>
-                    {caixa.resumo.erro.response?.data?.message ?? 'Não foi possível carregar o caixa.'}
+                    {caixa.resumo.erro?.response?.data?.message ?? 'Não foi possível carregar o caixa.'}
                     <Retry type="button" onClick={caixa.recarregar}>Tentar novamente</Retry>
                 </Error>
             );

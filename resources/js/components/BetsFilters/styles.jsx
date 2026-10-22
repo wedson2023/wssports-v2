@@ -12,9 +12,44 @@ export const Panel = styled.section`
     padding: 14px;
     border: solid 1px ${borda_campo};
     border-radius: 8px;
+`;
 
-    > button:last-child {
-        justify-self: start;
+// campo do prêmio mínimo e, no computador, o Limpar filtros na mesma linha
+export const PrizeRow = styled.div`
+    display: flex;
+    gap: 10px;
+
+    > input {
+        flex: 1;
+        min-width: 0;
+    }
+`;
+
+// limpar filtros: borda e texto na cor de destaque do tema, para chamar a atenção
+export const ClearButton = styled.button`
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    flex-shrink: 0;
+    min-height: 44px;
+    padding: 0 16px;
+    border: solid 1px ${({ theme }) => theme.principal};
+    border-radius: 4px;
+    background: transparent;
+    color: ${({ theme }) => theme.principal};
+    font: inherit;
+    font-weight: 500;
+    white-space: nowrap;
+    cursor: pointer;
+
+    i {
+        font-size: 20px;
+    }
+
+    &:hover {
+        background-color: ${({ theme }) => theme.principal};
+        color: #fff;
     }
 `;
 

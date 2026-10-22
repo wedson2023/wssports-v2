@@ -112,6 +112,7 @@ painel (specs 014 a 017) e regras de modais, cabeçalho e campos da constituiç�
 | `resources/js/components/PanelShell/index.jsx` | Item "Apostas" no menu | R-11 |
 | `resources/js/components/TicketModal/index.jsx` e `styles.jsx` | Props opcionais: comissão, forma de pagamento, faixa de cancelada, imprimir 2ª via, cancelar aposta, cancelar/restaurar palpite; com `painel`, cabeçalho `ModalHeader`; motivo do palpite cancelado; sem as props, site e Dashboard ficam iguais | R-05 |
 | `app/Http/Resources/ComprovanteApostaResource.php` | Campo `motivo_cancelamento` em cada palpite | R-05, FR-014 (aceito após o `/speckit-analyze`, U1) |
+| `app/Services/CancelamentoApostas.php` | `tem_jogo_iniciado` passa a ser público (usado pela restauração), sem mudar a regra | R-13 (pedido do responsável depois da implementação) |
 | `app/Services/AlcanceApostas.php` | Métodos públicos `pode_cancelar()` e `pode_editar()` (os `garantir_*` passam a usá-los), sem mudar a regra | R-05, T011/T021 (aceito após o `/speckit-analyze`, U2) |
 | `resources/js/hooks/useImpressao.js` | `imprimir_bilhete(comprovante, { segunda_via })`; modo APP com `true` no último segmento | R-06 |
 | `resources/js/utils/print.js`, `resources/js/utils/thermal.js` | Linha "2ª via" opcional no topo do comprovante | R-06 |
@@ -169,3 +170,10 @@ cancelamento, edição e impressão reaproveitados.
 ## Complexity Tracking
 
 Nenhuma violação a justificar.
+
+**Adendo (2026-10-22, R-13, restaurar aposta)**: arquivos novos `app/Services/RestauracaoApostas.php`,
+`app/Http/Controllers/RestauracaoApostasController.php`,
+`database/migrations/2026_10_24_000002_add_restauracao_apostas_table.php` (4 colunas com
+`->comment()`) e `database/migrations/2026_10_24_000003_criar_permissao_restaurar_apostas.php`; rota
+`POST /apostas/{codigo}/restaurar`; permissão `apostas.restaurar` em `Funcao::PERMISSOES_APOSTAS`
+(Gerente para cima pela regra padrão de `pode_usar`).
