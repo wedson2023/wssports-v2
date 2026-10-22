@@ -18,7 +18,8 @@ antigo").
   `apostas.exportar`) e atualizar (`refresh`).
 - Com busca por nome, a caixa "Buscar em todo o período" aparece ao lado da busca.
 - Estado na URL: `aba`, `de`, `ate`, `busca`, `todo_periodo`, `resultado`, `usuarios_id`,
-  `forma_pagamento`, `premio_minimo`, `page` (recarregar, voltar e o atalho do Caixa mantêm a lista).
+  `vendedor` (nome, só para a etiqueta), `forma_pagamento`, `premio_minimo`, `page` (recarregar,
+  voltar e o atalho do Caixa mantêm a lista).
 
 ## 2. Abas
 
@@ -43,7 +44,7 @@ mantém o período e os filtros. No celular, as abas dividem a largura toda (com
 ## 4. Cartões (`StatCard`)
 
 Ordem: **Apostas** (quantidade, com "12 abertas" embaixo), **Entradas**, **Comissão**, **Saídas**
-(dica "Prêmios pagos e valores devolvidos."), **Em aberto** (valor das aguardando) e, para Admin e
+(dica "Mesma regra do Caixa: prêmio sem o valor acrescido + devoluções."), **Em aberto** (valor das aguardando) e, para Admin e
 Supervisor, **Encerramentos** (dica "Encerramentos das apostas feitas no período."). Na aba
 Canceladas: **Canceladas** (quantidade) e **Valor cancelado**. Celular: duas colunas.
 
@@ -69,8 +70,12 @@ Canceladas: **Canceladas** (quantidade) e **Valor cancelado**. Celular: duas col
 - Mesmo conteúdo do site/Dashboard (dados, palpites, andamento, cotação total, valor, prêmio, valor
   acrescido, "Vendedor paga"), mais **Comissão** e **Forma de pagamento**; na cancelada, a faixa
   "Cancelada em dd/mm/aaaa hh:mm por Fulano".
-- Ícones do cabeçalho: compartilhar, acompanhar em tempo real, **imprimir 2ª via** (`print`, só com
-  `imprimir_segunda_via` em `painel.acoes`) e fechar.
+- Cabeçalho `ModalHeader` (aberto pelo painel): ícone `receipt`, título "Bilhete {CÓDIGO}",
+  descrição "Confira os palpites, o andamento dos jogos e os valores da aposta."; à direita, os
+  ícones compartilhar, acompanhar em tempo real, **imprimir 2ª via** (`print`, só com
+  `imprimir_segunda_via` em `painel.acoes`) e fechar. No site, o cabeçalho continua o atual.
+- Palpite cancelado riscado, com o motivo ("Jogo cancelado", "Empate anula aposta" ou, sem motivo
+  gravado, "Cancelado no bilhete").
 - Rodapé (só com `cancelar`): botão **Cancelar aposta** (vermelho), com confirmação "Cancelar a
   aposta AB3K9XQZ? O valor volta para o limite do vendedor (ou para o saldo do cliente)."
 - Por palpite (só com `editar_palpites`): ícone `delete_outline` (cancelar) ou `refresh`
@@ -96,7 +101,8 @@ Canceladas: **Canceladas** (quantidade) e **Valor cancelado**. Celular: duas col
 ## 9. Atalho do Caixa (`PanelCash`, alterado)
 
 - Na lista de vendedores do Caixa, o menu de três pontinhos ganha **Ver apostas** (`receipt_long`)
-  para quem tem `apostas.listar`, abrindo `/painel/apostas?usuarios_id={id}&de={de}&ate={ate}&aba={tipo}`.
+  para quem tem `apostas.listar`, abrindo
+  `/painel/apostas?usuarios_id={id}&vendedor={nome}&de={de}&ate={ate}&aba={tipo}`.
 
 ## 10. Componentes do sistema antigo usados como referência (Princípio VIII)
 

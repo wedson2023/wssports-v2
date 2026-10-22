@@ -99,9 +99,15 @@
   continua nos services existentes.
 - **Alcance**: o mesmo da lista (R-02); fora dele → 404 "Aposta não encontrada." (não revela que
   existe).
-- **Frontend**: o `TicketModal` existente ganha props opcionais (`acoes`, `ao_cancelar_aposta`,
-  `ao_cancelar_palpite`, `ao_restaurar_palpite`, `ao_imprimir`); sem elas, o site e a Dashboard
-  continuam iguais.
+- **Ações sem exceção**: `AlcanceApostas` ganha `pode_cancelar()` e `pode_editar()` públicos (a regra
+  privada `alcanca` exposta como sim/não); `garantir_pode_cancelar` e `garantir_pode_editar`
+  passam a usá-los, sem mudar a regra.
+- **Motivo do palpite**: o `ComprovanteApostaResource` passa a enviar `motivo_cancelamento` em cada
+  palpite (a coluna já existe), para o bilhete mostrar o palpite cancelado com o motivo.
+- **Frontend**: o `TicketModal` existente ganha props opcionais (`painel`, `ao_cancelar_aposta`,
+  `ao_cancelar_palpite`, `ao_restaurar_palpite`, `ao_imprimir`); com `painel`, o cabeçalho passa a ser
+  o `ModalHeader` (constituição, "Cabeçalho dos modais do painel"); sem as props, o site e a
+  Dashboard continuam iguais.
 - **Alternatives considered**: um modal novo só do painel (duplicaria o comprovante); usar
   `GET /publico/apostas/{codigo}` (público, sem comissão e sem alcance).
 
@@ -142,9 +148,9 @@
   (`deleteFileAfterSend`), como o Caixa; corrige o arquivo fixo do antigo.
 - **Reuso do estilo**: a montagem da planilha (`ExportacaoCaixa::gerar`, privada) passa para uma
   classe compartilhada `app/Support/PlanilhaPainel.php`, usada pelo Caixa e por esta tela, sem mudar
-  o resultado da planilha do Caixa. **Precisa de confirmação do responsável** (altera
-  `ExportacaoCaixa.php`, Princípio IV); a alternativa é copiar o método para `ExportacaoApostas`
-  (duplicação de ~140 linhas).
+  o resultado da planilha do Caixa. Confirmado pelo responsável em 2026-10-22 (altera
+  `ExportacaoCaixa.php`, Princípio IV); a alternativa rejeitada era copiar o método para
+  `ExportacaoApostas` (duplicação de ~140 linhas).
 - **Linhas**: leitura em blocos (`chunkById`) para não carregar 50.000 modelos de uma vez.
 
 ## R-09 — Permissões

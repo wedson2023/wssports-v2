@@ -69,6 +69,15 @@ painel no padrão das specs 014, 015, 016 e 017, responsiva com prioridade ao ce
   → A: A data em que foi feita, como no antigo e na lista; a imagem bate com a lista filtrada por
   "Premiadas" no mesmo período (FR-020).
 
+### Session 2026-10-22 (`/speckit-analyze`, recomendações aceitas pelo responsável)
+
+- O bilhete aberto pelo painel usa `ModalHeader` (constituição, "Cabeçalho dos modais do painel");
+  no site ele continua com o cabeçalho atual (FR-014).
+- O comprovante passa a enviar o motivo do cancelamento de cada palpite, para o bilhete mostrá-lo
+  (FR-014; o site também passa a mostrar o motivo).
+- As Saídas e os Encerramentos dos totais ficam com a regra e a base de data explicadas no FR-012;
+  os premiados seguem a aba e o vendedor filtrados (FR-020).
+
 ## Referências do sistema antigo *(Princípios VII e VIII)*
 
 - Backend (`wssports.bet`, `main` `408cf730`): `app/Http/Controllers/BilhetesController.php`
@@ -367,11 +376,16 @@ linhas e os totais batem com a tela.
 
 - **FR-012**: A tela DEVE mostrar, para todos os níveis e sempre (não só com busca), os cartões com os
   totais de todas as apostas do filtro (não só da página): Apostas (quantidade), Entradas (soma do
-  valor), Comissão (soma da comissão), Saídas (prêmios pagos das premiadas + valores devolvidos,
-  como no Caixa) e Em aberto (quantidade e valor das aguardando). Para Admin e Supervisor, que veem
-  as apostas dos clientes do site, há também o cartão Encerramentos (valor pago nos encerramentos,
-  cash out), separado das Saídas, como no Caixa clientes (spec 017). Na aba Canceladas, os cartões
-  mostram só a quantidade e o valor cancelado.
+  valor), Comissão (soma da comissão), Saídas (pela mesma regra do Caixa e da Dashboard: prêmio das
+  premiadas sem o valor acrescido do ganho múltiplo de palpites + valores devolvidos; por isso a
+  soma da coluna Prêmio das premiadas, que inclui o acréscimo, pode ser maior que as Saídas, e o
+  cartão tem a dica "Mesma regra do Caixa: prêmio sem o valor acrescido + devoluções.") e Em aberto
+  (quantidade e valor das aguardando). Para Admin e Supervisor, que veem as apostas dos clientes do
+  site, há também o cartão Encerramentos, separado das Saídas como no Caixa clientes (spec 017): soma
+  do valor pago nos encerramentos (cash out) das apostas feitas no período, com a dica
+  "Encerramentos das apostas feitas no período." (o Caixa clientes soma pela data do encerramento;
+  os números só diferem quando a aposta é encerrada num dia diferente do que foi feita). Na aba
+  Canceladas, os cartões mostram só a quantidade e o valor cancelado.
 - **FR-013**: Os totais DEVEM usar as mesmas regras de soma da Dashboard e do Caixa (specs 014 e
   017), calculados no servidor em reais com duas casas, sem arredondamento por ponto flutuante, de
   modo que, para o mesmo período, tipo e vendedor, Entradas, Comissão e Saídas batam com o Caixa.
@@ -382,8 +396,10 @@ linhas e os totais batem com a tela.
   (ou categoria, nos especiais), horário de início, campeonato, palpite, cotação, tipo e, com o jogo
   em andamento ou decidido, placar, 1º e 2º tempo, escanteios, período e situação; no rodapé:
   quantidade de jogos, cotação total, comissão, valor, prêmio, valor acrescido (quando maior que
-  zero) e "Vendedor paga" (quando diferente do total a pagar). O bilhete DEVE reaproveitar o modal
-  de bilhete que o v2 já usa no site e na Dashboard, acrescentando as ações do painel.
+  zero) e "Vendedor paga" (quando diferente do total a pagar); palpite cancelado aparece riscado com
+  o motivo do cancelamento. O bilhete DEVE reaproveitar o modal de bilhete que o v2 já usa no site e
+  na Dashboard, acrescentando as ações do painel; aberto pelo painel, usa o cabeçalho padrão dos
+  modais do painel (`ModalHeader`), e no site continua com o cabeçalho atual.
 - **FR-015**: O bilhete DEVE ter as ações compartilhar (link da página do bilhete em tempo real da
   spec 010, pelo compartilhamento do aparelho ou pelo WhatsApp no computador, ou copiando o link
   quando não houver compartilhamento) e acompanhar em tempo real (abre essa página).
@@ -411,7 +427,8 @@ linhas e os totais batem com a tela.
 
 - **FR-020**: A tela DEVE ter a ação "Premiados" para Gerente, Supervisor e Admin com a permissão de
   exportar, gerando uma imagem com o logo da banca e as até 23 apostas premiadas de maior prêmio
-  feitas no período (pela data em que a aposta foi feita, como a lista), dentro da rede do usuário (código, vendedor, cliente, valor, prêmio, situação), para
+  feitas no período (pela data em que a aposta foi feita, como a lista), na aba de tipo e no
+  vendedor filtrados na tela, dentro da rede do usuário (código, vendedor, cliente, valor, prêmio, situação), para
   compartilhar ou baixar. O Vendedor NÃO DEVE poder usá-la, mesmo com a permissão (corrige o
   Supervisor sem alcance do antigo).
 - **FR-021**: A tela DEVE ter "Baixar planilha" para quem tem a permissão de exportar, gerando um

@@ -78,7 +78,7 @@ O registro das rotas fixas (`resumo`, `exportacao`, `premiados`, `vendedores`) v
 `apostas.listar`; fora do alcance da lista ou situação não listada → 404 "Aposta não encontrada.".
 ```json
 {
-  "data": { "...": "ComprovanteApostaResource com mostrar_comissao (comissao, percentual_comissao)" },
+  "data": { "...": "ComprovanteApostaResource com mostrar_comissao (comissao, percentual_comissao); cada palpite com motivo_cancelamento" },
   "painel": {
     "cancelada_em": null, "cancelada_por": null,
     "acoes": ["cancelar", "editar_palpites", "imprimir_segunda_via"]
