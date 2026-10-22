@@ -131,7 +131,7 @@ Reavaliado depois da Fase 1: sem violação nova.
 | `app/Services/NotificacoesPush.php`, `InscricoesNotificacoes.php`, `app/Http/Controllers/AreaClienteNotificacoesController.php` (ou request) | Tag/URL do aviso da banca; preferência `receber_avisos_banca` | R-10 |
 | `app/Http/Resources/ClientesResource.php`, `SaquesResource.php`, `AfiliadosResource.php` | `saldo_liquido`; telefone mascarado e saldo; `sem_gerente` | R-05, R-07, R-04 |
 | `app/Http/Requests/ClientesTransacoesRequest.php`, `UpdateClientesRequest.php` | `senha`; afiliado da rede | R-06, R-15 |
-| `app/Http/Requests/StoreAfiliadosRequest.php`, `UpdateAfiliadosRequest.php`, `AprovarAfiliadoRequest.php`, `Concerns/DadosAfiliado.php`, `app/Services/CadastroAfiliados.php`, `ListagemAfiliados.php`, `app/Http/Controllers/Concerns/GarantirAlcanceAfiliado.php` | Gerente obrigatório e da rede; filtro `sem_gerente`; alcance do Supervisor (P-2) | R-04 |
+| `app/Http/Requests/StoreAfiliadosRequest.php`, `UpdateAfiliadosRequest.php`, `AprovarAfiliadoRequest.php`, `Concerns/DadosAfiliado.php`, `app/Services/CadastroAfiliados.php`, `ListagemAfiliados.php`, `app/Http/Controllers/AfiliadosController.php` (validar `sem_gerente`), `app/Http/Controllers/Concerns/GarantirAlcanceAfiliado.php` | Gerente obrigatório e da rede; filtro `sem_gerente`; alcance do Supervisor (P-2) | R-04 |
 | `app/Http/Controllers/PainelController.php`, `routes/api.php`, `routes/web.php` | Página e rotas | contracts |
 | `resources/js/components/PanelShell/index.jsx` | Item "Clientes" | R-13 |
 | `resources/js/pages/PanelBets/index.jsx`, `resources/js/hooks/useApostasPainel.js` | Filtro e etiqueta de cliente | R-11 |
