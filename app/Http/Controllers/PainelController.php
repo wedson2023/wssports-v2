@@ -49,4 +49,12 @@ class PainelController extends Controller
     {
         return Inertia::render('PanelCash');
     }
+
+    /**
+     * Tela "Apostas" (spec 018); aba, período e filtros vêm na query string.
+     */
+    public function apostas(): Response
+    {
+        return Inertia::render('PanelBets');
+    }
 }

@@ -127,12 +127,107 @@ export const Hunches = styled.div`
     }
 `;
 
+// palpite cancelado apagado; o botão de restaurar (painel) continua visível
 export const Hunch = styled.div`
+    position: relative;
     padding: 5px 0;
-    opacity: ${({ $cancelado }) => ($cancelado ? 0.2 : 1)};
+
+    > *:not(button) {
+        opacity: ${({ $cancelado }) => ($cancelado ? 0.2 : 1)};
+    }
 
     & + div {
         border-top: solid thin #ccc;
+    }
+`;
+
+// cancelar ou restaurar o palpite (painel, spec 018), no canto do palpite
+export const HunchAction = styled.button`
+    position: absolute;
+    top: 6px;
+    right: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    border: solid 2px green;
+    border-radius: 0.3em;
+    background: transparent;
+    color: green;
+    cursor: pointer;
+
+    i {
+        font-size: 18px;
+    }
+
+    &:disabled {
+        opacity: 0.5;
+        cursor: default;
+    }
+
+    /* dentro do bloco Criar Aposta, ao lado da cotação do palpite */
+    span > & {
+        position: static;
+        width: 26px;
+        height: 26px;
+        margin-left: 8px;
+        vertical-align: middle;
+    }
+`;
+
+// ícones de ação do bilhete no painel, logo abaixo do ModalHeader
+export const PanelTools = styled.div`
+    flex-shrink: 0;
+    display: flex;
+    justify-content: flex-end;
+    padding: 8px 10px;
+    border-bottom: solid thin #ccc;
+`;
+
+// faixa da aposta cancelada (painel)
+export const Banner = styled.p`
+    margin: 0 0 8px;
+    padding: 8px 10px;
+    border-radius: 0.3em;
+    background-color: #eee;
+    color: #555;
+    font-size: 0.85em;
+    text-align: center;
+`;
+
+// rodapé com "Cancelar aposta" (painel); não encolhe
+export const Footer = styled.footer`
+    flex-shrink: 0;
+    display: flex;
+    justify-content: flex-end;
+    padding: 10px;
+    border-top: solid thin #ccc;
+`;
+
+export const CancelButton = styled.button`
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    min-height: 40px;
+    padding: 0 16px;
+    border: none;
+    border-radius: 4px;
+    background-color: #c62828;
+    color: #fff;
+    font: inherit;
+    font-weight: bold;
+    cursor: pointer;
+
+    &:disabled {
+        opacity: 0.6;
+        cursor: default;
+    }
+
+    ${mobile} {
+        width: 100%;
     }
 `;
 

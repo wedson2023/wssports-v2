@@ -12,7 +12,11 @@ use App\Http\Controllers\AreaAfiliadoPainelController;
 use App\Http\Controllers\AreaAfiliadoRecuperacaoSenhaController;
 use App\Http\Controllers\ApostasController;
 use App\Http\Controllers\ApostasEncerramentosController;
+use App\Http\Controllers\ApostasExportacaoController;
+use App\Http\Controllers\ApostasListagemController;
 use App\Http\Controllers\ApostasPalpitesController;
+use App\Http\Controllers\ApostasPremiadosController;
+use App\Http\Controllers\ApostasSegundaViaController;
 use App\Http\Controllers\AreaClienteAcessoAssistidoController;
 use App\Http\Controllers\AreaClienteApostasController;
 use App\Http\Controllers\AreaClienteAutenticacaoController;
@@ -426,6 +430,15 @@ Route::middleware(['auth:api', 'garantir_acesso'])->group(function () {
 // apostas no painel: vendedor aposta, acompanha e valida código; vendedor e hierarquia cancelam;
 // a hierarquia edita palpites
 Route::middleware(['auth:api', 'garantir_acesso'])->group(function () {
+    // lista de apostas do painel (spec 018): as rotas fixas vêm antes de apostas/{codigo}
+    Route::get('apostas', [ApostasListagemController::class, 'index']);
+    Route::get('apostas/resumo', [ApostasListagemController::class, 'resumo']);
+    Route::get('apostas/vendedores', [ApostasListagemController::class, 'vendedores']);
+    Route::get('apostas/premiados', ApostasPremiadosController::class);
+    Route::get('apostas/exportacao', ApostasExportacaoController::class);
+    Route::get('apostas/{codigo}', [ApostasListagemController::class, 'show'])->where('codigo', '[A-Za-z0-9]{8}');
+    Route::get('apostas/{codigo}/segunda-via', ApostasSegundaViaController::class)->where('codigo', '[A-Za-z0-9]{8}');
+
     Route::post('apostas', [ApostasController::class, 'store']);
     Route::get('apostas/{codigo}/situacao', [ApostasController::class, 'situacao']);
 

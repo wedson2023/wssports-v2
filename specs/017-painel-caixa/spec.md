@@ -32,7 +32,8 @@ specs 014, 015 e 016, responsiva com prioridade ao celular."
   adicionar a mesma biblioteca de planilhas usada no antigo (a justificativa fica no plano, como
   pede a constituição).
 - Q: O atalho "ver apostas do vendedor" do antigo entra? → A: Não por enquanto. O painel do v2 ainda
-  não tem lista de apostas; o atalho fica fora desta spec.
+  não tem lista de apostas; o atalho fica fora desta spec. Alterado pela spec 018: o atalho "Ver
+  apostas" passou a existir no menu da linha do vendedor.
 - Q: Acumuladão e "créditos" do vendedor (abas do antigo) entram? → A: Não. Não existem no v2.
 - Q: O visual pode mudar em relação ao antigo (Princípio VIII)? → A: Sim. O responsável pediu UI e UX
   bem aplicadas no padrão do painel novo (specs 014, 015 e 016). As diferenças aprovadas estão em

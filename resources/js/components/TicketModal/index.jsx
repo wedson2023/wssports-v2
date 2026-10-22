@@ -2,6 +2,7 @@ import { Fragment } from 'react';
 import { router } from '@inertiajs/react';
 
 import Backdrop from '../Backdrop';
+import ModalHeader from '../ModalHeader';
 import useTelaMobile from '../../hooks/useTelaMobile';
 import useVoltarFecha from '../../hooks/useVoltarFecha';
 import { agrupar_palpites_comprovante } from '../../utils/bet_builder';
@@ -9,7 +10,9 @@ import { formatar_data_hora } from '../../utils/dates';
 import { formatar_real, para_centavos } from '../../utils/money';
 import { compartilhar_texto } from '../../utils/share';
 import { useTheme } from 'styled-components';
-import { Container, Data, Header, Hunch, Hunches, Icon, Icons, Label, Row, Status, Teams, Title } from './styles';
+import {
+    Banner, CancelButton, Container, Data, Footer, Header, Hunch, HunchAction, Hunches, Icon, Icons, Label, PanelTools, Row, Status, Teams, Title,
+} from './styles';
 
 const real = (valor) => `R$ ${formatar_real(para_centavos(valor))}`;
 
@@ -29,6 +32,9 @@ const situacao_palpite = (palpite) => {
 
     return palpite.periodo ?? palpite.situacao;
 };
+
+// motivo do palpite cancelado: o automático (jogo cancelado, empate anula) ou cancelado por um usuário
+const motivo_cancelamento = (palpite) => palpite.motivo_cancelamento ?? 'Cancelado no bilhete';
 
 const placar = (casa, fora) => `${casa ?? 0} x ${fora ?? 0}`;
 
@@ -54,8 +60,30 @@ const linhas_andamento = (palpite) => (
     </>
 );
 
-const linha_palpite = (palpite) => (
+const texto_palpite = (palpite) => (palpite.jogador ? `${palpite.jogador} (${palpite.jogador_tipo})` : palpite.mercado);
+
+// cancelar ou restaurar o palpite (painel, spec 018), só para quem pode editar o bilhete
+const acao_palpite = (palpite, edicao) => {
+    if (!edicao) return null;
+
+    const cancelado = palpite.situacao === 'Cancelado';
+
+    return (
+        <HunchAction
+            type="button"
+            title={cancelado ? 'Restaurar este palpite' : 'Cancelar este palpite'}
+            aria-label={cancelado ? `Restaurar o palpite ${texto_palpite(palpite)}` : `Cancelar o palpite ${texto_palpite(palpite)}`}
+            disabled={edicao.ocupado}
+            onClick={() => (cancelado ? edicao.ao_restaurar(palpite) : edicao.ao_cancelar(palpite))}
+        >
+            <i className="material-icons" aria-hidden="true">{cancelado ? 'refresh' : 'delete_outline'}</i>
+        </HunchAction>
+    );
+};
+
+const linha_palpite = (palpite, edicao) => (
     <Hunch $cancelado={palpite.situacao === 'Cancelado'}>
+        {acao_palpite(palpite, edicao)}
         <Teams>{palpite.time_casa} x {palpite.time_fora}</Teams>
         <Row><Label>Horário:</Label><span>{formatar_data_hora(palpite.data_inicio)}</span></Row>
         <Row><Label>Campeonato:</Label><span>{palpite.campeonato}</span></Row>
@@ -67,15 +95,14 @@ const linha_palpite = (palpite) => (
             <Label>Situação:</Label>
             <Status $situacao={situacao_palpite(palpite)}>{situacao_palpite(palpite)}</Status>
         </Row>
+        {palpite.situacao === 'Cancelado' && <Row><Label>Motivo:</Label><span>{motivo_cancelamento(palpite)}</span></Row>}
     </Hunch>
 );
-
-const texto_palpite = (palpite) => (palpite.jogador ? `${palpite.jogador} (${palpite.jogador_tipo})` : palpite.mercado);
 
 // bloco Criar Aposta (spec 008): jogo, horário, campeonato e tipo uma vez só; "Palpite: Criar
 // Aposta"; uma linha por palpite
 // (mercado e cotação), a cotação do bloco (rótulo "Cotação") e a situação do bloco
-const linha_bloco = (bloco, palpites) => {
+const linha_bloco = (bloco, palpites, edicao) => {
     const [primeiro] = palpites;
 
     return (
@@ -86,8 +113,13 @@ const linha_bloco = (bloco, palpites) => {
             <Row><Label>Palpite:</Label><span>Criar Aposta</span></Row>
             {palpites.map((palpite) => (
                 <Row key={palpite.id}>
-                    <Label>{`${texto_palpite(palpite)}${palpite.situacao === 'Cancelado' ? ' (cancelado)' : ''}:`}</Label>
-                    <span>{Number(palpite.cotacao).toFixed(2)}</span>
+                    <Label>
+                        {`${texto_palpite(palpite)}${palpite.situacao === 'Cancelado' ? ` (cancelado: ${motivo_cancelamento(palpite)})` : ''}:`}
+                    </Label>
+                    <span>
+                        {Number(palpite.cotacao).toFixed(2)}
+                        {acao_palpite(palpite, edicao)}
+                    </span>
                 </Row>
             ))}
             <Row><Label>Cotação:</Label><span>{Number(bloco.cotacao).toFixed(2)}</span></Row>
@@ -100,33 +132,69 @@ const linha_bloco = (bloco, palpites) => {
     );
 };
 
-// comprovante do bilhete consultado pelo código (FR-044, data-model.md seção 4)
-export default function TicketModal({ comprovante, ao_fechar }) {
+// comprovante do bilhete consultado pelo código (FR-044, data-model.md seção 4). No painel (spec 018),
+// `painel` traz a data e o autor do cancelamento e as ações permitidas ({ cancelada_em,
+// cancelada_por, acoes }); com ele, o cabeçalho é o ModalHeader do painel, o rodapé mostra comissão,
+// forma de pagamento e "Vendedor paga", e aparecem imprimir 2ª via, cancelar a aposta e cancelar ou
+// restaurar palpites. Sem `painel`, o bilhete do site e da Dashboard fica como era
+export default function TicketModal({
+    comprovante, ao_fechar, painel = null, ocupado = false, ao_imprimir = null, ao_cancelar_aposta = null, ao_cancelar_palpite = null, ao_restaurar_palpite = null,
+}) {
     const e_mobile = useTelaMobile();
     const tema = useTheme();
     const visivel = Boolean(comprovante);
     useVoltarFecha(visivel, ao_fechar);
 
+    const acoes = painel?.acoes ?? [];
+    const edicao = acoes.includes('editar_palpites') && ao_cancelar_palpite
+        ? { ocupado, ao_cancelar: ao_cancelar_palpite, ao_restaurar: ao_restaurar_palpite }
+        : null;
+
     // o link leva ao bilhete em tempo real, como no sistema antigo (spec 010, FR-015)
     const link_bilhete = () => `${window.location.origin}/bilhete/${comprovante.codigo}`;
     const compartilhar = () => compartilhar_texto(`*ACOMPANHE SEU BILHETE:* \n\n ${link_bilhete()}`, e_mobile);
     const acompanhar = () => router.visit(`/bilhete/${comprovante.codigo}`);
+    const pode_acompanhar = comprovante && comprovante.situacao !== 'Pendente';
+    const vendedor_paga = comprovante?.premio_liquido && para_centavos(comprovante.premio_liquido) !== para_centavos(comprovante.total_a_pagar);
 
     return (
         <>
             <Container $visivel={visivel}>
-                <Header>
-                    <Title>Conferir Bilhete</Title>
-                    <Icons>
-                        <Icon $cor="green" title="Clique para compartilhar bilhete" onClick={compartilhar}>share</Icon>
-                        {comprovante && comprovante.situacao !== 'Pendente' && (
-                            <Icon $cor="green" title="Clique para acompanhar esse bilhete em tempo real" onClick={acompanhar}>desktop_mac</Icon>
-                        )}
-                        <Icon $cor={tema.principal} title="Clique para fechar o bilhete" onClick={ao_fechar}>close</Icon>
-                    </Icons>
-                </Header>
+                {painel ? (
+                    <>
+                        <ModalHeader
+                            icone="receipt"
+                            titulo={comprovante ? `Bilhete ${comprovante.codigo.toUpperCase()}` : 'Bilhete'}
+                            descricao="Confira os palpites, o andamento dos jogos e os valores da aposta."
+                            ao_fechar={ao_fechar}
+                        />
+                        <PanelTools>
+                            <Icon $cor="green" title="Clique para compartilhar bilhete" onClick={compartilhar}>share</Icon>
+                            {pode_acompanhar && <Icon $cor="green" title="Clique para acompanhar esse bilhete em tempo real" onClick={acompanhar}>desktop_mac</Icon>}
+                            {acoes.includes('imprimir_segunda_via') && ao_imprimir && (
+                                <Icon $cor={tema.principal} title="Clique para imprimir a 2ª via do bilhete" onClick={ao_imprimir}>print</Icon>
+                            )}
+                        </PanelTools>
+                    </>
+                ) : (
+                    <Header>
+                        <Title>Conferir Bilhete</Title>
+                        <Icons>
+                            <Icon $cor="green" title="Clique para compartilhar bilhete" onClick={compartilhar}>share</Icon>
+                            {pode_acompanhar && (
+                                <Icon $cor="green" title="Clique para acompanhar esse bilhete em tempo real" onClick={acompanhar}>desktop_mac</Icon>
+                            )}
+                            <Icon $cor={tema.principal} title="Clique para fechar o bilhete" onClick={ao_fechar}>close</Icon>
+                        </Icons>
+                    </Header>
+                )}
                 {comprovante && (
                     <Data>
+                        {painel?.cancelada_em && (
+                            <Banner>
+                                {`Cancelada em ${formatar_data_hora(painel.cancelada_em)}${painel.cancelada_por ? ` por ${painel.cancelada_por}` : ''}`}
+                            </Banner>
+                        )}
                         <Row><Label>Código:</Label><span>{comprovante.codigo.toUpperCase()}</span></Row>
                         <Row><Label>Cliente:</Label><span>{comprovante.nome}</span></Row>
                         <Row><Label>Vendedor:</Label><span>{comprovante.vendedor ?? '-'}</span></Row>
@@ -138,18 +206,29 @@ export default function TicketModal({ comprovante, ao_fechar }) {
                         <Hunches>
                             {agrupar_palpites_comprovante(comprovante).map(({ bloco, palpites }) => (
                                 <Fragment key={palpites[0].id}>
-                                    {bloco ? linha_bloco(bloco, palpites) : linha_palpite(palpites[0])}
+                                    {bloco ? linha_bloco(bloco, palpites, edicao) : linha_palpite(palpites[0], edicao)}
                                 </Fragment>
                             ))}
                         </Hunches>
                         <Row><Label>Qtde. Jogos:</Label><span>{comprovante.quantidade_jogos ?? comprovante.palpites.length}</span></Row>
                         <Row><Label>Cotação Total:</Label><span>{Number(comprovante.cotacao_total).toFixed(2)}</span></Row>
+                        {painel && comprovante.comissao !== undefined && <Row><Label>Comissão:</Label><span>{real(comprovante.comissao)}</span></Row>}
                         <Row><Label>Valor:</Label><span>{real(comprovante.valor)}</span></Row>
                         <Row><Label>Prêmio:</Label><span>{real(comprovante.premio)}</span></Row>
                         {para_centavos(comprovante.valor_acrescido) > 0 && (
                             <Row><Label>Valor acrescido:</Label><span>{real(comprovante.valor_acrescido)}</span></Row>
                         )}
+                        {painel && vendedor_paga && <Row><Label>Vendedor Paga:</Label><span>{real(comprovante.premio_liquido)}</span></Row>}
+                        {painel && comprovante.forma_pagamento && <Row><Label>Forma de pagamento:</Label><span>{comprovante.forma_pagamento}</span></Row>}
                     </Data>
+                )}
+                {comprovante && acoes.includes('cancelar') && ao_cancelar_aposta && (
+                    <Footer>
+                        <CancelButton type="button" disabled={ocupado} onClick={ao_cancelar_aposta}>
+                            <i className="material-icons" aria-hidden="true">delete</i>
+                            Cancelar aposta
+                        </CancelButton>
+                    </Footer>
                 )}
             </Container>
             <Backdrop visivel={visivel} ao_fechar={ao_fechar} />

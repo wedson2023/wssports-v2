@@ -71,9 +71,10 @@ Canceladas: **Canceladas** (quantidade) e **Valor cancelado**. Celular: duas col
   acrescido, "Vendedor paga"), mais **Comissão** e **Forma de pagamento**; na cancelada, a faixa
   "Cancelada em dd/mm/aaaa hh:mm por Fulano".
 - Cabeçalho `ModalHeader` (aberto pelo painel): ícone `receipt`, título "Bilhete {CÓDIGO}",
-  descrição "Confira os palpites, o andamento dos jogos e os valores da aposta."; à direita, os
-  ícones compartilhar, acompanhar em tempo real, **imprimir 2ª via** (`print`, só com
-  `imprimir_segunda_via` em `painel.acoes`) e fechar. No site, o cabeçalho continua o atual.
+  descrição "Confira os palpites, o andamento dos jogos e os valores da aposta." e o fechar; logo
+  abaixo, uma barra com os ícones compartilhar, acompanhar em tempo real e **imprimir 2ª via**
+  (`print`, só com `imprimir_segunda_via` em `painel.acoes`), porque o `ModalHeader` compartilhado
+  só tem o botão de fechar. No site, o cabeçalho continua o atual.
 - Palpite cancelado riscado, com o motivo ("Jogo cancelado", "Empate anula aposta" ou, sem motivo
   gravado, "Cancelado no bilhete").
 - Rodapé (só com `cancelar`): botão **Cancelar aposta** (vermelho), com confirmação "Cancelar a

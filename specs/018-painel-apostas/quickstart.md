@@ -6,7 +6,7 @@
 ## 0. Preparação
 
 ```bash
-php artisan migrate          # índice de apostas e permissões apostas.listar/exportar/imprimir_segunda_via
+php artisan migrate          # permissões apostas.listar/exportar/imprimir_segunda_via
 npm run build                # ou npm run dev
 ```
 
@@ -57,8 +57,8 @@ npm run build                # ou npm run dev
 
 1. Abrir D: dados, palpites (placar e período nos jogos em andamento), cotação total, comissão,
    valor, prêmio, valor acrescido e "Vendedor paga" (quando houver comissão por prêmio).
-2. Compartilhar: no celular abre o compartilhamento; no computador, o WhatsApp; sem
-   compartilhamento, "Link copiado.". O link abre `/bilhete/{codigo}`.
+2. Compartilhar: no celular abre o compartilhamento; no computador (ou sem compartilhamento), o
+   WhatsApp. O link abre `/bilhete/{codigo}`.
 3. Acompanhar em tempo real: abre `/bilhete/{codigo}`.
 4. 2ª via em D (aguardando): imprime com "2ª via" no topo (navegador; Bluetooth; modo APP envia
    `true`). Em A (vencedora): o ícone não aparece e `GET /api/apostas/{A}/segunda-via` → 422 com a

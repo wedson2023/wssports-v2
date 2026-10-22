@@ -312,7 +312,8 @@ linhas e os totais batem com a tela.
   ou usar filtros (FR-021).
 - Imagem de premiados sem nenhuma aposta premiada no período: a tela informa "Nenhuma aposta
   premiada no período." e não gera imagem.
-- Aparelho sem compartilhamento nativo: o link é copiado e a tela avisa "Link copiado.".
+- Aparelho sem compartilhamento nativo: o link é enviado pelo WhatsApp, como no bilhete do site
+  (ajustado na implementação: o compartilhamento usa o mesmo utilitário do site).
 - Permissão retirada com a tela aberta: a próxima ação é recusada com a mensagem do servidor e a ação
   some ao recarregar.
 - Sessão expirada: leva ao login como no restante do painel.
@@ -401,8 +402,8 @@ linhas e os totais batem com a tela.
   na Dashboard, acrescentando as ações do painel; aberto pelo painel, usa o cabeçalho padrão dos
   modais do painel (`ModalHeader`), e no site continua com o cabeçalho atual.
 - **FR-015**: O bilhete DEVE ter as ações compartilhar (link da página do bilhete em tempo real da
-  spec 010, pelo compartilhamento do aparelho ou pelo WhatsApp no computador, ou copiando o link
-  quando não houver compartilhamento) e acompanhar em tempo real (abre essa página).
+  spec 010, pelo compartilhamento do aparelho ou pelo WhatsApp no computador e quando o aparelho
+  não compartilha, como o bilhete do site) e acompanhar em tempo real (abre essa página).
 - **FR-016**: O bilhete DEVE ter a ação imprimir 2ª via para quem tem a permissão, só em apostas
   ativas ainda aguardando resultado (decididas, encerradas e canceladas não têm 2ª via; a ação não
   aparece e o servidor recusa com "A 2ª via só pode ser impressa em apostas aguardando resultado."),

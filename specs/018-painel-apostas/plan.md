@@ -37,7 +37,7 @@ Decisões em [research.md](research.md) (R-01 a R-12).
 sweetalert2, jwt-auth, spatie/laravel-permission, phpoffice/phpspreadsheet). Nenhuma nova: a imagem
 de premiados usa a API Canvas 2D do navegador.
 
-**Storage**: MySQL; nenhuma tabela ou coluna nova; 1 índice (`apostas(situacao, created_at)`) e 1
+**Storage**: MySQL; nenhuma tabela, coluna ou índice novo (o índice `apostas(situacao, created_at)` já existe, spec 014) e 1
 migration de dados (permissões).
 
 **Testing**: nenhum teste automatizado (Constituição); validação pelo [quickstart.md](quickstart.md)
@@ -49,7 +49,7 @@ migration de dados (permissões).
 **Performance Goals**: cartões e primeira página em até 2 s com até 50.000 apostas no período
 (SC-007): uma consulta paginada e uma agregada por requisição, subconsultas de palpites por aposta
 da página (sem N+1), índices `(usuarios_id, situacao, created_at)`, `(clientes_id, situacao,
-created_at)` e o novo `(situacao, created_at)`; planilha em blocos (`chunkById`) até 50.000 linhas.
+created_at)` e o `(situacao, created_at)` da spec 014; planilha em blocos (`chunkById`) até 50.000 linhas.
 
 **Constraints**: somas iguais às do Caixa (`ApuracaoCaixa`); bcmath nos valores; query builder com
 parâmetros (busca escapada no `LIKE`); alcance e permissões sempre no servidor; cancelamento e
@@ -60,7 +60,7 @@ painel (specs 014 a 017) e regras de modais, cabeçalho e campos da constituiç�
 
 | Item | Quantidade |
 |---|---|
-| Migrations | 2 (1 índice, 1 de dados) |
+| Migrations | 1 (de dados) |
 | Rotas da API novas | 7 |
 | Rotas web novas | 1 (`/painel/apostas`) |
 | Services novos / alterados | 3 (`ListagemApostas`, `ExportacaoApostas`, `PremiadosApostas`) / 1 (`ExportacaoCaixa`) |
@@ -76,7 +76,7 @@ painel (specs 014 a 017) e regras de modais, cabeçalho e campos da constituiç�
 
 | Princípio / Regra | Verificação | Status |
 |---|---|---|
-| I. Nomes no backend | Classes `ListagemApostas`, `ApostasListagemController` etc.; índice em `apostas`; permissões `apostas.listar`, `apostas.exportar`, `apostas.imprimir_segunda_via` no padrão `<recurso>.<acao>`; rotas kebab-case (`/apostas/segunda-via`) e query em snake_case (`premio_minimo`, `todo_periodo`) | ✅ Pass |
+| I. Nomes no backend | Classes `ListagemApostas`, `ApostasListagemController` etc.; permissões `apostas.listar`, `apostas.exportar`, `apostas.imprimir_segunda_via` no padrão `<recurso>.<acao>`; rotas kebab-case (`/apostas/segunda-via`) e query em snake_case (`premio_minimo`, `todo_periodo`) | ✅ Pass |
 | I. Nomes no frontend | Componentes em inglês PascalCase (`PanelBets`, `BetsTable`, `BetsFilters`, `SellerPicker`, `WinnersModal`, `ActiveFilters`); hook `useApostasPainel`; util `winners_image.js`; variáveis e props snake_case em português | ✅ Pass |
 | II. Idioma | Artefatos, comentários, mensagens e textos em português | ✅ Pass |
 | III. Componentes | Cada componente em pasta própria com `index.jsx` e `styles.jsx` | ✅ Pass |
@@ -88,7 +88,7 @@ painel (specs 014 a 017) e regras de modais, cabeçalho e campos da constituiç�
 | IX. Dados fake | Nenhum | ✅ Pass |
 | Stack | Sem dependência nova (Canvas 2D no lugar de `html2canvas`, R-07) | ✅ Pass |
 | Timestamps / soft delete | Sem tabela nova; nada é excluído | ✅ Pass |
-| Comentários de colunas | Sem coluna nova (só índice) | ✅ Pass |
+| Comentários de colunas | Sem coluna nova | ✅ Pass |
 | Referências a tabelas inexistentes | Nenhuma | ✅ Pass |
 | Paginação ≤ 100 | Lista padrão 20, máximo 100; vendedores do filtro até 20; premiados até 23; a planilha é exportação, limitada a 50.000 linhas (Clarifications) | ✅ Pass |
 | Atualização do frontend | Sem mudança de cache/PWA | ✅ Pass |
@@ -148,8 +148,7 @@ app/
     ├── Requests/ApostasFiltrosRequest.php                                     # novo
     └── Resources/ApostasListaResource.php                                     # novo
 database/
-├── migrations/2026_10_24_000001_add_indice_situacao_apostas_table.php         # novo
-└── migrations/2026_10_24_000002_criar_permissoes_apostas_painel.php            # novo (dados)
+└── migrations/2026_10_24_000001_criar_permissoes_apostas_painel.php            # novo (dados)
 routes/{api,web}.php                                                           # alterados
 resources/js/
 ├── pages/PanelBets/{index,styles}.jsx                                         # novo

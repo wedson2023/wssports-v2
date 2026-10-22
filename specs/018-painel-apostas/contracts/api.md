@@ -13,7 +13,7 @@ Permissões checadas com `Funcao::usuario_pode`. Valores em reais como string co
 |---|---|
 | `de`, `ate` | `AAAA-MM-DD`, obrigatórios, `ate` ≥ `de`, no máximo 366 dias, não futuro; Brasília; pela data em que a aposta foi feita |
 | `aba` | `todas` (padrão) \| `pre_jogo` \| `ao_vivo` \| `canceladas` |
-| `busca` | até 60 caracteres; código completo (8 caracteres) ignora o período; senão, parte do nome do cliente |
+| `busca` | até 60 caracteres; parte do nome do cliente (no período) ou, com 8 letras ou números, também o código da aposta em qualquer data |
 | `todo_periodo` | `0` (padrão) \| `1`: a busca por nome ignora o período |
 | `resultado` | `Aguardando` \| `Vencedor` \| `Perdedor` \| `Devolvido` \| `Encerrada` (ignorado em `canceladas`) |
 | `usuarios_id` | vendedor da rede; fora do alcance → 403 "Você não tem permissão para esta ação."; ignorado para o Vendedor |
@@ -21,7 +21,7 @@ Permissões checadas com `Funcao::usuario_pode`. Valores em reais como string co
 | `premio_minimo` | valor > 0, duas casas; total a pagar ≥ valor |
 
 O registro das rotas fixas (`resumo`, `exportacao`, `premiados`, `vendedores`) vem antes de
-`apostas/{codigo}`, e `{codigo}` aceita só o formato do código (8 caracteres de `CodigoAposta`).
+`apostas/{codigo}`, e `{codigo}` aceita só 8 letras ou números.
 
 ## 1. Lista (`ApostasListagemController`)
 

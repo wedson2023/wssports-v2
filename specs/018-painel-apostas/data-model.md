@@ -3,7 +3,7 @@
 **Spec**: [spec.md](spec.md) · **Research**: [research.md](research.md)
 
 Esta spec **não cria tabelas nem colunas**. Ela lê as tabelas das specs 004, 008, 009 e 010 e acrescenta
-um índice e as permissões.
+as permissões (o índice que a lista usa já existe).
 
 ## 1. Tabelas lidas
 
@@ -16,14 +16,14 @@ um índice e as permissões.
 | `clientes` | `id`, `nome` | Cliente das apostas do site, quando `apostas.nome` estiver vazio |
 | `configuracoes` | `nome_sistema`, `logo` | Planilha e imagem de premiados |
 
-## 2. Índice novo
+## 2. Índices usados (já existentes)
 
 | Tabela | Índice | Motivo |
 |---|---|---|
-| `apostas` | `(situacao, created_at)` | Lista e totais do Admin (sem filtro de vendedor), ordenados e filtrados pela data (R-04) |
+| `apostas` | `(situacao, created_at)` (spec 014) | Lista e totais do Admin (sem filtro de vendedor), ordenados e filtrados pela data (R-04) |
 
-Migration: `2026_10_24_000001_add_indice_situacao_apostas_table.php` (só o índice; sem coluna nova,
-então sem `->comment()`).
+Criado pela spec 014 (`2026_10_20_000003_add_indices_dashboard.php`); esta spec não cria índice nem
+migration de estrutura.
 
 ## 3. Valores derivados (não gravados)
 
@@ -57,7 +57,7 @@ Situações listadas: `Ativa` (Todas, Pré-jogo, Ao vivo) e `Cancelada` (Cancela
 | `apostas.exportar` | Baixar planilha; premiados (só Gerente para cima) | ✅ | ✅ | ✅ | ✅ (só planilha) |
 | `apostas.imprimir_segunda_via` | Imprimir a 2ª via de aposta aguardando resultado | ✅ | ✅ | ✅ | ✅ |
 
-Migration de dados: `2026_10_24_000002_criar_permissoes_apostas_painel.php`, no padrão da
+Migration de dados: `2026_10_24_000001_criar_permissoes_apostas_painel.php`, no padrão da
 `2026_10_23_000004_criar_permissoes_caixa.php` (cria as três e dá aos usuários existentes as que a
 função recebe por padrão).
 

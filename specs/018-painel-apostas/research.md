@@ -42,11 +42,14 @@
   - situação: `Ativa` nas abas Todas, Pré-jogo e Ao vivo; `Cancelada` na aba Canceladas; nunca
     Pendente, Em análise, Recusada nem Expirada (FR-004); sem `deleted_at`;
   - período: `created_at` entre o início de `de` e o fim de `ate` em Brasília (`FusoSistema`), como o
-    Caixa; ignorado quando a busca é um código completo, ou com `todo_periodo=1` na busca por nome;
+    Caixa; a busca por nome respeita o período (salvo `todo_periodo=1`); a busca por código vale em
+    qualquer data;
   - tipo: Ao vivo = `EXISTS` palpite com `confrontos_ao_vivo_id`; Pré-jogo = `NOT EXISTS` (mesma
     regra do `ApuracaoCaixa`);
-  - busca: código completo (8 caracteres do alfabeto de `CodigoAposta`, normalizado) → igualdade em
-    `codigo`; senão `apostas.nome LIKE %termo%` (termo escapado);
+  - busca: `apostas.nome LIKE %termo%` (termo escapado, no período) **ou**, quando o termo tem 8
+    letras ou números (normalizado), `codigo = termo` em qualquer data. Não se limita ao alfabeto
+    atual de `CodigoAposta` porque há apostas com códigos de antes dele (ex.: `Y607HZVO`), e o OU
+    mantém a busca por um nome de 8 letras;
   - resultado, vendedor (`usuarios_id`, conferido no alcance), forma de pagamento e prêmio mínimo
     (`TRUNCATE((premio + valor_acrescido) * fracao_restante, 2) >= ?`, a mesma conta de
     `Apostas::total_a_pagar()`).
@@ -84,7 +87,7 @@
   `jogos_restantes` = palpites `Ativo` com `resultado = Aguardando` (a mesma regra na lista e na
   planilha, corrigindo o antigo); nome do vendedor por `LEFT JOIN usuarios` (com `deleted_at` e
   `ativo` para a etiqueta "inativo/excluído"); `cancelada_por` com o nome do autor.
-- **Índice novo**: `apostas(situacao, created_at)` para a consulta do Admin (sem filtro de
+- **Índices**: `apostas(situacao, created_at)`, já criado pela spec 014 (`2026_10_20_000003_add_indices_dashboard.php`), para a consulta do Admin (sem filtro de
   `usuarios_id`); as dos demais níveis usam o índice existente `(usuarios_id, situacao, created_at)`
   e as de cliente o `(clientes_id, situacao, created_at)`.
 - **Rationale**: SC-007 (2 s com até 50.000 apostas no período); sem N+1.
@@ -151,7 +154,15 @@
   o resultado da planilha do Caixa. Confirmado pelo responsável em 2026-10-22 (altera
   `ExportacaoCaixa.php`, Princípio IV); a alternativa rejeitada era copiar o método para
   `ExportacaoApostas` (duplicação de ~140 linhas).
-- **Linhas**: leitura em blocos (`chunkById`) para não carregar 50.000 modelos de uma vez.
+- **Linhas**: leitura por cursor (uma consulta, um model por vez) e montagem linha a linha.
+- **Planilha grande**: o `PlanilhaPainel` aceita larguras fixas por coluna; com elas, as linhas
+  alternadas viram uma regra de formatação condicional (no lugar de um estilo por linha) e as colunas
+  não se ajustam ao conteúdo. O Caixa continua com o modo de antes (planilha idêntica, conferida
+  célula a célula). A rota da planilha tem tempo máximo de 180 s.
+- **Medição** (2026-10-22, máquina local): 7,4 mil linhas em 8 s; 37 mil linhas em 44 a 48 s e
+  330 MB de memória (a biblioteca de planilhas leva cerca de 9 s escrevendo e 11 s salvando). No
+  limite de 50.000 linhas, a estimativa é de cerca de 60 s e 450 MB, perto do `memory_limit` de
+  512 MB. Ver as notas de `tasks.md`.
 
 ## R-09 — Permissões
 
