@@ -12,6 +12,7 @@ use App\Models\Apostas;
 use App\Models\Clientes;
 use App\Models\ClientesTransacoes;
 use App\Models\Configuracoes;
+use App\Models\Usuarios;
 
 /**
  * Pagamento dos prêmios (spec 009, R-10): movimenta só a diferença entre o valor devido e o já pago
@@ -28,9 +29,11 @@ class LiquidacaoApostas
     ) {}
 
     /**
-     * Deve rodar dentro da transação de quem chama, com a aposta já bloqueada.
+     * Deve rodar dentro da transação de quem chama, com a aposta já bloqueada. A antecipação pelo
+     * painel (spec 019, FR-019) passa `$ignorar_janela` para creditar sem esperar a janela de
+     * segurança e o `$autor`, que fica na transação do extrato; sem eles, nada muda.
      */
-    public function liquidar(Apostas $aposta, OrigemApuracao $origem): void
+    public function liquidar(Apostas $aposta, OrigemApuracao $origem, bool $ignorar_janela = false, ?Usuarios $autor = null): void
     {
         if (! $this->elegivel($aposta)) {
             $this->marcar_pendente($aposta, false);
@@ -49,14 +52,14 @@ class LiquidacaoApostas
         }
 
         // crédito espera a janela, para absorver correções rápidas do provedor; estorno é na hora
-        if ($diferenca > 0 && ! $this->janela_vencida($aposta)) {
+        if ($diferenca > 0 && ! $ignorar_janela && ! $this->janela_vencida($aposta)) {
             $this->marcar_pendente($aposta, true);
 
             return;
         }
 
         $diferenca > 0
-            ? $this->creditar($aposta, $origem, $diferenca, $pago)
+            ? $this->creditar($aposta, $origem, $diferenca, $pago, $autor)
             : $this->estornar($aposta, $origem, -$diferenca, $devido);
 
         $aposta->forceFill([
@@ -100,7 +103,7 @@ class LiquidacaoApostas
         return $aposta->apurada_em === null || $aposta->apurada_em->copy()->addMinutes($this->minutos_janela())->lte(now());
     }
 
-    private function creditar(Apostas $aposta, OrigemApuracao $origem, int $centavos, int $pago): void
+    private function creditar(Apostas $aposta, OrigemApuracao $origem, int $centavos, int $pago, ?Usuarios $autor = null): void
     {
         // sem palpite ativo a aposta só devolve o valor apostado (todos os jogos cancelados)
         $devolucao = $pago === 0 && ! $aposta->palpites_ativos()->exists();
@@ -110,7 +113,7 @@ class LiquidacaoApostas
             $this->carteira($aposta),
             SaldoClientes::para_decimal($centavos),
             $devolucao ? OrigemTransacao::DevoluçãoAposta : OrigemTransacao::Prêmio,
-            null,
+            $autor,
             $aposta->id,
             "Aposta {$aposta->codigo}",
         );

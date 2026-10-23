@@ -142,7 +142,8 @@ trait DadosAfiliado
     }
 
     /**
-     * O responsável precisa ser um usuário com a função Gerente.
+     * O responsável precisa ser um usuário com a função Gerente e, para o Supervisor, da rede dele
+     * (spec 019, FR-003d); o Admin escolhe qualquer gerente.
      */
     protected function regra_gerente(): Closure
     {
@@ -151,6 +152,14 @@ trait DadosAfiliado
 
             if ($gerente === null || $gerente->funcao() !== Funcao::Gerente) {
                 $falhar('O responsável deve ser um usuário com a função Gerente.');
+
+                return;
+            }
+
+            $solicitante = $this->user();
+
+            if ($solicitante?->funcao() === Funcao::Supervisor && ! $solicitante->gerencia($gerente)) {
+                $falhar('O gerente escolhido não é da sua rede.');
             }
         };
     }

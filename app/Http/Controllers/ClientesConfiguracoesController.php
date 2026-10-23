@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Concerns\GarantirAlcanceCliente;
 use App\Http\Controllers\Concerns\GarantirPermissaoCliente;
 use App\Http\Requests\ClientesConfiguracoesRequest;
 use App\Http\Resources\ClientesConfiguracoesResource;
@@ -13,13 +14,14 @@ use Illuminate\Routing\Controllers\HasMiddleware;
  */
 class ClientesConfiguracoesController extends Controller implements HasMiddleware
 {
-    use GarantirPermissaoCliente;
+    use GarantirAlcanceCliente, GarantirPermissaoCliente;
 
     public static function middleware(): array
     {
         return [
             self::permissao_cliente('clientes.listar', only: ['show']),
             self::permissao_cliente('clientes.editar_configuracoes', only: ['update']),
+            self::alcance_cliente(),
         ];
     }
 

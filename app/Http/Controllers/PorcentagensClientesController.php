@@ -6,6 +6,7 @@ use App\Http\Controllers\Concerns\GarantirPermissaoCliente;
 use App\Http\Requests\RegrasCotacaoRequest;
 use App\Models\PorcentagensClientes;
 use App\Models\PorcentagensClientesAoVivo;
+use App\Services\AlcanceClientes;
 use App\Services\HistoricoCotacoes;
 use App\Services\RegrasCotacao;
 use Illuminate\Http\JsonResponse;
@@ -37,12 +38,15 @@ class PorcentagensClientesController extends Controller implements HasMiddleware
             'clientes_id.exists' => 'Cliente não encontrado.',
         ]);
 
+        $this->garantir_da_rede($request, $filtros['clientes_id'] ?? null);
+
         return response()->json($this->dados($filtros['clientes_id'] ?? null));
     }
 
     public function update(RegrasCotacaoRequest $request, RegrasCotacao $regras, HistoricoCotacoes $historico): JsonResponse
     {
         $clientes_id = $request->validated('clientes_id');
+        $this->garantir_da_rede($request, $clientes_id);
         $model = $request->validated('tipo') === 'ao_vivo' ? PorcentagensClientesAoVivo::class : PorcentagensClientes::class;
 
         $registro = $model::firstOrNew(['clientes_id' => $clientes_id]);
@@ -59,6 +63,16 @@ class PorcentagensClientesController extends Controller implements HasMiddleware
         });
 
         return response()->json($this->dados($clientes_id));
+    }
+
+    /**
+     * A regra de um cliente só para clientes da rede (spec 019, FR-003a); a regra geral não muda.
+     */
+    private function garantir_da_rede(Request $request, mixed $clientes_id): void
+    {
+        if ($clientes_id !== null) {
+            app(AlcanceClientes::class)->garantir($request->user(), (int) $clientes_id);
+        }
     }
 
     /**

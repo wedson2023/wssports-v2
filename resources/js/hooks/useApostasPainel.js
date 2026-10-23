@@ -25,6 +25,8 @@ const filtros_da_url = () => {
         todo_periodo: parametros.get('todo_periodo') === '1',
         resultado: da_lista('resultado', resultados),
         vendedor: Number(parametros.get('usuarios_id')) ? { id: Number(parametros.get('usuarios_id')), nome: parametros.get('vendedor') ?? 'Vendedor' } : null,
+        // atalho "Ver apostas" da tela Clientes (spec 019)
+        cliente: Number(parametros.get('clientes_id')) ? { id: Number(parametros.get('clientes_id')), nome: parametros.get('cliente') ?? 'Cliente' } : null,
         forma_pagamento: da_lista('forma_pagamento', formas_pagamento),
         premio_minimo: /^\d+(\.\d{1,2})?$/.test(parametros.get('premio_minimo') ?? '') ? parametros.get('premio_minimo') : null,
         pagina: Math.max(1, Number(parametros.get('page')) || 1),
@@ -39,18 +41,24 @@ export const parametros_api = (filtros) => ({
     ...(filtros.busca.trim() ? { busca: filtros.busca.trim(), ...(filtros.todo_periodo ? { todo_periodo: 1 } : {}) } : {}),
     ...(filtros.resultado && filtros.aba !== 'canceladas' ? { resultado: filtros.resultado } : {}),
     ...(filtros.vendedor ? { usuarios_id: filtros.vendedor.id } : {}),
+    ...(filtros.cliente ? { clientes_id: filtros.cliente.id } : {}),
     ...(filtros.forma_pagamento ? { forma_pagamento: filtros.forma_pagamento } : {}),
     ...(filtros.premio_minimo ? { premio_minimo: filtros.premio_minimo } : {}),
 });
 
 // grava os filtros na URL, para recarregar, voltar e o atalho do Caixa manterem a lista
 const gravar_na_url = (filtros) => {
-    const { usuarios_id, ...resto } = parametros_api(filtros);
+    const { usuarios_id, clientes_id, ...resto } = parametros_api(filtros);
     const parametros = new URLSearchParams(resto);
 
     if (usuarios_id) {
         parametros.set('usuarios_id', usuarios_id);
         parametros.set('vendedor', filtros.vendedor.nome);
+    }
+
+    if (clientes_id) {
+        parametros.set('clientes_id', clientes_id);
+        parametros.set('cliente', filtros.cliente.nome);
     }
 
     if (filtros.pagina > 1) parametros.set('page', filtros.pagina);

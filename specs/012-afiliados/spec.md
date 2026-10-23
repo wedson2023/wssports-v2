@@ -81,6 +81,14 @@ antigo."
 - Q: A cor do tema usada nas páginas e nos e-mails é dado real? → A: Não; é o fake existente
   `DadosFake::tema()` (spec 005), registrado nas premissas (Princípio IX).
 
+### Session 2026-10-22 (alterado pela spec 019)
+
+- O gerente responsável passa a ser obrigatório no cadastro pelo painel, na edição (não pode ser
+  retirado) e na aprovação do cadastro público; o Supervisor só escolhe gerentes da rede dele
+  (spec 019, FR-003d).
+- O Supervisor passa a ver e agir só sobre os afiliados dos gerentes da rede dele; o Admin vê todos,
+  inclusive os sem gerente, com o filtro `sem_gerente` (spec 019, FR-003d).
+
 ## Referências do sistema antigo *(Princípios VII e VIII)*
 
 - Backend: `app/Http/Controllers/FiliadosController.php`, `app/Models/Filiados.php`,

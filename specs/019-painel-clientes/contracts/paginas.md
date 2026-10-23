@@ -55,9 +55,9 @@ Painel lateral (tela cheia no celular), com **Aplicar** e **Limpar filtros**:
   **Acessar conta**, **Ver apostas** (abre `/painel/apostas?clientes_id={id}&cliente={nome}&de={1º
   dia do mês}&ate={hoje}`).
 - **Configurações** (`ClientSettingsForm`): os campos de `clientes_configuracoes` (spec 002), com os
-  esportes permitidos pelo `BettingRulesFields`; **Salvar** com `clientes.editar_configuracoes`.
+  esportes permitidos em chips da lista do site (`ClientSettingsForm`); **Salvar** com `clientes.editar_configuracoes`.
 - **Pagamentos** (`PaymentMethodsList`): chaves Pix com adicionar, editar e excluir.
-- **Extrato**: `StatementFilters` + `StatementTable` (data, tipo, origem, carteira, valor, saldo
+- **Extrato** (`ClientStatement`): filtros de data e carteira e a lista (data, tipo, origem, carteira, valor, saldo
   depois, autor, observação), paginado.
 
 ## 5. Modais de ação
@@ -79,7 +79,7 @@ Painel lateral (tela cheia no celular), com **Aplicar** e **Limpar filtros**:
 
 ## 6. Saques (`WithdrawalsTable`)
 
-- Chips de situação: **Pendentes** (padrão) · Processando · Pagos · Recusados; período (`PeriodFilter`,
+- Chips de situação: **Pendentes** (padrão) · Processando · Pagos · Recusados; período ("Pedido de" e "até", campos de data com rótulo,
   vazio por padrão em Pendentes); busca por nome ou ID.
 - Cartões (`StatCard`): Pendentes (quantidade e valor), Processando (quantidade e valor) e, com
   período, Pagos no período.
@@ -98,7 +98,7 @@ Painel lateral (tela cheia no celular), com **Aplicar** e **Limpar filtros**:
   banca, vermelho perda) · QTD. SAQUES / VALOR.
 - Tocar na linha abre o detalhe.
 
-## 8. Lixeira (`TrashTable`)
+## 8. Lixeira (`ClientsTable` com `lixeira`)
 
 - Colunas de Cadastros + EXCLUÍDO EM; só a ação **Restaurar** (`restore`, verde) com confirmação.
 - Conflito de dados únicos (422 com `errors`): `RestoreConflictModal` (`warning`, "Alguns dados já

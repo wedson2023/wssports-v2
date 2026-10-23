@@ -23,21 +23,23 @@ class CaixaOnline
     public function __construct(private readonly AlcanceDashboard $alcance) {}
 
     /**
-     * Totais do intervalo (sem intervalo = o dia atual, como na Dashboard).
+     * Totais do intervalo (sem intervalo = o dia atual, como na Dashboard). Com `$restringir_clientes`
+     * (ids dos clientes da rede, spec 019), só esses clientes entram; sem ele, a banca toda.
      *
      * @return array<string, string>
      */
-    public function calcular(?Carbon $inicio = null, ?Carbon $fim = null): array
+    public function calcular(?Carbon $inicio = null, ?Carbon $fim = null, ?Builder $restringir_clientes = null): array
     {
         [$inicio, $fim] = $inicio && $fim ? [$inicio, $fim] : $this->alcance->periodo_do_dia();
+        $restringir = fn (Builder $consulta) => $restringir_clientes === null ? $consulta : $consulta->whereIn('clientes_id', $restringir_clientes);
 
-        $apostas = $this->somas_apostas($inicio, $fim)->first();
-        $encerramentos = $this->soma('apostas_encerramentos', 'decidido_em', [SituacaoEncerramento::Registrado->value, SituacaoEncerramento::Creditado->value], $inicio, $fim)->value('total');
+        $apostas = $restringir($this->somas_apostas($inicio, $fim))->first();
+        $encerramentos = $restringir($this->soma('apostas_encerramentos', 'decidido_em', [SituacaoEncerramento::Registrado->value, SituacaoEncerramento::Creditado->value], $inicio, $fim))->value('total');
 
         // a quantidade de apostas só serve à lista por cliente; a Dashboard continua com os mesmos campos
         $valores = array_diff_key($this->formatar($apostas, $encerramentos), ['apostas' => true]);
-        $valores['depositos'] = $this->dinheiro($this->soma('depositos', 'pago_em', [SituacaoDeposito::Aprovado->value], $inicio, $fim)->value('total'));
-        $valores['saques_pagos'] = $this->dinheiro($this->soma('saques', 'pago_em', [SituacaoSaque::Pago->value], $inicio, $fim)->value('total'));
+        $valores['depositos'] = $this->dinheiro($restringir($this->soma('depositos', 'pago_em', [SituacaoDeposito::Aprovado->value], $inicio, $fim))->value('total'));
+        $valores['saques_pagos'] = $this->dinheiro($restringir($this->soma('saques', 'pago_em', [SituacaoSaque::Pago->value], $inicio, $fim))->value('total'));
 
         return $valores;
     }

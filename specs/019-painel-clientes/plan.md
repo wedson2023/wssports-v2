@@ -98,7 +98,7 @@ da constituição.
 | Atualização do frontend | Sem mudança de cache/PWA | ✅ Pass |
 | Tamanho dos modais | Gaveta com altura fixa (abas internas); modais de ação com altura do conteúdo; tela cheia no celular; cabeçalho e rodapé sem encolher | ✅ Pass |
 | Cabeçalho dos modais | Todos com `ModalHeader` (ícone sem fundo, título, descrição, fechar) | ✅ Pass |
-| Campos de itens existentes | Afiliado, gerente e clientes do público escolhidos de listas com busca; carteira, tipo, critério, período e situação em chips; esportes pelo `BettingRulesFields` | ✅ Pass |
+| Campos de itens existentes | Afiliado, gerente e clientes do público escolhidos de listas com busca; carteira, tipo, critério, período e situação em chips; esportes em chips da lista do site (`ClientSettingsForm`) | ✅ Pass |
 | Sem testes | Nenhum arquivo, tarefa ou dependência de teste | ✅ Pass |
 | Postman | Regenerado na entrega | ✅ Pass |
 
@@ -124,7 +124,7 @@ Reavaliado depois da Fase 1: sem violação nova.
 | `app/Http/Controllers/ClientesTransacoesController.php`, `ClientesConfiguracoesController.php`, `ClientesMeiosPagamentoController.php`, `AcessosAssistidosController.php` | Garantir o cliente no alcance | R-03 |
 | `app/Http/Controllers/SaquesController.php` | Alcance, busca, período, `resumo`; a consulta passa para o service novo `ListagemSaques` | R-07 |
 | `app/Http/Controllers/CotacoesPainelController.php` (`clientes`), `PorcentagensClientesController.php`, `ApostasEncerramentosController.php` | Alcance | R-03 |
-| `app/Http/Controllers/CaixaClientesController.php`, `app/Services/CaixaClientes.php`, `CaixaOnline.php`, `RelatorioCassino.php`, `ExportacaoCaixa.php` | Subconsulta opcional do alcance (sem ela, igual a hoje); campo de entradas do cassino por cliente | R-03, R-08 |
+| `app/Http/Controllers/CaixaClientesController.php`, `app/Http/Controllers/CaixaExportacaoController.php` (passa o solicitante à planilha; incluído na implementação), `app/Services/CaixaClientes.php`, `CaixaOnline.php`, `RelatorioCassino.php`, `ExportacaoCaixa.php` | Subconsulta opcional do alcance (sem ela, igual a hoje); campo de entradas do cassino por cliente | R-03, R-08 |
 | `app/Services/ListagemApostas.php`, `AlcanceApostas.php`, `app/Http/Requests/ApostasFiltrosRequest.php` | Apostas do site pela rede; filtro `clientes_id` | R-03, R-11 |
 | `app/Services/LiquidacaoApostas.php` | `liquidar(..., ignorar_janela, autor)` opcionais | R-06 |
 | `app/Services/LiquidacaoEncerramentos.php` | Método público `creditar_encerramento($id, $autor)` extraído do privado | R-06 |
@@ -176,7 +176,7 @@ database/migrations/
 └── 2026_10_25_000005_criar_permissoes_clientes_painel.php                     # dados
 resources/js/
 ├── pages/PanelClients/{index,styles}.jsx                                      # novo
-├── components/{ClientsTable,ClientsFilters,ClientDrawer,ClientFormModal,ClientSettingsForm,PaymentMethodsList,BalanceAdjustModal,AnticipateModal,WithdrawalsTable,WithdrawalDecisionModal,RankingTable,TrashTable,RestoreConflictModal,PushNotificationModal,AffiliatePicker,ClientPicker}/  # novos
+├── components/{ClientsTable,ClientsFilters,ClientDrawer,ClientStatement,ClientFormModal,ClientSettingsForm,PaymentMethodsList,BalanceAdjustModal,AnticipateModal,WithdrawalsTable,WithdrawalDecisionModal,RankingTable,RestoreConflictModal,PushNotificationModal,AffiliatePicker,ClientPicker}/  # novos
 ├── hooks/useClientesPainel.js                                                 # novo
 └── (alterados: PanelShell, PanelBets, useApostasPainel, NotificationSettingsModal, utils/permissions.js)
 docs/postman/wssports_api.postman_collection.json                              # regenerada

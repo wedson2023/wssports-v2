@@ -100,6 +100,15 @@ painel no padrão das specs 014, 015, 016 e 017, responsiva com prioridade ao ce
   limite ou saldo? → A: Recusa. Acrescentado na implementação: apostas do site só para Admin e
   Supervisor (FR-003) e recusa de aposta com encerramento parcial (FR-019a).
 
+### Session 2026-10-22 (alterado pela spec 019)
+
+- As apostas dos clientes do site passam a aparecer ao Supervisor só para os clientes da rede dele;
+  o Admin continua vendo todas (spec 019, FR-003c).
+- A lista, os totais e a planilha ganham o filtro `clientes_id`, usado pelo atalho "Ver apostas" da
+  tela Clientes (spec 019, FR-016).
+- O "subir créditos", que esta spec deixou de fora, entrou na spec 019 como "Antecipar pendentes"
+  (FR-019).
+
 ## Referências do sistema antigo *(Princípios VII e VIII)*
 
 - Backend (`wssports.bet`, `main` `408cf730`): `app/Http/Controllers/BilhetesController.php`

@@ -50,4 +50,12 @@ class ClientesNotificacoes extends Model
     {
         return $this->belongsTo(Apostas::class, 'apostas_id');
     }
+
+    /**
+     * Envio manual pelo painel que gerou o aviso (spec 019); nulo nos avisos automáticos.
+     */
+    public function envio(): BelongsTo
+    {
+        return $this->belongsTo(ClientesNotificacoesEnvios::class, 'clientes_notificacoes_envios_id');
+    }
 }

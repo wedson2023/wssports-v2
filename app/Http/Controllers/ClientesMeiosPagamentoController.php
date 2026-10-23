@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Concerns\GarantirAlcanceCliente;
 use App\Http\Controllers\Concerns\GarantirPermissaoCliente;
 use App\Http\Requests\ClientesMeiosPagamentoRequest;
 use App\Http\Resources\ClientesMeiosPagamentoResource;
@@ -17,7 +18,7 @@ use Illuminate\Routing\Controllers\HasMiddleware;
  */
 class ClientesMeiosPagamentoController extends Controller implements HasMiddleware
 {
-    use GarantirPermissaoCliente;
+    use GarantirAlcanceCliente, GarantirPermissaoCliente;
 
     public function __construct(private MeiosPagamentoClientes $meios) {}
 
@@ -26,6 +27,7 @@ class ClientesMeiosPagamentoController extends Controller implements HasMiddlewa
         return [
             self::permissao_cliente('clientes.listar', only: ['index']),
             self::permissao_cliente('clientes.editar', only: ['store', 'update', 'destroy']),
+            self::alcance_cliente(),
         ];
     }
 

@@ -127,6 +127,13 @@ do escopo."
   para uma spec própria, junto com a avaliação do Pix por Open Finance (pagamento com
   redirecionamento para o banco do cliente, que vale para vários bancos).
 
+### Session 2026-10-22 (alterado pela spec 019)
+
+- A fila de saques e o acesso assistido passam a respeitar a rede: o Supervisor só vê, paga, recusa
+  e acessa os clientes dos afiliados dos gerentes abaixo dele; o Admin, todos (spec 019, FR-003a).
+- A fila ganha busca por cliente, período e os cartões de pendentes, processando e pagos; o telefone
+  do cliente vem mascarado sem a permissão de ver dados completos (spec 019, FR-022 a FR-025).
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Cliente acompanha saldos e extrato (Priority: P1)

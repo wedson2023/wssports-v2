@@ -39,6 +39,7 @@ class ListagemApostas
     public function __construct(
         private readonly AlcanceDashboard $alcance_dashboard,
         private readonly AlcanceApostas $alcance_apostas,
+        private readonly AlcanceClientes $alcance_clientes,
     ) {}
 
     /**
@@ -51,6 +52,7 @@ class ListagemApostas
         $consulta = Apostas::query();
 
         $this->aplicar_alcance($consulta, $usuario, $filtros['usuarios_id'] ?? null);
+        $this->aplicar_cliente($consulta, $usuario, $filtros['clientes_id'] ?? null);
 
         $canceladas = $filtros['aba'] === 'canceladas';
         $consulta->where('apostas.situacao', $canceladas ? SituacaoAposta::Cancelada->value : SituacaoAposta::Ativa->value);
@@ -318,15 +320,36 @@ class ListagemApostas
             return;
         }
 
-        $consulta->where(function (Builder $condicao) use ($ids, $ve_site) {
+        // apostas do site: o Admin vê todas; o Supervisor, só as dos clientes da rede dele (spec 019,
+        // FR-003c)
+        $clientes_da_rede = $ve_site ? $this->alcance_clientes->subconsulta_ids($usuario) : null;
+
+        $consulta->where(function (Builder $condicao) use ($ids, $ve_site, $clientes_da_rede) {
             $ids === null
                 ? $condicao->whereNotNull('apostas.usuarios_id')
                 : $condicao->whereIn('apostas.usuarios_id', $ids);
 
             if ($ve_site) {
-                $condicao->orWhereNotNull('apostas.clientes_id');
+                $clientes_da_rede === null
+                    ? $condicao->orWhereNotNull('apostas.clientes_id')
+                    : $condicao->orWhereIn('apostas.clientes_id', $clientes_da_rede);
             }
         });
+    }
+
+    /**
+     * Filtro por cliente (spec 019, FR-016): só para quem vê as apostas do site (Admin e Supervisor),
+     * e o cliente precisa estar na rede; para os demais, o filtro é ignorado.
+     */
+    private function aplicar_cliente(Builder $consulta, Usuarios $usuario, ?int $clientes_id): void
+    {
+        if ($clientes_id === null || ! $this->ve_apostas_do_site($usuario)) {
+            return;
+        }
+
+        abort_unless($this->alcance_clientes->contem($usuario, $clientes_id), 403, 'Você não tem permissão para esta ação.');
+
+        $consulta->where('apostas.clientes_id', $clientes_id);
     }
 
     /**

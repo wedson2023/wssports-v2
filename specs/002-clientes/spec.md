@@ -122,6 +122,17 @@ de afiliados, depósito via PIX/gateway e saque, bônus, rollover, cashback e ca
   e a permissão `clientes.editar_configuracoes_padrao` foram removidas. O cliente novo nasce com os
   valores padrão das colunas de `clientes_configuracoes` (os mesmos de FR-050).
 
+### Session 2026-10-22 (alterado pela spec 019)
+
+- O Gerente e o Supervisor passam a ver e agir só sobre os clientes da rede deles: os clientes dos
+  afiliados de que o Gerente é o responsável, e os dos gerentes abaixo do Supervisor; o Admin vê
+  todos. Cliente fora da rede responde "Cliente não encontrado." (spec 019, FR-003 e FR-003a).
+- Ao editar o cliente, Supervisor e Gerente só escolhem um afiliado da rede e não deixam o cliente
+  sem afiliado (spec 019, FR-003b).
+- O ajuste manual de saldo passa a exigir a senha de quem ajusta (spec 019, FR-018).
+- A lista e o detalhe passam a trazer o saldo líquido, e a lista ganha os filtros de depósito, Pix
+  em aberto, modalidade e aniversariantes no período (spec 019, FR-006 e FR-008).
+
 ## User Scenarios & Testing *(mandatory)*
 
 > Conforme a constituição, o projeto não terá testes automatizados. Os cenários

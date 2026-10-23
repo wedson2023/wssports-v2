@@ -40,8 +40,11 @@ class StoreAfiliadosRequest extends FormRequest
             ...$this->regras_dados_afiliado('required'),
             'login' => $this->regras_login(),
             'password' => ['required', 'confirmed', $this->regra_senha()],
-            // Admin e Supervisor escolhem o responsável; o do Gerente é ele mesmo
-            'usuarios_id' => ['nullable', 'integer', $this->regra_gerente()],
+            // Admin e Supervisor escolhem o responsável, obrigatório (spec 019, FR-003d); o do Gerente
+            // é ele mesmo
+            'usuarios_id' => $this->user()?->funcao() === Funcao::Gerente
+                ? ['nullable']
+                : ['required', 'integer', $this->regra_gerente()],
             ...$this->regras_comissao_opcional(),
         ];
     }
@@ -51,6 +54,10 @@ class StoreAfiliadosRequest extends FormRequest
      */
     public function messages(): array
     {
-        return [...$this->mensagens_dados_afiliado(), ...$this->mensagens_comissao()];
+        return [
+            ...$this->mensagens_dados_afiliado(),
+            ...$this->mensagens_comissao(),
+            'usuarios_id.required' => 'O gerente responsável é obrigatório.',
+        ];
     }
 }

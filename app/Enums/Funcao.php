@@ -55,7 +55,8 @@ enum Funcao: string
     }
 
     /**
-     * Todas as permissões de gestão de clientes e promoções existentes no sistema.
+     * Todas as permissões de gestão de clientes e promoções existentes no sistema; as quatro últimas
+     * de clientes são da tela Clientes do painel (spec 019).
      */
     public const PERMISSOES_CLIENTES = [
         'clientes.listar',
@@ -65,16 +66,25 @@ enum Funcao: string
         'clientes.movimentar_saldo',
         'clientes.excluir',
         'clientes.restaurar',
+        'clientes.ver_ranking',
+        'clientes.exportar',
+        'clientes.enviar_notificacao',
+        'clientes.antecipar_pendentes',
         'clientes_promocoes.gerenciar',
         'clientes_promocoes.estornar',
     ];
 
     /**
-     * Permissões de clientes que só Admin e Supervisor podem usar, mesmo que outra função as receba.
+     * Permissões de clientes que só Admin e Supervisor podem usar, mesmo que outra função as receba:
+     * excluir, restaurar, estornar promoção e, na tela Clientes (spec 019), exportar, enviar
+     * notificação e antecipar pendentes.
      */
     public const PERMISSOES_CLIENTES_RESTRITAS = [
         'clientes.excluir',
         'clientes.restaurar',
+        'clientes.exportar',
+        'clientes.enviar_notificacao',
+        'clientes.antecipar_pendentes',
         'clientes_promocoes.estornar',
     ];
 

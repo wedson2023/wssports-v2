@@ -244,6 +244,8 @@ class AfiliadosController extends Controller implements HasMiddleware
             'situacao' => ['nullable', Rule::enum(SituacaoAfiliado::class)],
             'busca' => ['nullable', 'string', 'max:150'],
             'usuarios_id' => ['nullable', 'integer'],
+            // afiliados antigos ainda sem gerente responsável (spec 019, FR-003d)
+            'sem_gerente' => ['nullable', 'boolean'],
             'de' => ['nullable', 'date_format:Y-m-d'],
             'ate' => ['nullable', 'date_format:Y-m-d', 'after_or_equal:de'],
             'por_pagina' => ['nullable', 'integer', 'between:1,100'],
@@ -252,6 +254,7 @@ class AfiliadosController extends Controller implements HasMiddleware
             'busca.string' => 'A busca deve ser um texto.',
             'busca.max' => 'A busca é longa demais.',
             'usuarios_id.integer' => 'O gerente informado é inválido.',
+            'sem_gerente.boolean' => 'O filtro sem gerente deve ser verdadeiro ou falso.',
             ...ListagemAfiliados::mensagens_extrato(),
         ]);
 

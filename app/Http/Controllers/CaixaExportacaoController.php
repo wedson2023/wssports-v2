@@ -48,7 +48,7 @@ class CaixaExportacaoController extends Controller implements HasMiddleware
                 'Você não tem permissão para esta ação.',
             );
 
-            $caminho = $this->exportacao->clientes($inicio, $fim, $de, $ate);
+            $caminho = $this->exportacao->clientes($inicio, $fim, $de, $ate, $solicitante);
             $nome = "caixa-clientes-{$de}-{$ate}.xlsx";
         } else {
             $foco = $this->foco_caixa($request, $request->filled('usuarios_id') ? (int) $request->validated('usuarios_id') : null);

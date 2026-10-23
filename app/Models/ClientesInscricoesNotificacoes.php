@@ -40,6 +40,7 @@ class ClientesInscricoesNotificacoes extends Model
             'receber_fim_jogo' => 'boolean',
             'receber_resultado_aposta' => 'boolean',
             'receber_encerramento_automatico' => 'boolean',
+            'receber_avisos_banca' => 'boolean',
             'ultimo_envio_em' => 'datetime',
         ];
     }

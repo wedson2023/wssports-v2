@@ -39,7 +39,7 @@ class NotificacoesPush
      * Registra o aviso do fato (chave) para o cliente; nulo quando ele já foi avisado desse fato
      * (SC-008: sem aviso repetido, mesmo com várias apostas no jogo ou job repetido).
      */
-    public function registrar(int $clientes_id, TipoNotificacao $tipo, string $chave, string $titulo, ?string $corpo, string $url, ?int $confrontos_eventos_id = null, ?int $apostas_id = null): ?ClientesNotificacoes
+    public function registrar(int $clientes_id, TipoNotificacao $tipo, string $chave, string $titulo, ?string $corpo, string $url, ?int $confrontos_eventos_id = null, ?int $apostas_id = null, ?int $clientes_notificacoes_envios_id = null): ?ClientesNotificacoes
     {
         try {
             return ClientesNotificacoes::create([
@@ -48,6 +48,7 @@ class NotificacoesPush
                 'chave' => mb_substr($chave, 0, 80),
                 'confrontos_eventos_id' => $confrontos_eventos_id,
                 'apostas_id' => $apostas_id,
+                'clientes_notificacoes_envios_id' => $clientes_notificacoes_envios_id,
                 'titulo' => mb_substr($titulo, 0, 120),
                 'corpo' => $corpo !== null ? mb_substr($corpo, 0, 255) : null,
                 'url' => $url,
@@ -148,9 +149,12 @@ class NotificacoesPush
      */
     private function conteudo(ClientesNotificacoes $notificacao): array
     {
-        $tag = $notificacao->confrontos_eventos_id !== null
-            ? 'confronto-'.$notificacao->evento?->confrontos_id
-            : 'aposta-'.$notificacao->aposta?->codigo;
+        $tag = match (true) {
+            $notificacao->confrontos_eventos_id !== null => 'confronto-'.$notificacao->evento?->confrontos_id,
+            // aviso manual da banca (spec 019): um por envio
+            $notificacao->clientes_notificacoes_envios_id !== null => 'aviso-'.$notificacao->clientes_notificacoes_envios_id,
+            default => 'aposta-'.$notificacao->aposta?->codigo,
+        };
 
         return [
             'titulo' => $notificacao->titulo,

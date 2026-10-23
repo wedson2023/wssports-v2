@@ -55,8 +55,12 @@ use App\Http\Controllers\CassinosSessoesController;
 use App\Http\Controllers\CassinosSincronizacoesController;
 use App\Http\Controllers\ClientesConfiguracoesController;
 use App\Http\Controllers\ClientesController;
+use App\Http\Controllers\ClientesExportacaoController;
 use App\Http\Controllers\ClientesMeiosPagamentoController;
+use App\Http\Controllers\ClientesNotificacoesController;
+use App\Http\Controllers\ClientesPendentesController;
 use App\Http\Controllers\ClientesPromocoesController;
+use App\Http\Controllers\ClientesRankingController;
 use App\Http\Controllers\ClientesTransacoesController;
 use App\Http\Controllers\ConfiguracoesAfiliadosController;
 use App\Http\Controllers\ConfiguracoesApuracaoController;
@@ -239,6 +243,13 @@ Route::middleware(['auth:api', 'garantir_acesso'])->group(function () {
 
     // rotas específicas antes do apiResource, para não serem capturadas por clientes/{cliente}
     Route::get('clientes/excluidos', [ClientesController::class, 'excluidos']);
+    // tela Clientes do painel (spec 019): ranking e planilha da aba
+    Route::get('clientes/ranking', ClientesRankingController::class);
+    Route::get('clientes/exportacao', ClientesExportacaoController::class);
+    Route::get('clientes/notificacoes/limite', [ClientesNotificacoesController::class, 'limite']);
+    Route::put('clientes/notificacoes/limite', [ClientesNotificacoesController::class, 'alterar_limite']);
+    Route::post('clientes/notificacoes/alcance', [ClientesNotificacoesController::class, 'alcance']);
+    Route::post('clientes/notificacoes', [ClientesNotificacoesController::class, 'store']);
     Route::post('clientes/{cliente}/restaurar', [ClientesController::class, 'restaurar'])
         ->withTrashed()
         ->missing($cliente_nao_encontrado);
@@ -251,6 +262,12 @@ Route::middleware(['auth:api', 'garantir_acesso'])->group(function () {
     Route::get('clientes/{cliente}/transacoes', [ClientesTransacoesController::class, 'index'])
         ->missing($cliente_nao_encontrado);
     Route::post('clientes/{cliente}/transacoes', [ClientesTransacoesController::class, 'store'])
+        ->missing($cliente_nao_encontrado);
+
+    // antecipar prêmios e encerramentos na janela de segurança (spec 019)
+    Route::get('clientes/{cliente}/pendentes', [ClientesPendentesController::class, 'show'])
+        ->missing($cliente_nao_encontrado);
+    Route::post('clientes/{cliente}/antecipar', [ClientesPendentesController::class, 'store'])
         ->missing($cliente_nao_encontrado);
 
     Route::get('clientes/{cliente}/configuracoes', [ClientesConfiguracoesController::class, 'show'])
@@ -541,6 +558,8 @@ Route::middleware(['auth:api', 'garantir_acesso'])->group(function () {
 
     $saque_nao_encontrado = fn () => abort(404, 'Saque não encontrado.');
     Route::get('saques', [SaquesController::class, 'index']);
+    // cartões da aba Saques da tela Clientes (spec 019)
+    Route::get('saques/resumo', [SaquesController::class, 'resumo']);
     Route::post('saques/{saque}/pagar', [SaquesController::class, 'pagar'])->missing($saque_nao_encontrado);
     Route::post('saques/{saque}/recusar', [SaquesController::class, 'recusar'])->missing($saque_nao_encontrado);
 });

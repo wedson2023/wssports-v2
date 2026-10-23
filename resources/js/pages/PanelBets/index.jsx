@@ -224,6 +224,7 @@ export default function PanelBets() {
     const etiquetas = [
         filtros.resultado && filtros.aba !== 'canceladas' && { chave: 'resultado', texto: opcoes_resultado.find((opcao) => opcao.valor === filtros.resultado)?.rotulo },
         filtros.vendedor && { chave: 'vendedor', texto: `Vendedor: ${filtros.vendedor.nome}` },
+        filtros.cliente && { chave: 'cliente', texto: `Cliente: ${filtros.cliente.nome}` },
         filtros.forma_pagamento && { chave: 'forma_pagamento', texto: filtros.forma_pagamento },
         filtros.premio_minimo && { chave: 'premio_minimo', texto: `Prêmio ≥ ${formatar_valor(filtros.premio_minimo)}` },
     ].filter(Boolean);

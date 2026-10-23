@@ -284,14 +284,20 @@
 - **Decision**: página Inertia `PanelClients` em `/painel/clientes` (`PainelController::clientes`),
   item "Clientes" no `PanelShell` (visível com `clientes.listar`), hook `useClientesPainel` (estado no
   endereço: aba, busca, filtros, ordenação, página; requisições por aba; recarregar sem perder
-  posição). Reaproveita `PanelShell`, `PanelTabs`, `PeriodFilter`, `StatCard`, `ActionsMenu`,
-  `ActiveFilters`, `Pagination`, `ModalHeader`, `ConfirmModal`, `EmptyMessage`, `Spinner`,
-  `useCampoValor`, `useTelaMobile`, `StatementTable`/`StatementFilters` (extrato) e
-  `BettingRulesFields` (esportes das configurações). Componentes novos: `ClientsTable`,
-  `ClientsFilters`, `ClientDrawer`, `ClientFormModal`, `ClientSettingsForm`, `PaymentMethodsList`,
-  `BalanceAdjustModal`, `AnticipateModal`, `WithdrawalsTable`, `WithdrawalDecisionModal`,
-  `RankingTable`, `TrashTable`, `RestoreConflictModal`, `PushNotificationModal`, `AffiliatePicker`,
-  `ClientPicker`.
+  posição). Reaproveita `PanelShell`, `PanelTabs`, `StatCard`, `ActionsMenu`, `ActiveFilters`,
+  `Pagination`, `ModalHeader`, `CashModal` (moldura dos modais), `Spinner`, `useTelaMobile` e, por
+  reexportação nos `styles.jsx`, os estilos de `BetsTable`, `BetsFilters`, `SellerPicker`,
+  `CashEntryModal` e `BettingRulesFields`. Componentes novos: `ClientsTable` (Cadastros e Lixeira,
+  com a prop `lixeira`), `ClientsFilters`, `ClientDrawer`, `ClientStatement`, `ClientFormModal`,
+  `ClientSettingsForm`, `PaymentMethodsList`, `BalanceAdjustModal`, `AnticipateModal`,
+  `WithdrawalsTable`, `WithdrawalDecisionModal`, `RankingTable`, `RestoreConflictModal`,
+  `PushNotificationModal`, `AffiliatePicker`, `ClientPicker`.
+- **Ajustado na implementação**: `StatementTable`/`StatementFilters` são do extrato da área do
+  cliente (outro formato de dados e outras colunas) e não servem ao extrato do painel, que mostra
+  origem, carteira, saldo depois e autor: o extrato virou o componente `ClientStatement`. O
+  `BettingRulesFields` tem os grupos do vendedor fixos no código: as configurações do cliente usam o
+  `ClientSettingsForm`, com os campos de `ClientesConfiguracoes::CAMPOS` e os mesmos estilos e chips
+  de esportes. Não houve `TrashTable`: a Lixeira usa a `ClientsTable`.
 - **Rationale**: padrão das specs 014 a 018; detalhe em gaveta (FR-011) para não perder a lista.
 - **Alternatives considered**: páginas separadas por aba (perde o estado ao trocar).
 

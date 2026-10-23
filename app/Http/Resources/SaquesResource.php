@@ -21,10 +21,14 @@ class SaquesResource extends JsonResource
         return [
             'id' => $this->id,
             'codigo' => $this->codigo,
+            // telefone mascarado sem clientes.ver_dados_completos e saldo atual (spec 019, R-07)
             'cliente' => $this->whenLoaded('cliente', fn () => [
                 'id' => $this->cliente->id,
                 'nome' => $this->cliente->nome,
-                'telefone' => $this->cliente->telefone,
+                'telefone' => ClientesResource::deve_mascarar($request)
+                    ? ClientesResource::mascarar_telefone((string) $this->cliente->ddi, preg_replace(ClientesResource::SUFIXO_EXCLUSAO, '', (string) $this->cliente->telefone))
+                    : $this->cliente->telefone,
+                'saldo' => $this->cliente->saldo,
             ]),
             'valor' => $this->valor,
             'pix' => [

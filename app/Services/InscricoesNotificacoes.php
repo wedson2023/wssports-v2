@@ -21,6 +21,8 @@ class InscricoesNotificacoes
         'receber_fim_jogo',
         'receber_resultado_aposta',
         'receber_encerramento_automatico',
+        // avisos manuais da banca (spec 019)
+        'receber_avisos_banca',
     ];
 
     /**

@@ -98,18 +98,21 @@ class RelatorioCassino
     /**
      * Somas do cassino num intervalo para o Caixa clientes (spec 017, R-06), com as mesmas regras do
      * relatório: entradas, saídas, resultado (GGR) e comissão de cada provedor. Opcionalmente só de
-     * uma carteira e, com os ids, também por cliente.
+     * uma carteira, só dos clientes de `$restringir_clientes` (a rede, spec 019) e, com os ids, também
+     * por cliente.
      *
      * @param  list<int>|null  $ids_clientes
      * @return array{total: array<string, string>, por_cliente: array<int, array<string, string>>}
      */
-    public function somas_periodo(Carbon $inicio, Carbon $fim, ?string $carteira = null, ?array $ids_clientes = null): array
+    public function somas_periodo(Carbon $inicio, Carbon $fim, ?string $carteira = null, ?array $ids_clientes = null, ?Builder $restringir_clientes = null): array
     {
         $por_cliente = $ids_clientes !== null;
         $agrupar = $por_cliente ? ['r.clientes_id', ...self::AGRUPAMENTOS['provedor']] : self::AGRUPAMENTOS['provedor'];
 
         $linhas = $this->somas($this->base($inicio->toDateTimeString(), $fim->toDateTimeString(), null))
             ->when($carteira, fn (Builder $c) => $c->where('r.carteira', $carteira))
+            // só os clientes da rede (spec 019, FR-003c); sem a restrição, a banca toda
+            ->when($restringir_clientes !== null, fn (Builder $c) => $c->whereIn('r.clientes_id', $restringir_clientes))
             ->when($por_cliente, fn (Builder $c) => $c->whereIn('r.clientes_id', $ids_clientes)->addSelect('r.clientes_id'))
             ->addSelect(self::COLUNAS['provedor'])
             ->groupBy($agrupar)

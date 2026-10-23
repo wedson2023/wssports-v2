@@ -112,6 +112,12 @@ de cassino e frontend."
   explícito vale -03:00 e é gravada em UTC; idempotência do visitante pelo mesmo IP com a aposta
   ainda Pendente.
 
+### Session 2026-10-22 (alterado pela spec 019)
+
+- Cancelar ou editar uma aposta de cliente, que valia para qualquer Gerente ou Supervisor com a
+  permissão, passa a valer só para as apostas dos clientes da rede deles (afiliado → gerente
+  responsável); o Admin continua com todas (spec 019, FR-003c).
+
 ## User Scenarios & Testing *(mandatory)*
 
 > Conforme a constituição, o projeto não terá testes automatizados. Os cenários abaixo são

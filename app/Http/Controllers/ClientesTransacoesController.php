@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Enums\Carteira;
 use App\Enums\OrigemTransacao;
 use App\Enums\TipoTransacao;
+use App\Http\Controllers\Concerns\GarantirAlcanceCliente;
 use App\Http\Controllers\Concerns\GarantirPermissaoCliente;
 use App\Http\Requests\ClientesTransacoesRequest;
 use App\Http\Requests\Concerns\FiltrosExtrato;
@@ -20,13 +21,14 @@ use Illuminate\Routing\Controllers\HasMiddleware;
  */
 class ClientesTransacoesController extends Controller implements HasMiddleware
 {
-    use FiltrosExtrato, GarantirPermissaoCliente;
+    use FiltrosExtrato, GarantirAlcanceCliente, GarantirPermissaoCliente;
 
     public static function middleware(): array
     {
         return [
             self::permissao_cliente('clientes.listar', only: ['index']),
             self::permissao_cliente('clientes.movimentar_saldo', only: ['store']),
+            self::alcance_cliente(),
         ];
     }
 

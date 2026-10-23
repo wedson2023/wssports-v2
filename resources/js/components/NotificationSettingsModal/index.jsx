@@ -11,6 +11,8 @@ const tipos = [
     { chave: 'receber_fim_jogo', rotulo: 'Fim de jogo', descricao: 'Placar final' },
     { chave: 'receber_resultado_aposta', rotulo: 'Resultado da aposta', descricao: 'Quando a aposta é ganha ou perdida' },
     { chave: 'receber_encerramento_automatico', rotulo: 'Encerramento automático', descricao: 'Quando a aposta é encerrada pelo valor-alvo' },
+    // avisos manuais enviados pelo painel (spec 019)
+    { chave: 'receber_avisos_banca', rotulo: 'Avisos da banca', descricao: 'Novidades e promoções enviadas pela banca' },
 ];
 
 // preferências das notificações deste aparelho e o botão de desativar (FR-041)

@@ -44,7 +44,8 @@ class UpdateAfiliadosRequest extends FormRequest
             'pix_chave' => [...$regras['pix_chave'], 'required_with:pix_tipo_chave'],
             'login' => ['prohibited'],
             'password' => ['sometimes', 'required', 'confirmed', $this->regra_senha()],
-            'usuarios_id' => $gestor_geral ? ['sometimes', 'nullable', 'integer', $this->regra_gerente()] : ['prohibited'],
+            // o gerente responsável não pode ser retirado (spec 019, FR-003d)
+            'usuarios_id' => $gestor_geral ? ['sometimes', 'required', 'integer', $this->regra_gerente()] : ['prohibited'],
             'codigo' => $gestor_geral
                 ? ['sometimes', 'required', 'string', 'regex:/^[A-Z0-9._-]{4,50}$/', Rule::unique('afiliados', 'codigo')->ignore($afiliado_id)]
                 : ['prohibited'],
@@ -63,6 +64,7 @@ class UpdateAfiliadosRequest extends FormRequest
             'pix_chave.required_with' => 'Informe a chave Pix junto com o tipo.',
             'login.prohibited' => 'O login não pode ser alterado.',
             'usuarios_id.prohibited' => 'Só Admin e Supervisor alteram o gerente responsável.',
+            'usuarios_id.required' => 'O gerente responsável é obrigatório.',
             'codigo.prohibited' => 'Só Admin e Supervisor alteram o código.',
             'codigo.required' => 'O código é obrigatório.',
             'codigo.regex' => 'O código deve ter de 4 a 50 caracteres, só com letras, números, ponto, hífen ou sublinhado.',

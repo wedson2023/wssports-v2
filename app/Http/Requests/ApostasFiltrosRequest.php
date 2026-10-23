@@ -15,7 +15,7 @@ use Illuminate\Validation\Validator;
 /**
  * Filtros da lista de apostas do painel (spec 018, contracts/api.md "Filtros comuns"): período em
  * dias de Brasília (até 366 dias, sem data futura), aba, busca por código ou nome do cliente,
- * resultado, vendedor, forma de pagamento, prêmio mínimo e paginação.
+ * resultado, vendedor, cliente (spec 019), forma de pagamento, prêmio mínimo e paginação.
  */
 class ApostasFiltrosRequest extends FormRequest
 {
@@ -42,6 +42,8 @@ class ApostasFiltrosRequest extends FormRequest
             'todo_periodo' => ['nullable', 'boolean'],
             'resultado' => ['nullable', Rule::in(array_map(fn (ResultadoAposta $resultado) => $resultado->value, ResultadoAposta::cases()))],
             'usuarios_id' => ['nullable', 'integer'],
+            // cliente do site (spec 019, FR-016): atalho "Ver apostas" da tela Clientes
+            'clientes_id' => ['nullable', 'integer'],
             'forma_pagamento' => ['nullable', Rule::enum(FormaPagamento::class)],
             'premio_minimo' => ['nullable', 'numeric', 'gt:0', 'decimal:0,2', 'max:9999999999'],
             'page' => ['nullable', 'integer', 'min:1'],
@@ -86,6 +88,7 @@ class ApostasFiltrosRequest extends FormRequest
             'todo_periodo.boolean' => 'O campo buscar em todo o período é inválido.',
             'resultado.in' => 'O resultado informado é inválido.',
             'usuarios_id.integer' => 'O vendedor informado é inválido.',
+            'clientes_id.integer' => 'O cliente informado é inválido.',
             'forma_pagamento.*' => 'A forma de pagamento informada é inválida.',
             'premio_minimo.*' => 'Informe um prêmio mínimo maior que zero, com até duas casas.',
             'page.*' => 'A página informada é inválida.',
@@ -131,7 +134,7 @@ class ApostasFiltrosRequest extends FormRequest
     /**
      * Filtros no formato que o ListagemApostas recebe.
      *
-     * @return array{inicio: Carbon, fim: Carbon, de: string, ate: string, aba: string, codigo: ?string, nome: ?string, todo_periodo: bool, resultado: ?string, usuarios_id: ?int, forma_pagamento: ?string, premio_minimo: ?string}
+     * @return array{inicio: Carbon, fim: Carbon, de: string, ate: string, aba: string, codigo: ?string, nome: ?string, todo_periodo: bool, resultado: ?string, usuarios_id: ?int, clientes_id: ?int, forma_pagamento: ?string, premio_minimo: ?string}
      */
     public function filtros(): array
     {
@@ -150,6 +153,7 @@ class ApostasFiltrosRequest extends FormRequest
             'todo_periodo' => $this->boolean('todo_periodo'),
             'resultado' => $this->validated('resultado'),
             'usuarios_id' => $this->filled('usuarios_id') ? (int) $this->validated('usuarios_id') : null,
+            'clientes_id' => $this->filled('clientes_id') ? (int) $this->validated('clientes_id') : null,
             'forma_pagamento' => $this->validated('forma_pagamento'),
             'premio_minimo' => $this->filled('premio_minimo') ? bcadd((string) $this->validated('premio_minimo'), '0', 2) : null,
         ];
