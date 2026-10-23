@@ -77,7 +77,7 @@ e regras de modais, cabeçalho e campos da constituição.
 | I. Nomes no frontend | Componentes em inglês PascalCase (`PanelBonus`, `PromotionsTable`, `BonusDrawer` etc.); hook `useBonusPainel`; variáveis e props snake_case em português | ✅ Pass |
 | II. Idioma | Artefatos, comentários, mensagens e textos em português | ✅ Pass |
 | III. Componentes | Cada componente em pasta própria com `index.jsx` e `styles.jsx` | ✅ Pass |
-| IV. Escopo estrito | Arquivos existentes listados abaixo, **a confirmar pelo responsável** antes do `/speckit-implement`; as mudanças de regra nas specs 002, 007 e 012 foram pedidas na spec (Clarifications) | ⚠️ Aguarda confirmação da lista |
+| IV. Escopo estrito | Arquivos existentes listados abaixo, confirmados pelo responsável em 2026-10-23 ("AUTORIZO A ALTERAÇÃO", no `/speckit-tasks`); as mudanças de regra nas specs 002, 007 e 012 foram pedidas na spec (Clarifications) | ✅ Pass |
 | V. Legibilidade | Revisão ao final de cada tarefa | ✅ Pass |
 | VI. Consistência | Alcance por service + trait de controller (como `AlcanceClientes`/`GarantirAlcanceCliente`); senha pelo `ConfirmacaoCaixa`; listagens em services (como `ListagemSaques`); permissões em `Funcao.php` sem mudança; componentes do painel reaproveitados | ✅ Pass |
 | VII. Sistema antigo | `BonusController`, `BonusCommand`, `CreditosBonus`, migrations `creditos_bonuses`, telas `adm/bonus` e `adm/modals/bonus` analisados na `main` `408cf730` (R-01); diferenças aprovadas em Clarifications | ✅ Pass |
@@ -95,8 +95,8 @@ e regras de modais, cabeçalho e campos da constituição.
 | Sem testes | Nenhum arquivo, tarefa ou dependência de teste | ✅ Pass |
 | Postman | Regenerado na entrega | ✅ Pass |
 
-**Resultado do gate**: aprovado para seguir ao `/speckit-tasks`, com a lista de arquivos existentes
-abaixo pendente de confirmação do responsável (Princípio IV), como nas specs anteriores.
+**Resultado do gate**: aprovado. A lista de arquivos existentes abaixo foi confirmada pelo responsável
+em 2026-10-23 (Princípio IV).
 
 Reavaliado depois da Fase 1: sem violação nova.
 
