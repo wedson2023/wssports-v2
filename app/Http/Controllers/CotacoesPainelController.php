@@ -16,6 +16,7 @@ use App\Models\PorcentagensHistoricos;
 use App\Models\PorcentagensVendedores;
 use App\Models\PorcentagensVendedoresAoVivo;
 use App\Models\Usuarios;
+use App\Services\AlcanceClientes;
 use App\Services\AlcanceHierarquia;
 use App\Services\CadeadosCotacoes;
 use App\Services\CalculoCotacoes;
@@ -106,6 +107,8 @@ class CotacoesPainelController extends Controller
                 ->where('nome', 'like', $this->termo($filtros['busca']))
                 ->orWhere('telefone', 'like', $this->termo($filtros['busca']))
                 ->orWhere('email', 'like', $this->termo($filtros['busca']))))
+            // só os clientes da rede (spec 019, FR-003a)
+            ->tap(fn (Builder $c) => app(AlcanceClientes::class)->aplicar($c, $request->user()))
             ->orderBy('nome')
             ->paginate($filtros['por_pagina'] ?? 20, ['id', 'nome', 'telefone', 'email'])
             ->withQueryString();

@@ -1,7 +1,7 @@
 {
     "info": {
         "name": "WSSports API",
-        "description": "Rotas da API do WSSports (autenticação JWT, gestão de usuários e permissões, área do cliente, gestão de clientes, confrontos e apostas).\n\nVariáveis da coleção:\n- base_url: endereço da API (ex.: http://127.0.0.1:8000/api)\n- token: token do painel, preenchido pelo login e refresh do painel\n- token_cliente: token do cliente, preenchido pelo cadastro, login e refresh da área do cliente\n- usuario_id / permissao: usados nas rotas de usuários e permissões\n- cliente_id / meio_pagamento_id / promocao_id: usados nas rotas de clientes\n- campeonato_id / confronto_id / registro_id / gerente_id: usados nas rotas de confrontos\n- codigo_aposta / palpite_id / confronto_ao_vivo_id: usados nas rotas de apostas\n- codigo_aposta / chave_encerramento / endpoint_push: usados nas rotas da spec 010\n- jogo_cassino / canal_cassino / provedor_cassino / sessao_cassino / acao_cassino / cassino_hall / cassino_chave: usados nas rotas da spec 011 (hall e chave só para simular o callback localmente)\n- token_afiliado / afiliado_id: usados nas rotas de afiliados da spec 012 (token_afiliado é preenchido pelo login, refresh e troca de senha do afiliado)\n\n- Dashboard (spec 014): as rotas usam o token do painel; atualizar=1 ignora o cache\n- Apostas do painel (spec 018): as rotas usam o token do painel e o codigo_aposta\n\nFluxo: execute 'Login' (painel) e 'Login do cliente'; as demais rotas usam os tokens salvos.",
+        "description": "Rotas da API do WSSports (autenticação JWT, gestão de usuários e permissões, área do cliente, gestão de clientes, confrontos e apostas).\n\nVariáveis da coleção:\n- base_url: endereço da API (ex.: http://127.0.0.1:8000/api)\n- token: token do painel, preenchido pelo login e refresh do painel\n- token_cliente: token do cliente, preenchido pelo cadastro, login e refresh da área do cliente\n- usuario_id / permissao: usados nas rotas de usuários e permissões\n- cliente_id / meio_pagamento_id / promocao_id: usados nas rotas de clientes\n- campeonato_id / confronto_id / registro_id / gerente_id: usados nas rotas de confrontos\n- codigo_aposta / palpite_id / confronto_ao_vivo_id: usados nas rotas de apostas\n- codigo_aposta / chave_encerramento / endpoint_push: usados nas rotas da spec 010\n- jogo_cassino / canal_cassino / provedor_cassino / sessao_cassino / acao_cassino / cassino_hall / cassino_chave: usados nas rotas da spec 011 (hall e chave só para simular o callback localmente)\n- token_afiliado / afiliado_id: usados nas rotas de afiliados da spec 012 (token_afiliado é preenchido pelo login, refresh e troca de senha do afiliado)\n\n- Dashboard (spec 014): as rotas usam o token do painel; atualizar=1 ignora o cache\n- Apostas do painel (spec 018): as rotas usam o token do painel e o codigo_aposta\n- Clientes do painel (spec 019): as rotas usam o token do painel e o cliente_id\n\nFluxo: execute 'Login' (painel) e 'Login do cliente'; as demais rotas usam os tokens salvos.",
         "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
     },
     "auth": {
@@ -1310,7 +1310,7 @@
                             }
                         ],
                         "url": {
-                            "raw": "{{base_url}}/clientes?busca=&ativo=1&ordenar_por=nome&direcao=asc&por_pagina=20",
+                            "raw": "{{base_url}}/clientes?busca=&ativo=1&ordenar_por=nome&direcao=asc&por_pagina=20&deposito=&pix_em_aberto=&modalidade=&aniversariantes=&periodo_de=&periodo_ate=",
                             "host": [
                                 "{{base_url}}"
                             ],
@@ -1337,10 +1337,34 @@
                                 {
                                     "key": "por_pagina",
                                     "value": "20"
+                                },
+                                {
+                                    "key": "deposito",
+                                    "value": ""
+                                },
+                                {
+                                    "key": "pix_em_aberto",
+                                    "value": ""
+                                },
+                                {
+                                    "key": "modalidade",
+                                    "value": ""
+                                },
+                                {
+                                    "key": "aniversariantes",
+                                    "value": ""
+                                },
+                                {
+                                    "key": "periodo_de",
+                                    "value": ""
+                                },
+                                {
+                                    "key": "periodo_ate",
+                                    "value": ""
                                 }
                             ]
                         },
-                        "description": "clientes.listar. Filtros: busca, ativo, ddi, afiliados_id, cadastro_de, cadastro_ate, idade_minima, idade_maxima, genero, saldo_minimo, saldo_maximo, com_saldo_promocional, saque_bloqueado, com_cpf, com_email."
+                        "description": "clientes.listar. Filtros: busca, ativo, ddi, afiliados_id, cadastro_de, cadastro_ate, idade_minima, idade_maxima, genero, saldo_minimo, saldo_maximo, com_saldo_promocional, saque_bloqueado, com_cpf, com_email.\n\nSpec 019: só os clientes da rede (afiliado → gerente responsável); cada item traz saldo_liquido. Filtros novos: deposito (ja_depositou|nunca_depositou), pix_em_aberto=1, modalidade (esportes|cassino) e aniversariantes=1, os dois últimos com periodo_de/periodo_ate (até 366 dias)."
                     }
                 },
                 {
@@ -1394,7 +1418,7 @@
                                 "{{cliente_id}}"
                             ]
                         },
-                        "description": "clientes.editar. Saldos não são aceitos.",
+                        "description": "clientes.editar. Saldos não são aceitos.\n\nSpec 019: Supervisor e Gerente só escolhem afiliado da rede e não deixam o cliente sem afiliado.",
                         "body": {
                             "mode": "raw",
                             "raw": "{\n    \"nome\": \"Maria Souza\",\n    \"email\": \"maria@mail.com\"\n}"
@@ -1584,10 +1608,10 @@
                                 "transacoes"
                             ]
                         },
-                        "description": "clientes.movimentar_saldo. Carteiras: Saldo, Promoção esportes, Promoção cassino. 422 Saldo insuficiente.",
+                        "description": "clientes.movimentar_saldo. Carteiras: Saldo, Promoção esportes, Promoção cassino. 422 Saldo insuficiente.\n\nSpec 019: exige a senha de quem ajusta (422 \"Senha incorreta.\").",
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \"carteira\": \"Saldo\",\n    \"tipo\": \"Crédito\",\n    \"valor\": \"100.00\",\n    \"observacao\": \"Ajuste de atendimento\"\n}"
+                            "raw": "{\n    \"carteira\": \"Saldo\",\n    \"tipo\": \"Crédito\",\n    \"valor\": \"100.00\",\n    \"observacao\": \"Ajuste de atendimento\",\n    \"senha\": \"senha_do_usuario\"\n}"
                         }
                     }
                 },
@@ -5699,7 +5723,7 @@
                             }
                         ],
                         "url": {
-                            "raw": "{{base_url}}/saques?situacao=Pendente&pagina=1&por_pagina=30",
+                            "raw": "{{base_url}}/saques?situacao=Pendente&pagina=1&por_pagina=30&busca=&de=&ate=",
                             "host": [
                                 "{{base_url}}"
                             ],
@@ -5718,10 +5742,63 @@
                                 {
                                     "key": "por_pagina",
                                     "value": "30"
+                                },
+                                {
+                                    "key": "busca",
+                                    "value": ""
+                                },
+                                {
+                                    "key": "de",
+                                    "value": ""
+                                },
+                                {
+                                    "key": "ate",
+                                    "value": ""
                                 }
                             ]
                         },
-                        "description": "Saques com cliente, chave Pix, modo, situação e motivos. Pendentes do mais antigo para o mais novo; por_pagina até 100."
+                        "description": "Saques com cliente, chave Pix, modo, situação e motivos. Pendentes do mais antigo para o mais novo; por_pagina até 100.\n\nSpec 019: só os saques dos clientes da rede; busca por nome ou ID do cliente; de/ate pela data do pedido."
+                    }
+                },
+                {
+                    "name": "Cartões da fila de saques",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/saques/resumo?busca=&de=2026-10-01&ate=2026-10-22",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "saques",
+                                "resumo"
+                            ],
+                            "query": [
+                                {
+                                    "key": "busca",
+                                    "value": ""
+                                },
+                                {
+                                    "key": "de",
+                                    "value": "2026-10-01"
+                                },
+                                {
+                                    "key": "ate",
+                                    "value": "2026-10-22"
+                                }
+                            ]
+                        },
+                        "description": "saques.gerenciar (spec 019). Pendentes e processando (quantidade e valor) e, com de/ate, os pagos no período, só dos clientes da rede."
                     }
                 },
                 {
@@ -7765,7 +7842,7 @@
                             }
                         ],
                         "url": {
-                            "raw": "{{base_url}}/afiliados?situacao=&busca=&usuarios_id=&de=2026-10-01&ate=2026-10-31&por_pagina=20",
+                            "raw": "{{base_url}}/afiliados?situacao=&busca=&usuarios_id=&de=2026-10-01&ate=2026-10-31&por_pagina=20&sem_gerente=",
                             "host": [
                                 "{{base_url}}"
                             ],
@@ -7796,10 +7873,14 @@
                                 {
                                     "key": "por_pagina",
                                     "value": "20"
+                                },
+                                {
+                                    "key": "sem_gerente",
+                                    "value": ""
                                 }
                             ]
                         },
-                        "description": "afiliados.listar. Filtros: situacao (Em análise, Ativo, Inativo, Recusado), busca (nome, login ou código), usuarios_id (gerente), de/ate (período dos totais; padrão hoje). Gerente só vê os seus. por_pagina até 100."
+                        "description": "afiliados.listar. Filtros: situacao (Em análise, Ativo, Inativo, Recusado), busca (nome, login ou código), usuarios_id (gerente), de/ate (período dos totais; padrão hoje). Gerente só vê os seus. por_pagina até 100.\n\nSpec 019: sem_gerente=1 lista os afiliados ainda sem gerente responsável; cada item traz sem_gerente. O Supervisor só vê os afiliados dos gerentes da rede dele."
                     }
                 },
                 {
@@ -7862,7 +7943,7 @@
                                 "afiliados"
                             ]
                         },
-                        "description": "afiliados.cadastrar. Nasce Ativo. Gerente fica como responsável (usuarios_id ignorado). tipo_ganho/percentual só valem com afiliados.editar_comissao; sem ela, a regra padrão."
+                        "description": "afiliados.cadastrar. Nasce Ativo. Gerente fica como responsável (usuarios_id ignorado). tipo_ganho/percentual só valem com afiliados.editar_comissao; sem ela, a regra padrão.\n\nSpec 019: o gerente responsável (usuarios_id) é obrigatório para Admin e Supervisor, e da rede do Supervisor."
                     }
                 },
                 {
@@ -7920,7 +8001,7 @@
                                 "{{afiliado_id}}"
                             ]
                         },
-                        "description": "afiliados.editar. login proibido; password (+ confirmação) invalida os tokens; usuarios_id e codigo só Admin/Supervisor."
+                        "description": "afiliados.editar. login proibido; password (+ confirmação) invalida os tokens; usuarios_id e codigo só Admin/Supervisor.\n\nSpec 019: o gerente responsável (usuarios_id) é obrigatório para Admin e Supervisor, e da rede do Supervisor."
                     }
                 },
                 {
@@ -7984,7 +8065,7 @@
                                 "aprovar"
                             ]
                         },
-                        "description": "afiliados.alterar_situacao + Admin/Supervisor. De Em análise ou Recusado para Ativo; e-mail de aprovação. Corpo opcional."
+                        "description": "afiliados.alterar_situacao + Admin/Supervisor. De Em análise ou Recusado para Ativo; e-mail de aprovação. Corpo opcional.\n\nSpec 019: o gerente responsável (usuarios_id) é obrigatório para Admin e Supervisor, e da rede do Supervisor."
                     }
                 },
                 {
@@ -9934,7 +10015,7 @@
                             }
                         ],
                         "url": {
-                            "raw": "{{base_url}}/apostas?de=2026-10-01&ate=2026-10-22&aba=todas&busca=&todo_periodo=&resultado=&usuarios_id=&forma_pagamento=&premio_minimo=&page=1&por_pagina=20",
+                            "raw": "{{base_url}}/apostas?de=2026-10-01&ate=2026-10-22&aba=todas&busca=&todo_periodo=&resultado=&usuarios_id=&forma_pagamento=&premio_minimo=&page=1&por_pagina=20&clientes_id=",
                             "host": [
                                 "{{base_url}}"
                             ],
@@ -9985,10 +10066,14 @@
                                 {
                                     "key": "por_pagina",
                                     "value": "20"
+                                },
+                                {
+                                    "key": "clientes_id",
+                                    "value": ""
                                 }
                             ]
                         },
-                        "description": "apostas.listar. Apostas da rede no período (pela data em que foram feitas), da mais nova para a mais antiga. aba=todas|pre_jogo|ao_vivo|canceladas; busca = código (qualquer data) ou nome do cliente (no período, salvo todo_periodo=1); resultado=Aguardando|Vencedor|Perdedor|Devolvido|Encerrada; usuarios_id = vendedor da rede (fora dela → 403); forma_pagamento=Dinheiro|Saldo|Promoção esportes; premio_minimo em reais. Apostas do site só para Admin e Supervisor. Paginação padrão 20, máximo 100."
+                        "description": "apostas.listar. Apostas da rede no período (pela data em que foram feitas), da mais nova para a mais antiga. aba=todas|pre_jogo|ao_vivo|canceladas; busca = código (qualquer data) ou nome do cliente (no período, salvo todo_periodo=1); resultado=Aguardando|Vencedor|Perdedor|Devolvido|Encerrada; usuarios_id = vendedor da rede (fora dela → 403); forma_pagamento=Dinheiro|Saldo|Promoção esportes; premio_minimo em reais. Apostas do site só para Admin e Supervisor. Paginação padrão 20, máximo 100.\n\nSpec 019: clientes_id filtra as apostas de um cliente (Admin e Supervisor; cliente da rede)."
                     }
                 },
                 {
@@ -10006,7 +10091,7 @@
                             }
                         ],
                         "url": {
-                            "raw": "{{base_url}}/apostas/resumo?de=2026-10-01&ate=2026-10-22&aba=todas&busca=&todo_periodo=&resultado=&usuarios_id=&forma_pagamento=&premio_minimo=",
+                            "raw": "{{base_url}}/apostas/resumo?de=2026-10-01&ate=2026-10-22&aba=todas&busca=&todo_periodo=&resultado=&usuarios_id=&forma_pagamento=&premio_minimo=&clientes_id=",
                             "host": [
                                 "{{base_url}}"
                             ],
@@ -10050,10 +10135,14 @@
                                 {
                                     "key": "premio_minimo",
                                     "value": ""
+                                },
+                                {
+                                    "key": "clientes_id",
+                                    "value": ""
                                 }
                             ]
                         },
-                        "description": "apostas.listar. Totais de todas as apostas do filtro: apostas, entradas, comissao, saidas (regra do Caixa), abertas, em_aberto e encerramentos (só Admin e Supervisor); na aba canceladas, apostas e valor_cancelado. Traz também limite_planilha (50000)."
+                        "description": "apostas.listar. Totais de todas as apostas do filtro: apostas, entradas, comissao, saidas (regra do Caixa), abertas, em_aberto e encerramentos (só Admin e Supervisor); na aba canceladas, apostas e valor_cancelado. Traz também limite_planilha (50000).\n\nSpec 019: clientes_id filtra as apostas de um cliente (Admin e Supervisor; cliente da rede)."
                     }
                 },
                 {
@@ -10149,7 +10238,7 @@
                             }
                         ],
                         "url": {
-                            "raw": "{{base_url}}/apostas/exportacao?de=2026-10-01&ate=2026-10-22&aba=todas&busca=&todo_periodo=&resultado=&usuarios_id=&forma_pagamento=&premio_minimo=",
+                            "raw": "{{base_url}}/apostas/exportacao?de=2026-10-01&ate=2026-10-22&aba=todas&busca=&todo_periodo=&resultado=&usuarios_id=&forma_pagamento=&premio_minimo=&clientes_id=",
                             "host": [
                                 "{{base_url}}"
                             ],
@@ -10193,10 +10282,14 @@
                                 {
                                     "key": "premio_minimo",
                                     "value": ""
+                                },
+                                {
+                                    "key": "clientes_id",
+                                    "value": ""
                                 }
                             ]
                         },
-                        "description": "apostas.exportar. Download .xlsx (apostas-{de}-{ate}.xlsx) com período, filtros, totais e uma linha por aposta do filtro. Mais de 50.000 apostas → 422."
+                        "description": "apostas.exportar. Download .xlsx (apostas-{de}-{ate}.xlsx) com período, filtros, totais e uma linha por aposta do filtro. Mais de 50.000 apostas → 422.\n\nSpec 019: clientes_id filtra as apostas de um cliente (Admin e Supervisor; cliente da rede)."
                     }
                 },
                 {
@@ -10282,6 +10375,280 @@
                             ]
                         },
                         "description": "apostas.restaurar (Admin, Supervisor e Gerente, na própria rede; apostas do site só Admin e Supervisor). A aposta cancelada volta a Ativa; o valor sai de novo do limite do vendedor ou do saldo do cliente (com o rollover). Com jogo iniciado, exige apostas.cancelar_iniciada e a aposta é apurada de novo. 422: não cancelada, encerramento parcial, sem limite ou sem saldo. Resposta { data: ComprovanteApostaResource }."
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Clientes do painel (spec 019)",
+            "item": [
+                {
+                    "name": "Ranking de clientes",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/clientes/ranking?periodo=30d&criterio=depositos&de=&ate=&page=1&por_pagina=20",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "clientes",
+                                "ranking"
+                            ],
+                            "query": [
+                                {
+                                    "key": "periodo",
+                                    "value": "30d"
+                                },
+                                {
+                                    "key": "criterio",
+                                    "value": "depositos"
+                                },
+                                {
+                                    "key": "de",
+                                    "value": ""
+                                },
+                                {
+                                    "key": "ate",
+                                    "value": ""
+                                },
+                                {
+                                    "key": "page",
+                                    "value": "1"
+                                },
+                                {
+                                    "key": "por_pagina",
+                                    "value": "20"
+                                }
+                            ]
+                        },
+                        "description": "clientes.ver_ranking. periodo: 24h|7d|30d|90d|personalizado (com de/ate); criterio: depositos|valor_apostado|resultado|saques. Só clientes da rede, com posição contínua entre as páginas."
+                    }
+                },
+                {
+                    "name": "Planilha da aba",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/clientes/exportacao?aba=cadastros",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "clientes",
+                                "exportacao"
+                            ],
+                            "query": [
+                                {
+                                    "key": "aba",
+                                    "value": "cadastros"
+                                }
+                            ]
+                        },
+                        "description": "clientes.exportar (Admin e Supervisor) + a permissão da aba. aba: cadastros|saques|ranking|lixeira, com os mesmos filtros da aba. Até 50.000 linhas (acima, 422)."
+                    }
+                },
+                {
+                    "name": "Pendentes do cliente",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/clientes/{{cliente_id}}/pendentes",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "clientes",
+                                "{{cliente_id}}",
+                                "pendentes"
+                            ]
+                        },
+                        "description": "clientes.antecipar_pendentes (Admin e Supervisor). Prêmios e encerramentos na janela de segurança."
+                    }
+                },
+                {
+                    "name": "Antecipar pendentes",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"senha\": \"senha_do_usuario\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/clientes/{{cliente_id}}/antecipar",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "clientes",
+                                "{{cliente_id}}",
+                                "antecipar"
+                            ]
+                        },
+                        "description": "clientes.antecipar_pendentes. Credita agora os pendentes; 422 \"Senha incorreta.\" ou \"Nenhum prêmio ou encerramento pendente.\"."
+                    }
+                },
+                {
+                    "name": "Limite de notificações do dia",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/clientes/notificacoes/limite",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "clientes",
+                                "notificacoes",
+                                "limite"
+                            ]
+                        },
+                        "description": "clientes.enviar_notificacao. limite, enviados_hoje, restantes e pode_alterar (só Admin)."
+                    }
+                },
+                {
+                    "name": "Alterar limite de notificações",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"limite\": 3\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/clientes/notificacoes/limite",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "clientes",
+                                "notificacoes",
+                                "limite"
+                            ]
+                        },
+                        "description": "Só Admin. Limite de envios manuais por dia, de 1 a 50."
+                    }
+                },
+                {
+                    "name": "Contar alcançados",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"publico\": \"Todos\",\n    \"clientes_ids\": [],\n    \"dias\": 10\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/clientes/notificacoes/alcance",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "clientes",
+                                "notificacoes",
+                                "alcance"
+                            ]
+                        },
+                        "description": "clientes.enviar_notificacao. publico: Todos | Por ID (clientes_ids) | Sem interagir (dias, 1 a 365)."
+                    }
+                },
+                {
+                    "name": "Enviar notificação",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"publico\": \"Todos\",\n    \"titulo\": \"Novidade\",\n    \"mensagem\": \"Confira as promoções de hoje.\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/clientes/notificacoes",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "clientes",
+                                "notificacoes"
+                            ]
+                        },
+                        "description": "clientes.enviar_notificacao. Envio em segundo plano aos inscritos da rede com \"Avisos da banca\" ligado. 422 sem alcançados ou sem envios restantes no dia."
                     }
                 }
             ]

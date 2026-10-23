@@ -106,6 +106,8 @@ class Configuracoes extends Model
         'aviso_combinacao_whatsapp',
         'telefone_whatsapp_admin',
         'chave_callmebot',
+        // limite diário das notificações push manuais (spec 019)
+        'limite_notificacoes_manuais_dia',
     ];
 
     /**
@@ -180,6 +182,8 @@ class Configuracoes extends Model
             // aviso de combinação de risco (spec 014)
             'aviso_combinacao_whatsapp' => 'boolean',
             'chave_callmebot' => 'encrypted',
+            // notificações manuais (spec 019)
+            'limite_notificacoes_manuais_dia' => 'integer',
         ];
     }
 

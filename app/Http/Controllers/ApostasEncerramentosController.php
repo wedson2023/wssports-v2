@@ -6,6 +6,7 @@ use App\Http\Controllers\Concerns\GarantirPermissaoCliente;
 use App\Http\Requests\ListagemEncerramentosRequest;
 use App\Http\Resources\ApostasEncerramentosResource;
 use App\Models\ApostasEncerramentos;
+use App\Services\AlcanceClientes;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Routing\Controllers\HasMiddleware;
@@ -31,7 +32,9 @@ class ApostasEncerramentosController extends Controller implements HasMiddleware
             ->whereBetween('created_at', [$inicio, $fim])
             ->when($request->validated('clientes_id'), fn (Builder $c, $id) => $c->where('clientes_id', $id))
             ->when($request->validated('modalidade'), fn (Builder $c, $modalidade) => $c->where('modalidade', $modalidade))
-            ->when($request->validated('situacao'), fn (Builder $c, $situacao) => $c->where('situacao', $situacao));
+            ->when($request->validated('situacao'), fn (Builder $c, $situacao) => $c->where('situacao', $situacao))
+            // só os clientes da rede (spec 019, FR-003a)
+            ->tap(fn (Builder $c) => app(AlcanceClientes::class)->aplicar($c, $request->user(), 'clientes_id'));
 
         $totais = $this->totais(clone $consulta);
 

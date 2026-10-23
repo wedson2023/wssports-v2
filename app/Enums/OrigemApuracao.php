@@ -13,4 +13,6 @@ enum OrigemApuracao: string
     case ReprocessamentoManual = 'Reprocessamento manual';
     case LançamentoManual = 'Lançamento manual';
     case EncerramentoEspecial = 'Encerramento de especial';
+    // prêmios creditados antes da janela de segurança pelo painel (spec 019, FR-019)
+    case Antecipação = 'Antecipação de pendentes';
 }

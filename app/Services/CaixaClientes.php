@@ -32,11 +32,11 @@ class CaixaClientes
      *
      * @return array<string, mixed>
      */
-    public function resumo(Carbon $inicio, Carbon $fim): array
+    public function resumo(Carbon $inicio, Carbon $fim, ?Builder $restringir_clientes = null): array
     {
-        $online = $this->caixa_online->calcular($inicio, $fim);
-        $cassino = $this->cassino->somas_periodo($inicio, $fim, Carteira::Saldo->value)['total'];
-        $bonus = $this->bonus(null, $inicio, $fim)[0] ?? ['concedidos' => '0.00', 'convertidos' => '0.00'];
+        $online = $this->caixa_online->calcular($inicio, $fim, $restringir_clientes);
+        $cassino = $this->cassino->somas_periodo($inicio, $fim, Carteira::Saldo->value, restringir_clientes: $restringir_clientes)['total'];
+        $bonus = $this->bonus(null, $inicio, $fim, $restringir_clientes)[0] ?? ['concedidos' => '0.00', 'convertidos' => '0.00'];
 
         $esportes = array_intersect_key($online, array_flip(['entradas', 'em_aberto', 'premiadas', 'perdidas', 'saidas', 'encerramentos', 'saldo_liquido']));
 
@@ -53,12 +53,14 @@ class CaixaClientes
     /**
      * Clientes com movimento no período, paginados no banco, com as somas só dos da página.
      */
-    public function clientes(Carbon $inicio, Carbon $fim, ?string $busca, string $ordenar, string $direcao, int $por_pagina, int $pagina): LengthAwarePaginator
+    public function clientes(Carbon $inicio, Carbon $fim, ?string $busca, string $ordenar, string $direcao, int $por_pagina, int $pagina, ?Builder $restringir_clientes = null): LengthAwarePaginator
     {
         $com_movimento = DB::query()->fromSub($this->ids_com_movimento($inicio, $fim), 'movimento')->select('clientes_id')->distinct();
 
         $consulta = DB::table('clientes as c')
             ->whereIn('c.id', $com_movimento)
+            // só os clientes da rede (spec 019, FR-003c); sem a restrição, a banca toda
+            ->when($restringir_clientes !== null, fn (Builder $c) => $c->whereIn('c.id', $restringir_clientes))
             ->when($busca, fn (Builder $c) => $c->where(fn (Builder $b) => $b
                 ->where('c.nome', 'like', '%'.$busca.'%')
                 ->orWhere('c.telefone', 'like', '%'.$busca.'%')
@@ -117,6 +119,7 @@ class CaixaClientes
                 'entradas' => $esportes['entradas'],
                 'saidas' => $esportes['saidas'],
                 'encerramentos' => $esportes['encerramentos'],
+                'entradas_cassino' => $do_cassino['entradas'],
                 'resultado_cassino' => $do_cassino['resultado'],
                 'bonus_convertidos' => $convertidos,
                 'depositos' => $depositos[$cliente->id] ?? '0.00',
@@ -141,12 +144,12 @@ class CaixaClientes
 
     /**
      * Bônus concedidos (promoções creditadas nas carteiras de promoção) e convertidos (passados para
-     * o saldo real) no período; sem ids, o total da banca na posição 0.
+     * o saldo real) no período; sem ids, o total da banca (ou da rede, com a restrição) na posição 0.
      *
      * @param  list<int>|null  $ids
      * @return array<int, array{concedidos: string, convertidos: string}>
      */
-    private function bonus(?array $ids, Carbon $inicio, Carbon $fim): array
+    private function bonus(?array $ids, Carbon $inicio, Carbon $fim, ?Builder $restringir_clientes = null): array
     {
         $carteiras_promocao = [Carteira::PromoçãoEsportes->value, Carteira::PromoçãoCassino->value];
 
@@ -154,6 +157,7 @@ class CaixaClientes
             ->whereNull('deleted_at')
             ->where('tipo', TipoTransacao::Crédito->value)
             ->whereBetween('created_at', [$inicio, $fim])
+            ->when($restringir_clientes !== null, fn (Builder $c) => $c->whereIn('clientes_id', $restringir_clientes))
             ->when($ids !== null, fn (Builder $c) => $c->whereIn('clientes_id', $ids)->groupBy('clientes_id')->addSelect('clientes_id'))
             ->selectRaw(
                 'COALESCE(SUM(CASE WHEN origem = ? AND carteira IN (?, ?) THEN valor ELSE 0 END), 0) as concedidos',

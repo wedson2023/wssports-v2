@@ -40,7 +40,7 @@ class ListagemAfiliados
      * Listagem da gestão (FR-043 e FR-044): filtros e, por afiliado, cadastros, depósitos, saques e
      * comissão do período, valor a receber e última prestação, tudo por subconsultas.
      *
-     * @param  array{situacao?: ?string, busca?: ?string, usuarios_id?: ?int, de?: ?string, ate?: ?string}  $filtros
+     * @param  array{situacao?: ?string, busca?: ?string, usuarios_id?: ?int, sem_gerente?: ?bool, de?: ?string, ate?: ?string}  $filtros
      */
     public function consulta_gestao(Builder $consulta, array $filtros): Builder
     {
@@ -51,6 +51,7 @@ class ListagemAfiliados
             ->with(['gerente', 'comissao_vigente', 'ultima_prestacao'])
             ->when(isset($filtros['situacao']), fn (Builder $c) => $c->where('afiliados.situacao', $filtros['situacao']))
             ->when(isset($filtros['usuarios_id']), fn (Builder $c) => $c->where('afiliados.usuarios_id', $filtros['usuarios_id']))
+            ->when((bool) ($filtros['sem_gerente'] ?? false), fn (Builder $c) => $c->whereNull('afiliados.usuarios_id'))
             ->when(isset($filtros['busca']), fn (Builder $c) => $c->where(fn (Builder $busca) => $busca
                 ->where('afiliados.nome', 'like', '%'.$filtros['busca'].'%')
                 ->orWhere('afiliados.login', 'like', $filtros['busca'].'%')

@@ -57,4 +57,12 @@ class PainelController extends Controller
     {
         return Inertia::render('PanelBets');
     }
+
+    /**
+     * Tela "Clientes" (spec 019); aba, busca e filtros vêm na query string.
+     */
+    public function clientes(): Response
+    {
+        return Inertia::render('PanelClients');
+    }
 }

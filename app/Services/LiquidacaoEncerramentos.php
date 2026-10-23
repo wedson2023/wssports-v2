@@ -9,6 +9,7 @@ use App\Events\ApostaAtualizada;
 use App\Models\Apostas;
 use App\Models\ApostasEncerramentos;
 use App\Models\Clientes;
+use App\Models\Usuarios;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Throwable;
@@ -38,7 +39,7 @@ class LiquidacaoEncerramentos
 
         foreach ($ids as $id) {
             try {
-                $codigo = $this->creditar((int) $id);
+                $codigo = $this->creditar_encerramento((int) $id);
 
                 if ($codigo !== null) {
                     $resumo['creditados']++;
@@ -54,11 +55,14 @@ class LiquidacaoEncerramentos
     }
 
     /**
+     * Credita um encerramento ainda registrado; também usado pela antecipação do painel (spec 019,
+     * FR-019), que informa o `$autor` para o extrato.
+     *
      * @return string|null o código da aposta quando creditou
      */
-    private function creditar(int $id): ?string
+    public function creditar_encerramento(int $id, ?Usuarios $autor = null): ?string
     {
-        return DB::transaction(function () use ($id) {
+        return DB::transaction(function () use ($id, $autor) {
             $apostas_id = ApostasEncerramentos::whereKey($id)->value('apostas_id');
             // ordem de bloqueio: aposta → encerramento (a mesma da apuração e do pedido)
             $aposta = Apostas::lockForUpdate()->findOrFail($apostas_id);
@@ -74,7 +78,7 @@ class LiquidacaoEncerramentos
                 Carteira::Saldo,
                 (string) $encerramento->valor,
                 OrigemTransacao::EncerramentoAposta,
-                null,
+                $autor,
                 $aposta->id,
                 "Encerramento da aposta {$aposta->codigo}",
             );

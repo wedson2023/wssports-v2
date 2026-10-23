@@ -42,6 +42,8 @@ class AfiliadosResource extends JsonResource
                 'id' => $this->gerente->id,
                 'nome' => $this->gerente->nome,
             ]),
+            // afiliado sem gerente responsável: os clientes dele ficam só para o Admin (spec 019)
+            'sem_gerente' => $this->usuarios_id === null,
             'comissao' => $this->whenLoaded('comissao_vigente', fn () => $this->comissao_vigente === null ? null : [
                 'tipo_ganho' => $this->comissao_vigente->tipo_ganho,
                 'percentual' => $this->comissao_vigente->percentual,

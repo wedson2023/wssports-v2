@@ -26,6 +26,7 @@ class InscricaoNotificacaoResource extends JsonResource
             'receber_fim_jogo' => $this->receber_fim_jogo,
             'receber_resultado_aposta' => $this->receber_resultado_aposta,
             'receber_encerramento_automatico' => $this->receber_encerramento_automatico,
+            'receber_avisos_banca' => $this->receber_avisos_banca,
         ];
     }
 }

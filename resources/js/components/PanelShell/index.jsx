@@ -22,8 +22,8 @@ const permissoes_cotacoes = [
 const permissoes_caixa = ['caixa.ver', 'caixa.ver_clientes'];
 
 // itens do menu do painel: Dashboard (spec 014), o grupo Usuários (spec 015) com os subitens por
-// função, como no menu "Usuários" do antigo, Cotações (spec 016), Caixa (spec 017) e Apostas
-// (spec 018); cada um diz quem pode vê-lo
+// função, como no menu "Usuários" do antigo, Cotações (spec 016), Caixa (spec 017), Clientes
+// (spec 019) e Apostas (spec 018); cada um diz quem pode vê-lo
 const itens_menu = [
     { chave: 'dashboard', rotulo: 'Dashboard', icone: 'bar_chart', href: '/painel', visivel: (usuario) => usuario.secoes.length > 0 },
     {
@@ -50,6 +50,13 @@ const itens_menu = [
         icone: 'point_of_sale',
         href: '/painel/caixa',
         visivel: (usuario) => permissoes_caixa.some((permissao) => usuario.permissoes.includes(permissao)),
+    },
+    {
+        chave: 'clientes',
+        rotulo: 'Clientes',
+        icone: 'credit_card',
+        href: '/painel/clientes',
+        visivel: (usuario) => usuario.permissoes.includes('clientes.listar'),
     },
     {
         chave: 'apostas',

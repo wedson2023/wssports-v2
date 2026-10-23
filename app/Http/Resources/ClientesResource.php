@@ -49,6 +49,8 @@ class ClientesResource extends JsonResource
             'saldo' => $this->saldo,
             'saldo_promocao_esportes' => $this->saldo_promocao_esportes,
             'saldo_promocao_cassino' => $this->saldo_promocao_cassino,
+            // calculado só na lista e no detalhe do painel (spec 019, FR-006)
+            'saldo_liquido' => $this->when(isset($this->saldo_liquido), fn () => bcadd((string) $this->saldo_liquido, '0', 2)),
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,
             'deleted_at' => $this->when($this->trashed(), $this->deleted_at),

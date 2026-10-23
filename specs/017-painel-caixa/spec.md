@@ -76,6 +76,12 @@ specs 014, 015 e 016, responsiva com prioridade ao celular."
   prestação de contas? → A: Pode prestar contas e lançar retiradas; suprimento é recusado; o caixa
   dele continua na lista enquanto houver saldo (FR-014a).
 
+### Session 2026-10-22 (alterado pela spec 019)
+
+- O Caixa clientes (totais, lista por cliente e planilha) passa a mostrar ao Supervisor só os
+  clientes da rede dele (afiliado → gerente responsável); o Admin continua vendo a banca toda. A
+  Caixa online da Dashboard não muda (spec 019, FR-003c).
+
 ## Referências do sistema antigo *(Princípios VII e VIII)*
 
 - Backend: `app/Http/Controllers/CaixaController.php` (`caixaAdmin`, `caixaGerentes`,

@@ -84,6 +84,11 @@ class CadastroAfiliados
                 $afiliado->usuarios_id = $opcoes['usuarios_id'];
             }
 
+            // só aprova com gerente responsável: os clientes do afiliado precisam de uma rede (spec 019)
+            if ($afiliado->usuarios_id === null) {
+                throw ValidationException::withMessages(['usuarios_id' => 'Escolha o gerente responsável para aprovar.']);
+            }
+
             $afiliado->forceFill([
                 'situacao' => SituacaoAfiliado::Ativo,
                 'motivo_recusa' => null,

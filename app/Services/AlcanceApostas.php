@@ -9,12 +9,14 @@ use App\Models\Usuarios;
 /**
  * Quem pode cancelar e editar qual aposta (R-15): o vendedor, só as próprias; Gerente e
  * Supervisor, as dos vendedores da sua hierarquia; o Admin, todas; as apostas de cliente, que não
- * têm vendedor, qualquer Gerente, Supervisor ou Admin com a permissão. Fora do alcance, a aposta é
- * tratada como inexistente.
+ * têm vendedor, o Gerente e o Supervisor só as dos clientes da rede (spec 019, AlcanceClientes).
+ * Fora do alcance, a aposta é tratada como inexistente.
  */
 class AlcanceApostas
 {
     private const NAO_ENCONTRADA = 'Aposta não encontrada.';
+
+    public function __construct(private readonly AlcanceClientes $alcance_clientes) {}
 
     public function garantir_pode_cancelar(Usuarios $usuario, Apostas $aposta): void
     {
@@ -54,8 +56,13 @@ class AlcanceApostas
             return false;
         }
 
-        if ($aposta->clientes_id !== null || $funcao === Funcao::Admin) {
+        if ($funcao === Funcao::Admin) {
             return true;
+        }
+
+        // aposta de cliente: só dos clientes da rede (spec 019, FR-003c)
+        if ($aposta->clientes_id !== null) {
+            return $this->alcance_clientes->contem($usuario, $aposta->clientes_id);
         }
 
         return $aposta->usuarios_id !== null && in_array($aposta->usuarios_id, $usuario->ids_sub_hierarquia(), true);

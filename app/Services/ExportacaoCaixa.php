@@ -38,6 +38,7 @@ class ExportacaoCaixa
         private readonly ApuracaoCaixa $apuracao,
         private readonly CaixaClientes $clientes,
         private readonly PlanilhaPainel $planilha,
+        private readonly AlcanceClientes $alcance_clientes,
     ) {}
 
     /**
@@ -76,15 +77,17 @@ class ExportacaoCaixa
     }
 
     /**
-     * Caixa clientes do período: totais e uma linha por cliente com movimento.
+     * Caixa clientes do período: totais e uma linha por cliente com movimento, só dos clientes da
+     * rede do solicitante (spec 019, FR-003c; o Admin vê a banca toda).
      */
-    public function clientes(Carbon $inicio, Carbon $fim, string $de, string $ate): string
+    public function clientes(Carbon $inicio, Carbon $fim, string $de, string $ate, Usuarios $solicitante): string
     {
-        $resumo = $this->clientes->resumo($inicio, $fim);
+        $restringir = $this->alcance_clientes->subconsulta_ids($solicitante);
+        $resumo = $this->clientes->resumo($inicio, $fim, $restringir);
         $linhas = [];
 
         for ($pagina = 1; count($linhas) < self::MAXIMO_LINHAS; $pagina++) {
-            $pagina_clientes = $this->clientes->clientes($inicio, $fim, null, 'nome', 'asc', self::POR_PAGINA, $pagina);
+            $pagina_clientes = $this->clientes->clientes($inicio, $fim, null, 'nome', 'asc', self::POR_PAGINA, $pagina, $restringir);
             $linhas = [...$linhas, ...$pagina_clientes->items()];
 
             if ($pagina >= $pagina_clientes->lastPage()) {

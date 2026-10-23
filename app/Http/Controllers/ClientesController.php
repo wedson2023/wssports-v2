@@ -2,12 +2,13 @@
 
 namespace App\Http\Controllers;
 
-use App\Enums\Genero;
+use App\Http\Controllers\Concerns\GarantirAlcanceCliente;
 use App\Http\Controllers\Concerns\GarantirPermissaoCliente;
 use App\Http\Requests\RestaurarClientesRequest;
 use App\Http\Requests\UpdateClientesRequest;
 use App\Http\Resources\ClientesResource;
 use App\Models\Clientes;
+use App\Services\FiltrosClientes;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -15,14 +16,14 @@ use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Http\Response;
 use Illuminate\Routing\Controllers\HasMiddleware;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Validation\Rule;
 
 /**
- * Gestão de clientes no painel: listagem, consulta, edição, situação, exclusão e restauração.
+ * Gestão de clientes no painel: listagem, consulta, edição, situação, exclusão e restauração, só dos
+ * clientes da rede do usuário (spec 019, FR-003a).
  */
 class ClientesController extends Controller implements HasMiddleware
 {
-    use GarantirPermissaoCliente;
+    use GarantirAlcanceCliente, GarantirPermissaoCliente;
 
     /**
      * Dados únicos que recebem o sufixo de exclusão.
@@ -39,6 +40,8 @@ class ClientesController extends Controller implements HasMiddleware
         ];
     }
 
+    public function __construct(private readonly FiltrosClientes $filtros) {}
+
     public function index(Request $request): AnonymousResourceCollection
     {
         return $this->listar($request, Clientes::query());
@@ -49,9 +52,11 @@ class ClientesController extends Controller implements HasMiddleware
         return $this->listar($request, Clientes::onlyTrashed());
     }
 
-    public function show(Clientes $cliente): ClientesResource
+    public function show(Request $request, Clientes $cliente): ClientesResource
     {
-        return new ClientesResource($cliente->load(['configuracoes', 'afiliado']));
+        $this->garantir_cliente($request, $cliente);
+
+        return new ClientesResource($this->com_saldo_liquido($cliente)->load(['configuracoes', 'afiliado']));
     }
 
     /**
@@ -59,6 +64,8 @@ class ClientesController extends Controller implements HasMiddleware
      */
     public function update(UpdateClientesRequest $request, Clientes $cliente): ClientesResource
     {
+        $this->garantir_cliente($request, $cliente);
+
         $cliente->update($request->validated());
 
         return new ClientesResource($cliente->load(['configuracoes', 'afiliado']));
@@ -69,6 +76,8 @@ class ClientesController extends Controller implements HasMiddleware
      */
     public function alterar_situacao(Request $request, Clientes $cliente): ClientesResource
     {
+        $this->garantir_cliente($request, $cliente);
+
         $ativo = $request->validate(
             ['ativo' => ['required', 'boolean']],
             ['ativo.required' => 'Informe se o cliente fica ativo.', 'ativo.boolean' => 'O campo ativo deve ser verdadeiro ou falso.'],
@@ -86,8 +95,10 @@ class ClientesController extends Controller implements HasMiddleware
     /**
      * Exclusão lógica com sufixo nos dados únicos, que ficam livres para novos cadastros.
      */
-    public function destroy(Clientes $cliente): Response
+    public function destroy(Request $request, Clientes $cliente): Response
     {
+        $this->garantir_cliente($request, $cliente);
+
         $sufixo = '_deleted_'.now()->timestamp;
 
         DB::transaction(function () use ($cliente, $sufixo) {
@@ -111,6 +122,8 @@ class ClientesController extends Controller implements HasMiddleware
      */
     public function restaurar(RestaurarClientesRequest $request, Clientes $cliente): ClientesResource|JsonResponse
     {
+        $this->garantir_cliente($request, $cliente);
+
         if (! $cliente->trashed()) {
             return response()->json(['message' => 'Cliente não está excluído.'], 422);
         }
@@ -156,68 +169,14 @@ class ClientesController extends Controller implements HasMiddleware
     }
 
     /**
-     * Listagem com busca, filtros, ordenação e paginação (máximo 100), usada também pelos excluídos.
+     * Listagem da rede com busca, filtros, saldo líquido, ordenação e paginação (máximo 100), usada
+     * também pelos excluídos (spec 019, FiltrosClientes).
      */
     private function listar(Request $request, Builder $consulta): AnonymousResourceCollection
     {
-        // filtros enviados vazios (ex.: ?busca=) chegam como null e são ignorados
-        $filtros = $request->validate([
-            'busca' => ['nullable', 'string', 'max:150'],
-            'ativo' => ['nullable', 'boolean'],
-            'ddi' => ['nullable', 'digits_between:1,3'],
-            'afiliados_id' => ['nullable', 'integer'],
-            'cadastro_de' => ['nullable', 'date_format:Y-m-d'],
-            'cadastro_ate' => ['nullable', 'date_format:Y-m-d'],
-            'idade_minima' => ['nullable', 'integer', 'min:0'],
-            'idade_maxima' => ['nullable', 'integer', 'min:0'],
-            'genero' => ['nullable', Rule::enum(Genero::class)],
-            'saldo_minimo' => ['nullable', 'numeric'],
-            'saldo_maximo' => ['nullable', 'numeric'],
-            'com_saldo_promocional' => ['nullable', 'boolean'],
-            'saque_bloqueado' => ['nullable', 'boolean'],
-            'com_cpf' => ['nullable', 'boolean'],
-            'com_email' => ['nullable', 'boolean'],
-            'ordenar_por' => ['nullable', Rule::in(['nome', 'created_at', 'saldo'])],
-            'direcao' => ['nullable', Rule::in(['asc', 'desc'])],
-            'por_pagina' => ['nullable', 'integer', 'between:1,100'],
-        ], [
-            '*.string' => 'O filtro :attribute deve ser um texto.',
-            '*.max' => 'O filtro :attribute é longo demais.',
-            '*.min' => 'O filtro :attribute não pode ser negativo.',
-            'ddi.digits_between' => 'O DDI deve ter de 1 a 3 dígitos.',
-            '*.boolean' => 'O filtro :attribute deve ser verdadeiro ou falso.',
-            '*.date_format' => 'O filtro :attribute deve estar no formato AAAA-MM-DD.',
-            '*.integer' => 'O filtro :attribute deve ser um número inteiro.',
-            '*.numeric' => 'O filtro :attribute deve ser um número.',
-            'genero.enum' => 'O gênero informado é inválido.',
-            'ordenar_por.in' => 'Ordene por nome, created_at ou saldo.',
-            'direcao.in' => 'A direção deve ser asc ou desc.',
-            'por_pagina.between' => 'O campo por página deve estar entre 1 e 100.',
-        ]);
+        $filtros = $this->filtros->validar($request);
 
-        $busca_completa = ! ClientesResource::deve_mascarar($request);
-
-        $clientes = $consulta
-            ->with(['configuracoes', 'afiliado'])
-            ->when(isset($filtros['busca']), fn (Builder $c) => $this->aplicar_busca($c, $filtros['busca'], $busca_completa))
-            ->when(isset($filtros['ativo']), fn (Builder $c) => $c->where('ativo', (bool) $filtros['ativo']))
-            ->when(isset($filtros['ddi']), fn (Builder $c) => $c->where('ddi', $filtros['ddi']))
-            ->when(isset($filtros['afiliados_id']), fn (Builder $c) => $c->where('afiliados_id', (int) $filtros['afiliados_id']))
-            ->when(isset($filtros['cadastro_de']), fn (Builder $c) => $c->where('created_at', '>=', $filtros['cadastro_de'].' 00:00:00'))
-            ->when(isset($filtros['cadastro_ate']), fn (Builder $c) => $c->where('created_at', '<=', $filtros['cadastro_ate'].' 23:59:59'))
-            ->when(isset($filtros['idade_minima']), fn (Builder $c) => $c->where('data_nascimento', '<=', now()->subYears((int) $filtros['idade_minima'])->toDateString()))
-            ->when(isset($filtros['idade_maxima']), fn (Builder $c) => $c->where('data_nascimento', '>', now()->subYears((int) $filtros['idade_maxima'] + 1)->toDateString()))
-            ->when(isset($filtros['genero']), fn (Builder $c) => $c->where('genero', $filtros['genero']))
-            ->when(isset($filtros['saldo_minimo']), fn (Builder $c) => $c->where('saldo', '>=', $filtros['saldo_minimo']))
-            ->when(isset($filtros['saldo_maximo']), fn (Builder $c) => $c->where('saldo', '<=', $filtros['saldo_maximo']))
-            ->when(isset($filtros['com_saldo_promocional']), fn (Builder $c) => $this->filtrar_saldo_promocional($c, (bool) $filtros['com_saldo_promocional']))
-            ->when(isset($filtros['saque_bloqueado']), fn (Builder $c) => $c->whereHas(
-                'configuracoes', fn (Builder $conf) => $conf->where('bloquear_saque', (bool) $filtros['saque_bloqueado'])
-            ))
-            ->when(isset($filtros['com_cpf']), fn (Builder $c) => $filtros['com_cpf'] ? $c->whereNotNull('cpf') : $c->whereNull('cpf'))
-            ->when(isset($filtros['com_email']), fn (Builder $c) => $filtros['com_email'] ? $c->whereNotNull('email') : $c->whereNull('email'))
-            ->orderBy($filtros['ordenar_por'] ?? 'nome', $filtros['direcao'] ?? 'asc')
-            ->orderBy('id')
+        $clientes = $this->filtros->consulta($request->user(), $consulta, $filtros, $request)
             ->paginate($filtros['por_pagina'] ?? 20)
             ->withQueryString();
 
@@ -225,39 +184,15 @@ class ClientesController extends Controller implements HasMiddleware
     }
 
     /**
-     * Nome por trecho; telefone, CPF e e-mail por prefixo para quem vê os dados completos
-     * e só pelo valor completo para os demais (casa também com o valor antes do sufixo de exclusão).
+     * O mesmo cliente com o saldo líquido calculado (FR-006), para o detalhe.
      */
-    private function aplicar_busca(Builder $consulta, string $busca, bool $busca_completa): Builder
+    private function com_saldo_liquido(Clientes $cliente): Clientes
     {
-        $digitos = preg_replace('/\D/', '', $busca);
-        $email = mb_strtolower(trim($busca));
+        $cliente->saldo_liquido = Clientes::withTrashed()
+            ->whereKey($cliente->id)
+            ->select(['saldo_liquido' => FiltrosClientes::subconsulta_saldo_liquido()])
+            ->value('saldo_liquido');
 
-        return $consulta->where(function (Builder $c) use ($busca, $digitos, $email, $busca_completa) {
-            $c->where('nome', 'like', '%'.$busca.'%');
-
-            if ($busca_completa) {
-                if ($digitos !== '') {
-                    $c->orWhere('telefone', 'like', $digitos.'%')->orWhere('cpf', 'like', $digitos.'%');
-                }
-
-                $c->orWhere('email', 'like', $email.'%');
-
-                return;
-            }
-
-            foreach (['telefone' => $digitos, 'cpf' => $digitos, 'email' => $email] as $campo => $valor) {
-                if ($valor !== '') {
-                    $c->orWhere($campo, $valor)->orWhere($campo, 'like', $valor.'\_deleted\_%');
-                }
-            }
-        });
-    }
-
-    private function filtrar_saldo_promocional(Builder $consulta, bool $com_saldo): Builder
-    {
-        return $com_saldo
-            ? $consulta->where(fn (Builder $c) => $c->where('saldo_promocao_esportes', '>', 0)->orWhere('saldo_promocao_cassino', '>', 0))
-            : $consulta->where('saldo_promocao_esportes', 0)->where('saldo_promocao_cassino', 0);
+        return $cliente;
     }
 }

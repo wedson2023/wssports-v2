@@ -13,6 +13,8 @@ enum TipoNotificacao: string
     case FimDeJogo = 'Fim de jogo';
     case ResultadoAposta = 'Resultado da aposta';
     case EncerramentoAutomático = 'Encerramento automático';
+    // aviso manual enviado pelo painel (spec 019, FR-031 a FR-033a)
+    case AvisoBanca = 'Aviso da banca';
 
     /**
      * Coluna da inscrição que liga ou desliga este tipo de aviso no aparelho.
@@ -25,6 +27,7 @@ enum TipoNotificacao: string
             self::FimDeJogo => 'receber_fim_jogo',
             self::ResultadoAposta => 'receber_resultado_aposta',
             self::EncerramentoAutomático => 'receber_encerramento_automatico',
+            self::AvisoBanca => 'receber_avisos_banca',
         };
     }
 
