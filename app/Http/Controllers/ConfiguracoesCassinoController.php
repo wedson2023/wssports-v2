@@ -6,6 +6,7 @@ use App\Http\Controllers\Concerns\GarantirPermissaoCliente;
 use App\Http\Requests\ConfiguracoesCassinoRequest;
 use App\Http\Resources\ConfiguracoesCassinoResource;
 use App\Models\Configuracoes;
+use App\Services\HistoricoConfiguracoes;
 use App\Services\ListagemCassino;
 use Illuminate\Routing\Controllers\HasMiddleware;
 
@@ -27,10 +28,10 @@ class ConfiguracoesCassinoController extends Controller implements HasMiddleware
         return new ConfiguracoesCassinoResource(Configuracoes::atual());
     }
 
-    public function update(ConfiguracoesCassinoRequest $request): ConfiguracoesCassinoResource
+    public function update(ConfiguracoesCassinoRequest $request, HistoricoConfiguracoes $historico): ConfiguracoesCassinoResource
     {
         $configuracoes = Configuracoes::atual();
-        $configuracoes->update($request->validated());
+        $historico->alterar($request->user(), 'cassino', $configuracoes, $request->validated());
 
         // o demo muda o botão dos jogos na tela inicial em cache
         ListagemCassino::limpar_cache();

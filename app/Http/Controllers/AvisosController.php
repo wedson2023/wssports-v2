@@ -2,11 +2,13 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\AcaoConfiguracao;
 use App\Http\Controllers\Concerns\GarantirPermissaoCliente;
 use App\Http\Requests\AvisosRequest;
 use App\Http\Resources\AvisosResource;
 use App\Models\Avisos;
 use App\Services\ArmazenamentoImagens;
+use App\Services\HistoricoConfiguracoes;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Http\Response;
@@ -20,7 +22,10 @@ class AvisosController extends Controller implements HasMiddleware
 {
     use GarantirPermissaoCliente;
 
-    public function __construct(private ArmazenamentoImagens $imagens) {}
+    // campos do aviso registrados no histórico (spec 021, FR-003a)
+    private const CAMPOS_HISTORICO = ['imagem', 'titulo', 'link', 'inicio_em', 'fim_em', 'ativo'];
+
+    public function __construct(private ArmazenamentoImagens $imagens, private HistoricoConfiguracoes $historico) {}
 
     public static function middleware(): array
     {
@@ -56,12 +61,15 @@ class AvisosController extends Controller implements HasMiddleware
             'imagem' => $this->imagens->salvar($request->file('imagem'), 'avisos'),
         ]);
 
+        $this->historico->registrar($request->user(), 'avisos', AcaoConfiguracao::Cadastro, $aviso->id);
+
         return new AvisosResource($aviso);
     }
 
     public function update(AvisosRequest $request, Avisos $aviso): AvisosResource
     {
         $anterior = $aviso->imagem;
+        $antes = $this->historico->valores($aviso, self::CAMPOS_HISTORICO);
         $aviso->fill($request->dados_aviso());
 
         if ($request->hasFile('imagem')) {
@@ -75,13 +83,20 @@ class AvisosController extends Controller implements HasMiddleware
             $this->imagens->remover($anterior);
         }
 
+        $alteracoes = $this->historico->diferencas($antes, $this->historico->valores($aviso, self::CAMPOS_HISTORICO));
+
+        if ($alteracoes !== []) {
+            $this->historico->registrar($request->user(), 'avisos', AcaoConfiguracao::Alteração, $aviso->id, $alteracoes);
+        }
+
         return new AvisosResource($aviso->loadCount('leituras'));
     }
 
-    public function destroy(Avisos $aviso): Response
+    public function destroy(Request $request, Avisos $aviso): Response
     {
         $aviso->delete();
         $this->imagens->remover($aviso->imagem);
+        $this->historico->registrar($request->user(), 'avisos', AcaoConfiguracao::Exclusão, $aviso->id);
 
         return response()->noContent();
     }

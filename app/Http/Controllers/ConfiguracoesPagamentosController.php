@@ -6,6 +6,7 @@ use App\Http\Controllers\Concerns\GarantirPermissaoCliente;
 use App\Http\Requests\ConfiguracoesPagamentosRequest;
 use App\Http\Resources\ConfiguracoesPagamentosResource;
 use App\Models\Configuracoes;
+use App\Services\HistoricoConfiguracoes;
 use Illuminate\Routing\Controllers\HasMiddleware;
 
 /**
@@ -26,10 +27,10 @@ class ConfiguracoesPagamentosController extends Controller implements HasMiddlew
         return new ConfiguracoesPagamentosResource(Configuracoes::atual());
     }
 
-    public function update(ConfiguracoesPagamentosRequest $request): ConfiguracoesPagamentosResource
+    public function update(ConfiguracoesPagamentosRequest $request, HistoricoConfiguracoes $historico): ConfiguracoesPagamentosResource
     {
         $configuracoes = Configuracoes::atual();
-        $configuracoes->update($request->validated());
+        $historico->alterar($request->user(), 'pagamentos', $configuracoes, $request->validated());
 
         return new ConfiguracoesPagamentosResource($configuracoes);
     }

@@ -61,39 +61,59 @@ export const Logo = styled.img`
     width: 96px;
 `;
 
-// regras da banca escritas pelo administrador: cada parágrafo em um cartão com destaque na cor do
-// tema à esquerda e ícone, no lugar do "- " no começo da linha
-export const BankRules = styled.ul`
-    list-style: none;
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
+// regras da banca escritas no editor do painel (spec 021): HTML limpo no servidor, no mesmo cartão
+// claro com a borda na cor do tema que os parágrafos tinham antes
+export const BankRichText = styled.div`
     margin: 8px 0;
-    padding: 0;
-`;
-
-export const BankRule = styled.li`
-    display: flex;
-    align-items: flex-start;
-    gap: 10px;
-    padding: 12px 14px;
+    padding: 12px 16px;
     background: #f6f7f9;
     border-left: 3px solid ${({ theme }) => theme.principal};
     border-radius: 8px;
     font-size: 0.9em;
     line-height: 1.6;
     color: #333;
+    overflow-wrap: anywhere;
 
-    i {
-        flex-shrink: 0;
-        margin-top: 2px;
-        font-size: 18px;
-        color: ${({ theme }) => theme.principal};
+    h2,
+    h3 {
+        margin: 14px 0 6px;
+        color: #222;
+        line-height: 1.3;
     }
 
-    span {
-        white-space: pre-line;
-        overflow-wrap: anywhere;
+    h2 {
+        font-size: 1.25em;
+    }
+
+    h3 {
+        font-size: 1.1em;
+    }
+
+    p {
+        margin: 0 0 8px;
+    }
+
+    ul,
+    ol {
+        margin: 0 0 8px;
+        padding-left: 22px;
+    }
+
+    li + li {
+        margin-top: 4px;
+    }
+
+    a {
+        color: ${({ theme }) => theme.principal};
+        text-decoration: underline;
+    }
+
+    > :first-child {
+        margin-top: 0;
+    }
+
+    > :last-child {
+        margin-bottom: 0;
     }
 `;
 

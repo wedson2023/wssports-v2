@@ -89,6 +89,13 @@ paralelo, com cache curto; o botão do Mercado Pago sai do frontend."
   concede ou retira, na sua rede, as permissões que possui (Admin no Supervisor, Supervisor no
   Gerente, Gerente no Vendedor).
 
+### Session 2026-10-25 (alterado pela spec 021, pedido do responsável)
+
+- Ao trocar de tela pelo menu do painel, só o conteúdo carrega: o usuário do painel já carregado
+  fica guardado na aba do navegador (`usePainel`), então menu e cabeçalho aparecem na hora, sem o
+  carregando de tela inteira; a consulta `GET /auth/eu` continua sendo feita para manter as
+  permissões em dia. Na primeira entrada (ou com outro token), o carregando de tela inteira continua.
+
 ## Referências do sistema antigo *(Princípios VII e VIII)*
 
 - Backend: `app/Http/Controllers/DashboardController.php` (`index`, `apuradoDia`,

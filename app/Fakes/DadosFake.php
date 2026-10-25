@@ -10,59 +10,6 @@ namespace App\Fakes;
 class DadosFake
 {
     /**
-     * Cor principal do tema e a cor escura derivada de cada uma (research.md, R-04).
-     */
-    private const CORES_DERIVADAS = [
-        '#c40808' => '#a41f1a',
-        '#d0af01' => '#9f8601',
-        '#008000' => '#005400',
-        '#006eb1' => '#024b77',
-        '#fe6a00' => '#b94e02',
-        '#b91552' => '#930137',
-    ];
-
-    /**
-     * Tamanhos dos ícones do aplicativo, iguais aos do manifest do sistema antigo.
-     */
-    private const TAMANHOS_ICONES = [32, 64, 96, 128, 168, 192, 256, 512];
-
-    /**
-     * FAKE — cores do tema. Substituído pela spec de configurações visuais (a logo já é real:
-     * Configuracoes::url_logo, spec 006).
-     *
-     * @return array{temas: string, letter: string, cor_fundo: string}
-     */
-    public static function tema(): array
-    {
-        $temas = '#c40808';
-
-        return [
-            'temas' => $temas,
-            'letter' => self::CORES_DERIVADAS[$temas],
-            'cor_fundo' => '#000000',
-        ];
-    }
-
-    /**
-     * FAKE — telefone do WhatsApp e redes sociais (null = não aparece). Substituído pela spec de
-     * configurações visuais.
-     *
-     * @return array<string, string|null>
-     */
-    public static function contatos(): array
-    {
-        return [
-            'whatsapp' => '5511999999999',
-            'mensagem_whatsapp' => 'Olá! Vim pelo site e gostaria de fazer uma aposta esportiva. Pode me ajudar?',
-            'instagram' => 'https://www.instagram.com/',
-            'youtube' => 'https://www.youtube.com/',
-            'twitter' => 'https://twitter.com/',
-            'facebook' => 'https://www.facebook.com/',
-            'jogo_responsavel' => 'https://www.gamblingtherapy.org/pt-br/',
-        ];
-    }
-
-    /**
      * FAKE — indicador de Acumuladão. Substituído pela spec própria (o de Cassino passou a vir da
      * configuração na spec 011).
      *
@@ -73,19 +20,5 @@ class DadosFake
         return [
             'acumuladao' => true,
         ];
-    }
-
-    /**
-     * FAKE — ícones do aplicativo (PWA). Substituídos pela spec de configurações visuais.
-     *
-     * @return list<array{src: string, sizes: string, type: string}>
-     */
-    public static function icones(): array
-    {
-        return array_map(fn (int $tamanho) => [
-            'src' => "/fakes/icones/icon-{$tamanho}.png",
-            'sizes' => "{$tamanho}x{$tamanho}",
-            'type' => 'image/png',
-        ], self::TAMANHOS_ICONES);
     }
 }

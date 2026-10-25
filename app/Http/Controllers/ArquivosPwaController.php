@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Fakes\DadosFake;
 use App\Models\Configuracoes;
 use Illuminate\Http\JsonResponse;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
@@ -46,8 +45,9 @@ class ArquivosPwaController extends Controller
      */
     public function manifest(): JsonResponse
     {
-        $nome = Configuracoes::atual()->nome_sistema;
-        $cor_fundo = DadosFake::tema()['cor_fundo'];
+        $configuracoes = Configuracoes::atual();
+        $nome = $configuracoes->nome_sistema;
+        $cor_fundo = $configuracoes->tema()['cor_fundo'];
 
         return response()->json([
             'name' => $nome,
@@ -59,7 +59,7 @@ class ArquivosPwaController extends Controller
             'id' => '/',
             'background_color' => $cor_fundo,
             'theme_color' => $cor_fundo,
-            'icons' => DadosFake::icones(),
+            'icons' => $configuracoes->icones()['manifest'],
         ], 200, [
             'Content-Type' => 'application/manifest+json',
             'Cache-Control' => 'no-cache',

@@ -380,6 +380,10 @@ aplicação nem copiar credenciais. A aplicação é do programador, dono do sis
 cujas credenciais já ficam no servidor. A partir daí, todos os depósitos e saques da banca usam a
 conta vinculada, e o programador recebe a comissão de cada venda.
 
+> Alterado pela spec 021 (FR-021, FR-022 e FR-003a): o vínculo fica na aba Integrações da tela
+> Configurações; o Supervisor também vê a situação (sem vincular nem desvincular) e o vínculo e o
+> desvínculo entram no histórico das configurações.
+
 **Why this priority**: sem o vínculo nenhum depósito funciona; é pré-requisito das US2, US3 e US4.
 
 **Independent Test**: como admin, iniciar o vínculo, autorizar no Mercado Pago (ambiente de

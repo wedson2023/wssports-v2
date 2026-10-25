@@ -2,12 +2,11 @@
 
 namespace App\Mail\Concerns;
 
-use App\Fakes\DadosFake;
 use App\Models\Configuracoes;
 
 /**
- * Dados comuns aos e-mails (logo, nome do sistema e cor do botão), lidos de um único lugar para a
- * troca do tema fake não exigir mexer nos e-mails (spec 012, R-10 e R-19).
+ * Dados comuns aos e-mails (logo, nome do sistema e cor do botão), lidos de um único lugar (spec
+ * 012, R-10 e R-19); a cor vem do tema configurado desde a spec 021.
  */
 trait DadosEmail
 {
@@ -21,8 +20,8 @@ trait DadosEmail
         return [
             'logo' => $configuracoes->url_logo(),
             'nome_sistema' => (string) $configuracoes->nome_sistema,
-            // FAKE — tema da spec 005 (DadosFake::tema), ver research R-19 da spec 012
-            'cor_principal' => DadosFake::tema()['temas'],
+            // cor principal do tema configurada (spec 021)
+            'cor_principal' => $configuracoes->tema()['temas'],
         ];
     }
 }

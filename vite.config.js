@@ -62,7 +62,7 @@ export default defineConfig({
                         options: { precacheFallback: { fallbackURL: '/offline.html' } },
                     },
                     {
-                        urlPattern: ({ url }) => url.pathname.startsWith('/api/') || url.pathname.startsWith('/fakes/'),
+                        urlPattern: ({ url }) => url.pathname.startsWith('/api/'),
                         handler: 'NetworkOnly',
                     },
                     {

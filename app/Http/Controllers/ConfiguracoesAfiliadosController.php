@@ -6,6 +6,7 @@ use App\Http\Controllers\Concerns\GarantirPermissaoCliente;
 use App\Http\Requests\ConfiguracoesAfiliadosRequest;
 use App\Http\Resources\ConfiguracoesAfiliadosResource;
 use App\Models\Configuracoes;
+use App\Services\HistoricoConfiguracoes;
 use Illuminate\Routing\Controllers\HasMiddleware;
 
 /**
@@ -25,10 +26,10 @@ class ConfiguracoesAfiliadosController extends Controller implements HasMiddlewa
         return new ConfiguracoesAfiliadosResource(Configuracoes::atual());
     }
 
-    public function update(ConfiguracoesAfiliadosRequest $request): ConfiguracoesAfiliadosResource
+    public function update(ConfiguracoesAfiliadosRequest $request, HistoricoConfiguracoes $historico): ConfiguracoesAfiliadosResource
     {
         $configuracoes = Configuracoes::atual();
-        $configuracoes->update($request->validated());
+        $historico->alterar($request->user(), 'afiliados', $configuracoes, $request->validated());
 
         return new ConfiguracoesAfiliadosResource($configuracoes);
     }

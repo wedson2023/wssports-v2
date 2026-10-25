@@ -1,7 +1,7 @@
 {
     "info": {
         "name": "WSSports API",
-        "description": "Rotas da API do WSSports (autenticação JWT, gestão de usuários e permissões, área do cliente, gestão de clientes, confrontos e apostas).\n\nVariáveis da coleção:\n- base_url: endereço da API (ex.: http://127.0.0.1:8000/api)\n- token: token do painel, preenchido pelo login e refresh do painel\n- token_cliente: token do cliente, preenchido pelo cadastro, login e refresh da área do cliente\n- usuario_id / permissao: usados nas rotas de usuários e permissões\n- cliente_id / meio_pagamento_id / promocao_id: usados nas rotas de clientes\n- campeonato_id / confronto_id / registro_id / gerente_id: usados nas rotas de confrontos\n- codigo_aposta / palpite_id / confronto_ao_vivo_id: usados nas rotas de apostas\n- codigo_aposta / chave_encerramento / endpoint_push: usados nas rotas da spec 010\n- jogo_cassino / canal_cassino / provedor_cassino / sessao_cassino / acao_cassino / cassino_hall / cassino_chave: usados nas rotas da spec 011 (hall e chave só para simular o callback localmente)\n- token_afiliado / afiliado_id: usados nas rotas de afiliados da spec 012 (token_afiliado é preenchido pelo login, refresh e troca de senha do afiliado)\n\n- Dashboard (spec 014): as rotas usam o token do painel; atualizar=1 ignora o cache\n- Apostas do painel (spec 018): as rotas usam o token do painel e o codigo_aposta\n- Clientes do painel (spec 019): as rotas usam o token do painel e o cliente_id\n- Bônus do painel (spec 020): as rotas usam o token do painel, o promocao_id e o bonus_id (id do crédito do bônus)\n\nFluxo: execute 'Login' (painel) e 'Login do cliente'; as demais rotas usam os tokens salvos.",
+        "description": "Rotas da API do WSSports (autenticação JWT, gestão de usuários e permissões, área do cliente, gestão de clientes, confrontos e apostas).\n\nVariáveis da coleção:\n- base_url: endereço da API (ex.: http://127.0.0.1:8000/api)\n- token: token do painel, preenchido pelo login e refresh do painel\n- token_cliente: token do cliente, preenchido pelo cadastro, login e refresh da área do cliente\n- usuario_id / permissao: usados nas rotas de usuários e permissões\n- cliente_id / meio_pagamento_id / promocao_id: usados nas rotas de clientes\n- campeonato_id / confronto_id / registro_id / gerente_id: usados nas rotas de confrontos\n- codigo_aposta / palpite_id / confronto_ao_vivo_id: usados nas rotas de apostas\n- codigo_aposta / chave_encerramento / endpoint_push: usados nas rotas da spec 010\n- jogo_cassino / canal_cassino / provedor_cassino / sessao_cassino / acao_cassino / cassino_hall / cassino_chave: usados nas rotas da spec 011 (hall e chave só para simular o callback localmente)\n- token_afiliado / afiliado_id: usados nas rotas de afiliados da spec 012 (token_afiliado é preenchido pelo login, refresh e troca de senha do afiliado)\n\n- Dashboard (spec 014): as rotas usam o token do painel; atualizar=1 ignora o cache\n- Apostas do painel (spec 018): as rotas usam o token do painel e o codigo_aposta\n- Clientes do painel (spec 019): as rotas usam o token do painel e o cliente_id\n- Bônus do painel (spec 020): as rotas usam o token do painel, o promocao_id e o bonus_id (id do crédito do bônus)\n- Configurações do painel (spec 021): as rotas usam o token do painel; o aviso da Evolution usa evolution_webhook_token\n\nFluxo: execute 'Login' (painel) e 'Login do cliente'; as demais rotas usam os tokens salvos.",
         "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
     },
     "auth": {
@@ -207,6 +207,10 @@
         },
         {
             "key": "bonus_id",
+            "value": ""
+        },
+        {
+            "key": "evolution_webhook_token",
             "value": ""
         }
     ],
@@ -4364,7 +4368,7 @@
                                 "regras"
                             ]
                         },
-                        "description": "configuracoes.editar. Texto das regras da banca (um parágrafo por linha), mostrado no topo da página de regras."
+                        "description": "configuracoes.editar. Regras da banca em HTML limpo (spec 021), mostradas no topo da página de regras."
                     }
                 },
                 {
@@ -4391,10 +4395,10 @@
                                 "regras"
                             ]
                         },
-                        "description": "configuracoes.editar. Texto simples (sem HTML), até 10.000 caracteres, um parágrafo por linha. Vazio esconde o bloco da banca na página de regras.",
+                        "description": "configuracoes.editar. HTML do editor (spec 021): só p, h2, h3, strong, em, u, s, ul, ol, li, br, a e cor/alinhamento por estilo; o resto é removido. Até 10.000 caracteres de texto visível e 50.000 com a formatação. Vazio esconde o bloco. Entra no histórico.",
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \"regras\": \"Prazo de pagamento até 2 dias úteis.\\nNão pagará jogos já realizados ou que já estejam rolando e, por falha, continuem no sistema, por erro de hora, cotação ou por jogo antecipado.\\nTodos os jogos são definidos ao final dos 90 minutos de jogo, incluindo acréscimos definidos pelos árbitros. Não valerá prorrogação nem disputa de pênaltis.\"\n}"
+                            "raw": "{\n    \"regras\": \"<h2>Regras da banca</h2><p>Prazo de pagamento até <strong>2 dias úteis</strong>.</p><ul><li>Não valerá prorrogação nem pênaltis.</li></ul>\"\n}"
                         }
                     }
                 },
@@ -4418,7 +4422,7 @@
                                 "logo"
                             ]
                         },
-                        "description": "configuracoes.editar. multipart/form-data: logo (png, jpg ou webp, até 1 MB, sem redimensionar). O arquivo é salvo com o hash do conteúdo no nome: trocar a logo muda o endereço (o navegador não mostra a antiga do cache) e a anterior é apagada. Resposta {\"data\": {\"logo\": \"/storage/logos/{hash}.png\"}}. Sem logo enviada, vale /images/logo_padrao.png.",
+                        "description": "configuracoes.editar. multipart/form-data: logo (png, jpg ou webp, até 1 MB). Gera os ícones do aplicativo (32 a 512, Apple 152/167/180 e favicon) sem distorcer, numa pasta com o hash da logo (spec 021). Resposta {\"data\": {\"logo\", \"icones\": {favicon, apple, manifest}, \"aviso\"}}; aviso quando a imagem tem menos de 192x192. Entra no histórico.",
                         "body": {
                             "mode": "formdata",
                             "formdata": [
@@ -5546,6 +5550,44 @@
                             "raw": "{\n    \"type\": \"payment\",\n    \"data\": {\n        \"id\": \"123456789\"\n    }\n}"
                         }
                     }
+                },
+                {
+                    "name": "Aviso da Evolution API",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "x-webhook-token",
+                                "value": "{{evolution_webhook_token}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/webhooks/evolution",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "webhooks",
+                                "evolution"
+                            ]
+                        },
+                        "description": "Público (spec 021), 120 por minuto. Cabeçalho x-webhook-token igual ao EVOLUTION_WEBHOOK_TOKEN (senão 401); instance igual à da banca (senão 404). connection.update: open → Conectado, connecting → Aguardando leitura, close → Desconectado. Resposta {\"recebido\": true}.",
+                        "auth": {
+                            "type": "noauth"
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"event\": \"connection.update\",\n    \"instance\": \"nome-da-instancia\",\n    \"data\": {\n        \"state\": \"open\",\n        \"wuid\": \"5511977776666@s.whatsapp.net\",\n        \"profileName\": \"Banca\"\n    }\n}"
+                        }
+                    }
                 }
             ]
         },
@@ -5577,7 +5619,7 @@
                                 "gateway"
                             ]
                         },
-                        "description": "Gateway, situação (Vinculado, Falha na renovação, Desvinculado), datas e falha da renovação. Nunca devolve tokens."
+                        "description": "configuracoes.editar (Admin e Supervisor, spec 021). Situação do vínculo do Mercado Pago, sem os tokens, e pode_alterar (só o Admin vincula e desvincula)."
                     }
                 },
                 {
@@ -5633,7 +5675,7 @@
                                 "gateway"
                             ]
                         },
-                        "description": "204; apaga os tokens e deixa os depósitos indisponíveis."
+                        "description": "gateway_pagamento.vincular (só Admin). Desvincula a conta do Mercado Pago; registra Desvínculo no histórico (spec 021)."
                     }
                 },
                 {
@@ -10850,6 +10892,267 @@
                             "mode": "raw",
                             "raw": "{\n    \"motivo\": \"Abuso da promoção\",\n    \"senha\": \"sua senha\"\n}"
                         }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Configurações do painel (spec 021)",
+            "item": [
+                {
+                    "name": "Dados da banca",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/configuracoes/banca",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "configuracoes",
+                                "banca"
+                            ]
+                        },
+                        "description": "configuracoes.editar. Nome, bilhete, WhatsApp, redes sociais, jogo responsável, tema (cor_tema e cor_fundo), GTM-ID e a lista cores_tema."
+                    }
+                },
+                {
+                    "name": "Alterar dados da banca",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/configuracoes/banca",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "configuracoes",
+                                "banca"
+                            ]
+                        },
+                        "description": "configuracoes.editar. Todos os campos opcionais. whatsapp só dígitos com DDI (12 ou 13); links http/https; cor_tema uma das 6 cores; cor_fundo #000000 ou #FFFFFF; gtm_id GTM-XXXX. Entra no histórico.",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"nome_sistema\": \"WSSports\",\n    \"mensagem_bilhete\": \"BOA SORTE!\",\n    \"whatsapp\": \"5511988887777\",\n    \"mensagem_whatsapp\": \"Olá! Vim pelo site e gostaria de fazer uma aposta esportiva. Pode me ajudar?\",\n    \"botao_whatsapp\": true,\n    \"instagram\": \"https://www.instagram.com/banca\",\n    \"facebook\": null,\n    \"twitter\": null,\n    \"youtube\": null,\n    \"jogo_responsavel\": \"https://www.gamblingtherapy.org/pt-br/\",\n    \"cor_tema\": \"#006eb1\",\n    \"cor_fundo\": \"#000000\",\n    \"gtm_id\": \"GTM-ABC1234\"\n}"
+                        }
+                    }
+                },
+                {
+                    "name": "Configurações do ao vivo",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/configuracoes/ao-vivo",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "configuracoes",
+                                "ao-vivo"
+                            ]
+                        },
+                        "description": "configuracoes.editar. Habilitado, trava, permanência, minuto limite, cotação máxima e a trava geral (só leitura)."
+                    }
+                },
+                {
+                    "name": "Alterar configurações do ao vivo",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/configuracoes/ao-vivo",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "configuracoes",
+                                "ao-vivo"
+                            ]
+                        },
+                        "description": "configuracoes.editar. Todos opcionais; ao_vivo_travado é ignorado (só a conferência muda). Entra no histórico.",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"ao_vivo_habilitado\": true,\n    \"segundos_trava_ao_vivo\": 15,\n    \"minutos_permanencia_ao_vivo\": 5,\n    \"minuto_limite_ao_vivo\": 95,\n    \"cotacao_maxima_ao_vivo\": \"30.00\"\n}"
+                        }
+                    }
+                },
+                {
+                    "name": "Sorteio de cotação",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/configuracoes/sorteio-cotacoes",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "configuracoes",
+                                "sorteio-cotacoes"
+                            ]
+                        },
+                        "description": "configuracoes.editar. Intervalos de \"ambas marcam\" e \"ambas não marcam\" (antigos ADD ambas)."
+                    }
+                },
+                {
+                    "name": "Alterar sorteio de cotação",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/configuracoes/sorteio-cotacoes",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "configuracoes",
+                                "sorteio-cotacoes"
+                            ]
+                        },
+                        "description": "configuracoes.editar. Cotações de 1,01 a 50 com 2 casas; o mínimo de cada par não pode passar do máximo. Entra no histórico.",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"sorteio_ambas_marcam_minimo\": \"1.30\",\n    \"sorteio_ambas_marcam_maximo\": \"1.50\",\n    \"sorteio_ambas_nao_marcam_minimo\": \"1.45\",\n    \"sorteio_ambas_nao_marcam_maximo\": \"1.55\"\n}"
+                        }
+                    }
+                },
+                {
+                    "name": "Situação do robô do WhatsApp",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/configuracoes/robo-whatsapp",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "configuracoes",
+                                "robo-whatsapp"
+                            ]
+                        },
+                        "description": "configuracoes.editar. Consulta a Evolution API (até 10 s) e corrige a situação gravada: situacao (Desconectado, Aguardando leitura, Conectado), numero, perfil, atualizado_em, disponivel, mensagem e pode_alterar."
+                    }
+                },
+                {
+                    "name": "Conectar o robô do WhatsApp",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/configuracoes/robo-whatsapp/conectar",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "configuracoes",
+                                "robo-whatsapp",
+                                "conectar"
+                            ]
+                        },
+                        "description": "robo_whatsapp.conectar (só Admin), 10 por minuto. Cria ou reaproveita a instância da banca com o webhook e devolve {situacao, qrcode} (data URL); já conectado, qrcode null. Evolution indisponível: 503."
+                    }
+                },
+                {
+                    "name": "Desconectar o robô do WhatsApp",
+                    "request": {
+                        "method": "DELETE",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/configuracoes/robo-whatsapp",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "configuracoes",
+                                "robo-whatsapp"
+                            ]
+                        },
+                        "description": "robo_whatsapp.conectar (só Admin). 204; registra Desconexão no histórico."
                     }
                 }
             ]

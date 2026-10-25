@@ -25,15 +25,20 @@ class TratarRequisicoesInertia extends Middleware
      */
     public function share(Request $request): array
     {
+        // uma leitura do registro por pedido
+        $configuracoes = Configuracoes::atual();
+
         return [
             ...parent::share($request),
             'versao' => $this->version($request),
-            'nome_sistema' => Configuracoes::atual()->nome_sistema,
-            // cores ainda fake; a logo vem da configuração (spec 006)
-            'tema' => [...DadosFake::tema(), 'logo' => Configuracoes::atual()->url_logo()],
-            'contatos' => DadosFake::contatos(),
+            'nome_sistema' => $configuracoes->nome_sistema,
+            // tema, logo e contatos da configuração (spec 021)
+            'tema' => $configuracoes->tema(),
+            'contatos' => $configuracoes->contatos(),
+            // Google Tag Manager das páginas do apostador (spec 021, FR-009)
+            'rastreamento' => ['gtm_id' => $configuracoes->gtm_id],
             // Acumuladão ainda fake; o cassino vem da configuração (spec 011, FR-035)
-            'indicadores' => [...DadosFake::indicadores(), 'cassino' => (bool) Configuracoes::atual()->cassino_habilitado],
+            'indicadores' => [...DadosFake::indicadores(), 'cassino' => (bool) $configuracoes->cassino_habilitado],
         ];
     }
 

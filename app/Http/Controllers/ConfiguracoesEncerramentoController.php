@@ -6,6 +6,7 @@ use App\Http\Controllers\Concerns\GarantirPermissaoCliente;
 use App\Http\Requests\ConfiguracoesEncerramentoRequest;
 use App\Http\Resources\ConfiguracoesEncerramentoResource;
 use App\Models\Configuracoes;
+use App\Services\HistoricoConfiguracoes;
 use Illuminate\Routing\Controllers\HasMiddleware;
 
 /**
@@ -26,10 +27,10 @@ class ConfiguracoesEncerramentoController extends Controller implements HasMiddl
         return new ConfiguracoesEncerramentoResource(Configuracoes::atual());
     }
 
-    public function update(ConfiguracoesEncerramentoRequest $request): ConfiguracoesEncerramentoResource
+    public function update(ConfiguracoesEncerramentoRequest $request, HistoricoConfiguracoes $historico): ConfiguracoesEncerramentoResource
     {
         $configuracoes = Configuracoes::atual();
-        $configuracoes->update($request->validated());
+        $historico->alterar($request->user(), 'encerramento', $configuracoes, $request->validated());
 
         return new ConfiguracoesEncerramentoResource($configuracoes);
     }

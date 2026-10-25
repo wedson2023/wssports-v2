@@ -6,6 +6,7 @@ import Spinner from '../Spinner';
 import useSessao from '../../hooks/useSessao';
 import useVoltarFecha from '../../hooks/useVoltarFecha';
 import { alerta_erro, alerta_sucesso } from '../../utils/alerts';
+import { enviar_evento } from '../../utils/tracking';
 import {
     Body, Check, CloseButton, Container, Field, FieldError, Form, Hint, InputBox, Logo, Row, SubmitButton, Switch, Tab, Tabs,
 } from './styles';
@@ -128,6 +129,8 @@ export default function AuthModal({ aba, codigo_afiliado = '', codigo_indicacao 
                 codigo_afiliado: cadastro.codigo_afiliado.trim() || null,
                 codigo_indicacao: codigo_indicacao || null,
             });
+            // evento do GTM do cadastro concluído, como no sistema antigo (spec 021, FR-010)
+            enviar_evento('subscribe');
             definir_cadastro({ ...cadastro_vazio });
             ao_fechar();
             alerta_sucesso('Cadastro realizado! Você já está conectado.');

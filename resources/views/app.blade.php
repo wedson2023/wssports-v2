@@ -8,11 +8,13 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
 
     <link rel="manifest" href="/manifest.webmanifest">
-    <link rel="icon" href="/fakes/icone.png">
-    <link rel="apple-touch-icon" href="/fakes/icones/touch-icon-iphone.png">
-    <link rel="apple-touch-icon" sizes="152x152" href="/fakes/icones/touch-icon-ipad.png">
-    <link rel="apple-touch-icon" sizes="180x180" href="/fakes/icones/touch-icon-iphone-retina.png">
-    <link rel="apple-touch-icon" sizes="167x167" href="/fakes/icones/touch-icon-ipad-retina.png">
+    {{-- ícones gerados da logo da banca (spec 021, research R-06) --}}
+    @php($icones = $page['props']['tema']['icones'])
+    <link rel="icon" href="{{ $icones['favicon'] }}">
+    <link rel="apple-touch-icon" href="{{ $icones['apple'][180] }}">
+    <link rel="apple-touch-icon" sizes="152x152" href="{{ $icones['apple'][152] }}">
+    <link rel="apple-touch-icon" sizes="180x180" href="{{ $icones['apple'][180] }}">
+    <link rel="apple-touch-icon" sizes="167x167" href="{{ $icones['apple'][167] }}">
 
     <script>
         // aplica o modo salvo (claro/escuro) antes do React desenhar, para não piscar o modo errado

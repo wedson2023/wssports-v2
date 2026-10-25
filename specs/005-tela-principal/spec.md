@@ -634,6 +634,10 @@ site.
   aplicativo DEVEM ser fake até a spec de configurações visuais.
 - **FR-061**: Telefone do WhatsApp e links das redes sociais DEVEM ser fake até a spec de
   configurações visuais.
+  > Alterado pela spec 021 (FR-005, FR-006, FR-008, FR-011 e FR-012): tema (cor principal, cor
+  > derivada e fundo), favicon, ícones do aplicativo, WhatsApp, redes sociais e jogo responsável
+  > deixaram de ser fake e vêm da configuração editada na tela Configurações do painel;
+  > `DadosFake::tema`, `contatos` e `icones` foram removidos.
 - **FR-062**: Banners DEVEM ser fake até a spec de banners; indicadores de Acumuladão e de
   Cassino DEVEM ser fake até as specs próprias; o texto das regras DEVE ser fake até a spec de
   regras.

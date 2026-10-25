@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\ClientesPromocoes;
 use App\Models\Configuracoes;
 use App\Services\IdentificacaoPublico;
+use App\Services\LimpezaHtml;
 use App\Services\Publico;
 use App\Services\RegrasExibicao;
 use Illuminate\Http\Request;
@@ -12,14 +13,15 @@ use Inertia\Inertia;
 use Inertia\Response;
 
 /**
- * Regulamento da banca exibido no site (spec 006, US4): texto das regras do administrador, regras
+ * Regulamento da banca exibido no site (spec 006, US4): texto das regras do administrador (HTML do
+ * editor desde a spec 021), regras
  * de bônus das promoções ativas e limites de aposta de quem está vendo (as regras de cada mercado
  * são fixas no frontend). Token de gestor do painel vê os limites do visitante, como na tela
  * principal.
  */
 class RegrasController extends Controller
 {
-    public function index(Request $request, IdentificacaoPublico $identificacao, RegrasExibicao $regras): Response
+    public function index(Request $request, IdentificacaoPublico $identificacao, RegrasExibicao $regras, LimpezaHtml $limpeza): Response
     {
         $publico = $identificacao->identificar($request);
 
@@ -28,7 +30,8 @@ class RegrasController extends Controller
         }
 
         return Inertia::render('Rules', [
-            'regras' => Configuracoes::atual()->paragrafos_regras(),
+            // HTML do editor, limpo de novo na saída (spec 021, research R-08)
+            'regras' => $limpeza->limpar(Configuracoes::atual()->regras),
             'regras_bonus' => $this->regras_bonus(),
             'limites_aposta' => $this->limites_aposta($publico, $regras),
             'encerramento' => $this->encerramento(),

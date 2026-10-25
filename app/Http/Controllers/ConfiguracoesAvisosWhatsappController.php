@@ -6,6 +6,7 @@ use App\Http\Controllers\Concerns\GarantirPermissaoCliente;
 use App\Http\Requests\ConfiguracoesAvisosWhatsappRequest;
 use App\Http\Resources\ConfiguracoesAvisosWhatsappResource;
 use App\Models\Configuracoes;
+use App\Services\HistoricoConfiguracoes;
 use Illuminate\Routing\Controllers\HasMiddleware;
 
 /**
@@ -26,10 +27,10 @@ class ConfiguracoesAvisosWhatsappController extends Controller implements HasMid
         return new ConfiguracoesAvisosWhatsappResource(Configuracoes::atual());
     }
 
-    public function update(ConfiguracoesAvisosWhatsappRequest $request): ConfiguracoesAvisosWhatsappResource
+    public function update(ConfiguracoesAvisosWhatsappRequest $request, HistoricoConfiguracoes $historico): ConfiguracoesAvisosWhatsappResource
     {
         $configuracoes = Configuracoes::atual();
-        $configuracoes->update($request->validated());
+        $historico->alterar($request->user(), 'avisos_whatsapp', $configuracoes, $request->validated());
 
         return new ConfiguracoesAvisosWhatsappResource($configuracoes);
     }
