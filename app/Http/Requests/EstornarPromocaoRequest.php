@@ -2,10 +2,16 @@
 
 namespace App\Http\Requests;
 
+use App\Http\Requests\Concerns\ConfirmacaoCaixa;
 use Illuminate\Foundation\Http\FormRequest;
 
+/**
+ * Estorno da promoção inteira; desde a spec 020 (FR-026), confirmado com a senha de quem estorna.
+ */
 class EstornarPromocaoRequest extends FormRequest
 {
+    use ConfirmacaoCaixa;
+
     public function authorize(): bool
     {
         // a permissão é checada pelo middleware do controller
@@ -19,6 +25,7 @@ class EstornarPromocaoRequest extends FormRequest
     {
         return [
             'motivo' => ['required', 'string', 'max:255'],
+            'senha' => ['required', 'string', $this->regra_senha()],
         ];
     }
 
@@ -30,6 +37,7 @@ class EstornarPromocaoRequest extends FormRequest
         return [
             'motivo.required' => 'O motivo do estorno é obrigatório.',
             'motivo.max' => 'O motivo deve ter no máximo 255 caracteres.',
+            'senha.required' => 'Informe a sua senha.',
         ];
     }
 }

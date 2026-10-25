@@ -65,4 +65,12 @@ class PainelController extends Controller
     {
         return Inertia::render('PanelClients');
     }
+
+    /**
+     * Tela "Bônus" (spec 020); aba, busca, situação e filtros vêm na query string.
+     */
+    public function bonus(): Response
+    {
+        return Inertia::render('PanelBonus');
+    }
 }

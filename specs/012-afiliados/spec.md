@@ -499,6 +499,10 @@ P1.
   ligação.
 - **FR-025**: As regras de promoção por afiliado da spec 007 (FR-018g e a escolha da promoção no
   cadastro, depósito e indicação) DEVEM continuar iguais, passando a usar a nova ligação.
+  > Alterado pela spec 020 (FR-002 e FR-014): a promoção passa a pertencer à rede do gerente
+  > responsável do afiliado dela — Supervisor e Gerente só cadastram, alteram e veem as promoções
+  > dos afiliados da rede deles (as gerais, só para leitura); a escolha da promoção para o cliente
+  > não muda.
 - **FR-026**: A ligação do cliente com o afiliado NÃO DEVE ser alterada pelo cliente. A gestão de
   clientes PODE filtrar clientes pelo afiliado.
 

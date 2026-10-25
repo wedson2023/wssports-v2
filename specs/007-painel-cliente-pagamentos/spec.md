@@ -605,6 +605,9 @@ contagem e o bônus pago ao indicador.
 - **FR-032**: Estorno ou chargeback de um depósito creditado DEVE debitar do saldo o valor
   estornado, mesmo que o saldo fique negativo, registrar a movimentação "Estorno de depósito" e
   cancelar o bônus e o rollover ligados àquele depósito.
+  > Alterado pela spec 020 (R-05): o cancelamento do bônus passa a ficar registrado como estorno
+  > "Automático" em `clientes_promocoes_estornos` (motivo "Cancelado pelo estorno do depósito"), para
+  > o bônus aparecer como Estornado na tela Bônus, e não como excluído pelo cliente.
 - **FR-033**: A consulta da situação de um depósito DEVE responder só ao dono do depósito (ou ao
   acesso assistido daquele cliente).
 
@@ -657,6 +660,9 @@ contagem e o bônus pago ao indicador.
   depósito for estornado, a indicação DEVE voltar para "Pendente de depósito" (um novo depósito
   aprovado a valida de novo) e, se ela tinha completado um grupo, o bônus desse grupo DEVE ser
   cancelado com o rollover, debitando o saldo de bônus da modalidade mesmo que fique negativo.
+  > Alterado pela spec 020 (R-05): esse cancelamento passa a ficar registrado como estorno
+  > "Automático" em `clientes_promocoes_estornos` (motivo "Cancelado pelo estorno do depósito de um
+  > indicado").
 - **FR-044b**: A promoção de Indicação DEVE ter a quantidade de indicações válidas exigida (padrão
   5). A cada grupo completo dessa quantidade (5, 10, 15…), o indicador DEVE receber o valor do
   bônus da promoção no saldo de bônus da modalidade, com o rollover dela, se aceitar bônus e

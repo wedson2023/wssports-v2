@@ -2,6 +2,9 @@
 
 namespace App\Http\Resources;
 
+use App\Enums\Funcao;
+use App\Services\AlcancePromocoes;
+use App\Services\ListagemPromocoes;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -12,6 +15,10 @@ class ClientesPromocoesResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
+        // a lista já traz ja_aplicada na consulta; sem ela (show, store, update), consulta o banco
+        $ja_aplicada = $this->resource->getAttribute('ja_aplicada');
+        $aplicada = $ja_aplicada === null ? $this->aplicada() : (bool) $ja_aplicada;
+
         return [
             'id' => $this->id,
             'nome' => $this->nome,
@@ -37,10 +44,15 @@ class ClientesPromocoesResource extends JsonResource
                 'id' => $this->afiliado->id,
                 'nome' => $this->afiliado->nome,
                 'codigo' => $this->afiliado->codigo,
+                'excluido' => $this->afiliado->deleted_at !== null,
             ]),
             'quantidade_indicacoes' => $this->quantidade_indicacoes,
             'vigente' => $this->vigente(),
-            'aplicada' => $this->aplicada(),
+            'aplicada' => $aplicada,
+            // tela Bônus (spec 020): situação calculada, números de uso e ações que o usuário pode fazer
+            'situacao' => $this->resource->getAttribute('situacao') ?? ListagemPromocoes::situacao($this->resource)->value,
+            'uso' => $this->when($this->resource->getAttribute('uso') !== null, fn () => $this->resource->getAttribute('uso')),
+            'pode' => $this->pode($request, $aplicada),
             'estorno' => [
                 'situacao' => $this->estorno_situacao,
                 'motivo' => $this->estorno_motivo,
@@ -53,6 +65,28 @@ class ClientesPromocoesResource extends JsonResource
             ],
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,
+        ];
+    }
+
+    /**
+     * Ações da promoção para o usuário (spec 020, FR-010): pela permissão, pelo alcance (a geral só o
+     * Admin altera), pelo estorno (estornada não muda mais) e pelo uso (aplicada não é excluída).
+     *
+     * @return array{editar: bool, ativar: bool, excluir: bool, estornar: bool}
+     */
+    private function pode(Request $request, bool $aplicada): array
+    {
+        $usuario = $request->user();
+        $alteravel = $usuario !== null
+            && ! $this->estornada()
+            && app(AlcancePromocoes::class)->alteravel($usuario, $this->resource);
+        $gerenciar = $alteravel && Funcao::usuario_pode($usuario, 'clientes_promocoes.gerenciar');
+
+        return [
+            'editar' => $gerenciar,
+            'ativar' => $gerenciar,
+            'excluir' => $gerenciar && ! $aplicada,
+            'estornar' => $alteravel && Funcao::usuario_pode($usuario, 'clientes_promocoes.estornar'),
         ];
     }
 }

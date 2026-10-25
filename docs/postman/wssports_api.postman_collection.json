@@ -1,7 +1,7 @@
 {
     "info": {
         "name": "WSSports API",
-        "description": "Rotas da API do WSSports (autenticação JWT, gestão de usuários e permissões, área do cliente, gestão de clientes, confrontos e apostas).\n\nVariáveis da coleção:\n- base_url: endereço da API (ex.: http://127.0.0.1:8000/api)\n- token: token do painel, preenchido pelo login e refresh do painel\n- token_cliente: token do cliente, preenchido pelo cadastro, login e refresh da área do cliente\n- usuario_id / permissao: usados nas rotas de usuários e permissões\n- cliente_id / meio_pagamento_id / promocao_id: usados nas rotas de clientes\n- campeonato_id / confronto_id / registro_id / gerente_id: usados nas rotas de confrontos\n- codigo_aposta / palpite_id / confronto_ao_vivo_id: usados nas rotas de apostas\n- codigo_aposta / chave_encerramento / endpoint_push: usados nas rotas da spec 010\n- jogo_cassino / canal_cassino / provedor_cassino / sessao_cassino / acao_cassino / cassino_hall / cassino_chave: usados nas rotas da spec 011 (hall e chave só para simular o callback localmente)\n- token_afiliado / afiliado_id: usados nas rotas de afiliados da spec 012 (token_afiliado é preenchido pelo login, refresh e troca de senha do afiliado)\n\n- Dashboard (spec 014): as rotas usam o token do painel; atualizar=1 ignora o cache\n- Apostas do painel (spec 018): as rotas usam o token do painel e o codigo_aposta\n- Clientes do painel (spec 019): as rotas usam o token do painel e o cliente_id\n\nFluxo: execute 'Login' (painel) e 'Login do cliente'; as demais rotas usam os tokens salvos.",
+        "description": "Rotas da API do WSSports (autenticação JWT, gestão de usuários e permissões, área do cliente, gestão de clientes, confrontos e apostas).\n\nVariáveis da coleção:\n- base_url: endereço da API (ex.: http://127.0.0.1:8000/api)\n- token: token do painel, preenchido pelo login e refresh do painel\n- token_cliente: token do cliente, preenchido pelo cadastro, login e refresh da área do cliente\n- usuario_id / permissao: usados nas rotas de usuários e permissões\n- cliente_id / meio_pagamento_id / promocao_id: usados nas rotas de clientes\n- campeonato_id / confronto_id / registro_id / gerente_id: usados nas rotas de confrontos\n- codigo_aposta / palpite_id / confronto_ao_vivo_id: usados nas rotas de apostas\n- codigo_aposta / chave_encerramento / endpoint_push: usados nas rotas da spec 010\n- jogo_cassino / canal_cassino / provedor_cassino / sessao_cassino / acao_cassino / cassino_hall / cassino_chave: usados nas rotas da spec 011 (hall e chave só para simular o callback localmente)\n- token_afiliado / afiliado_id: usados nas rotas de afiliados da spec 012 (token_afiliado é preenchido pelo login, refresh e troca de senha do afiliado)\n\n- Dashboard (spec 014): as rotas usam o token do painel; atualizar=1 ignora o cache\n- Apostas do painel (spec 018): as rotas usam o token do painel e o codigo_aposta\n- Clientes do painel (spec 019): as rotas usam o token do painel e o cliente_id\n- Bônus do painel (spec 020): as rotas usam o token do painel, o promocao_id e o bonus_id (id do crédito do bônus)\n\nFluxo: execute 'Login' (painel) e 'Login do cliente'; as demais rotas usam os tokens salvos.",
         "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
     },
     "auth": {
@@ -204,6 +204,10 @@
             "key": "prestacao_id",
             "value": "1",
             "type": "string"
+        },
+        {
+            "key": "bonus_id",
+            "value": ""
         }
     ],
     "item": [
@@ -1812,7 +1816,7 @@
                             }
                         ],
                         "url": {
-                            "raw": "{{base_url}}/clientes-promocoes?por_pagina=20",
+                            "raw": "{{base_url}}/clientes-promocoes?busca=&situacao=Vigente&modalidade=&categoria=&afiliados_id=&page=1&por_pagina=20",
                             "host": [
                                 "{{base_url}}"
                             ],
@@ -1821,12 +1825,36 @@
                             ],
                             "query": [
                                 {
+                                    "key": "busca",
+                                    "value": ""
+                                },
+                                {
+                                    "key": "situacao",
+                                    "value": "Vigente"
+                                },
+                                {
+                                    "key": "modalidade",
+                                    "value": ""
+                                },
+                                {
+                                    "key": "categoria",
+                                    "value": ""
+                                },
+                                {
+                                    "key": "afiliados_id",
+                                    "value": ""
+                                },
+                                {
+                                    "key": "page",
+                                    "value": "1"
+                                },
+                                {
                                     "key": "por_pagina",
                                     "value": "20"
                                 }
                             ]
                         },
-                        "description": "clientes_promocoes.gerenciar. Filtros: ativa, modalidade, categoria."
+                        "description": "clientes_promocoes.gerenciar. Spec 020: só as promoções da rede (Supervisor e Gerente veem as gerais só para leitura). Filtros: busca (nome), situacao (Vigente|Agendada|Encerrada|Desativada|Estornando|Estornada), modalidade, categoria, afiliados_id (id ou \"geral\"), ativa. Cada item traz situacao, uso (clientes, creditado, cumpridos, convertido, retirado) e pode (editar, ativar, excluir, estornar)."
                     }
                 },
                 {
@@ -1853,7 +1881,7 @@
                                 "{{promocao_id}}"
                             ]
                         },
-                        "description": "clientes_promocoes.gerenciar."
+                        "description": "clientes_promocoes.gerenciar. Fora da rede: 404 \"Promoção não encontrada.\". Traz situacao, uso, pode e o estorno com o progresso."
                     }
                 },
                 {
@@ -1879,7 +1907,7 @@
                                 "clientes-promocoes"
                             ]
                         },
-                        "description": "clientes_promocoes.gerenciar. Mesma categoria e modalidade não podem ter períodos sobrepostos. Spec 007: dias_cumprir (padrão 30), rollover_primeiro_deposito (só Primeiro depósito), afiliados_id e quantidade_indicacoes (obrigatório em Indicação, proibido nas demais).",
+                        "description": "clientes_promocoes.gerenciar. Mesma categoria e modalidade não podem ter períodos sobrepostos. Spec 007: dias_cumprir (padrão 30), rollover_primeiro_deposito (só Primeiro depósito), afiliados_id e quantidade_indicacoes (obrigatório em Indicação, proibido nas demais). Spec 020: nome único; fim não pode estar no passado; Supervisor e Gerente informam afiliados_id de um afiliado da rede; sobreposição só com a mesma categoria, modalidade e afiliado (ou duas gerais).",
                         "body": {
                             "mode": "raw",
                             "raw": "{\n    \"nome\": \"Bônus de boas-vindas\",\n    \"descricao\": \"R$ 20 para apostar em esportes\",\n    \"modalidade\": \"Esportes\",\n    \"categoria\": \"Primeiro cadastro\",\n    \"tipo_ganho\": \"Fixo\",\n    \"valor\": \"20.00\",\n    \"rollover\": 5,\n    \"valor_minimo_aposta\": \"2.00\",\n    \"valor_maximo_aposta\": \"100.00\",\n    \"valor_maximo_deposito\": null,\n    \"valor_maximo_conversao\": \"200.00\",\n    \"odd_minima_aposta_simples\": \"1.50\",\n    \"odd_minima_aposta_multipla\": \"1.30\",\n    \"data_inicio\": \"2026-10-01 00:00:00\",\n    \"data_fim\": null,\n    \"ativa\": true,\n    \"dias_cumprir\": 30,\n    \"rollover_primeiro_deposito\": false,\n    \"afiliados_id\": null\n}"
@@ -1910,7 +1938,7 @@
                                 "{{promocao_id}}"
                             ]
                         },
-                        "description": "clientes_promocoes.gerenciar. Promoção aplicada não muda valor, tipo de ganho, categoria e modalidade. Spec 007: dias_cumprir (padrão 30), rollover_primeiro_deposito (só Primeiro depósito), afiliados_id e quantidade_indicacoes (obrigatório em Indicação, proibido nas demais).",
+                        "description": "clientes_promocoes.gerenciar. Promoção aplicada não muda valor, tipo de ganho, categoria e modalidade. Spec 007: dias_cumprir (padrão 30), rollover_primeiro_deposito (só Primeiro depósito), afiliados_id e quantidade_indicacoes (obrigatório em Indicação, proibido nas demais). Spec 020: promoção geral só o Admin altera (403 \"Só o Admin pode alterar promoções gerais.\"); nome único, fim no passado e afiliado da rede conferidos só quando mudam; ativar/desativar com {\"ativa\": false}.",
                         "body": {
                             "mode": "raw",
                             "raw": "{\n    \"nome\": \"Bônus de boas-vindas 2\",\n    \"dias_cumprir\": 30,\n    \"rollover_primeiro_deposito\": false,\n    \"afiliados_id\": null\n}"
@@ -1941,7 +1969,7 @@
                                 "{{promocao_id}}"
                             ]
                         },
-                        "description": "clientes_promocoes.gerenciar."
+                        "description": "clientes_promocoes.gerenciar. Spec 020: só promoção que ninguém recebeu (422 \"Promoção já aplicada não pode ser excluída; desative ou estorne.\"); geral só o Admin."
                     }
                 },
                 {
@@ -1969,10 +1997,10 @@
                                 "estornar"
                             ]
                         },
-                        "description": "clientes_promocoes.estornar (Admin/Supervisor). 202; processado em segundo plano (php artisan queue:work).",
+                        "description": "clientes_promocoes.estornar (Admin/Supervisor). Spec 020: pede a senha de quem estorna (422 \"Senha incorreta.\"). 202; processado em segundo plano bônus a bônus (php artisan queue:work), pulando os convertidos, expirados, excluídos e já estornados.",
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \"motivo\": \"Promoção criada por engano\"\n}"
+                            "raw": "{\n    \"motivo\": \"Promoção criada por engano\",\n    \"senha\": \"sua senha\"\n}"
                         }
                     }
                 }
@@ -10649,6 +10677,179 @@
                             ]
                         },
                         "description": "clientes.enviar_notificacao. Envio em segundo plano aos inscritos da rede com \"Avisos da banca\" ligado. 422 sem alcançados ou sem envios restantes no dia."
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Bônus do painel (spec 020)",
+            "item": [
+                {
+                    "name": "Bônus recebidos",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/clientes-bonus?situacao=Em andamento&busca=&clientes_promocoes_id=&modalidade=&data_inicial=&data_final=&page=1&por_pagina=30",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "clientes-bonus"
+                            ],
+                            "query": [
+                                {
+                                    "key": "situacao",
+                                    "value": "Em andamento"
+                                },
+                                {
+                                    "key": "busca",
+                                    "value": ""
+                                },
+                                {
+                                    "key": "clientes_promocoes_id",
+                                    "value": ""
+                                },
+                                {
+                                    "key": "modalidade",
+                                    "value": ""
+                                },
+                                {
+                                    "key": "data_inicial",
+                                    "value": ""
+                                },
+                                {
+                                    "key": "data_final",
+                                    "value": ""
+                                },
+                                {
+                                    "key": "page",
+                                    "value": "1"
+                                },
+                                {
+                                    "key": "por_pagina",
+                                    "value": "30"
+                                }
+                            ]
+                        },
+                        "description": "clientes_promocoes.gerenciar. Bônus dados aos clientes da rede (um por crédito de promoção). situacao: Em andamento (padrão)|Cumprido|Convertido|Expirado|Excluído pelo cliente|Estornado|Todos; busca: nome ou ID do cliente; modalidade: Esportes|Cassino; data_inicial/data_final (AAAA-MM-DD, Brasília, até 1 ano)."
+                    }
+                },
+                {
+                    "name": "Resumo dos bônus recebidos",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/clientes-bonus/resumo?busca=&clientes_promocoes_id=&modalidade=&data_inicial=&data_final=",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "clientes-bonus",
+                                "resumo"
+                            ],
+                            "query": [
+                                {
+                                    "key": "busca",
+                                    "value": ""
+                                },
+                                {
+                                    "key": "clientes_promocoes_id",
+                                    "value": ""
+                                },
+                                {
+                                    "key": "modalidade",
+                                    "value": ""
+                                },
+                                {
+                                    "key": "data_inicial",
+                                    "value": ""
+                                },
+                                {
+                                    "key": "data_final",
+                                    "value": ""
+                                }
+                            ]
+                        },
+                        "description": "clientes_promocoes.gerenciar. Cartões: em_andamento (quantidade e falta, sem período), creditado, convertido e retirado (no período, ou desde sempre)."
+                    }
+                },
+                {
+                    "name": "Consultar bônus recebido",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/clientes-bonus/{{bonus_id}}",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "clientes-bonus",
+                                "{{bonus_id}}"
+                            ]
+                        },
+                        "description": "clientes_promocoes.gerenciar. Bônus com regras gravadas e histórico. Fora da rede ou id que não é crédito de promoção: 404 \"Bônus não encontrado.\"."
+                    }
+                },
+                {
+                    "name": "Estornar bônus recebido",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/clientes-bonus/{{bonus_id}}/estornar",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "clientes-bonus",
+                                "{{bonus_id}}",
+                                "estornar"
+                            ]
+                        },
+                        "description": "clientes_promocoes.estornar (Admin/Supervisor). Retira do saldo de bônus o menor entre o saldo e o valor do bônus e cancela o rollover. 422: \"Senha incorreta.\", \"Este bônus não pode mais ser estornado.\".",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"motivo\": \"Abuso da promoção\",\n    \"senha\": \"sua senha\"\n}"
+                        }
                     }
                 }
             ]

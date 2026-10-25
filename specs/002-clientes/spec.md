@@ -811,12 +811,18 @@ transações de estorno.
   (paginado, com filtros por ativa, modalidade e categoria), consultar, cadastrar, editar, ativar,
   desativar e excluir logicamente promoções. Uma promoção estornada NÃO DEVE poder ser reativada
   nem editada.
+  > Alterado pela spec 020 (FR-002, FR-016 e FR-019): só as promoções da rede do usuário (Supervisor e
+  > Gerente veem as gerais só para leitura); nome único entre as não excluídas e fim no passado
+  > recusado quando informado ou alterado; só a promoção que ninguém recebeu pode ser excluída. A
+  > lista ganha busca, situação, afiliado e os números de uso.
 - **FR-069**: Uma promoção está vigente quando está ativa, não excluída, não estornada e a data
   atual está entre a data de início e a data de fim (ou sem data de fim).
 - **FR-070**: Promoções ativas e não excluídas da **mesma categoria e mesma modalidade** NÃO
   DEVEM ter períodos que se sobreponham (inclusive futuros; data de fim vazia = sem fim).
   Promoções de categorias diferentes PODEM ter períodos sobrepostos. Cadastrar, editar ou ativar
   uma promoção que cause sobreposição proibida DEVE ser recusado.
+  > Alterado pela spec 020 (FR-015): a regra passa a considerar também o afiliado — só não podem se
+  > cruzar duas do mesmo afiliado ou duas gerais; uma geral e uma de afiliado podem.
 - **FR-071**: Nesta spec, só a categoria Primeiro cadastro é aplicada (FR-075). Primeiro depósito,
   Qualquer depósito e Indicação são cadastradas agora e aplicadas pelas specs de depósito e de
   afiliados.
@@ -845,6 +851,8 @@ transações de estorno.
   origem "Promoção" referenciando essa promoção, inclusive inativos e excluídos. Desde a spec 004,
   o estorno também marca como cancelados (`cancelado_em`) os rollovers pendentes daquela promoção,
   para que as regras de uso do bônus deixem de valer.
+  > Alterado pela spec 020 (FR-026 e FR-029): o estorno também pede a senha de quem estorna ("Senha
+  > incorreta." sem gravar nada), e só vale para promoções da rede; a geral, só o Admin estorna.
 - **FR-078**: Ao iniciar o estorno, a promoção DEVE ser desativada e passar a guardar: situação do
   estorno (Em andamento ou Concluído), quem estornou, quando, o motivo, a quantidade de clientes a
   processar, a quantidade processada e o total estornado.
@@ -854,9 +862,15 @@ transações de estorno.
   promocional for 0,00, nenhuma transação é criada e o cliente conta como "sem saldo para
   estornar". O que faltar NÃO fica pendente, o saldo NUNCA DEVE ficar negativo e o `saldo` real e
   o saldo promocional da outra modalidade NUNCA DEVEM ser alterados pelo estorno.
+  > Alterado pela spec 020 (FR-028, research R-05): o estorno passa a ser feito bônus a bônus — de
+  > cada bônus em andamento ou cumprido sai o menor entre o saldo promocional e o valor dele; os
+  > convertidos, expirados, excluídos e já estornados são pulados. Cada bônus estornado fica em
+  > `clientes_promocoes_estornos`, e existe também o estorno do bônus de um cliente só.
 - **FR-080**: O estorno DEVE ser processado em segundo plano, em lotes, sem travar o painel, e
   DEVE poder ser retomado após uma interrupção sem estornar duas vezes o mesmo cliente (um cliente
   que já tem transação de "Estorno" dessa promoção é pulado).
+  > Alterado pela spec 020 (R-04): a retomada passa a pular cada bônus que já tem registro em
+  > `clientes_promocoes_estornos` (crédito único), e não mais o cliente inteiro.
 - **FR-081**: Uma promoção já estornada (ou com estorno em andamento) NÃO DEVE poder ser estornada
   de novo. Gerentes e Vendedores NÃO DEVEM poder estornar, mesmo que recebam a permissão.
 

@@ -10,6 +10,7 @@ use App\Enums\TipoGanho;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 /**
@@ -96,6 +97,14 @@ class ClientesPromocoes extends Model
     public function autor_estorno(): BelongsTo
     {
         return $this->belongsTo(Usuarios::class, 'estorno_usuarios_id');
+    }
+
+    /**
+     * Bônus desta promoção estornados, um por cliente e crédito (spec 020).
+     */
+    public function estornos(): HasMany
+    {
+        return $this->hasMany(ClientesPromocoesEstornos::class, 'clientes_promocoes_id');
     }
 
     /**

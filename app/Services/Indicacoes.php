@@ -20,7 +20,7 @@ use Illuminate\Support\Facades\DB;
  */
 class Indicacoes
 {
-    public function __construct(private SaldoClientes $saldo, private RolloverClientes $rollover) {}
+    public function __construct(private SaldoClientes $saldo, private RolloverClientes $rollover, private EstornoBonus $estorno_bonus) {}
 
     /**
      * Cadastro feito pelo link de outro cliente; código inexistente é ignorado.
@@ -159,11 +159,14 @@ class Indicacoes
         $indicador = Clientes::withTrashed()->findOrFail($grupo->clientes_id);
         $credito = ClientesTransacoes::findOrFail($grupo->clientes_transacoes_id);
 
-        $this->saldo->debitar($indicador, $credito->carteira, (string) $credito->valor, OrigemTransacao::BônusExcluído, null, $grupo->clientes_promocoes_id, 'Bônus de indicação cancelado pelo estorno do depósito de um indicado', permitir_negativo: true);
+        $debito = $this->saldo->debitar($indicador, $credito->carteira, (string) $credito->valor, OrigemTransacao::BônusExcluído, null, $grupo->clientes_promocoes_id, 'Bônus de indicação cancelado pelo estorno do depósito de um indicado', permitir_negativo: true);
 
         if ($grupo->rollover !== null) {
             $this->rollover->cancelar($grupo->rollover);
         }
+
+        // aparece como Estornado (automático) na tela Bônus (spec 020)
+        $this->estorno_bonus->registrar_automatico($credito->id, $grupo->rollover, 'Cancelado pelo estorno do depósito de um indicado', (string) $debito->valor, $debito);
 
         $grupo->forceFill(['cancelado_em' => now()])->save();
         ClientesIndicacoes::where('clientes_indicacoes_bonus_id', $grupo->id)->update(['clientes_indicacoes_bonus_id' => null]);
