@@ -64,7 +64,8 @@ telas do painel 014–020 (PanelShell, PanelTabs, SaveBar, hooks usePainel)."
   consulta nesta spec (FR-003a).
 - Q: O Supervisor pode alterar todas as seções da aba Operação, inclusive as que mexem com dinheiro?
   → A: Sim. Admin e Supervisor alteram todas as abas e seções, como o servidor já permite; só as
-  ações das integrações ficam com o Admin (FR-001 e FR-028).
+  ações das integrações ficam com o Admin (FR-001 e FR-028). Exceção registrada no plano (research
+  R-03): o limite de notificações manuais continua só do Admin, como o servidor já faz (spec 019).
 - Q: O visual pode mudar em relação ao antigo (Princípio VIII)? → A: Sim, no padrão do painel novo
   (specs 014 a 020), como nas specs anteriores. As diferenças estão em "Referências do sistema
   antigo".
@@ -475,7 +476,8 @@ gravado; provocar um erro de validação e ver a mensagem no campo.
 - **FR-029**: A aba DEVE ter também a seção Ao vivo (habilitado, segundos de trava, minutos de
   permanência, minuto limite e cotação máxima), a seção Sorteio de cotação (mínimo e máximo de
   "ambas marcam" e de "ambas não marcam", com o mínimo menor ou igual ao máximo) e o limite diário de
-  notificações manuais (1 a 50), que hoje não têm como ser alterados.
+  notificações manuais (1 a 50), que hoje não têm como ser alterados. O limite de notificações
+  manuais mantém a regra da spec 019: só o Admin altera; o Supervisor vê o valor sem poder mudá-lo.
 - **FR-030**: A trava geral do ao vivo (ligada pela conferência) DEVE aparecer só como informação na
   seção Ao vivo, sem poder ser alterada pela tela.
 - **FR-031**: A chave do CallMeBot NÃO DEVE ser mostrada; a seção mostra só se está preenchida e
