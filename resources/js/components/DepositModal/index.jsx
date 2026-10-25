@@ -7,6 +7,7 @@ import Spinner from '../Spinner';
 import api from '../../utils/api';
 import { alerta_erro } from '../../utils/alerts';
 import { centavos_para_texto, formatar_real, para_centavos } from '../../utils/money';
+import { acompanhar_compra, enviar_compra, enviar_pix_gerado } from '../../utils/tracking';
 import {
     BonusBox, Check, Chip, Chips, ErrorText, Field, Hint, Input, Label, Method, Methods, Notice, Prefix, Success, SuccessMark,
 } from './styles';
@@ -29,6 +30,8 @@ export default function DepositModal({ aberto, opcoes_iniciais = null, ao_fechar
     const [erro, definir_erro] = useState('');
     const [enviando, definir_enviando] = useState(false);
     const consulta = useRef(null);
+    // depósito ainda sem confirmação, para o "purchase" do GTM seguir depois de fechar (spec 021, R-15)
+    const pendente = useRef(null);
 
     // cada abertura recomeça do valor, com as opções atuais da banca
     useEffect(() => {
@@ -65,7 +68,23 @@ export default function DepositModal({ aberto, opcoes_iniciais = null, ao_fechar
     const parar_consulta = () => clearInterval(consulta.current);
 
     useEffect(() => parar_consulta, []);
-    useEffect(() => { if (!aberto) parar_consulta(); }, [aberto]);
+    useEffect(() => {
+        if (aberto) return;
+
+        parar_consulta();
+
+        // fechou antes da confirmação: o rastreamento continua consultando enquanto a página estiver aberta
+        if (pendente.current) {
+            acompanhar_compra(pendente.current.codigo, pendente.current.valor, pendente.current.expira_em);
+            pendente.current = null;
+        }
+    }, [aberto]);
+
+    // depósito aprovado: "purchase" do GTM, uma vez por depósito (spec 021, FR-010)
+    const registrar_compra = (codigo) => {
+        enviar_compra(codigo, pendente.current?.valor ?? 0);
+        pendente.current = null;
+    };
 
     const concluir = useCallback((texto) => {
         parar_consulta();
@@ -81,8 +100,11 @@ export default function DepositModal({ aberto, opcoes_iniciais = null, ao_fechar
             try {
                 const { data } = await api.get(`/area-cliente/depositos/${codigo}`);
 
-                if (data.data.situacao === 'Aprovado') concluir('Depósito realizado com sucesso!');
-                else if (['Expirado', 'Cancelado', 'Recusado'].includes(data.data.situacao)) {
+                if (data.data.situacao === 'Aprovado') {
+                    registrar_compra(codigo);
+                    concluir('Depósito realizado com sucesso!');
+                } else if (['Expirado', 'Cancelado', 'Recusado'].includes(data.data.situacao)) {
+                    pendente.current = null;
                     parar_consulta();
                     definir_deposito((atual) => ({ ...atual, situacao: data.data.situacao }));
                 }
@@ -116,9 +138,14 @@ export default function DepositModal({ aberto, opcoes_iniciais = null, ao_fechar
             });
 
             definir_deposito(data.data);
+            pendente.current = { codigo: data.data.codigo, valor: data.data.valor, expira_em: data.data.pix?.expira_em ?? null };
 
-            if (data.data.situacao === 'Aprovado') concluir('Depósito realizado com sucesso!');
-            else if (meio === 'Pix') {
+            if (data.data.situacao === 'Aprovado') {
+                registrar_compra(data.data.codigo);
+                concluir('Depósito realizado com sucesso!');
+            } else if (meio === 'Pix') {
+                // evento do GTM do Pix gerado, como no sistema antigo (spec 021, FR-010)
+                enviar_pix_gerado(data.data.valor);
                 definir_etapa('pix');
                 acompanhar(data.data.codigo);
             } else {

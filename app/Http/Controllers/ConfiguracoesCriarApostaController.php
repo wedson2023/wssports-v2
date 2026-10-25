@@ -6,6 +6,7 @@ use App\Http\Controllers\Concerns\GarantirPermissaoCliente;
 use App\Http\Requests\ConfiguracoesCriarApostaRequest;
 use App\Http\Resources\ConfiguracoesCriarApostaResource;
 use App\Models\Configuracoes;
+use App\Services\HistoricoConfiguracoes;
 use Illuminate\Routing\Controllers\HasMiddleware;
 
 /**
@@ -26,10 +27,10 @@ class ConfiguracoesCriarApostaController extends Controller implements HasMiddle
         return new ConfiguracoesCriarApostaResource(Configuracoes::atual());
     }
 
-    public function update(ConfiguracoesCriarApostaRequest $request): ConfiguracoesCriarApostaResource
+    public function update(ConfiguracoesCriarApostaRequest $request, HistoricoConfiguracoes $historico): ConfiguracoesCriarApostaResource
     {
         $configuracoes = Configuracoes::atual();
-        $configuracoes->update($request->validated());
+        $historico->alterar($request->user(), 'criar_aposta', $configuracoes, $request->validated());
 
         return new ConfiguracoesCriarApostaResource($configuracoes);
     }

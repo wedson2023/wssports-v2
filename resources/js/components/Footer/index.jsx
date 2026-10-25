@@ -19,10 +19,11 @@ export default function Footer() {
         <Container>
             <Logo src={tema.logo} alt="" />
             <Text>Jogue com responsabilidade</Text>
+            {/* sem link de jogo responsável configurado, a imagem fica sem clique (spec 021, FR-007) */}
             <ResponsibleImage
                 src="/images/gordon_moody.png"
-                title={contatos.jogo_responsavel}
-                onClick={() => abrir(contatos.jogo_responsavel)}
+                title={contatos.jogo_responsavel ?? undefined}
+                onClick={contatos.jogo_responsavel ? () => abrir(contatos.jogo_responsavel) : undefined}
                 alt=""
             />
             <Icons>

@@ -5,12 +5,12 @@ import BonusRules from '../BonusRules';
 import CashOutRules from '../CashOutRules';
 import MarketRules from '../MarketRules';
 import RulesBlock from '../RulesBlock';
-import { BackLink, BankRule, BankRules, Help, Logo, LogoArea, Page, TopBar, TopTitle } from './styles';
+import { BackLink, BankRichText, Help, Logo, LogoArea, Page, TopBar, TopTitle } from './styles';
 
 // regulamento da banca em blocos, como no sistema antigo (spec 006, FR-021a): regras da banca,
 // regras de bônus, regras de apostas e limites de aposta; barra com "Voltar" e atalho do WhatsApp
 // aprovados na spec 005
-export default function RulesContent({ regras, regras_bonus = [], limites_aposta = null, encerramento = null }) {
+export default function RulesContent({ regras = '', regras_bonus = [], limites_aposta = null, encerramento = null }) {
     const { tema, contatos, nome_sistema } = usePage().props;
 
     const falar_no_whatsapp = () => {
@@ -31,17 +31,11 @@ export default function RulesContent({ regras, regras_bonus = [], limites_aposta
                 <Logo src={tema.logo} alt={nome_sistema} />
             </LogoArea>
 
-            {/* texto do administrador: cada linha é um parágrafo, sempre como texto (sem HTML) */}
-            {regras.length > 0 && (
+            {/* texto do administrador escrito no editor do painel: HTML limpo no servidor (spec 021,
+                research R-08); vazio esconde o bloco */}
+            {regras && (
                 <RulesBlock>
-                    <BankRules>
-                        {regras.map((paragrafo, indice) => (
-                            <BankRule key={`${indice}-${paragrafo}`}>
-                                <i className="material-icons" aria-hidden="true">check_circle</i>
-                                <span>{paragrafo}</span>
-                            </BankRule>
-                        ))}
-                    </BankRules>
+                    <BankRichText dangerouslySetInnerHTML={{ __html: regras }} />
                 </RulesBlock>
             )}
 

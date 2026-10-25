@@ -67,7 +67,7 @@ modais, cabeçalho e campos da constituição.
 | Rotas da API novas / alteradas | 9 (banca ×2, ao-vivo ×2, sorteio-cotacoes ×2, robo-whatsapp GET/DELETE, conectar) + 1 webhook / 1 (`GET configuracoes/gateway`: permissão) |
 | Rotas web novas | 1 (`/painel/configuracoes`) |
 | Services novos / alterados | 5 (`HistoricoConfiguracoes`, `IconesAplicativo`, `LimpezaHtml`, `ClienteEvolution`, `RoboWhatsapp`; a conversão das regras fica na migration de dados, R-09) / 2 (`NotificacoesPush`, `VinculoMercadoPago`) |
-| Controllers novos / alterados | 5 (`ConfiguracoesBancaController`, `ConfiguracoesAoVivoController`, `ConfiguracoesSorteioCotacoesController`, `RoboWhatsappController`, `WebhooksEvolutionController`) / 14 (R-16 e abaixo) |
+| Controllers novos / alterados | 5 (`ConfiguracoesBancaController`, `ConfiguracoesAoVivoController`, `ConfiguracoesSorteioCotacoesController`, `RoboWhatsappController`, `WebhooksEvolutionController`) / 16 (tabela abaixo) |
 | Models / Enums novos | 1 (`ConfiguracoesHistoricos`) / 2 (`AcaoConfiguracao`, `SituacaoRoboWhatsapp`) |
 | Requests / Resources novos | 3 (`ConfiguracoesBancaRequest`, `ConfiguracoesAoVivoRequest`, `ConfiguracoesSorteioCotacoesRequest`) / 3 (`ConfiguracoesBancaResource`, `ConfiguracoesAoVivoResource`, `ConfiguracoesSorteioCotacoesResource`) |
 | Exceções novas | 1 (`RoboIndisponivelException`) |
@@ -84,7 +84,7 @@ modais, cabeçalho e campos da constituição.
 | I. Nomes no frontend | Componentes em inglês PascalCase (`PanelSettings`, `SettingsForm`, `WhatsAppBotCard`…); hook `useSecaoConfiguracoes`; utils `tracking.js` e `settings_fields.js` (inglês snake_case); variáveis e props snake_case em português | ✅ Pass |
 | II. Idioma | Artefatos, comentários, mensagens e textos em português | ✅ Pass |
 | III. Componentes | Cada componente em pasta própria com `index.jsx` e `styles.jsx` | ✅ Pass |
-| IV. Escopo estrito | Arquivos existentes listados abaixo; **aguardam a confirmação do responsável** no `/speckit-tasks` (padrão das specs anteriores) | ⏳ Pendente de confirmação |
+| IV. Escopo estrito | Arquivos existentes listados abaixo, confirmados pelo responsável em 2026-10-25 ("sigo o recomendado", no `/speckit-implement`, depois do `/speckit-analyze` recomendar a autorização) | ✅ Pass |
 | V. Legibilidade | Revisão ao final de cada tarefa | ✅ Pass |
 | VI. Consistência | Controllers `Configuracoes*` com show/update + Request + Resource + `GarantirPermissaoCliente`; histórico no padrão do `HistoricoCotacoes`; cliente HTTP externo no padrão do `ClienteMercadoPago`; webhook no padrão do `WebhooksMercadoPagoController`; permissão nova em `Funcao.php` + migration de dados (padrão da spec 019); componentes do painel reaproveitados | ✅ Pass |
 | VII. Sistema antigo | `screens/adm/config`, `ConfigController`, `WhatsAppController`, `app.blade.php`, modais `register` e `credits` analisados na `main` `408cf730` (R-01); diferenças aprovadas em Clarifications e listadas na spec | ✅ Pass |
@@ -102,8 +102,8 @@ modais, cabeçalho e campos da constituição.
 | Sem testes | Nenhum arquivo, tarefa ou dependência de teste | ✅ Pass |
 | Postman | Regenerado na entrega (tarefa explícita) | ✅ Pass |
 
-**Resultado do gate**: aprovado para a Fase 0/1. A lista de arquivos existentes abaixo precisa ser
-confirmada pelo responsável antes da implementação (Princípio IV).
+**Resultado do gate**: aprovado. A lista de arquivos existentes abaixo foi confirmada pelo responsável
+em 2026-10-25 (Princípio IV).
 
 Reavaliado depois da Fase 1: sem violação nova.
 
@@ -124,7 +124,7 @@ Reavaliado depois da Fase 1: sem violação nova.
 | `app/Http/Controllers/ConfiguracoesRegrasController.php`, `app/Http/Requests/ConfiguracoesRegrasRequest.php` | HTML limpo, limites, histórico | R-08, R-16 |
 | `app/Http/Controllers/RegrasController.php` | `regras` em HTML (limpo de novo na saída) | R-08 |
 | `app/Http/Controllers/Configuracoes{Pagamentos,CriarAposta,Apuracao,Encerramento,Cassino,Afiliados,AvisosWhatsapp}Controller.php` | `update` pelo `HistoricoConfiguracoes` (1 linha cada) | R-16 |
-| `app/Http/Controllers/BannersController.php`, `AvisosController.php` | Histórico em store/update/destroy | R-16 |
+| `app/Http/Controllers/BannersController.php`, `AvisosController.php` | Histórico em store/update/destroy; banner novo sem ordem entra no fim (maior + 10, até 999) | R-16, R-18 |
 | `app/Http/Controllers/GatewayPagamentoController.php` | `show` com `configuracoes.editar` + `pode_alterar`; histórico no `destroy` | R-13, R-16 |
 | `app/Services/VinculoMercadoPago.php` (`concluir`) | Histórico `Vínculo` | R-16 |
 | `app/Http/Controllers/ClientesNotificacoesController.php` (`alterar_limite`) | Histórico `notificacoes` | R-16 |

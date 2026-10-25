@@ -3,10 +3,10 @@
 namespace App\Services;
 
 use App\Enums\TipoNotificacao;
-use App\Fakes\DadosFake;
 use App\Jobs\EnviarNotificacaoPush;
 use App\Models\ClientesInscricoesNotificacoes;
 use App\Models\ClientesNotificacoes;
+use App\Models\Configuracoes;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Facades\Log;
 use Minishlink\WebPush\Subscription;
@@ -162,7 +162,8 @@ class NotificacoesPush
             'url' => $notificacao->url,
             'tag' => $tag,
             'tipo' => $notificacao->tipo->value,
-            'icone' => collect(DadosFake::icones())->firstWhere('sizes', '192x192')['src'] ?? null,
+            // ícone gerado da logo da banca (spec 021)
+            'icone' => Configuracoes::atual()->url_icone(192),
         ];
     }
 }

@@ -64,14 +64,17 @@ use App\Http\Controllers\ClientesPromocoesController;
 use App\Http\Controllers\ClientesRankingController;
 use App\Http\Controllers\ClientesTransacoesController;
 use App\Http\Controllers\ConfiguracoesAfiliadosController;
+use App\Http\Controllers\ConfiguracoesAoVivoController;
 use App\Http\Controllers\ConfiguracoesApuracaoController;
 use App\Http\Controllers\ConfiguracoesAvisosWhatsappController;
+use App\Http\Controllers\ConfiguracoesBancaController;
 use App\Http\Controllers\ConfiguracoesCassinoController;
 use App\Http\Controllers\ConfiguracoesCriarApostaController;
 use App\Http\Controllers\ConfiguracoesEncerramentoController;
 use App\Http\Controllers\ConfiguracoesLogoController;
 use App\Http\Controllers\ConfiguracoesPagamentosController;
 use App\Http\Controllers\ConfiguracoesRegrasController;
+use App\Http\Controllers\ConfiguracoesSorteioCotacoesController;
 use App\Http\Controllers\ConfrontosAoVivoController;
 use App\Http\Controllers\ConfrontosAoVivoNaoPermitidosController;
 use App\Http\Controllers\ConfrontosController;
@@ -99,12 +102,14 @@ use App\Http\Controllers\PublicoConfrontosController;
 use App\Http\Controllers\PublicoConfrontosDetalheController;
 use App\Http\Controllers\PublicoEspeciaisController;
 use App\Http\Controllers\RestauracaoApostasController;
+use App\Http\Controllers\RoboWhatsappController;
 use App\Http\Controllers\SaquesController;
 use App\Http\Controllers\TabelaJogosController;
 use App\Http\Controllers\UsuariosConfiguracoesController;
 use App\Http\Controllers\UsuariosController;
 use App\Http\Controllers\ValidacaoApostasController;
 use App\Http\Controllers\VisitantesConfiguracoesController;
+use App\Http\Controllers\WebhooksEvolutionController;
 use App\Http\Controllers\WebhooksMercadoPagoController;
 use App\Http\Middleware\GarantirAcessoAfiliado;
 use App\Http\Middleware\GarantirAcessoCliente;
@@ -529,6 +534,11 @@ Route::middleware(['auth:api', 'garantir_acesso'])->group(function () {
 // avisos do Mercado Pago (spec 007): públicos, conferidos pela assinatura e processados na fila
 Route::post('webhooks/mercado-pago', [WebhooksMercadoPagoController::class, 'store'])->middleware('throttle:120,1');
 
+// avisos de conexão do robô do WhatsApp (spec 021): públicos, conferidos pelo token do cabeçalho
+Route::post('webhooks/evolution', [WebhooksEvolutionController::class, 'store'])
+    ->name('webhooks.evolution')
+    ->middleware('throttle:120,1');
+
 // pagamentos no painel (spec 007): gateway, configurações de pagamento, saques e acesso assistido
 Route::middleware(['auth:api', 'garantir_acesso'])->group(function () {
     Route::get('configuracoes/gateway', [GatewayPagamentoController::class, 'show']);
@@ -559,6 +569,18 @@ Route::middleware(['auth:api', 'garantir_acesso'])->group(function () {
     // aviso de combinação de risco nova no WhatsApp do Admin (spec 014)
     Route::get('configuracoes/avisos-whatsapp', [ConfiguracoesAvisosWhatsappController::class, 'show']);
     Route::put('configuracoes/avisos-whatsapp', [ConfiguracoesAvisosWhatsappController::class, 'update']);
+    // dados da banca, contatos, tema e GTM (spec 021)
+    Route::get('configuracoes/banca', [ConfiguracoesBancaController::class, 'show']);
+    Route::put('configuracoes/banca', [ConfiguracoesBancaController::class, 'update']);
+    // ao vivo e sorteio de cotação de "ambas marcam" (spec 021)
+    Route::get('configuracoes/ao-vivo', [ConfiguracoesAoVivoController::class, 'show']);
+    Route::put('configuracoes/ao-vivo', [ConfiguracoesAoVivoController::class, 'update']);
+    Route::get('configuracoes/sorteio-cotacoes', [ConfiguracoesSorteioCotacoesController::class, 'show']);
+    Route::put('configuracoes/sorteio-cotacoes', [ConfiguracoesSorteioCotacoesController::class, 'update']);
+    // robô do WhatsApp pela Evolution API (spec 021)
+    Route::get('configuracoes/robo-whatsapp', [RoboWhatsappController::class, 'show']);
+    Route::post('configuracoes/robo-whatsapp/conectar', [RoboWhatsappController::class, 'conectar'])->middleware('throttle:10,1');
+    Route::delete('configuracoes/robo-whatsapp', [RoboWhatsappController::class, 'destroy']);
 
     Route::post('clientes/{cliente}/acesso-assistido', [AcessosAssistidosController::class, 'store'])
         ->missing(fn () => abort(404, 'Cliente não encontrado.'));

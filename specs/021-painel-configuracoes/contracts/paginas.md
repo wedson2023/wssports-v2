@@ -70,6 +70,10 @@ lista de banners/popups com link e ícones de excluir, ver e salvar). Visual do 
 Query: `?aba=banca|visual|regras|integracoes|operacao` (padrão `banca`); na Operação,
 `&secao=pagamentos|...` abre a sanfona.
 
+Layout (ajuste visual de 2026-10-25): largura de 1250 px; frase da aba embaixo das abas; Banca,
+Visual e Integrações em grade de duas colunas (uma abaixo de 1100 px), cartões da mesma altura na
+linha e os indicados como "largura toda" ocupando a linha; Operação em coluna.
+
 ### Aba Banca
 
 Seções (cartões): **Identificação** (nome do sistema, mensagem do bilhete); **Atendimento**
@@ -94,8 +98,9 @@ para a aba.
 ### Aba Regras
 
 `RulesEditor`: barra (parágrafo/títulos, negrito, itálico, sublinhado, cor, listas, alinhamento,
-link, desfazer/refazer) fixa no topo do editor; contador "N de 10.000 caracteres"; botão "Ver como
-fica" (prévia com o estilo da página de regras); `SaveBar`.
+link, desfazer/refazer) fixa no topo do editor; contador "N de 10.000 caracteres"; no computador,
+a prévia "Como fica no site" ao lado do editor (3:2), acompanhando o texto; no celular, o botão "Ver
+como fica" (prévia com o estilo da página de regras); `SaveBar`.
 
 ### Aba Integrações
 

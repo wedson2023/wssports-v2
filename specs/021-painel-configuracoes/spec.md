@@ -66,6 +66,30 @@ telas do painel 014–020 (PanelShell, PanelTabs, SaveBar, hooks usePainel)."
   → A: Sim. Admin e Supervisor alteram todas as abas e seções, como o servidor já permite; só as
   ações das integrações ficam com o Admin (FR-001 e FR-028). Exceção registrada no plano (research
   R-03): o limite de notificações manuais continua só do Admin, como o servidor já faz (spec 019).
+
+### Session 2026-10-25 (`/speckit-analyze`, correções aceitas pelo responsável: "sigo o recomendado")
+
+- O banner novo entra no fim da ordem (o servidor grava a maior ordem + 10, até 999) — US3, cenário 1.
+- O GTM é carregado pelo próprio site, sem o trecho `noscript` (FR-009).
+- O limite das regras é de 10.000 caracteres de texto visível e 50.000 com a formatação (FR-018).
+- Os FRs das abas dizem "Admin e Supervisor", como no FR-001.
+
+### Session 2026-10-25 (ajustes visuais pedidos pelo responsável depois da implementação)
+
+- A tela ocupa a largura das outras telas do painel (1250 px) e cada aba ganha uma frase explicando
+  o que se configura nela.
+- Banca em duas colunas com a altura de cada cartão (Identificação e Redes sociais | Atendimento e
+  Rastreamento), campos numa coluna nos cartões (redes em duas) e Tema embaixo na largura toda (cor e
+  fundo lado a lado). Visual e Integrações em cartões de duas colunas no computador (uma no celular):
+  Logo | Avisos, Banners na largura toda; Mercado Pago | Robô do WhatsApp.
+- Banners e avisos em galeria: cada cartão com a imagem grande na proporção do site (banner com a
+  posição no carrossel), situação, mover para antes/depois (banners) e menu de ações; o último cartão,
+  tracejado, cadastra um novo. Ícones gerados da logo em caixas do mesmo tamanho.
+- Cartões com linha separando o cabeçalho do conteúdo e espaçamento uniforme.
+- Regras: no computador, editor e prévia ("Como fica no site") lado a lado, a prévia acompanhando o
+  que é escrito; no celular continua o botão "Ver como fica".
+- A aba Operação fica como estava (aprovada pelo responsável), só mais larga; os campos de ligar e
+  desligar dela passam a ser seleção Sim/Não.
 - Q: O visual pode mudar em relação ao antigo (Princípio VIII)? → A: Sim, no padrão do painel novo
   (specs 014 a 020), como nas specs anteriores. As diferenças estão em "Referências do sistema
   antigo".
@@ -384,11 +408,11 @@ gravado; provocar um erro de validação e ver a mensagem no campo.
 
 **Aba Banca**
 
-- **FR-005**: O Admin DEVE poder editar: nome do sistema (obrigatório, até 100 caracteres), mensagem
+- **FR-005**: Admin e Supervisor DEVEM poder editar: nome do sistema (obrigatório, até 100 caracteres), mensagem
   do bilhete (até 500), WhatsApp de atendimento (com DDI e DDD, opcional), mensagem inicial do
   WhatsApp (opcional), botão flutuante de atendimento (ligado/desligado), Instagram, Facebook,
   Twitter/X, YouTube e link de jogo responsável (endereços `http`/`https`, opcionais).
-- **FR-006**: O Admin DEVE poder escolher a cor principal do tema entre as 6 cores do sistema antigo
+- **FR-006**: Admin e Supervisor DEVEM poder escolher a cor principal do tema entre as 6 cores do sistema antigo
   (vermelho, amarelo, verde, azul, laranja, rosa), vendo uma amostra de cada, e a cor de fundo padrão
   (preto ou branco); a cor escura derivada é calculada pelo sistema.
 - **FR-007**: Campos de contato vazios DEVEM esconder o item correspondente no site; o botão
@@ -396,11 +420,11 @@ gravado; provocar um erro de validação e ver a mensagem no campo.
 - **FR-008**: Os dados de contato e de tema DEVEM vir da configuração gravada, substituindo os dados
   fake atuais (contatos e tema) em todos os lugares que os usam: site, painel, manifest do
   aplicativo, e-mails e notificações; os fakes correspondentes DEVEM ser removidos.
-- **FR-009**: O Admin DEVE poder informar o GTM-ID (formato `GTM-` seguido de letras maiúsculas e
+- **FR-009**: Admin e Supervisor DEVEM poder informar o GTM-ID (formato `GTM-` seguido de letras maiúsculas e
   números, opcional); preenchido, as páginas do apostador (`/`, `/app`, `/cassino`, área do cliente,
-  regras e bilhete) DEVEM carregar o Google Tag Manager com esse contêiner (no início da página e o
-  trecho alternativo no corpo); o painel e a área do afiliado NÃO DEVEM carregá-lo; vazio, nada é
-  carregado.
+  regras e bilhete) DEVEM carregar o Google Tag Manager com esse contêiner, pelo próprio site ao
+  abrir a página (sem o trecho alternativo `noscript`, porque o site não funciona sem JavaScript); o
+  painel e a área do afiliado NÃO DEVEM carregá-lo; vazio, nada é carregado.
 - **FR-010**: Com o GTM ativo, o site DEVE enviar os eventos: `subscribe` ao concluir o cadastro do
   cliente; `addtocart` com `amount` (valor em reais) ao gerar a cobrança Pix de depósito; e o evento
   de compra com `amount` quando a tela do cliente recebe a confirmação do depósito pago, uma vez por
@@ -409,7 +433,7 @@ gravado; provocar um erro de validação e ver a mensagem no campo.
 
 **Aba Visual**
 
-- **FR-011**: O Admin DEVE poder enviar a logo (png, jpg, jpeg ou webp, até 1 MB, como hoje) e ver a
+- **FR-011**: Admin e Supervisor DEVEM poder enviar a logo (png, jpg, jpeg ou webp, até 1 MB, como hoje) e ver a
   prévia da logo atual; a troca DEVE gerar, a partir da logo, os ícones do aplicativo de 32, 64, 96,
   128, 168, 192, 256 e 512 pixels, os ícones da Apple de 152, 167 e 180 pixels e o ícone da aba do
   navegador, sem distorcer (imagem centralizada em quadrado com fundo transparente).
@@ -418,11 +442,11 @@ gravado; provocar um erro de validação e ver a mensagem no campo.
   novos, para o navegador não mostrar os antigos, e os arquivos anteriores DEVEM sair do disco.
 - **FR-013**: A tela DEVE recomendar a logo quadrada de 512x512 e avisar quando a imagem enviada for
   menor que 192x192.
-- **FR-014**: O Admin DEVE ver os banners do carrossel com miniatura, link, ordem e situação, e poder
+- **FR-014**: Admin e Supervisor DEVEM ver os banners do carrossel com miniatura, link, ordem e situação, e poder
   cadastrar (imagem obrigatória e link opcional), trocar a imagem, alterar o link, ativar/desativar,
   mudar a ordem (subir e descer), ver em tamanho real e excluir com confirmação, usando o cadastro de
   banners já existente (imagem ajustada para 1280x405).
-- **FR-015**: O Admin DEVE ver os avisos da banca (antigo popup) com miniatura, título, link, período
+- **FR-015**: Admin e Supervisor DEVEM ver os avisos da banca (antigo popup) com miniatura, título, link, período
   e situação, e poder cadastrar, editar, ativar/desativar, ver e excluir com confirmação, usando o
   cadastro de avisos já existente; a tela DEVE recomendar a imagem de 500x500.
 - **FR-016**: As listas de banners e avisos DEVEM ser paginadas (até 20 por página) e virar cartões
@@ -430,12 +454,13 @@ gravado; provocar um erro de validação e ver a mensagem no campo.
 
 **Aba Regras**
 
-- **FR-017**: O Admin DEVE editar as regras da banca num editor com formatação: títulos, parágrafo,
+- **FR-017**: Admin e Supervisor DEVEM editar as regras da banca num editor com formatação: títulos, parágrafo,
   negrito, itálico, sublinhado, lista com marcadores e numerada, alinhamento, link, cor do texto,
   desfazer e refazer.
 - **FR-018**: O servidor DEVE gravar as regras como texto formatado, mantendo só os elementos e
   atributos permitidos (os do editor) e removendo scripts, estilos livres, eventos e qualquer outro
-  conteúdo, com o limite atual de 10.000 caracteres.
+  conteúdo, com o limite atual de 10.000 caracteres de texto visível (e até 50.000 contando a
+  formatação).
 - **FR-019**: A página pública de regras DEVE mostrar as regras da banca com a formatação; regras
   vazias escondem o bloco, como hoje.
 - **FR-020**: Na publicação, as regras já gravadas em texto puro DEVEM ser convertidas em parágrafos

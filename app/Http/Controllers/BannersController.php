@@ -2,11 +2,13 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\AcaoConfiguracao;
 use App\Http\Controllers\Concerns\GarantirPermissaoCliente;
 use App\Http\Requests\BannersRequest;
 use App\Http\Resources\BannersResource;
 use App\Models\Banners;
 use App\Services\ArmazenamentoImagens;
+use App\Services\HistoricoConfiguracoes;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
@@ -26,7 +28,13 @@ class BannersController extends Controller implements HasMiddleware
 
     private const ALTURA = 405;
 
-    public function __construct(private ArmazenamentoImagens $imagens) {}
+    // maior ordem aceita pelo cadastro (BannersRequest)
+    private const ORDEM_MAXIMA = 999;
+
+    // campos do banner registrados no histórico (spec 021, FR-003a)
+    private const CAMPOS_HISTORICO = ['imagem', 'link', 'ordem', 'ativo'];
+
+    public function __construct(private ArmazenamentoImagens $imagens, private HistoricoConfiguracoes $historico) {}
 
     public static function middleware(): array
     {
@@ -61,10 +69,19 @@ class BannersController extends Controller implements HasMiddleware
 
     public function store(BannersRequest $request): BannersResource
     {
+        $dados = $request->dados_banner();
+
+        // sem ordem informada, o banner novo entra no fim do carrossel (spec 021, US3)
+        if (! array_key_exists('ordem', $dados)) {
+            $dados['ordem'] = min(self::ORDEM_MAXIMA, (int) Banners::max('ordem') + 10);
+        }
+
         $banner = Banners::create([
-            ...$request->dados_banner(),
+            ...$dados,
             'imagem' => $this->imagens->salvar($request->file('imagem'), 'banners', self::LARGURA, self::ALTURA),
         ]);
+
+        $this->historico->registrar($request->user(), 'banners', AcaoConfiguracao::Cadastro, $banner->id);
 
         return new BannersResource($banner);
     }
@@ -72,6 +89,7 @@ class BannersController extends Controller implements HasMiddleware
     public function update(BannersRequest $request, Banners $banner): BannersResource
     {
         $anterior = $banner->imagem;
+        $antes = $this->historico->valores($banner, self::CAMPOS_HISTORICO);
         $banner->fill($request->dados_banner());
 
         if ($request->hasFile('imagem')) {
@@ -85,13 +103,20 @@ class BannersController extends Controller implements HasMiddleware
             $this->imagens->remover($anterior);
         }
 
+        $alteracoes = $this->historico->diferencas($antes, $this->historico->valores($banner, self::CAMPOS_HISTORICO));
+
+        if ($alteracoes !== []) {
+            $this->historico->registrar($request->user(), 'banners', AcaoConfiguracao::Alteração, $banner->id, $alteracoes);
+        }
+
         return new BannersResource($banner);
     }
 
-    public function destroy(Banners $banner): Response
+    public function destroy(Request $request, Banners $banner): Response
     {
         $banner->delete();
         $this->imagens->remover($banner->imagem);
+        $this->historico->registrar($request->user(), 'banners', AcaoConfiguracao::Exclusão, $banner->id);
 
         return response()->noContent();
     }

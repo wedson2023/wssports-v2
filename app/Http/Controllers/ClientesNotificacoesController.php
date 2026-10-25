@@ -7,6 +7,7 @@ use App\Http\Controllers\Concerns\GarantirPermissaoCliente;
 use App\Http\Requests\NotificacaoManualRequest;
 use App\Http\Resources\ClientesNotificacoesEnviosResource;
 use App\Models\Configuracoes;
+use App\Services\HistoricoConfiguracoes;
 use App\Services\NotificacoesManuais;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -35,7 +36,7 @@ class ClientesNotificacoesController extends Controller implements HasMiddleware
         ]);
     }
 
-    public function alterar_limite(Request $request): JsonResponse
+    public function alterar_limite(Request $request, HistoricoConfiguracoes $historico): JsonResponse
     {
         abort_unless($request->user()->funcao() === Funcao::Admin, 403, 'Você não tem permissão para esta ação.');
 
@@ -44,7 +45,8 @@ class ClientesNotificacoesController extends Controller implements HasMiddleware
             ['limite.*' => 'O limite deve ser um número de 1 a 50.'],
         )['limite'];
 
-        Configuracoes::atual()->update(['limite_notificacoes_manuais_dia' => (int) $limite]);
+        // histórico da tela Configurações (spec 021, FR-003a)
+        $historico->alterar($request->user(), 'notificacoes', Configuracoes::atual(), ['limite_notificacoes_manuais_dia' => (int) $limite]);
 
         return $this->limite($request);
     }

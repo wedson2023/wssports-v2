@@ -392,6 +392,9 @@ conferir o carrossel e a logo; trocar a logo e conferir que a nova aparece sem l
   definidos ao final dos 90 minutos de jogo, incluindo acréscimos definidos pelos árbitros. Não
   valerá prorrogação nem disputa de pênaltis."). A página DEVE mostrar cada linha do texto como um
   parágrafo, sem interpretar HTML; com o texto vazio, o bloco não aparece.
+  > Alterado pela spec 021 (FR-017 a FR-020): o texto passa a ser escrito num editor com formatação
+  > na tela Configurações e gravado em HTML limpo no servidor (só os elementos do editor); a página
+  > mostra a formatação. O texto antigo foi convertido em parágrafos.
 - **FR-022**: A página de regras DEVE mostrar o bloco "Regras de bônus" com um item por promoção
   ativa e dentro do período (cabeçalho com a categoria e o nome, e o texto), sem o bloco quando
   não houver nenhuma.
@@ -453,6 +456,8 @@ conferir o carrossel e a logo; trocar a logo e conferir que a nova aparece sem l
   guardada na configuração. A instalação DEVE preencher a logo padrão do projeto.
 - **FR-032e**: O cabeçalho da tela principal e a página de regras DEVEM usar a logo da
   configuração. Favicon e ícones do aplicativo continuam fake até a spec de configurações visuais.
+  > Alterado pela spec 021 (FR-011 e FR-012): enviar a logo gera o favicon e os ícones do aplicativo
+  > a partir dela, sem distorcer; não são mais fake.
 - **FR-032f**: Os arquivos da logo, dos banners e dos avisos DEVEM ser salvos com um hash do
   conteúdo no nome, para que trocar a imagem mude o endereço e o navegador não mostre a versão
   antiga guardada no cache. Ao trocar ou remover a imagem, o arquivo anterior DEVE ser apagado.

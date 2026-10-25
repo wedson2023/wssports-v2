@@ -101,4 +101,17 @@ return [
         'tempo_limite_historico' => 10,
     ],
 
+    // robô do WhatsApp (spec 021, research R-10): Evolution API v2; a chave global e o token do
+    // webhook ficam só no servidor e nunca vão para o log, o navegador ou o histórico
+    'evolution' => [
+        'url' => env('EVOLUTION_API_URL'),
+        'chave' => env('EVOLUTION_API_CHAVE'),
+        // nome da instância da banca; vazio = host do app.url (um servidor atende várias bancas)
+        'instancia' => env('EVOLUTION_API_INSTANCIA'),
+        // token que a Evolution manda no cabeçalho x-webhook-token dos avisos de conexão
+        'webhook_token' => env('EVOLUTION_WEBHOOK_TOKEN'),
+        // tempo limite das chamadas, em segundos
+        'tempo_limite' => 10,
+    ],
+
 ];

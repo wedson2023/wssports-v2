@@ -73,4 +73,12 @@ class PainelController extends Controller
     {
         return Inertia::render('PanelBonus');
     }
+
+    /**
+     * Tela "Configurações" (spec 021); aba e seção vêm na query string.
+     */
+    public function configuracoes(): Response
+    {
+        return Inertia::render('PanelSettings');
+    }
 }

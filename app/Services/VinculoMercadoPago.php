@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Enums\AcaoConfiguracao;
 use App\Enums\SituacaoGateway;
 use App\Models\Configuracoes;
 use App\Models\GatewaysPagamento;
@@ -24,7 +25,7 @@ class VinculoMercadoPago
 
     private const GATEWAY = 'Mercado Pago';
 
-    public function __construct(private ClienteMercadoPago $mercado_pago) {}
+    public function __construct(private ClienteMercadoPago $mercado_pago, private HistoricoConfiguracoes $historico) {}
 
     /**
      * Endereço de autorização; o state (uso único, 10 minutos) liga o retorno a este admin.
@@ -82,6 +83,13 @@ class VinculoMercadoPago
             ]);
 
             Configuracoes::atual()->update(['gateway_pagamento' => self::GATEWAY]);
+
+            // histórico da tela Configurações (spec 021): o autor é o admin guardado no state
+            $admin = Usuarios::withTrashed()->find($admin_id);
+
+            if ($admin !== null) {
+                $this->historico->registrar($admin, 'mercado_pago', AcaoConfiguracao::Vínculo);
+            }
         });
 
         return ['sucesso' => true, 'mensagem' => 'Conta do Mercado Pago vinculada com sucesso.'];

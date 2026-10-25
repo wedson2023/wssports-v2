@@ -6,6 +6,7 @@ use App\Http\Controllers\Concerns\GarantirPermissaoCliente;
 use App\Http\Requests\ConfiguracoesApuracaoRequest;
 use App\Http\Resources\ConfiguracoesApuracaoResource;
 use App\Models\Configuracoes;
+use App\Services\HistoricoConfiguracoes;
 use Illuminate\Routing\Controllers\HasMiddleware;
 
 /**
@@ -26,10 +27,10 @@ class ConfiguracoesApuracaoController extends Controller implements HasMiddlewar
         return new ConfiguracoesApuracaoResource(Configuracoes::atual());
     }
 
-    public function update(ConfiguracoesApuracaoRequest $request): ConfiguracoesApuracaoResource
+    public function update(ConfiguracoesApuracaoRequest $request, HistoricoConfiguracoes $historico): ConfiguracoesApuracaoResource
     {
         $configuracoes = Configuracoes::atual();
-        $configuracoes->update($request->validated());
+        $historico->alterar($request->user(), 'apuracao', $configuracoes, $request->validated());
 
         return new ConfiguracoesApuracaoResource($configuracoes);
     }

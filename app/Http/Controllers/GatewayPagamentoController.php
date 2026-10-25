@@ -2,9 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\AcaoConfiguracao;
+use App\Enums\Funcao;
 use App\Enums\SituacaoGateway;
 use App\Http\Controllers\Concerns\GarantirPermissaoCliente;
 use App\Models\GatewaysPagamento;
+use App\Services\HistoricoConfiguracoes;
 use App\Services\VinculoMercadoPago;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -13,7 +16,8 @@ use Illuminate\Routing\Controllers\HasMiddleware;
 
 /**
  * Campo "Gateway de pagamentos" das configurações do painel (spec 007, US8): situação, início do
- * vínculo por OAuth e desvínculo. Só o Admin.
+ * vínculo por OAuth e desvínculo. A situação é vista por Admin e Supervisor (spec 021,
+ * Clarification 1); vincular e desvincular, só o Admin.
  */
 class GatewayPagamentoController extends Controller implements HasMiddleware
 {
@@ -21,13 +25,16 @@ class GatewayPagamentoController extends Controller implements HasMiddleware
 
     public static function middleware(): array
     {
-        return [self::permissao_cliente('gateway_pagamento.vincular')];
+        return [
+            self::permissao_cliente('configuracoes.editar', only: ['show']),
+            self::permissao_cliente('gateway_pagamento.vincular', except: ['show']),
+        ];
     }
 
     /**
-     * Situação do vínculo, sem os tokens.
+     * Situação do vínculo, sem os tokens, e se quem vê pode alterá-lo.
      */
-    public function show(): JsonResponse
+    public function show(Request $request): JsonResponse
     {
         $gateway = GatewaysPagamento::atual();
 
@@ -38,6 +45,7 @@ class GatewayPagamentoController extends Controller implements HasMiddleware
             'expira_em' => $gateway?->expira_em,
             'renovado_em' => $gateway?->renovado_em,
             'falha_renovacao' => $gateway?->falha_renovacao,
+            'pode_alterar' => Funcao::usuario_pode($request->user(), 'gateway_pagamento.vincular'),
         ]]);
     }
 
@@ -49,9 +57,10 @@ class GatewayPagamentoController extends Controller implements HasMiddleware
         return response()->json(['url' => $vinculo->iniciar($request->user())]);
     }
 
-    public function destroy(VinculoMercadoPago $vinculo): Response
+    public function destroy(Request $request, VinculoMercadoPago $vinculo, HistoricoConfiguracoes $historico): Response
     {
         $vinculo->desvincular();
+        $historico->registrar($request->user(), 'mercado_pago', AcaoConfiguracao::Desvínculo);
 
         return response()->noContent();
     }
