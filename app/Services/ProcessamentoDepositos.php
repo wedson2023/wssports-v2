@@ -27,6 +27,7 @@ class ProcessamentoDepositos
         private EscolhaPromocoes $promocoes,
         private Indicacoes $indicacoes,
         private ComissoesAfiliados $comissoes,
+        private EstornoBonus $estorno_bonus,
     ) {}
 
     /**
@@ -233,11 +234,16 @@ class ProcessamentoDepositos
         $saldo_carteira = (string) $cliente->{$bonus->carteira->coluna()};
         $retirar = bccomp($saldo_carteira, (string) $bonus->valor_creditado, 2) < 0 ? $saldo_carteira : (string) $bonus->valor_creditado;
 
+        $debito = null;
+
         if (bccomp($retirar, '0', 2) > 0) {
-            $this->saldo->debitar($cliente, $bonus->carteira, $retirar, OrigemTransacao::BônusExcluído, null, $bonus->clientes_promocoes_id, 'Bônus cancelado pelo estorno do depósito');
+            $debito = $this->saldo->debitar($cliente, $bonus->carteira, $retirar, OrigemTransacao::BônusExcluído, null, $bonus->clientes_promocoes_id, 'Bônus cancelado pelo estorno do depósito');
         }
 
         $bonus->forceFill(['cancelado_em' => now(), 'excluido_em' => now()])->save();
+
+        // aparece como Estornado (automático) na tela Bônus, não como excluído pelo cliente (spec 020)
+        $this->estorno_bonus->registrar_automatico($bonus->clientes_transacoes_id, $bonus, 'Cancelado pelo estorno do depósito', $debito === null ? '0.00' : $retirar, $debito);
     }
 
     private function vencido(Depositos $deposito): bool

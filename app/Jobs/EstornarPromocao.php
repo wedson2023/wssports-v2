@@ -4,19 +4,21 @@ namespace App\Jobs;
 
 use App\Enums\OrigemTransacao;
 use App\Enums\SituacaoEstorno;
-use App\Models\Clientes;
+use App\Enums\TipoEstornoBonus;
 use App\Models\ClientesPromocoes;
+use App\Models\ClientesPromocoesEstornos;
 use App\Models\ClientesTransacoes;
-use App\Services\RolloverClientes;
-use App\Services\SaldoClientes;
+use App\Services\EstornoBonus;
 use Illuminate\Contracts\Queue\ShouldBeUnique;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Support\Collection;
 
 /**
- * Estorna uma promoção de todos os clientes que a receberam, em lotes, só no saldo
- * promocional da modalidade. Idempotente: pode ser retomado sem estornar alguém duas vezes.
+ * Estorna uma promoção de todos que a receberam, bônus a bônus e em lotes (spec 020, R-05): cada
+ * crédito passa pelo EstornoBonus, que só retira o que ainda está em andamento ou cumprido e pula os
+ * convertidos, expirados, excluídos e já estornados. Idempotente por bônus: pode ser retomado sem
+ * retirar nada duas vezes.
  */
 class EstornarPromocao implements ShouldBeUnique, ShouldQueue
 {
@@ -33,89 +35,47 @@ class EstornarPromocao implements ShouldBeUnique, ShouldQueue
         return (string) $this->promocao_id;
     }
 
-    public function handle(SaldoClientes $saldo, RolloverClientes $rollover): void
+    public function handle(EstornoBonus $estorno): void
     {
-        $promocao = ClientesPromocoes::withTrashed()->findOrFail($this->promocao_id);
-        $clientes_avaliados = 0;
+        $promocao = ClientesPromocoes::withTrashed()->with('autor_estorno')->findOrFail($this->promocao_id);
+        $clientes_avaliados = [];
 
-        // a consulta agrupada não tem "id": o lote avança pela coluna clientes_id
-        $this->consulta_recebimentos()->chunkById(self::TAMANHO_LOTE, function (Collection $lote) use ($promocao, $saldo, $rollover, &$clientes_avaliados) {
-            foreach ($lote as $recebimento) {
-                // o bônus estornado deixa de exigir rollover e suas regras de uso deixam de valer (spec 004)
-                $rollover->cancelar_da_promocao((int) $recebimento->clientes_id, $promocao->id);
-                $this->estornar_cliente($promocao, $saldo, (int) $recebimento->clientes_id, (string) $recebimento->total_recebido);
+        $this->creditos()->chunkById(self::TAMANHO_LOTE, function (Collection $lote) use ($promocao, $estorno, &$clientes_avaliados) {
+            foreach ($lote as $credito) {
+                $estorno->estornar($credito, TipoEstornoBonus::Geral, $promocao->autor_estorno, (string) $promocao->estorno_motivo);
+                $clientes_avaliados[$credito->clientes_id] = true;
             }
 
-            $clientes_avaliados += $lote->count();
-            $this->atualizar_contadores($promocao, $clientes_avaliados);
-        }, 'clientes_id');
+            $this->atualizar_contadores($promocao, count($clientes_avaliados));
+        });
 
-        $this->atualizar_contadores($promocao, $clientes_avaliados);
+        $this->atualizar_contadores($promocao, count($clientes_avaliados));
         $promocao->forceFill([
             'estorno_situacao' => SituacaoEstorno::Concluído,
             'estorno_concluido_em' => now(),
         ])->save();
     }
 
-    private function estornar_cliente(ClientesPromocoes $promocao, SaldoClientes $saldo, int $clientes_id, string $total_recebido): void
-    {
-        // idempotência: quem já tem estorno desta promoção foi processado numa execução anterior
-        if ($this->transacoes_da_promocao(OrigemTransacao::Estorno)->where('clientes_id', $clientes_id)->exists()) {
-            return;
-        }
-
-        $cliente = Clientes::withTrashed()->find($clientes_id);
-
-        if ($cliente === null) {
-            return;
-        }
-
-        $carteira = $promocao->modalidade->carteira();
-        $saldo_atual = SaldoClientes::para_centavos((string) $cliente->getRawOriginal($carteira->coluna()));
-
-        // retira o recebido ou, se não houver tudo isso, zera o saldo promocional; nada fica pendente
-        $valor = min($saldo_atual, SaldoClientes::para_centavos($total_recebido));
-
-        if ($valor <= 0) {
-            return;
-        }
-
-        $saldo->debitar(
-            $cliente,
-            $carteira,
-            SaldoClientes::para_decimal($valor),
-            OrigemTransacao::Estorno,
-            $promocao->autor_estorno,
-            $promocao->id,
-            $promocao->estorno_motivo,
-        );
-    }
-
     /**
-     * Clientes que receberam a promoção, com o total recebido por cliente.
+     * Créditos da promoção (um por bônus recebido).
      */
-    private function consulta_recebimentos()
-    {
-        return $this->transacoes_da_promocao(OrigemTransacao::Promoção)
-            ->selectRaw('clientes_id, SUM(valor) as total_recebido')
-            ->groupBy('clientes_id');
-    }
-
-    private function transacoes_da_promocao(OrigemTransacao $origem)
+    private function creditos()
     {
         return ClientesTransacoes::query()
-            ->where('origem', $origem)
+            ->where('origem', OrigemTransacao::Promoção)
             ->where('referencia_id', $this->promocao_id);
     }
 
     /**
-     * Recalcula os contadores a partir do banco (não soma), para uma retomada não contar em dobro.
+     * Recalcula o valor a partir do banco (não soma), para uma retomada não contar em dobro.
      */
     private function atualizar_contadores(ClientesPromocoes $promocao, int $clientes_avaliados): void
     {
         $promocao->forceFill([
             'estorno_clientes_processados' => $clientes_avaliados,
-            'estorno_valor_total' => (string) ($this->transacoes_da_promocao(OrigemTransacao::Estorno)->sum('valor') ?: '0'),
+            'estorno_valor_total' => (string) (ClientesPromocoesEstornos::where('clientes_promocoes_id', $this->promocao_id)
+                ->where('tipo', TipoEstornoBonus::Geral)
+                ->sum('valor_retirado') ?: '0'),
         ])->save();
     }
 }

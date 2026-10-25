@@ -91,7 +91,7 @@ e regras de modais, cabeçalho e campos da constituição.
 | Atualização do frontend | Sem mudança de cache/PWA | ✅ Pass |
 | Tamanho dos modais | Cadastro com altura fixa (conteúdo longo); estornos e confirmações com altura do conteúdo; gavetas com altura fixa; tela cheia no celular; cabeçalho e rodapé sem encolher | ✅ Pass |
 | Cabeçalho dos modais | Todos com `ModalHeader` (ícone sem fundo, título, descrição, fechar) | ✅ Pass |
-| Campos de itens existentes | Afiliado (`AffiliatePicker`) e promoção (`PromotionPicker`) escolhidos de listas; categoria, modalidade, tipo de ganho e situação em chips | ✅ Pass |
+| Campos de itens existentes | Afiliado (`AffiliatePicker`) e promoção (`PromotionPicker`) escolhidos de listas; categoria, modalidade, tipo de ganho e Sim/Não em campos de seleção no cadastro; situação, modalidade e categoria em chips nos filtros | ✅ Pass |
 | Sem testes | Nenhum arquivo, tarefa ou dependência de teste | ✅ Pass |
 | Postman | Regenerado na entrega | ✅ Pass |
 

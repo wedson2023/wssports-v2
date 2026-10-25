@@ -38,6 +38,8 @@ Route::get('painel/caixa', [PainelController::class, 'caixa'])->name('painel.cai
 Route::get('painel/apostas', [PainelController::class, 'apostas'])->name('painel.apostas');
 // clientes do painel (spec 019)
 Route::get('painel/clientes', [PainelController::class, 'clientes'])->name('painel.clientes');
+// bônus e promoções do painel (spec 020)
+Route::get('painel/bonus', [PainelController::class, 'bonus'])->name('painel.bonus');
 // afiliados (spec 012): página pública de cadastro e painel do afiliado
 Route::get('cadastro-afiliado', [AfiliadosPaginasController::class, 'cadastro'])->name('cadastro_afiliado');
 Route::get('afiliados', [AfiliadosPaginasController::class, 'painel'])->name('afiliados');

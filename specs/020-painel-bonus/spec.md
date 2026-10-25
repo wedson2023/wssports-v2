@@ -60,6 +60,20 @@ lista que vira cartões no celular)."
   saldo real? → A: Não. Bônus convertido não é estornado, nem no estorno individual nem no geral; a
   correção é pelo ajuste manual de saldo da spec 019 (FR-027 e FR-028).
 
+### Session 2026-10-25 (ajustes visuais pedidos pelo responsável depois da implementação)
+
+- No cadastro de promoção, os interruptores (Ativa, Rollover no primeiro depósito) e os chips
+  (Categoria, Modalidade, Tipo de ganho) passam a ser campos de seleção, em grade de duas colunas.
+- No computador, as abas ficam do tamanho do texto (sem quebrar "Bônus recebidos") e a busca tem
+  largura própria, sem acompanhar o maior elemento da coluna.
+- No celular, as abas dividem a largura toda e os chips de situação ficam numa linha só, com rolagem
+  para o lado.
+- Filtro da aba Bônus recebidos numa linha com os botões Limpar filtros e Aplicar: Promoção,
+  Modalidade e Período em campos de seleção (De/Até só no Personalizado).
+- Filtro da aba Promoções: Situação e Modalidade (seleção) na linha dos botões; embaixo, Categoria e
+  Afiliado em chips, um por linha (Afiliado: Todos, Geral ou De um afiliado, com a busca ao lado).
+- O botão Cadastrar aparece nas duas abas.
+
 ## Referências do sistema antigo *(Princípios VII e VIII)*
 
 - Backend (`wssports.bet`, `main` `408cf730`): `app/Http/Controllers/BonusController.php` (`index`
@@ -222,7 +236,7 @@ que "Em andamento" vem selecionado e mostra só o primeiro, com o quanto falta a
    que falta apostar) e, para o período escolhido, Creditado, Convertido e Retirado (expirados,
    excluídos e estornados).
 5. **Given** um bônus, **When** o usuário toca na linha, **Then** abre o detalhe do bônus com o
-   histórico (recebido, apostas que somaram no rollover, cumprido, convertido, expirado, excluído
+   valor já apostado no rollover, o histórico (recebido, cumprido, convertido, expirado, excluído
    ou estornado) e o atalho para o detalhe do cliente da tela Clientes (spec 019).
 6. **Given** uma promoção no detalhe, **When** o usuário escolhe "Ver bônus recebidos", **Then** abre
    esta aba filtrada pela promoção, na situação Todos.
@@ -319,6 +333,9 @@ promoção já creditada e conferir a recusa.
   pode receber várias vezes, spec 007).
 - Bônus de indicação cancelado porque a indicação voltou a "Pendente de depósito" (spec 007): aparece
   como Estornado, com a observação do motivo automático.
+- Bônus cancelado porque o depósito que o gerou foi estornado por inteiro (spec 007): aparece como
+  Estornado (automático), com o motivo "Cancelado pelo estorno do depósito", e não como "Excluído
+  pelo cliente".
 - Estorno geral com um cliente excluído ou inativo: o bônus dele também é retirado.
 - Estorno geral interrompido (queda do servidor): retoma de onde parou, sem retirar duas vezes.
 - Estorno individual e estorno geral do mesmo bônus ao mesmo tempo: o bônus é retirado uma vez só.
@@ -446,8 +463,9 @@ promoção já creditada e conferir a recusa.
   individual ou o cancelamento automático do bônus de indicação).
 - **FR-022**: Cada linha DEVE mostrar: cliente (ID e nome), promoção (nome), modalidade, valor
   recebido, saldo promocional atual do cliente na modalidade, rollover exigido, apostado e quanto
-  falta, recebido em, expira em, situação e, quando encerrado, a data, o valor retirado ou
-  convertido e, no estorno, o autor e o motivo.
+  falta, recebido em, expira em, situação e, quando encerrado, a data e, no estorno, o valor
+  retirado, o autor e o motivo. Nos estornos gerais anteriores a esta spec, em que o valor por bônus
+  não foi guardado, o valor retirado aparece como "—".
 - **FR-023**: A aba DEVE ter busca por cliente (nome ou ID) e os filtros promoção (escolhida de
   lista), modalidade e período de recebimento (atalhos Hoje, Ontem, Esta semana, Este mês e
   Personalizado, até 1 ano; sem período por padrão em Em andamento), com etiquetas removíveis e
@@ -458,7 +476,7 @@ promoção já creditada e conferir a recusa.
   filtros.
 - **FR-025**: O detalhe do bônus DEVE mostrar os dados da linha, as regras de uso gravadas no
   recebimento (valor mínimo e máximo de aposta e odds mínimas), o histórico (recebido, cumprido,
-  convertido, expirado, excluído ou estornado, com datas) e o atalho "Ver cliente", que abre o
+  convertido, expirado, excluído ou estornado, com datas; o valor no recebimento e no estorno) e o atalho "Ver cliente", que abre o
   detalhe do cliente da tela Clientes (spec 019) para quem tem `clientes.listar`.
 
 **Estornos**

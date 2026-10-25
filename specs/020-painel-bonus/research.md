@@ -146,13 +146,14 @@ coluna de autor. O 403 nas gerais (em vez de 404) é porque elas são visíveis.
 - **filtros**: `busca` (nome, `LIKE %trecho%` com parâmetro), `situacao`, `modalidade`, `categoria`,
   `afiliados_id` (id ou `geral`); ordem `data_inicio` desc; padrão 20, máximo 100. Os filtros atuais
   (`ativa`, `modalidade`, `categoria`, `por_pagina`) continuam aceitos.
-- **números de uso** só para as promoções da página, em uma consulta agrupada em `clientes_transacoes`
-  por `referencia_id` (`origem IN (Promoção, Conversão de bônus, Bônus expirado, Bônus excluído,
-  Estorno)`, com o alcance de clientes para Supervisor/Gerente): clientes distintos e soma dos
-  créditos `Promoção`; soma dos créditos `Conversão de bônus` na carteira `Saldo` (convertido); soma
-  dos débitos `Bônus expirado`, `Bônus excluído` e `Estorno` (retirado). **Cumpridos** = créditos com
-  rollover cumprido ou sem rollover (consulta agrupada com LEFT JOIN em `clientes_rollovers`). Valores
-  em string com 2 casas (bcmath na montagem).
+- **números de uso** só para as promoções da página, em consultas agrupadas por `referencia_id` (com o
+  alcance de clientes para Supervisor/Gerente): clientes distintos e soma dos créditos `Promoção`;
+  soma dos créditos `Conversão de bônus` na carteira `Saldo` (convertido); retirado = soma dos débitos
+  `Bônus expirado` e `Bônus excluído` mais a soma de `valor_retirado` dos estornos `Individual` e
+  `Geral` em `clientes_promocoes_estornos`. A origem `Estorno` não entra pela referência porque também
+  é usada nos estornos de apostas (com `referencia_id` = aposta); os automáticos não entram de novo
+  porque já debitaram como `Bônus excluído`. **Cumpridos** = créditos com rollover cumprido ou sem
+  rollover (LEFT JOIN em `clientes_rollovers`). Valores em string com 2 casas (bcmath na montagem).
 - **ações permitidas** por linha no resource (`pode`: editar, ativar, excluir, estornar), calculadas
   pela permissão, pelo alcance (geral só Admin), pela situação (estornada não altera) e por `aplicada()`
   (excluir).
@@ -194,8 +195,9 @@ com JOIN em `clientes` (com excluídos) e `clientes_promocoes` (com excluídas),
   "falta" = `valor_exigido − valor_apostado` (mínimo 0) calculado em SQL `GREATEST`;
 - **cartões** (`resumo`): Em andamento (quantidade e soma do que falta, sem período); Creditado
   (créditos `Promoção` no período), Convertido (créditos `Conversão de bônus` no período) e Retirado
-  (débitos `Bônus expirado`, `Bônus excluído` e `Estorno` no período), com a busca e os filtros de
-  promoção e modalidade;
+  (débitos `Bônus expirado` e `Bônus excluído` mais os estornos `Individual` e `Geral` da tabela de
+  estornos, no período; a origem `Estorno` não é usada, pelo mesmo motivo de R-07), com a busca e os
+  filtros de promoção e modalidade;
 - **detalhe** (`show`): a linha + regras gravadas no rollover + histórico (recebido em, cumprido em,
   convertido em, expirado em, excluído em, estornado em, com autor e motivo do estorno). As apostas que
   somaram no rollover ficam fora do detalhe (o progresso já mostra o valor apostado); ver Riscos.
@@ -229,7 +231,7 @@ Hook `useBonusPainel` (aba, filtros e página na URL, como `useClientesPainel`).
 | `PromotionDrawer` | Detalhe da promoção (campos, números, estorno com progresso) |
 | `PromotionReversalModal` | Estorno geral: aviso, clientes e valor creditado, motivo e senha |
 | `ReceivedBonusTable` | Lista de bônus recebidos (tabela/cartões), `ActionsMenu` |
-| `ReceivedBonusFilters` | Situação (chips), promoção, modalidade, período |
+| `ReceivedBonusFilters` | Promoção, modalidade e período (chips "Desde sempre", Hoje, Ontem, Esta semana, Este mês, de `utils/periods`, e as datas de/até); a situação fica em chips acima da lista |
 | `BonusDrawer` | Detalhe do bônus: regras, histórico, "Ver cliente" |
 | `BonusReversalModal` | Estorno individual: cliente, bônus, valor a retirar, motivo e senha |
 | `PromotionPicker` | Escolha de promoção por busca (`GET /clientes-promocoes?busca=`), só da lista |
@@ -272,7 +274,10 @@ Nenhum dado fake (Princípio IX). Nenhum teste automatizado (constituição); va
 
 ## Riscos
 
-- O `ClientDrawer` (spec 019) aberto sem ações precisa aceitar `acoes` vazio; conferir na implementação
-  e, se exigir mudança, comunicar antes (Princípio IV).
+- O `ClientDrawer` (spec 019) aceita `acoes` vazio sem mudança: "Ver cliente" o abre com `acoes={() => []}`
+  e sem as permissões de alterar (só consulta).
 - O histórico do bônus não lista as apostas que somaram no rollover (só o valor apostado); se o
   responsável quiser a lista, é uma consulta a mais em `apostas_rollovers` / `cassinos_rodadas_rollovers`.
+- O histórico mostra o valor só no recebimento e no estorno; a data da conversão, da expiração e da
+  exclusão aparece, mas o valor delas não é ligado ao bônus (as transações referenciam a promoção, não
+  o crédito).

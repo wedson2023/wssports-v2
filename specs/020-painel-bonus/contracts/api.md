@@ -45,7 +45,9 @@ Mesmo item de 1.1 (com `uso` e `estorno`). Usada também para acompanhar o progr
 ### 1.3 `POST /clientes-promocoes` e `PATCH|PUT /clientes-promocoes/{promocao}` (alteradas)
 Corpo atual. Mudanças de regra ([data-model.md](../data-model.md) §6):
 
-- `afiliados_id`: obrigatório e da rede para Supervisor/Gerente; 422 "Afiliado não encontrado.";
+- `afiliados_id`: obrigatório e da rede para Supervisor/Gerente; 422 "Afiliado não encontrado."; a
+  existência e a rede só são conferidas quando o afiliado muda (a promoção de um afiliado excluído
+  continua podendo ser desativada);
 - `nome`: único entre as não excluídas; 422 "Já existe uma promoção com este nome.";
 - `data_fim` enviada e diferente da gravada no passado: 422 "A data de fim já passou.";
 - sobreposição por afiliado: 422 em `data_inicio` "Já existe uma promoção ativa desta categoria e
@@ -96,15 +98,15 @@ Item (`BonusRecebidosResource`):
   "expira_em": "2026-10-27T13:00:00Z",
   "situacao": "Em andamento",
   "encerrado_em": null,
-  "valor_encerramento": null,
   "estorno": null,
   "pode": { "estornar": true }
 }
 ```
 
-`rollover` é `null` quando a promoção não exige rollover. `encerrado_em` / `valor_encerramento`: data e
-valor convertido, expirado, excluído ou retirado. `estorno`: `{ "tipo", "motivo", "autor": {id, nome} |
-null, "em", "valor_retirado" }`.
+`rollover` é `null` quando a promoção não exige rollover. `encerrado_em`: data em que o bônus cumpriu o
+rollover, foi convertido, expirou, foi excluído ou estornado. `estorno`: `{ "tipo", "motivo", "autor":
+{id, nome} | null, "em", "valor_retirado" }`; `valor_retirado` é `null` nos estornos gerais anteriores à
+spec 020 (R-12), e a tela mostra "—".
 
 ### 2.2 `GET /clientes-bonus/resumo`
 `clientes_promocoes.gerenciar`. Mesmos filtros de 2.1 (menos `situacao`).

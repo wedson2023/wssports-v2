@@ -59,6 +59,7 @@ use App\Http\Controllers\ClientesExportacaoController;
 use App\Http\Controllers\ClientesMeiosPagamentoController;
 use App\Http\Controllers\ClientesNotificacoesController;
 use App\Http\Controllers\ClientesPendentesController;
+use App\Http\Controllers\ClientesBonusController;
 use App\Http\Controllers\ClientesPromocoesController;
 use App\Http\Controllers\ClientesRankingController;
 use App\Http\Controllers\ClientesTransacoesController;
@@ -285,6 +286,12 @@ Route::middleware(['auth:api', 'garantir_acesso'])->group(function () {
     Route::apiResource('clientes-promocoes', ClientesPromocoesController::class)
         ->parameters(['clientes-promocoes' => 'promocao'])
         ->missing(fn () => abort(404, 'Promoção não encontrada.'));
+
+    // bônus recebidos pelos clientes da rede (spec 020); o resumo antes de clientes-bonus/{bonus}
+    Route::get('clientes-bonus/resumo', [ClientesBonusController::class, 'resumo']);
+    Route::get('clientes-bonus', [ClientesBonusController::class, 'index']);
+    Route::get('clientes-bonus/{bonus}', [ClientesBonusController::class, 'show'])->whereNumber('bonus');
+    Route::post('clientes-bonus/{bonus}/estornar', [ClientesBonusController::class, 'estornar'])->whereNumber('bonus');
 });
 
 // gestão de afiliados no painel (spec 012): mesmo token dos usuários; Gerente só vê os seus

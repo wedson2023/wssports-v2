@@ -22,10 +22,11 @@ Um registro por bônus estornado (individual, geral ou automático).
 | `motivo` | `string(255)` | obrigatório | Motivo informado no estorno (no automático, o evento que o causou) |
 | `usuarios_id` | `foreignId` → `usuarios` | nulo | Usuário do painel que estornou (nulo no automático) |
 | `valor_retirado` | `decimal(15,2)` | ≥ 0 | Valor retirado do saldo promocional da modalidade (R$) |
-| `debito_clientes_transacoes_id` | `foreignId` → `clientes_transacoes` | nulo | Transação de débito do estorno (nula quando não havia saldo para retirar) |
+| `debito_clientes_transacoes_id` | `foreignId` → `clientes_transacoes` (chave `clientes_promocoes_estornos_debito_foreign`: o nome padrão passa de 64 caracteres) | nulo | Transação de débito do estorno (nula quando não havia saldo para retirar; nula também nos estornos gerais anteriores à spec 020, R-12) |
 | `created_at`, `updated_at`, `deleted_at` | | | |
 
-Índices: único `clientes_transacoes_id`; `(clientes_promocoes_id, tipo)`; `(clientes_id)`.
+Índices: único `clientes_transacoes_id`; `(clientes_promocoes_id, tipo)`; `clientes_id` pelo índice da
+chave estrangeira.
 Model `ClientesPromocoesEstornos` com `SoftDeletes`, casts (`tipo` → `TipoEstornoBonus`,
 `valor_retirado` → `decimal:2`) e relações `promocao`, `cliente`, `credito`, `rollover`, `autor`, `debito`.
 
@@ -60,7 +61,7 @@ Model `ClientesPromocoesEstornos` com `SoftDeletes`, casts (`tipo` → `TipoEsto
 |---|---|
 | Situação da promoção | R-07 (`CASE`: Estornando, Estornada, Desativada, Agendada, Encerrada, Vigente) |
 | Situação do bônus | R-03 (`CASE`: Estornado, Convertido, Expirado, Excluído pelo cliente, Estornado legado, Cumprido, Em andamento) |
-| Números de uso | Clientes (distintos com crédito `Promoção`), Creditado (Σ `Promoção`), Cumpridos (créditos com rollover cumprido ou sem rollover), Convertido (Σ créditos `Conversão de bônus` em `Saldo`), Retirado (Σ débitos `Bônus expirado` + `Bônus excluído` + `Estorno`); por promoção, só clientes da rede para Supervisor/Gerente |
+| Números de uso | Clientes (distintos com crédito `Promoção`), Creditado (Σ `Promoção`), Cumpridos (créditos com rollover cumprido ou sem rollover), Convertido (Σ créditos `Conversão de bônus` em `Saldo`), Retirado (Σ débitos `Bônus expirado` + `Bônus excluído` + Σ `valor_retirado` dos estornos `Individual` e `Geral`; a origem `Estorno` também é de apostas e não é usada); por promoção, só clientes da rede para Supervisor/Gerente |
 | Falta apostar | `max(valor_exigido − valor_apostado, 0)`; 0 sem rollover |
 | Valor a retirar no estorno | `min(saldo da carteira do cliente, valor do crédito)`, nunca negativo |
 

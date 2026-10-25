@@ -11,8 +11,12 @@ cheia, sem rolagem horizontal, alvos de toque ≥ 40 px.
 - Menu do painel: item **Bônus** (ícone `redeem`), depois de Clientes, visível com
   `clientes_promocoes.gerenciar`.
 - Barra superior: título "Bônus — total N" (total da aba e do filtro), busca (atraso de 400 ms), botão
-  **Filtros** (`filter_alt`, com contador), **Cadastrar** (`add`, aba Promoções) e **Atualizar**.
+  **Filtros** (`filter_alt`, com contador), **Cadastrar** (`add`, nas duas abas, como no antigo) e
+  **Atualizar**.
 - Abas (`PanelTabs`): **Promoções** (`card_giftcard`) e **Bônus recebidos** (`redeem`).
+- Computador: abas do tamanho do texto, cada rótulo numa linha só, e busca com largura própria
+  (300 px); os chips de situação ficam embaixo e não alargam a coluna das abas. Celular: as abas
+  dividem a largura toda e a busca ocupa a linha (ajuste pedido pelo responsável em 2026-10-25).
 - Estado no endereço: `aba`, `busca`, filtros, `situacao`, `page` (FR-009, FR-023).
 
 ## 2. Promoções (`PromotionsTable`)
@@ -31,8 +35,11 @@ cheia, sem rolagem horizontal, alvos de toque ≥ 40 px.
 
 ## 3. Filtros das promoções (`PromotionsFilters`)
 
-Painel lateral (tela cheia no celular): Situação (chips), Modalidade (chips), Categoria (chips), Afiliado
-(`AffiliatePicker` + opção "Geral"). Aplicar recarrega a lista; etiquetas removíveis em `ActiveFilters`.
+Painel de filtros (tela cheia no celular): Situação e Modalidade (seleção, com "Todas") na mesma linha
+de Limpar filtros e Aplicar; embaixo, cada um na sua linha, Categoria (chips: Todas e as quatro
+categorias) e Afiliado (chips: Todos, Geral (sem afiliado) e De um afiliado; neste, a busca do afiliado,
+`AffiliatePicker`, ao lado dos chips). Aplicar recarrega a lista; etiquetas removíveis em
+`ActiveFilters`. Ajuste pedido pelo responsável em 2026-10-25.
 
 ## 4. Cadastrar / editar (`PromotionFormModal`)
 
@@ -40,14 +47,17 @@ Painel lateral (tela cheia no celular): Situação (chips), Modalidade (chips), 
 "Defina quem ganha o bônus, quanto e as regras para usar.". Altura fixa (`min(680px, 90dvh)`), corpo
 rolável, rodapé com Cancelar e Salvar (carregando, sem clique duplo).
 
+Campos em grade de duas colunas (uma no celular); as escolhas de lista fixa são campos de seleção,
+com o mesmo visual dos outros campos (ajuste pedido pelo responsável em 2026-10-25, no lugar dos
+interruptores e dos chips):
+
 | Grupo | Campos |
 |---|---|
-| Identificação | Nome · Descrição · Ativa (interruptor) |
-| Ganho | Categoria (chips: Primeiro cadastro, Primeiro depósito, Qualquer depósito, Indicação) · Modalidade (chips) · Tipo de ganho (chips Fixo/Percentual, só nas de depósito) · Valor (R$ ou %) · Depósito máximo (só Percentual) · Quantidade de indicações (só Indicação) |
-| Período | Início · Fim (opcional, "Sem fim" quando vazio) |
-| Rollover e prazo | Rollover (vezes) · Rollover no primeiro depósito (só Primeiro depósito) · Dias para cumprir |
+| Identificação | Nome (linha toda) · Descrição (linha toda) · Ativa (seleção Sim/Não) · Afiliado (`AffiliatePicker`, obrigatório para Supervisor/Gerente; Admin pode limpar = "Geral") |
+| Ganho | Categoria (seleção: Primeiro cadastro, Primeiro depósito, Qualquer depósito, Indicação) · Modalidade (seleção) · Tipo de ganho (seleção Fixo/Percentual; desabilitada em Fixo fora das categorias de depósito) · Valor (R$ ou %) · Depósito máximo (só Percentual) · Quantidade de indicações (só Indicação) |
+| Período | Início · Fim (vazio = sem fim) |
+| Rollover e prazo | Rollover (vezes) · Dias para cumprir · Rollover no primeiro depósito (seleção Sim/Não, só Primeiro depósito) |
 | Regras de aposta | Valor mínimo e máximo de aposta · Odd mínima simples e múltipla · Valor máximo de conversão |
-| Afiliado | `AffiliatePicker` (obrigatório para Supervisor/Gerente; Admin pode limpar = "Geral") |
 
 Promoção já aplicada: Valor, Tipo de ganho, Categoria e Modalidade travados com o aviso "Esta promoção
 já foi dada a clientes; esses campos não podem mudar.". Erros do servidor aparecem no campo.
@@ -73,9 +83,11 @@ vermelho. Depois de confirmar, a linha mostra "Estornando N de M" e atualiza a c
 - Cartões (`StatCard`): Em andamento (quantidade · falta apostar), Creditado, Convertido e Retirado
   (do período escolhido, ou "Desde sempre").
 - Situação em chips acima da lista: Em andamento (padrão) · Cumpridos · Convertidos · Expirados ·
-  Excluídos pelo cliente · Estornados · Todos.
-- Filtros: Promoção (`PromotionPicker`), Modalidade (chips), Período (`PeriodFilter`: Hoje, Ontem, Esta
-  semana, Este mês, Personalizado até 1 ano; vazio por padrão).
+  Excluídos pelo cliente · Estornados · Todos. No celular, numa linha só, com rolagem para o lado.
+- Filtros (painel de filtros), numa linha com Limpar filtros e Aplicar: Promoção (`PromotionPicker`, mais larga), Modalidade
+  (seleção: Todas, Esportes, Cassino) e Recebidos no período (seleção: Desde sempre — o padrão —,
+  Hoje, Ontem, Esta semana, Este mês e Personalizado); no Personalizado, as datas De/Até embaixo (até
+  1 ano). Ajuste pedido pelo responsável em 2026-10-25.
 - Colunas: CLIENTE (ID · nome) · PROMOÇÃO · MODALIDADE · VALOR · SALDO BÔNUS (atual) · ROLLOVER
   (apostado / exigido, barra de progresso, "falta R$ X") · RECEBIDO EM · EXPIRA EM · SITUAÇÃO
   (etiqueta: Em andamento azul, Cumprido verde, Convertido verde-escuro, Expirado cinza, Excluído
