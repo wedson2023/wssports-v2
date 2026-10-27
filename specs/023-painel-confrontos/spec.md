@@ -77,6 +77,16 @@ agrupados por seção; liga/desliga como campo select, não toggle. Sem exporta�
   A: Cada aposta conta inteira em cada jogo dela (valor e possível retorno totais), com a quantidade
   e o valor separados em Simples e Múltiplas (FR-016 e FR-019).
 
+### Session 2026-10-27 (`/speckit-plan`, resposta do responsável)
+
+- Q: Na aba Pendentes, o placar pode ser lançado em jogos do provedor (a spec 009 só permitia jogos
+  manuais)? → A: Sim, como no sistema antigo, e só pelo Admin. O lançamento vale para qualquer jogo
+  (do provedor ou manual), exige placar final, 1º e 2º tempo e escanteios e confere que a soma dos
+  gols dos tempos bate com o placar ("A soma dos gols dos times não bate com os gols dos tempos.");
+  se depois a carga do provedor trouxer um resultado diferente, ele substitui o lançado e as apostas
+  são reapuradas, como no antigo. `confrontos.lancar_resultado` passa a ser só do Admin (FR-003,
+  FR-022, FR-023 e FR-033). Muda a spec 009 (FR-045 e FR-046).
+
 ## Referências do sistema antigo *(Princípios VII e VIII)*
 
 - Backend (`wssports.bet`, `main` `408cf730`): `app/Http/Controllers/ConfrontosController.php`
@@ -253,8 +263,8 @@ conferir que só as apostas da rede dele contam.
 
 ### User Story 5 - Jogos pendentes de resultado e placar manual (Priority: P1)
 
-O Admin ou Supervisor abre a aba "Pendentes", vê os jogos que já deviam ter resultado e não têm,
-com o atraso e as apostas em aberto, e lança o placar.
+O Admin abre a aba "Pendentes", vê os jogos (do provedor ou manuais) que já deviam ter resultado e
+não têm, com o atraso e as apostas em aberto, e lança o placar, como no antigo.
 
 **Why this priority**: sem resultado, as apostas não são apuradas nem pagas (spec 009); é a rotina
 de conferência do antigo.
@@ -269,13 +279,15 @@ o jogo sai da aba e as apostas são apuradas.
    os jogos ativos, sem resultado, com apostas aguardando, que começaram há mais de 2 horas e há
    menos de 7 dias (casa x fora, campeonato, início, atraso em horas e minutos, quantidade de apostas
    e valor em aberto), do maior para o menor atraso.
-2. **Given** um jogo pendente, **When** o usuário escolhe "Lançar resultado", **Then** abre o modal
-   em grade com as seções Placar final (casa e fora, obrigatórios), Tempos (1º e 2º tempo, casa e
-   fora), Escanteios (casa e fora) e Gols (jogador, minuto e tempo, opcionais), com Cancelar e
-   Salvar no rodapé.
-3. **Given** o modal preenchido, **When** o usuário salva, **Then** o resultado é gravado como manual,
-   as apostas são apuradas pelas regras da spec 009, o jogo sai de Pendentes e a gaveta mostra o
-   resultado; com erro, a mensagem do servidor aparece no campo.
+2. **Given** um jogo pendente, do provedor ou manual, **When** o Admin escolhe "Lançar resultado",
+   **Then** abre o modal em grade com as seções Placar final (casa e fora), Tempos (1º e 2º tempo,
+   casa e fora) e Escanteios (casa e fora), todos obrigatórios, e Gols (jogador, minuto e tempo,
+   opcionais), com Cancelar e Salvar no rodapé.
+3. **Given** o modal preenchido, **When** o usuário salva, **Then** o resultado é gravado com origem
+   "Lançamento manual", as apostas são apuradas pelas regras da spec 009, o jogo sai de Pendentes e a
+   gaveta mostra o resultado; **When** a soma dos gols dos tempos não bate com o placar, **Then**
+   aparece "A soma dos gols dos times não bate com os gols dos tempos." e nada é gravado; com outro
+   erro, a mensagem do servidor aparece no campo.
 4. **Given** um jogo que já tem resultado, **When** o usuário escolhe "Corrigir resultado" (na aba
    Jogos ou na gaveta), **Then** o mesmo modal abre preenchido, e a correção segue a reapuração da
    spec 009.
@@ -414,6 +426,9 @@ editar um jogo do provedor e conferir que a ação não existe; excluir o jogo e
 - Jogo cancelado ou adiado (spec 009): aparece com a situação; não entra em Pendentes.
 - Jogo pendente cujo resultado chega do provedor com a tela aberta: a próxima atualização o tira de
   Pendentes; salvar o placar depois disso segue a correção da spec 009.
+- Placar lançado à mão num jogo do provedor e, depois, resultado diferente na carga: vale o do
+  provedor, e as apostas são reapuradas (estornos e pagamentos da spec 009); o histórico de apuração
+  mostra as duas origens.
 - Dois usuários lançando o resultado do mesmo jogo ao mesmo tempo: vale o último, com a reapuração
   da spec 009.
 - Limite alterado com o modal aberto por outro usuário: vale o último gravado.
@@ -455,9 +470,11 @@ editar um jogo do provedor e conferir que a ação não existe; excluir o jogo e
   não acessa a tela.
 - **FR-003**: O Gerente DEVE ver a lista, as abas Mais apostados e Campeonatos e a gaveta, desativar
   jogos e campeonatos só para a rede dele (FR-011 e FR-027) e ver o limite só para leitura. Alterar
-  o limite, lançar o resultado, ativar/desativar para todos, favoritar e o cadastro manual DEVEM ser
-  só de Admin e Supervisor, como as permissões padrão de hoje (`Funcao.php`), porque valem para todas
-  as redes; a aba Pendentes não aparece para o Gerente. Diferença em relação ao antigo, aprovada.
+  o limite, ativar/desativar para todos, favoritar e o cadastro manual DEVEM ser só de Admin e
+  Supervisor, como as permissões padrão de hoje (`Funcao.php`), porque valem para todas as redes.
+  Lançar e corrigir o resultado (`confrontos.lancar_resultado`) DEVE ser só do Admin: a função
+  Supervisor deixa de poder usá-la e perde a permissão; a aba Pendentes só aparece para o Admin.
+  Diferenças em relação ao antigo, aprovadas.
 
 **Cartões e lista**
 
@@ -541,9 +558,13 @@ editar um jogo do provedor e conferir que a ação não existe; excluir o jogo e
   início, atraso, quantidade de apostas e valor em aberto, do maior para o menor atraso, paginada
   (padrão 20, máximo 100), com a busca da aba Jogos.
 - **FR-023**: O modal de resultado DEVE ter, em grade e agrupados por seção: Placar final (casa e
-  fora, obrigatórios, 0 a 99), Tempos (1º e 2º tempo, casa e fora), Escanteios (casa e fora) e Gols
-  (lista de jogador, minuto e tempo, opcional), e gravar pela rota de resultado manual da spec 009,
-  com as regras e a reapuração dela. A correção usa o mesmo modal, preenchido.
+  fora), Tempos (1º e 2º tempo, casa e fora) e Escanteios (casa e fora), todos obrigatórios, de 0 a
+  99, e Gols (lista de jogador, minuto e tempo, opcional), e gravar pela rota de resultado manual da
+  spec 009, com a apuração e a reapuração dela. A rota DEVE aceitar qualquer jogo, do provedor ou
+  manual (como o antigo), e recusar quando a soma dos gols do 1º e do 2º tempo for diferente da soma
+  do placar final, com "A soma dos gols dos times não bate com os gols dos tempos.". Um resultado
+  diferente trazido depois pela carga do provedor substitui o lançado e reapura as apostas (como o
+  antigo). A correção usa o mesmo modal, preenchido. Muda a spec 009 (FR-045 e FR-046).
 
 **Cotações**
 
@@ -593,7 +614,8 @@ editar um jogo do provedor e conferir que a ação não existe; excluir o jogo e
 **Permissões**
 
 - **FR-033**: As permissões DEVEM ser as que já existem (specs 003, 009 e 016), com os mesmos padrões
-  por função (FR-003); não há permissão nova. As permissões e o alcance DEVEM ser aplicados no
+  por função, salvo `confrontos.lancar_resultado`, que passa a ser só do Admin (FR-003); não há
+  permissão nova. As permissões e o alcance DEVEM ser aplicados no
   servidor em toda consulta e ação, e as ações sem permissão NÃO DEVEM aparecer na tela.
 
 **Visual, responsividade e padrões do painel**
