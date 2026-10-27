@@ -67,6 +67,18 @@ agrupados por seção; liga/desliga como campo select, não toggle."
   depósitos, saques e comissão do período; "A receber" e "Entradas" não dependem do período
   (FR-007). Muda o padrão da listagem atual, que era o dia de hoje.
 
+### Session 2026-10-27 (`/speckit-analyze`, recomendações aceitas pelo responsável)
+
+- A lista de gerentes (filtro, cadastro, edição e aprovação) vem da lista de usuários atual, que já
+  mostra só a rede de quem consulta; quem não tem `usuarios.listar` vê o aviso no campo (FR-007 e
+  FR-011).
+- O período só afeta o cartão "Comissão do período"; "Total de afiliados" e "A receber" seguem a
+  rede, a busca e o gerente; "Em análise" conta todos os cadastros pendentes, sem filtros (FR-004).
+- A recusa com motivo usa um modal próprio, com o campo e o erro do servidor (FR-023).
+- "Prestar contas" exige `afiliados.prestar_contas` e `afiliados.consultar` (FR-009 e FR-027).
+- Na edição, se os dados salvam e a troca de situação falha, o modal continua aberto com o erro
+  no campo Situação e o aviso de que os dados já foram salvos (FR-013).
+
 ## Referências do sistema antigo *(Princípios VII e VIII)*
 
 - Backend (`wssports.bet`, `main` `408cf730`): `app/Http/Controllers/FiliadosController.php`
@@ -130,7 +142,8 @@ conferir que só o afiliado dele aparece e que os cartões mudam junto.
    cabeçalho e a lista (ID, nome e código, gerente, ganho, cadastros, depósitos, saques, comissão
    do período, entradas, a receber, última prestação e situação), paginada, no período "Este mês".
 2. **Given** a busca, **When** o usuário digita parte do nome, do login ou do código, **Then** a
-   lista e os cartões mostram só os afiliados que casam, sem escapar dos filtros aplicados.
+   lista e os cartões (menos o Em análise) mostram só os afiliados que casam, sem escapar dos
+   filtros aplicados.
 3. **Given** o painel de filtros, **When** o usuário escolhe situação (Ativo, Inativo ou Todos),
    gerente ou período, **Then** a lista é recarregada com os filtros combinados e eles aparecem
    como etiquetas removíveis.
@@ -406,8 +419,9 @@ texto; conferir na aba Em análise que o link abre o perfil; aprovar; entrar com
 - **FR-004**: A tela DEVE mostrar os cartões **Total de afiliados** (Ativos e Inativos), **Em
   análise** (quantidade de cadastros em análise; só para o Admin), **Comissão do período**
   (soma da comissão gerada no período) e **A receber** (soma dos lançamentos em aberto), calculados
-  no servidor em reais com duas casas, sem ponto flutuante, respeitando a rede, a busca, o gerente e
-  o período.
+  no servidor em reais com duas casas, sem ponto flutuante. Total de afiliados, Comissão do período e
+  A receber respeitam a rede, a busca e o gerente; só a Comissão do período depende do período. Em
+  análise conta todos os cadastros pendentes, sem a busca nem os filtros.
 - **FR-005**: A aba Ativos DEVE listar os afiliados não excluídos Ativos e Inativos, ordenados por
   nome, paginada (padrão 20, máximo 100), com o total do filtro no cabeçalho e a escolha de
   situação Todos (padrão), Ativos ou Inativos.
@@ -428,6 +442,7 @@ texto; conferir na aba Em análise que o link abre o perfil; aprovar; entrar com
   na aba Ativos, Ver detalhe, Editar, Ativar/Inativar, Trocar regra, Prestar contas, Copiar link e
   Excluir; na aba Em análise, Ver detalhe, Aprovar e Recusar (Recusar só para Em análise); na
   Lixeira, Ver detalhe e Restaurar. Tocar na linha abre a gaveta. Ativar/Inativar pede confirmação.
+  "Prestar contas" aparece só para quem tem `afiliados.prestar_contas` e `afiliados.consultar`.
 
 **Cadastro e edição**
 
@@ -454,7 +469,8 @@ texto; conferir na aba Em análise que o link abre o perfil; aprovar; entrar com
   seleção, só para quem tem `afiliados.alterar_situacao` e só para afiliados Ativos ou Inativos; o
   código público editável só para Admin e Supervisor (regra da spec 012); e os campos "Nova senha"
   e "Confirmar nova senha", opcionais (vazios, a senha não muda; preenchidos, seguem a regra de
-  senha e encerram as sessões do afiliado).
+  senha e encerram as sessões do afiliado). Se os dados salvam e a troca de situação falha, o modal
+  continua aberto com o erro no campo Situação e o aviso de que os dados já foram salvos.
 - **FR-014**: Na edição, CPF, e-mail, telefone e chave PIX DEVEM chegar mascarados para quem não tem
   `clientes.ver_dados_completos` (spec 012, FR-046); o campo mostra o valor mascarado e só é
   enviado quando o usuário digita um valor novo.
@@ -499,7 +515,8 @@ texto; conferir na aba Em análise que o link abre o perfil; aprovar; entrar com
   percentual, todos obrigatórios; se o afiliado já tiver uma regra (cadastros anteriores a esta
   spec), ela vem preenchida. Muda a spec 012 (FR-014, em que gerente e regra eram opcionais na
   aprovação). Aprovar é permitido para Em análise e Recusado.
-- **FR-023**: Recusar DEVE pedir confirmação com o motivo opcional (até 255 caracteres) e só valer
+- **FR-023**: Recusar DEVE abrir um modal com o motivo opcional (até 255 caracteres), com o erro do
+  servidor no campo, e só valer
   para Em análise. Aprovar e recusar DEVEM ser só do Admin com `afiliados.alterar_situacao`, com
   os e-mails da spec 012; o servidor DEVE recusar o Supervisor também por acesso direto. Muda a
   spec 012 (FR-014 e FR-051), em que o Supervisor também aprovava e recusava.
@@ -635,6 +652,8 @@ texto; conferir na aba Em análise que o link abre o perfil; aprovar; entrar com
 - Quem tem `afiliados.cadastrar` define a regra inicial no cadastro sem precisar de
   `afiliados.editar_comissao`, que continua necessária para trocar a regra depois.
 - Não há exportação em planilha nesta tela.
+- A lista de gerentes usa a lista de usuários do painel, que já é limitada à rede de quem consulta
+  e exige `usuarios.listar` (padrão de Admin e Supervisor).
 - Datas no fuso do sistema (Brasília).
 - Não há dados fake nesta spec.
 - Sem testes automatizados (constituição); a validação é manual pelo quickstart da spec.

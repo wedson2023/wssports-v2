@@ -21,7 +21,7 @@ existe como API (specs 012 e 019), e faz as mudanças de regra decididas na spec
 - **Frontend** (R-01, R-09 a R-12): página `PanelAffiliates` (`/painel/afiliados`) com abas Ativos,
   Em análise e Lixeira, gaveta `AffiliateDrawer` e os modais em grade, sem interruptores.
 
-Decisões em [research.md](research.md) (R-01 a R-14).
+Decisões em [research.md](research.md) (R-01 a R-16).
 
 ## Technical Context
 
@@ -55,7 +55,7 @@ constituição; sem `ToggleSwitch` nos modais.
 | Migrations | 2 |
 | Rotas da API novas / alteradas / removidas | 1 (`afiliados/resumo`) / 10 (ver contracts/api §2) / 2 (`configuracoes/afiliados`) |
 | Página nova | 1 (`PanelAffiliates`) + 1 rota web |
-| Componentes novos | 10 |
+| Componentes novos | 11 |
 | Componentes alterados | 4 (`PanelShell`, `AffiliateSignupModal`, `AffiliateProfileModal`, `utils/settings_fields.js`*) |
 
 \* arquivo de utilitário, não componente.
@@ -120,6 +120,7 @@ resources/js/components/AffiliateRuleModal/{index,styles}.jsx
 resources/js/components/AffiliateSettlementModal/{index,styles}.jsx
 resources/js/components/AffiliateDeleteModal/{index,styles}.jsx
 resources/js/components/AffiliateRestoreModal/{index,styles}.jsx
+resources/js/components/AffiliateRejectModal/{index,styles}.jsx
 resources/js/components/AffiliateProfileFields/{index,styles}.jsx   # rede, link, seguidores, sobre (gestão, cadastro público e Meus dados)
 
 # alterados (confirmar antes de implementar — Princípio IV)

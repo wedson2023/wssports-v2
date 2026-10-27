@@ -56,8 +56,8 @@ qualquer situação ──► lixeira (excluir: Admin/Supervisor + senha) ──
 | `entradas` | listagem | soma de `afiliados_lancamentos.base` em aberto (`afiliados_prestacoes_contas_id` nulo) |
 | `valor_a_receber` | listagem, consulta | soma de `valor` em aberto (já existe) |
 | `totais_periodo` | listagem | cadastros, depósitos, saques e comissão do período (já existe; padrão agora "este mês") |
-| `total_afiliados` | resumo | contagem dos Ativos e Inativos do filtro |
-| `em_analise` | resumo (Admin) | contagem dos Em análise (sem filtro de período) |
+| `total_afiliados` | resumo | contagem dos Ativos e Inativos do filtro (rede, busca, gerente; sem período) |
+| `em_analise` | resumo (Admin) | contagem de todos os Em análise, sem busca nem filtros |
 | `comissao_periodo` | resumo | soma de `valor` dos lançamentos com `ocorrido_em` no período, dos afiliados do filtro |
 | `a_receber` | resumo | soma de `valor` em aberto dos afiliados do filtro |
 | `soma` do extrato | gaveta | soma de `valor` dos lançamentos do filtro do extrato |

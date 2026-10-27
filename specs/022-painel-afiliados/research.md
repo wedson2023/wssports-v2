@@ -161,10 +161,14 @@ perfil, "sobre você", histórico de regras, histórico de prestações, cartõe
 
 - **Decision**: `AffiliateFormModal` (cadastro e edição), `AffiliateApprovalModal`,
   `AffiliateRuleModal` (trocar regra), `AffiliateSettlementModal` (prestação) e
-  `AffiliateDeleteModal` (exclusão com aviso e senha), todos com `ModalHeader`, corpo em grade de
-  duas colunas no computador e uma no celular, seções com título, rodapé fixo com Cancelar e a
-  ação principal à direita, e seleções nativas (`select`) no lugar de `ToggleSwitch`. Recusar usa o
-  `ConfirmModal` com campo de motivo (já suportado).
+  `AffiliateDeleteModal` (exclusão com aviso e senha) e `AffiliateRejectModal` (recusa com motivo,
+  no padrão do `WithdrawalDecisionModal`), todos com `ModalHeader`, corpo em grade de duas colunas
+  no computador e uma no celular, seções com título, rodapé fixo com Cancelar e a ação principal à
+  direita, e seleções nativas (`select`) no lugar de `ToggleSwitch`. O `ConfirmModal` (só título e
+  mensagem) é usado sem alteração para ativar/inativar, restaurar sem conflito e mostrar o link para
+  copiar à mão (o campo vai dentro da `mensagem`).
+- **Alternatives considered**: acrescentar um campo de motivo ao `ConfirmModal` — rejeitado: ele não
+  está na lista de arquivos alterados (Princípio IV) e não mostra erro por campo.
 - **Rationale**: pedido do responsável e decisões visuais da spec 020 (sessão de 2026-10-25).
 
 ### R-13 — Cadastro público e "Meus dados"
@@ -180,6 +184,24 @@ perfil, "sobre você", histórico de regras, histórico de prestações, cartõe
 - **Decision**: manter o limite atual de 500 caracteres da observação (coluna e request da spec 012);
   a spec é ajustada de 255 para 500.
 - **Rationale**: evitar migration e mudança de regra sem ganho.
+
+### R-15 — Lista de gerentes
+
+- **Decision**: os campos de gerente (filtro, cadastro, edição e aprovação) usam a rota atual
+  `GET /usuarios?funcao=Gerente&por_pagina=100` (spec 015), que já devolve só a sub-hierarquia de
+  quem consulta (Admin: todos; Supervisor: os da rede dele) e exige `usuarios.listar` (padrão de
+  Admin e Supervisor). Sem essa permissão, o campo mostra "Você não tem acesso à lista de
+  gerentes." e o Gerente não vê o campo (ele é o responsável).
+- **Rationale**: mesma fonte do `UserFormModal`; nenhuma rota nova.
+- **Alternatives considered**: rota `GET /afiliados/gerentes` com `afiliados.cadastrar` — só se a
+  dependência de `usuarios.listar` virar problema na prática.
+
+### R-16 — Resumo e filtros
+
+- **Decision**: "Total de afiliados", "Comissão do período" e "A receber" seguem rede, busca, gerente
+  e sem gerente; só "Comissão do período" usa o período; "Em análise" conta todos os cadastros Em
+  análise, sem busca nem filtros (só o Admin vê).
+- **Rationale**: clarificação do `/speckit-analyze` (I1, I2); os cadastros em análise não têm gerente.
 
 ## Dados fake
 

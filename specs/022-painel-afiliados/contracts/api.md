@@ -28,9 +28,11 @@ Cartões da tela (FR-004). Query: os mesmos filtros de `GET /afiliados` (§2.1),
 }
 ```
 
-- `total_afiliados`: Ativos e Inativos do filtro, na rede.
-- `em_analise`: só para o Admin com `afiliados.alterar_situacao`; `null` para os demais.
-- `comissao_periodo` e `a_receber`: dos afiliados do filtro (Ativos e Inativos).
+- `total_afiliados`: Ativos e Inativos do filtro, na rede (o período não muda a contagem).
+- `em_analise`: todos os cadastros Em análise, sem busca nem filtros; só para o Admin com
+  `afiliados.alterar_situacao`; `null` para os demais.
+- `comissao_periodo` (no período) e `a_receber` (em aberto, sem período): dos afiliados do filtro
+  (Ativos e Inativos).
 
 ---
 
@@ -129,7 +131,13 @@ Corpo novo: `{ "password": "senha do usuário do painel" }`.
 
 ---
 
-## 3. Rotas removidas
+## 3. Rotas usadas sem mudança
+
+| Rota | Uso |
+|---|---|
+| `GET /usuarios?funcao=Gerente&por_pagina=100` (`usuarios.listar`) | lista de gerentes do filtro, do cadastro, da edição e da aprovação; já limitada à sub-hierarquia de quem consulta (R-15) |
+
+## 3a. Rotas removidas
 
 | Rota | Motivo |
 |---|---|

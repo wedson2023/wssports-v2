@@ -23,7 +23,8 @@ Comissão do período · A receber.
 | Lixeira | com `afiliados.restaurar` | `GET /afiliados/excluidos` |
 
 **Filtros** (painel com etiquetas removíveis, `ActiveFilters`): Situação (seleção), Gerente (lista
-dos gerentes da rede; Admin e Supervisor), Sem gerente (só Admin), Período (`PeriodFilter`: Hoje,
+dos gerentes da rede por `GET /usuarios?funcao=Gerente`; Admin e Supervisor; sem `usuarios.listar`,
+o aviso "Você não tem acesso à lista de gerentes."), Sem gerente (só Admin), Período (`PeriodFilter`: Hoje,
 Ontem, Esta semana, Este mês — padrão —, Personalizado até 1 ano). Na URL: `aba`, `busca`,
 `situacao`, `usuarios_id`, `sem_gerente`, `data_inicial`, `data_final`, `page`.
 
@@ -40,7 +41,7 @@ Cadastrado em · Situação · ⋮. Nos recusados, + Recusado por / em / motivo.
 
 | Aba | Itens (conforme permissão e situação) |
 |---|---|
-| Ativos | Ver detalhe · Editar · Ativar/Inativar · Trocar regra · Prestar contas · Copiar link · Excluir |
+| Ativos | Ver detalhe · Editar · Ativar/Inativar · Trocar regra · Prestar contas (`prestar_contas` + `consultar`) · Copiar link · Excluir |
 | Em análise | Ver detalhe · Aprovar · Recusar (só Em análise) |
 | Lixeira | Ver detalhe · Restaurar |
 
@@ -57,7 +58,7 @@ celular, lado a lado com a largura toda). Sem `ToggleSwitch`: escolhas em `selec
 | Cadastrar afiliado | `AffiliateFormModal` | Dados pessoais (nome, login, senha, confirmar senha, e-mail, CPF) · Contato e endereço (DDI + telefone, cidade, estado, endereço) · PIX (tipo, chave) · Perfil (rede social, link do perfil, seguidores, sobre você com contador) · Ganho (gerente — não aparece para o Gerente —, tipo de ganho, percentual) | `POST /afiliados` |
 | Editar afiliado | `AffiliateFormModal` | iguais, com login só leitura; Ganho só com o gerente (Admin e Supervisor); código (Admin e Supervisor); Situação Ativo/Inativo (com `afiliados.alterar_situacao`); Nova senha e Confirmar nova senha (opcionais) | `PATCH /afiliados/{id}` e, se a situação mudou, `PATCH .../situacao` |
 | Aprovar cadastro | `AffiliateApprovalModal` | resumo do cadastro (rede, seguidores, link) · gerente · tipo de ganho · percentual (preenchidos se já houver regra) | `POST .../aprovar` |
-| Recusar cadastro | `ConfirmModal` com motivo | motivo (opcional, até 255) | `POST .../recusar` |
+| Recusar cadastro | `AffiliateRejectModal` | motivo (opcional, até 255, com contador e erro no campo) | `POST .../recusar` |
 | Trocar regra | `AffiliateRuleModal` | regra vigente (só leitura) · tipo de ganho · percentual · aviso "vale a partir de agora" | `PUT .../comissao` |
 | Prestar contas | `AffiliateSettlementModal` | lançamentos em aberto · valor apurado · valor a pagar (zero se negativo, com aviso) · chave PIX · observação (até 500) · senha | `POST .../prestacoes` |
 | Excluir afiliado | `AffiliateDeleteModal` | aviso "Este afiliado tem R$ X a receber." quando houver · senha | `DELETE /afiliados/{id}` |
