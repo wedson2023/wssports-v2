@@ -22,7 +22,7 @@ const permissoes_cotacoes = [
 const permissoes_caixa = ['caixa.ver', 'caixa.ver_clientes'];
 
 // itens do menu do painel: Dashboard (spec 014), o grupo Usuários (spec 015) com os subitens por
-// função, como no menu "Usuários" do antigo, Cotações (spec 016), Caixa (spec 017), Clientes
+// função, como no menu "Usuários" do antigo, Confrontos (spec 023), Cotações (spec 016), Caixa (spec 017), Clientes
 // (spec 019), Bônus (spec 020), Apostas (spec 018) e Configurações (spec 021); cada um diz quem pode
 // vê-lo
 const itens_menu = [
@@ -37,6 +37,13 @@ const itens_menu = [
             { chave: 'gerentes', rotulo: 'Gerentes', href: '/painel/gerentes', funcoes: ['Admin', 'Supervisor'] },
             { chave: 'vendedores', rotulo: 'Vendedores', href: '/painel/vendedores', funcoes: ['Admin', 'Supervisor', 'Gerente'] },
         ],
+    },
+    {
+        chave: 'confrontos',
+        rotulo: 'Confrontos',
+        icone: 'sports_soccer',
+        href: '/painel/confrontos',
+        visivel: (usuario) => usuario.permissoes.includes('confrontos.listar'),
     },
     {
         chave: 'cotacoes',

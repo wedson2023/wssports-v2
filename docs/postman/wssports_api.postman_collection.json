@@ -2174,7 +2174,34 @@
                                 }
                             ]
                         },
-                        "description": "campeonatos.listar."
+                        "description": "campeonatos.listar. Ordem favorito desc, nome. Cada item traz quantidade_jogos (disponíveis), total_jogos, restricoes (nao_permitido_proprio_id, redes_desativadas) e acoes (spec 023)."
+                    }
+                },
+                {
+                    "name": "Países dos campeonatos",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/campeonatos/paises",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "campeonatos",
+                                "paises"
+                            ]
+                        },
+                        "description": "campeonatos.listar (spec 023). Países distintos, para o filtro e o cadastro manual."
                     }
                 },
                 {
@@ -2289,7 +2316,7 @@
                                 "{{campeonato_id}}"
                             ]
                         },
-                        "description": "campeonatos.excluir. Exclusão lógica com os confrontos dele. 204."
+                        "description": "campeonatos.excluir. Só campeonato manual; exclui os jogos dele. 422 \"Este campeonato tem jogos com apostas.\" quando algum jogo dele tiver apostas vivas (spec 023)."
                     }
                 },
                 {
@@ -2371,7 +2398,7 @@
                             }
                         ],
                         "url": {
-                            "raw": "{{base_url}}/confrontos?busca=&campeonatos_id=&ativo=&manual=&esporte=&situacao=&dia=&fuso_horario=-03:00&por_pagina=20",
+                            "raw": "{{base_url}}/confrontos?busca=&campeonatos_id=&ativo=&manual=&esporte=&situacao=&dia=hoje&tipo=todos&fuso_horario=-03:00&por_pagina=20",
                             "host": [
                                 "{{base_url}}"
                             ],
@@ -2405,7 +2432,11 @@
                                 },
                                 {
                                     "key": "dia",
-                                    "value": ""
+                                    "value": "hoje"
+                                },
+                                {
+                                    "key": "tipo",
+                                    "value": "todos"
                                 },
                                 {
                                     "key": "fuso_horario",
@@ -2417,7 +2448,267 @@
                                 }
                             ]
                         },
-                        "description": "confrontos.listar. Mostra a cotação do provedor."
+                        "description": "confrontos.listar. dia: ontem, hoje, amanha, depois_de_amanha; data (Y-m-d, de 30 dias atrás a depois de amanhã) vence o dia; tipo: todos, pre_jogo, ao_vivo; busca nos times e no nome do campeonato (spec 023). Cada item traz limite_valor_apostado, apostas_em_aberto, ao_vivo (agora), resultado (placar), restricoes (nao_permitido_proprio e redes_desativadas) e acoes da linha. 422 filtros inválidos."
+                    }
+                },
+                {
+                    "name": "Cartões da tela Confrontos",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/confrontos/resumo?busca=&campeonatos_id=&ativo=&manual=&esporte=&situacao=&dia=hoje&tipo=todos&fuso_horario=-03:00",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "confrontos",
+                                "resumo"
+                            ],
+                            "query": [
+                                {
+                                    "key": "busca",
+                                    "value": ""
+                                },
+                                {
+                                    "key": "campeonatos_id",
+                                    "value": ""
+                                },
+                                {
+                                    "key": "ativo",
+                                    "value": ""
+                                },
+                                {
+                                    "key": "manual",
+                                    "value": ""
+                                },
+                                {
+                                    "key": "esporte",
+                                    "value": ""
+                                },
+                                {
+                                    "key": "situacao",
+                                    "value": ""
+                                },
+                                {
+                                    "key": "dia",
+                                    "value": "hoje"
+                                },
+                                {
+                                    "key": "tipo",
+                                    "value": "todos"
+                                },
+                                {
+                                    "key": "fuso_horario",
+                                    "value": "-03:00"
+                                }
+                            ]
+                        },
+                        "description": "confrontos.listar (spec 023). dia: ontem, hoje, amanha, depois_de_amanha; data (Y-m-d, de 30 dias atrás a depois de amanhã) vence o dia; tipo: todos, pre_jogo, ao_vivo; busca nos times e no nome do campeonato (spec 023). jogos, ao_vivo (agora, sem o dia), desativados (para o Gerente, soma os da rede dele) e pendentes (null sem confrontos.lancar_resultado)."
+                    }
+                },
+                {
+                    "name": "Mais apostados",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/confrontos/mais-apostados?busca=&campeonatos_id=&ativo=&manual=&esporte=&situacao=&dia=hoje&tipo=todos&fuso_horario=-03:00&por_pagina=20",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "confrontos",
+                                "mais-apostados"
+                            ],
+                            "query": [
+                                {
+                                    "key": "busca",
+                                    "value": ""
+                                },
+                                {
+                                    "key": "campeonatos_id",
+                                    "value": ""
+                                },
+                                {
+                                    "key": "ativo",
+                                    "value": ""
+                                },
+                                {
+                                    "key": "manual",
+                                    "value": ""
+                                },
+                                {
+                                    "key": "esporte",
+                                    "value": ""
+                                },
+                                {
+                                    "key": "situacao",
+                                    "value": ""
+                                },
+                                {
+                                    "key": "dia",
+                                    "value": "hoje"
+                                },
+                                {
+                                    "key": "tipo",
+                                    "value": "todos"
+                                },
+                                {
+                                    "key": "fuso_horario",
+                                    "value": "-03:00"
+                                },
+                                {
+                                    "key": "por_pagina",
+                                    "value": "20"
+                                }
+                            ]
+                        },
+                        "description": "confrontos.listar (spec 023). Jogos do filtro com aposta ativa na rede, do mais para o menos apostado: campos da lista + quantidade, simples e multiplas (apostas, valor, retorno; a múltipla conta inteira em cada jogo)."
+                    }
+                },
+                {
+                    "name": "Pendentes de resultado",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/confrontos/pendentes?busca=&por_pagina=20",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "confrontos",
+                                "pendentes"
+                            ],
+                            "query": [
+                                {
+                                    "key": "busca",
+                                    "value": ""
+                                },
+                                {
+                                    "key": "por_pagina",
+                                    "value": "20"
+                                }
+                            ]
+                        },
+                        "description": "confrontos.lancar_resultado (só Admin, spec 023). Jogos ativos, Aguardando, iniciados há mais de 2 horas e há menos de 7 dias, com palpites aguardando de apostas ativas: atraso_minutos, apostas, valor_em_aberto; do maior atraso para o menor."
+                    }
+                },
+                {
+                    "name": "Esportes dos jogos",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/confrontos/esportes",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "confrontos",
+                                "esportes"
+                            ]
+                        },
+                        "description": "confrontos.listar (spec 023). Esportes já usados pelos jogos, para o cadastro manual."
+                    }
+                },
+                {
+                    "name": "Ranking das opções do jogo",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/confrontos/{{confronto_id}}/mais-apostados",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "confrontos",
+                                "{{confronto_id}}",
+                                "mais-apostados"
+                            ]
+                        },
+                        "description": "confrontos.listar (spec 023). Opções apostadas no jogo (codigo_cotacao e jogador), com quantidade, simples e multiplas; alcance da tela Apostas."
+                    }
+                },
+                {
+                    "name": "Apostas do jogo",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/confrontos/{{confronto_id}}/apostas?por_pagina=30",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "confrontos",
+                                "{{confronto_id}}",
+                                "apostas"
+                            ],
+                            "query": [
+                                {
+                                    "key": "por_pagina",
+                                    "value": "30"
+                                }
+                            ]
+                        },
+                        "description": "confrontos.listar (spec 023). Apostas ativas com palpite no jogo, da mais nova para a mais antiga: só o palpite deste jogo; palpites > 1 = múltipla (jogos da aposta)."
                     }
                 },
                 {
@@ -2444,7 +2735,7 @@
                                 "{{confronto_id}}"
                             ]
                         },
-                        "description": "confrontos.listar. Com jogadores."
+                        "description": "confrontos.listar. Gaveta da tela Confrontos (spec 023): campos da lista, jogadores, resultado completo com gols e origem, cotacoes_site (odd1, odd2, odd3 como o visitante vê) e restricoes.nao_permitido_todos."
                     }
                 },
                 {
@@ -2532,7 +2823,7 @@
                                 "{{confronto_id}}"
                             ]
                         },
-                        "description": "confrontos.excluir. 204."
+                        "description": "confrontos.excluir. Só jogo manual. 422 \"Este jogo tem N apostas. Cancele o jogo em vez de excluir.\" quando houver palpite ativo de aposta Ativa, Pendente ou Em análise (spec 023)."
                     }
                 },
                 {
@@ -2568,7 +2859,7 @@
                     }
                 },
                 {
-                    "name": "Lançar resultado de jogo manual",
+                    "name": "Lançar resultado de jogo",
                     "request": {
                         "method": "PUT",
                         "header": [
@@ -2592,7 +2883,7 @@
                                 "resultado"
                             ]
                         },
-                        "description": "confrontos.lancar_resultado (Admin e Supervisor). Só jogo manual (jogo do provedor → 422). Placar obrigatório (0 a 99); gols de tempo os quatro juntos; escanteios os dois juntos; gols opcionais (sem o campo mantém os gravados, lista vazia apaga). O jogo fica Encerrado e as apostas dele são apuradas e pagas como na carga automática; o mesmo corpo de novo não muda nada (apostas_apuradas 0).",
+                        "description": "confrontos.lancar_resultado (só Admin, spec 023). Qualquer jogo, do provedor ou manual, como o antigo; só depois do início (422 \"O resultado só pode ser lançado depois do início do jogo.\"). Placar, 1º e 2º tempo e escanteios obrigatórios (0 a 99); a soma dos tempos tem de bater com o placar (422 em placar_casa: \"A soma dos gols dos times não bate com os gols dos tempos.\"); gols opcionais (sem o campo mantém os gravados, lista vazia apaga). O jogo fica Encerrado e as apostas são apuradas; um resultado diferente trazido depois pela carga do provedor substitui o lançado.",
                         "body": {
                             "mode": "raw",
                             "raw": "{\n    \"placar_casa\": 2,\n    \"placar_fora\": 1,\n    \"gols_primeiro_tempo_casa\": 1,\n    \"gols_primeiro_tempo_fora\": 0,\n    \"gols_segundo_tempo_casa\": 1,\n    \"gols_segundo_tempo_fora\": 1,\n    \"escanteios_casa\": 7,\n    \"escanteios_fora\": 3,\n    \"gols\": [\n        {\n            \"ordem\": 1,\n            \"nome\": \"Rebecca Rayner\",\n            \"minuto\": \"12\",\n            \"tempo_jogo\": \"1º tempo\"\n        },\n        {\n            \"ordem\": 2,\n            \"nome\": \"Ana Souza\",\n            \"minuto\": \"45+2\",\n            \"tempo_jogo\": \"2º tempo\"\n        }\n    ]\n}"

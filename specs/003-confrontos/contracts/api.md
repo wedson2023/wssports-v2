@@ -163,11 +163,11 @@ Objeto `campeonato`:
 
 | Rota | Permissão | Regras |
 |---|---|---|
-| `GET /confrontos` | `confrontos.listar` | pré-jogo; filtros `busca` (time), `campeonatos_id`, `ativo`, `manual`, `esporte`, `situacao`, `dia` + `fuso_horario` |
+| `GET /confrontos` | `confrontos.listar` | pré-jogo; filtros `busca` (time), `campeonatos_id`, `ativo`, `manual`, `esporte`, `situacao`, `dia` + `fuso_horario` (alterado pela spec 023: `dia` com `ontem`, `data`, `tipo`, busca também no campeonato e campos novos — ver `specs/023-painel-confrontos/contracts/api.md` §1.1) |
 | `GET /confrontos/{confronto}` | `confrontos.listar` | com as cotações do provedor (`cotacoes`) e os jogadores |
 | `POST /confrontos` | `confrontos.cadastrar` | manual (abaixo); **201** |
 | `PUT /confrontos/{confronto}` | `confrontos.editar` | só manual; campos do cadastro + `situacao` ∈ Aguardando, Adiado, Cancelado |
-| `DELETE /confrontos/{confronto}` | `confrontos.excluir` | só manual; soft delete; **204** |
+| `DELETE /confrontos/{confronto}` | `confrontos.excluir` | só manual; soft delete; **204** (alterado pela spec 023: **422** com apostas vivas no jogo; o mesmo vale para `DELETE /campeonatos/{campeonato}`) |
 | `PATCH /confrontos/{confronto}/situacao` | `confrontos.alterar_situacao` | `{"ativo": false}`; some também do ao vivo |
 | `GET /confrontos-ao-vivo` | `confrontos.listar` | jogos em andamento dentro da permanência, com `travado` |
 

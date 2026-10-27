@@ -6,6 +6,11 @@ Rotas novas: `configuracoes/apuracao` (no grupo das configurações de pagamento
 `confrontos.lancar_resultado`). As demais rotas não mudam: o extrato passa a mostrar a origem
 `Devolução de aposta` pelos campos que já existem.
 
+> Alterado pela spec 023: `PUT /confrontos/{confronto}/resultado` aceita jogos do provedor e
+> manuais, só depois do início (422 em `confronto`); 1º e 2º tempo e escanteios obrigatórios; 422 em
+> `placar_casa` quando a soma dos tempos não bate com o placar; permissão só do Admin. Contrato em
+> `specs/023-painel-confrontos/contracts/api.md` §1.3.
+
 ## Comprovante (todas as rotas que devolvem `ComprovanteApostaResource`)
 
 Cada palpite ganha o andamento do jogo, como no comprovante do sistema antigo:

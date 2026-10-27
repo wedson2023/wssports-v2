@@ -59,7 +59,8 @@ class CotacoesPainelController extends Controller
      */
     public function nomes(Request $request): JsonResponse
     {
-        $this->exigir($request, ...array_values(self::PERMISSOES));
+        // a tela Confrontos (spec 023) mostra os nomes das opções a quem só lista os jogos
+        $this->exigir($request, ...[...array_values(self::PERMISSOES), 'confrontos.listar']);
 
         $nomes = collect(CodigosCotacao::regras())->mapWithKeys(fn (string $codigo) => [$codigo => NomesCotacoes::nome($codigo)]);
 

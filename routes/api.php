@@ -76,6 +76,7 @@ use App\Http\Controllers\ConfiguracoesRegrasController;
 use App\Http\Controllers\ConfiguracoesSorteioCotacoesController;
 use App\Http\Controllers\ConfrontosAoVivoController;
 use App\Http\Controllers\ConfrontosAoVivoNaoPermitidosController;
+use App\Http\Controllers\ConfrontosApostasController;
 use App\Http\Controllers\ConfrontosController;
 use App\Http\Controllers\ConfrontosLimitesController;
 use App\Http\Controllers\ConfrontosNaoPermitidosController;
@@ -384,6 +385,8 @@ Route::middleware(['auth:api', 'garantir_acesso'])->group(function () {
         ->missing($campeonato_nao_encontrado);
     Route::patch('campeonatos/{campeonato}/favorito', [CampeonatosController::class, 'alterar_favorito'])
         ->missing($campeonato_nao_encontrado);
+    // países dos campeonatos, para o filtro e o cadastro manual (spec 023)
+    Route::get('campeonatos/paises', [CampeonatosController::class, 'paises']);
     Route::apiResource('campeonatos', CampeonatosController::class)
         ->missing($campeonato_nao_encontrado);
 
@@ -392,6 +395,16 @@ Route::middleware(['auth:api', 'garantir_acesso'])->group(function () {
         ->missing($confronto_nao_encontrado);
     // resultado de jogo manual (spec 009)
     Route::put('confrontos/{confronto}/resultado', [ConfrontosResultadosController::class, 'update'])
+        ->missing($confronto_nao_encontrado);
+    // tela Confrontos (spec 023): cartões, esportes, mais apostados, pendentes e, na gaveta, o
+    // ranking das opções e as apostas do jogo; antes do apiResource para não cair em {confronto}
+    Route::get('confrontos/resumo', [ConfrontosController::class, 'resumo']);
+    Route::get('confrontos/esportes', [ConfrontosController::class, 'esportes']);
+    Route::get('confrontos/mais-apostados', [ConfrontosApostasController::class, 'mais_apostados']);
+    Route::get('confrontos/pendentes', [ConfrontosApostasController::class, 'pendentes']);
+    Route::get('confrontos/{confronto}/mais-apostados', [ConfrontosApostasController::class, 'ranking'])
+        ->missing($confronto_nao_encontrado);
+    Route::get('confrontos/{confronto}/apostas', [ConfrontosApostasController::class, 'apostas'])
         ->missing($confronto_nao_encontrado);
     Route::apiResource('confrontos', ConfrontosController::class)
         ->missing($confronto_nao_encontrado);

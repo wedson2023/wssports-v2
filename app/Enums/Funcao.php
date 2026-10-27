@@ -115,7 +115,7 @@ enum Funcao: string
         'usuarios_configuracoes.editar',
         'visitantes_configuracoes.editar',
         'confrontos.alterar_limite',
-        // resultado de jogo manual (spec 009): só Admin e Supervisor
+        // resultado de jogo (spec 009): só Admin (spec 023)
         'confrontos.lancar_resultado',
     ];
 
@@ -397,7 +397,8 @@ enum Funcao: string
     /**
      * Se a função pode usar a permissão: Vendedor não acessa a gestão de clientes nem a de
      * confrontos; Gerente não usa as permissões de clientes restritas (excluir, restaurar e
-     * estorno) e, das de confrontos, só as de PERMISSOES_CONFRONTOS_GERENTE. Nas apostas, criar e
+     * estorno) e, das de confrontos, só as de PERMISSOES_CONFRONTOS_GERENTE; lançar resultado de
+     * jogo é só do Admin (spec 023). Nas apostas, criar e
      * validar código são só do Vendedor; cancelar, listar, exportar e imprimir 2ª via, de todos
      * (PERMISSOES_APOSTAS_TODOS); o resto, de Gerente para cima.
      * Especiais, recursos do site, pagamentos, encerramentos de aposta e cassino são só de Admin e
@@ -440,6 +441,11 @@ enum Funcao: string
         // vincular o gateway mexe no dinheiro de toda a banca e o robô usa o WhatsApp da banca
         // (spec 021): só o Admin
         if (in_array($permissao, ['gateway_pagamento.vincular', 'robo_whatsapp.conectar'], true)) {
+            return $this === self::Admin;
+        }
+
+        // lançar resultado vale para todas as redes e segue o antigo: só o Admin (spec 023)
+        if ($permissao === 'confrontos.lancar_resultado') {
             return $this === self::Admin;
         }
 

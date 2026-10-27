@@ -12,6 +12,9 @@ Diferenças em relação ao antigo aprovadas na spec (Referências do sistema an
 - Título da barra: "Cotações". Abas (`PanelTabs`, só as permitidas, `?aba=` na URL):
   **Público** (`groups`), **Campeonatos** (`emoji_events`), **Jogos** (`sports_soccer`),
   **Tetos** (`vertical_align_top`), **Regras ativas** (`fact_check`).
+- Alterado pela spec 023: `?aba=jogos&confrontos_id=ID&nome=…` ou `?aba=campeonatos&campeonatos_id=ID&nome=…`
+  abre o editor daquele jogo ou campeonato (atalho "Alterar cotações" da tela Confrontos); ao
+  fechar o editor, esses parâmetros saem da URL.
 - Celular: abas roláveis na horizontal (como hoje no `PanelTabs`), sem rolagem horizontal da página.
 
 ## 2. Editor de cotações (comum)

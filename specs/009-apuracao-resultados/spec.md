@@ -96,6 +96,15 @@ comando manual para reapurar um jogo."
 - Q: As metas de desempenho do plano são verificadas? → A: Sim, num cenário com massa grande no
   quickstart, anotando o tempo do resumo dos comandos.
 
+### Session 2026-10-27 (alterado pela spec 023)
+
+- O lançamento à mão (FR-045 e FR-046) passa a valer para qualquer jogo, do provedor ou manual,
+  como no sistema antigo, e só depois do início ("O resultado só pode ser lançado depois do início
+  do jogo."); 1º e 2º tempo e escanteios ficam obrigatórios e a soma dos tempos tem de bater com o
+  placar ("A soma dos gols dos times não bate com os gols dos tempos."). Um resultado diferente
+  trazido depois pela carga do provedor substitui o lançado e reapura as apostas.
+- `confrontos.lancar_resultado` passa a ser só do Admin (o Supervisor perde a permissão).
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Resultado do jogo decide palpites e apostas (Priority: P1)
@@ -473,7 +482,8 @@ resultado da aposta e o registro com origem "Lançamento manual".
   carga automática, com origem "Lançamento manual" nos registros.
 - **FR-046**: A rota DEVE recusar jogos do provedor (não manuais), com a mensagem "O resultado de
   jogos do provedor vem da carga automática.", e exigir uma permissão própria, dada por padrão só
-  a Admin e Supervisor.
+  a Admin e Supervisor. (Alterado pela spec 023: aceita qualquer jogo depois do início, com tempos
+  e escanteios obrigatórios e a regra da soma; permissão só do Admin.)
 - **FR-047**: Lançar de novo o mesmo resultado NÃO DEVE mudar nada (mesma regra de assinatura da
   carga automática).
 

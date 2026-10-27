@@ -60,6 +60,30 @@ const erros_dos_campos = (erro) => Object.fromEntries(
 // aba da URL (?aba=)
 const aba_da_url = () => new URLSearchParams(window.location.search).get('aba');
 
+// editor pedido pela URL (?confrontos_id= ou ?campeonatos_id=, com &nome=), vindo da tela
+// Confrontos (spec 023); null sem pedido
+const editor_da_url = () => {
+    const parametros = new URLSearchParams(window.location.search);
+    const nome = parametros.get('nome') ?? '';
+    const confronto = Number(parametros.get('confrontos_id'));
+    const campeonato = Number(parametros.get('campeonatos_id'));
+
+    if (confronto) return { aba: 'jogos', camada: 'confrontos', item: { id: confronto, nome } };
+    if (campeonato) return { aba: 'campeonatos', camada: 'campeonatos', item: { id: campeonato, nome } };
+
+    return null;
+};
+
+// tira da URL o pedido de editor, mantendo a aba (fechar o editor não reabre ao recarregar)
+const limpar_editor_da_url = () => {
+    const parametros = new URLSearchParams(window.location.search);
+
+    if (!parametros.has('confrontos_id') && !parametros.has('campeonatos_id')) return;
+
+    ['confrontos_id', 'campeonatos_id', 'nome'].forEach((chave) => parametros.delete(chave));
+    window.history.replaceState(window.history.state, '', `?${parametros}`);
+};
+
 // tela "Cotações" do painel (spec 016): abas Público, Campeonatos, Jogos, Tetos e Regras ativas, com
 // a grade por mercado, a prévia do cálculo, o cadeado por cotação e o histórico de cada regra
 export default function PanelQuotes() {
@@ -114,7 +138,12 @@ export default function PanelQuotes() {
         }
 
         const pedida = aba_da_url();
-        definir_aba(abas.some((item) => item.chave === pedida) ? pedida : abas[0].chave);
+        const permitida = abas.some((item) => item.chave === pedida);
+        definir_aba(permitida ? pedida : abas[0].chave);
+
+        // atalho "Alterar cotações" da tela Confrontos (spec 023): abre o editor do jogo ou do campeonato
+        const atalho = editor_da_url();
+        if (permitida && atalho && atalho.aba === pedida) definir_editando({ camada: atalho.camada, item: atalho.item });
     }, [logado]);
 
     // países do filtro de campeonatos
@@ -611,7 +640,10 @@ export default function PanelQuotes() {
                     nomes={nomes}
                     token={token}
                     cor={cor}
-                    ao_fechar={() => definir_editando(null)}
+                    ao_fechar={() => {
+                        definir_editando(null);
+                        limpar_editor_da_url();
+                    }}
                     ao_salvo={(id, resumo) => (editando.camada === 'campeonatos' ? campeonatos : jogos).atualizar_item(id, { resumo })}
                 />
             )}
