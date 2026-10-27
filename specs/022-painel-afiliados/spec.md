@@ -526,8 +526,8 @@ texto; conferir na aba Em análise que o link abre o perfil; aprovar; entrar com
 
 - **FR-027**: O modal de prestação DEVE mostrar, antes de confirmar, a quantidade de lançamentos em
   aberto, o valor apurado, o valor que será pago (zero quando o apurado é negativo, com o aviso) e
-  a chave PIX do afiliado (mascarada conforme a permissão), e pedir a observação (opcional, até 255
-  caracteres) e a senha de quem presta contas.
+  a chave PIX do afiliado (mascarada conforme a permissão), e pedir a observação (opcional, até 500
+  caracteres, limite atual da spec 012) e a senha de quem presta contas.
 - **FR-028**: A prestação DEVE usar a data e a hora da confirmação (sem data livre, diferença em
   relação ao antigo), seguir as regras da spec 012 (FR-035 a FR-041: fecha os lançamentos em
   aberto até o momento, zera o negativo, pode ser zerada, não se edita nem se exclui) e recusar a
