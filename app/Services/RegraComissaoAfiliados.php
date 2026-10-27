@@ -2,45 +2,32 @@
 
 namespace App\Services;
 
-use App\Enums\Funcao;
 use App\Enums\TipoGanhoAfiliado;
 use App\Models\Afiliados;
 use App\Models\AfiliadosComissoes;
-use App\Models\Configuracoes;
 use App\Models\Usuarios;
 use Illuminate\Support\Facades\DB;
 
 /**
- * Regra de comissão do afiliado com vigência (spec 012, R-08): a regra inicial do cadastro e a
- * troca, que encerra a vigente e abre a nova sem mexer nos lançamentos já gerados (FR-028).
+ * Regra de comissão do afiliado com vigência (spec 012, R-08): a regra inicial, definida por quem
+ * cadastra pelo painel (spec 022, FR-012), e a troca, que encerra a vigente e abre a nova sem mexer
+ * nos lançamentos já gerados (FR-028). O cadastro público fica sem regra até a aprovação.
  */
 class RegraComissaoAfiliados
 {
     /**
-     * Regra do afiliado recém-cadastrado: a informada só vale para quem tem
-     * afiliados.editar_comissao; sem ela (ou no cadastro público), a padrão da configuração.
+     * Regra do afiliado recém-cadastrado pelo painel: a informada no cadastro, com o autor; não
+     * depende de afiliados.editar_comissao, que só vale para trocar a regra depois.
      *
-     * @param  array{tipo_ganho?: ?string, percentual?: mixed}  $regra
+     * @param  array{tipo_ganho: string, percentual: mixed}  $regra
      */
-    public function definir_inicial(Afiliados $afiliado, array $regra = [], ?Usuarios $autor = null): AfiliadosComissoes
+    public function definir_inicial(Afiliados $afiliado, array $regra, Usuarios $autor): AfiliadosComissoes
     {
-        $pode_definir = $autor !== null && Funcao::usuario_pode($autor, 'afiliados.editar_comissao');
-        $informada = isset($regra['tipo_ganho'], $regra['percentual']);
-
-        if ($pode_definir && $informada) {
-            $tipo_ganho = TipoGanhoAfiliado::from($regra['tipo_ganho']);
-            $percentual = (string) $regra['percentual'];
-        } else {
-            $configuracoes = Configuracoes::atual();
-            $tipo_ganho = $configuracoes->afiliados_tipo_ganho_padrao;
-            $percentual = (string) $configuracoes->afiliados_percentual_padrao;
-        }
-
         return $afiliado->comissoes()->create([
-            'tipo_ganho' => $tipo_ganho,
-            'percentual' => bcadd($percentual, '0', 2),
+            'tipo_ganho' => TipoGanhoAfiliado::from($regra['tipo_ganho']),
+            'percentual' => bcadd((string) $regra['percentual'], '0', 2),
             'vigente_desde' => now(),
-            'usuarios_id' => $pode_definir && $informada ? $autor->id : null,
+            'usuarios_id' => $autor->id,
         ]);
     }
 

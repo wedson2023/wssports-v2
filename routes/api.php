@@ -63,7 +63,6 @@ use App\Http\Controllers\ClientesBonusController;
 use App\Http\Controllers\ClientesPromocoesController;
 use App\Http\Controllers\ClientesRankingController;
 use App\Http\Controllers\ClientesTransacoesController;
-use App\Http\Controllers\ConfiguracoesAfiliadosController;
 use App\Http\Controllers\ConfiguracoesAoVivoController;
 use App\Http\Controllers\ConfiguracoesApuracaoController;
 use App\Http\Controllers\ConfiguracoesAvisosWhatsappController;
@@ -305,6 +304,8 @@ Route::middleware(['auth:api', 'garantir_acesso'])->group(function () {
 
     // rotas específicas antes das de afiliados/{afiliado}
     Route::get('afiliados', [AfiliadosController::class, 'index']);
+    // cartões da tela Afiliados (spec 022)
+    Route::get('afiliados/resumo', [AfiliadosController::class, 'resumo']);
     Route::get('afiliados/excluidos', [AfiliadosController::class, 'excluidos']);
     Route::post('afiliados/{afiliado}/restaurar', [AfiliadosController::class, 'restaurar'])
         ->withTrashed()
@@ -563,9 +564,6 @@ Route::middleware(['auth:api', 'garantir_acesso'])->group(function () {
     // configurações do cassino (spec 011)
     Route::get('configuracoes/cassino', [ConfiguracoesCassinoController::class, 'show']);
     Route::put('configuracoes/cassino', [ConfiguracoesCassinoController::class, 'update']);
-    // regra de comissão padrão do cadastro público de afiliados (spec 012)
-    Route::get('configuracoes/afiliados', [ConfiguracoesAfiliadosController::class, 'show']);
-    Route::put('configuracoes/afiliados', [ConfiguracoesAfiliadosController::class, 'update']);
     // aviso de combinação de risco nova no WhatsApp do Admin (spec 014)
     Route::get('configuracoes/avisos-whatsapp', [ConfiguracoesAvisosWhatsappController::class, 'show']);
     Route::put('configuracoes/avisos-whatsapp', [ConfiguracoesAvisosWhatsappController::class, 'update']);

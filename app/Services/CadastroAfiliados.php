@@ -21,7 +21,8 @@ use Illuminate\Validation\ValidationException;
 use Throwable;
 
 /**
- * Cadastro do afiliado, feito de forma atômica: afiliado, chave Pix e regra de comissão inicial;
+ * Cadastro do afiliado, feito de forma atômica: afiliado, chave Pix e regra de comissão inicial (só
+ * no cadastro pelo painel);
  * aprovação e recusa do cadastro público, com os e-mails (spec 012, US1 e US2).
  */
 class CadastroAfiliados
@@ -39,7 +40,8 @@ class CadastroAfiliados
     public function __construct(private RegraComissaoAfiliados $regras) {}
 
     /**
-     * Cadastro pela gestão do painel: nasce Ativo; o Gerente fica como responsável (FR-008, FR-009).
+     * Cadastro pela gestão do painel: nasce Ativo, com a regra de ganho informada (obrigatória, spec
+     * 022 FR-012); o Gerente fica como responsável (FR-009).
      *
      * @param  array<string, mixed>  $dados  dados validados
      */
@@ -51,8 +53,8 @@ class CadastroAfiliados
     }
 
     /**
-     * Cadastro público: nasce Em análise, sem gerente e com a regra padrão (FR-011); e-mail de
-     * cadastro recebido.
+     * Cadastro público: nasce Em análise, sem gerente e sem regra de ganho (spec 022, FR-020); e-mail
+     * de cadastro recebido.
      *
      * @param  array<string, mixed>  $dados  dados validados, sem situação, gerente nem regra
      */
@@ -71,24 +73,17 @@ class CadastroAfiliados
     }
 
     /**
-     * Aprova o cadastro em análise ou recusado (reavaliação); gerente e regra são opcionais.
+     * Aprova o cadastro em análise ou recusado (reavaliação) com o gerente e a regra de ganho, ambos
+     * obrigatórios (spec 022, FR-022); a regra que o afiliado já tiver é encerrada e a nova aberta.
      *
-     * @param  array{usuarios_id?: ?int, tipo_ganho?: ?string, percentual?: mixed}  $opcoes
+     * @param  array{usuarios_id: int, tipo_ganho: string, percentual: mixed}  $opcoes
      */
-    public function aprovar(Afiliados $afiliado, Usuarios $autor, array $opcoes = []): Afiliados
+    public function aprovar(Afiliados $afiliado, Usuarios $autor, array $opcoes): Afiliados
     {
         $afiliado = DB::transaction(function () use ($afiliado, $autor, $opcoes) {
             $afiliado = $this->bloquear_em_situacao($afiliado, [SituacaoAfiliado::EmAnálise, SituacaoAfiliado::Recusado], 'Só é possível aprovar um cadastro em análise ou recusado.');
 
-            if (array_key_exists('usuarios_id', $opcoes)) {
-                $afiliado->usuarios_id = $opcoes['usuarios_id'];
-            }
-
-            // só aprova com gerente responsável: os clientes do afiliado precisam de uma rede (spec 019)
-            if ($afiliado->usuarios_id === null) {
-                throw ValidationException::withMessages(['usuarios_id' => 'Escolha o gerente responsável para aprovar.']);
-            }
-
+            $afiliado->usuarios_id = $opcoes['usuarios_id'];
             $afiliado->forceFill([
                 'situacao' => SituacaoAfiliado::Ativo,
                 'motivo_recusa' => null,
@@ -96,9 +91,7 @@ class CadastroAfiliados
                 'decidido_em' => now(),
             ])->save();
 
-            if (isset($opcoes['tipo_ganho'], $opcoes['percentual'])) {
-                $this->regras->trocar($afiliado, TipoGanhoAfiliado::from($opcoes['tipo_ganho']), (string) $opcoes['percentual'], $autor);
-            }
+            $this->regras->trocar($afiliado, TipoGanhoAfiliado::from($opcoes['tipo_ganho']), (string) $opcoes['percentual'], $autor);
 
             return $afiliado;
         });
@@ -179,7 +172,11 @@ class CadastroAfiliados
                 $afiliado->forceFill(['situacao' => $situacao])->save();
 
                 $afiliado->meio_pagamento()->create(Arr::only($dados, self::CAMPOS_PIX));
-                $this->regras->definir_inicial($afiliado, Arr::only($dados, self::CAMPOS_REGRA), $autor);
+
+                // só o cadastro pelo painel tem regra; o público ganha a dele na aprovação (spec 022)
+                if ($autor !== null) {
+                    $this->regras->definir_inicial($afiliado, Arr::only($dados, self::CAMPOS_REGRA), $autor);
+                }
 
                 return $afiliado;
             });

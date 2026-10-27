@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Enums\SituacaoAfiliado;
 use App\Enums\SituacaoDeposito;
 use App\Enums\SituacaoSaque;
 use Illuminate\Contracts\Database\Query\Builder as BuilderContrato;
@@ -22,40 +23,65 @@ class ListagemAfiliados
     public const FUSO = 'America/Sao_Paulo';
 
     /**
-     * Início e fim (em UTC) do período informado em dias locais; sem datas, o dia de hoje.
+     * Grupos de situação das abas da tela (spec 022, R-02): Ativos (Ativo e Inativo) e Em análise
+     * (Em análise e Recusado).
+     */
+    public const GRUPOS = [
+        'aprovados' => [SituacaoAfiliado::Ativo, SituacaoAfiliado::Inativo],
+        'analise' => [SituacaoAfiliado::EmAnálise, SituacaoAfiliado::Recusado],
+    ];
+
+    /**
+     * Início e fim (em UTC) do período informado em dias locais; sem datas, o dia de hoje ou, com
+     * $padrao "mes", do dia 1 do mês até hoje (listagem da gestão, spec 022).
      *
      * @return array{0: Carbon, 1: Carbon}
      */
-    public static function periodo(?string $de, ?string $ate): array
+    public static function periodo(?string $de, ?string $ate, string $padrao = 'hoje'): array
     {
         $hoje = now(self::FUSO)->toDateString();
+        $inicio_padrao = $padrao === 'mes' ? now(self::FUSO)->startOfMonth()->toDateString() : $hoje;
 
         return [
-            Carbon::parse($de ?? $hoje, self::FUSO)->startOfDay()->utc(),
-            Carbon::parse($ate ?? $de ?? $hoje, self::FUSO)->endOfDay()->utc(),
+            Carbon::parse($de ?? $inicio_padrao, self::FUSO)->startOfDay()->utc(),
+            Carbon::parse($ate ?? ($de === null ? $hoje : $de), self::FUSO)->endOfDay()->utc(),
         ];
     }
 
     /**
-     * Listagem da gestão (FR-043 e FR-044): filtros e, por afiliado, cadastros, depósitos, saques e
-     * comissão do período, valor a receber e última prestação, tudo por subconsultas.
+     * Filtros comuns da lista e do resumo da gestão: grupo, situação, gerente, sem gerente e busca.
      *
-     * @param  array{situacao?: ?string, busca?: ?string, usuarios_id?: ?int, sem_gerente?: ?bool, de?: ?string, ate?: ?string}  $filtros
+     * @param  array{grupo?: ?string, situacao?: ?string, busca?: ?string, usuarios_id?: ?int, sem_gerente?: ?bool}  $filtros
      */
-    public function consulta_gestao(Builder $consulta, array $filtros): Builder
+    public function filtrar_gestao(Builder $consulta, array $filtros): Builder
     {
-        [$inicio, $fim] = self::periodo($filtros['de'] ?? null, $filtros['ate'] ?? null);
-        $periodo = [$inicio, $fim];
-
         return $consulta
-            ->with(['gerente', 'comissao_vigente', 'ultima_prestacao'])
+            ->when(isset($filtros['grupo']), fn (Builder $c) => $c->whereIn('afiliados.situacao', self::GRUPOS[$filtros['grupo']]))
             ->when(isset($filtros['situacao']), fn (Builder $c) => $c->where('afiliados.situacao', $filtros['situacao']))
             ->when(isset($filtros['usuarios_id']), fn (Builder $c) => $c->where('afiliados.usuarios_id', $filtros['usuarios_id']))
             ->when((bool) ($filtros['sem_gerente'] ?? false), fn (Builder $c) => $c->whereNull('afiliados.usuarios_id'))
             ->when(isset($filtros['busca']), fn (Builder $c) => $c->where(fn (Builder $busca) => $busca
                 ->where('afiliados.nome', 'like', '%'.$filtros['busca'].'%')
                 ->orWhere('afiliados.login', 'like', $filtros['busca'].'%')
-                ->orWhere('afiliados.codigo', 'like', mb_strtoupper($filtros['busca']).'%')))
+                ->orWhere('afiliados.codigo', 'like', mb_strtoupper($filtros['busca']).'%')));
+    }
+
+    /**
+     * Listagem da gestão (FR-043 e FR-044 da spec 012): filtros e, por afiliado, cadastros,
+     * depósitos, saques e comissão do período (padrão: este mês), entradas e valor a receber (em
+     * aberto) e última prestação, tudo por subconsultas. Em análise vem do cadastro mais antigo para
+     * o mais novo; as demais, por nome (spec 022).
+     *
+     * @param  array{grupo?: ?string, situacao?: ?string, busca?: ?string, usuarios_id?: ?int, sem_gerente?: ?bool, de?: ?string, ate?: ?string}  $filtros
+     */
+    public function consulta_gestao(Builder $consulta, array $filtros): Builder
+    {
+        [$inicio, $fim] = self::periodo($filtros['de'] ?? null, $filtros['ate'] ?? null, 'mes');
+        $periodo = [$inicio, $fim];
+        $em_analise = ($filtros['grupo'] ?? null) === 'analise';
+
+        return $this->filtrar_gestao($consulta, $filtros)
+            ->with(['gerente', 'comissao_vigente', 'ultima_prestacao', 'autor_cadastro', 'autor_decisao'])
             ->withCount(['clientes as cadastros_periodo' => fn ($c) => $c->withTrashed()->whereBetween('clientes.created_at', $periodo)])
             ->addSelect([
                 'depositos_periodo' => DB::table('depositos')
@@ -75,8 +101,39 @@ class ListagemAfiliados
             ])
             ->withSum(['lancamentos as comissao_periodo' => fn ($c) => $c->whereBetween('ocorrido_em', $periodo)], 'valor')
             ->withSum(['lancamentos as valor_a_receber' => fn ($c) => $c->emAberto()], 'valor')
-            ->orderBy('afiliados.nome')
+            ->withSum(['lancamentos as entradas' => fn ($c) => $c->emAberto()], 'base')
+            ->when($em_analise, fn (Builder $c) => $c->orderBy('afiliados.created_at'), fn (Builder $c) => $c->orderBy('afiliados.nome'))
             ->orderBy('afiliados.id');
+    }
+
+    /**
+     * Cartões da tela (spec 022, FR-004, R-16), por consultas agregadas: total de Ativos e Inativos,
+     * comissão do período e a receber dos afiliados do filtro (rede, busca, gerente); Em análise conta
+     * todos os pendentes da rede, sem busca nem filtros, só quando $com_em_analise.
+     *
+     * @param  Builder  $consulta  afiliados já com o alcance aplicado
+     * @param  array{busca?: ?string, usuarios_id?: ?int, sem_gerente?: ?bool, de?: ?string, ate?: ?string}  $filtros
+     * @return array{total_afiliados: int, em_analise: ?int, comissao_periodo: string, a_receber: string, periodo: array{de: string, ate: string}}
+     */
+    public function resumo(Builder $consulta, array $filtros, bool $com_em_analise): array
+    {
+        [$inicio, $fim] = self::periodo($filtros['de'] ?? null, $filtros['ate'] ?? null, 'mes');
+
+        $aprovados = $this->filtrar_gestao($consulta->clone(), [...$filtros, 'grupo' => 'aprovados']);
+        $ids = $aprovados->clone()->select('afiliados.id')->toBase();
+        $soma = fn (callable $restringir) => bcadd((string) ($restringir(
+            DB::table('afiliados_lancamentos')->whereIn('afiliados_id', $ids)->whereNull('deleted_at'),
+        )->sum('valor') ?? '0'), '0', 2);
+
+        return [
+            'total_afiliados' => $aprovados->count(),
+            'em_analise' => $com_em_analise
+                ? $consulta->clone()->where('afiliados.situacao', SituacaoAfiliado::EmAnálise)->count()
+                : null,
+            'comissao_periodo' => $soma(fn ($c) => $c->whereBetween('ocorrido_em', [$inicio, $fim])),
+            'a_receber' => $soma(fn ($c) => $c->whereNull('afiliados_prestacoes_contas_id')),
+            'periodo' => ['de' => $inicio->clone()->setTimezone(self::FUSO)->toDateString(), 'ate' => $fim->clone()->setTimezone(self::FUSO)->toDateString()],
+        ];
     }
 
     /**

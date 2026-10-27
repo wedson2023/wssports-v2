@@ -2,19 +2,26 @@
 
 namespace App\Http\Requests;
 
+use App\Enums\Funcao;
 use App\Http\Requests\Concerns\DadosAfiliado;
 use Illuminate\Foundation\Http\FormRequest;
 
 /**
- * Aprovação do cadastro público (contracts/api §2.7): regra opcional e gerente responsável, que
- * passa a ser obrigatório quando o afiliado ainda não tem um (spec 019, FR-003d).
+ * Aprovação do cadastro público (contracts/api §2.5 da spec 022): gerente responsável (spec 019,
+ * FR-003d) e regra de ganho, os três obrigatórios (spec 022, FR-022).
  */
 class AprovarAfiliadoRequest extends FormRequest
 {
     use DadosAfiliado;
 
+    /**
+     * Só o Admin aprova (spec 022, FR-023); para os demais o cadastro sem gerente está fora da rede e
+     * é "não encontrado", antes de qualquer validação.
+     */
     public function authorize(): bool
     {
+        abort_unless($this->user()->funcao() === Funcao::Admin, 404, 'Afiliado não encontrado.');
+
         return true;
     }
 
@@ -23,11 +30,9 @@ class AprovarAfiliadoRequest extends FormRequest
      */
     public function rules(): array
     {
-        $sem_gerente = $this->route('afiliado')?->usuarios_id === null;
-
         return [
-            'usuarios_id' => [$sem_gerente ? 'required' : 'sometimes', 'required', 'integer', $this->regra_gerente()],
-            ...$this->regras_comissao_opcional(),
+            'usuarios_id' => ['required', 'integer', $this->regra_gerente()],
+            ...$this->regras_comissao_obrigatoria(),
         ];
     }
 

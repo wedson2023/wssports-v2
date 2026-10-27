@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Controllers\Concerns\GarantirAlcanceAfiliado;
 use App\Http\Controllers\Concerns\GarantirPermissaoCliente;
 use App\Http\Resources\AfiliadosLancamentosResource;
+use App\Http\Resources\AfiliadosResource;
 use App\Http\Resources\ClienteDoAfiliadoResource;
 use App\Models\Afiliados;
 use App\Services\ListagemAfiliados;
@@ -40,7 +41,11 @@ class AfiliadosExtratoController extends Controller implements HasMiddleware
             ->paginate($filtros['por_pagina'] ?? 30)
             ->withQueryString();
 
-        return AfiliadosLancamentosResource::collection($lancamentos);
+        // soma de todas as páginas do filtro, para a gaveta e a prestação (spec 022, R-10)
+        $soma = $this->listagem->filtrar_lancamentos($afiliado->lancamentos(), $filtros)->reorder()->sum('valor');
+
+        return AfiliadosLancamentosResource::collection($lancamentos)
+            ->additional(['meta' => ['soma' => AfiliadosResource::valor($soma)]]);
     }
 
     /**

@@ -40,6 +40,7 @@ class UpdateAfiliadosRequest extends FormRequest
 
         return [
             ...$regras,
+            ...$this->regras_perfil_afiliado('sometimes', $this->route('afiliado')),
             'pix_tipo_chave' => [...$regras['pix_tipo_chave'], 'required_with:pix_chave'],
             'pix_chave' => [...$regras['pix_chave'], 'required_with:pix_tipo_chave'],
             'login' => ['prohibited'],

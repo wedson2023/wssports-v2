@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\OrigemCadastroAfiliado;
+use App\Enums\RedeSocialAfiliado;
 use App\Enums\SituacaoAfiliado;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -37,6 +38,11 @@ class Afiliados extends Authenticatable implements JWTSubject
         'cidade',
         'estado',
         'endereco',
+        // perfil na rede social (spec 022)
+        'rede_social',
+        'link_perfil',
+        'quantidade_seguidores',
+        'sobre',
         'codigo',
         'origem_cadastro',
         'usuarios_id',
@@ -59,6 +65,8 @@ class Afiliados extends Authenticatable implements JWTSubject
             'password' => 'hashed',
             'situacao' => SituacaoAfiliado::class,
             'origem_cadastro' => OrigemCadastroAfiliado::class,
+            'rede_social' => RedeSocialAfiliado::class,
+            'quantidade_seguidores' => 'integer',
             'decidido_em' => 'datetime',
             'tokens_validos_desde' => 'datetime',
         ];
@@ -80,6 +88,22 @@ class Afiliados extends Authenticatable implements JWTSubject
     public function gerente(): BelongsTo
     {
         return $this->belongsTo(Usuarios::class, 'usuarios_id');
+    }
+
+    /**
+     * Usuário do painel que cadastrou o afiliado (nulo no cadastro público).
+     */
+    public function autor_cadastro(): BelongsTo
+    {
+        return $this->belongsTo(Usuarios::class, 'cadastrado_por')->withTrashed();
+    }
+
+    /**
+     * Usuário do painel que aprovou ou recusou o cadastro público.
+     */
+    public function autor_decisao(): BelongsTo
+    {
+        return $this->belongsTo(Usuarios::class, 'decidido_por')->withTrashed();
     }
 
     public function comissoes(): HasMany

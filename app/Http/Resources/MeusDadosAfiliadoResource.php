@@ -26,6 +26,11 @@ class MeusDadosAfiliadoResource extends JsonResource
             'cidade' => $this->cidade,
             'estado' => $this->estado,
             'endereco' => $this->endereco,
+            // perfil na rede social, editável pelo próprio afiliado (spec 022, FR-017)
+            'rede_social' => $this->rede_social,
+            'link_perfil' => $this->link_perfil,
+            'quantidade_seguidores' => $this->quantidade_seguidores,
+            'sobre' => $this->sobre,
             'pix_tipo_chave' => $this->meio_pagamento?->pix_tipo_chave,
             'pix_chave' => $this->meio_pagamento?->pix_chave,
         ];

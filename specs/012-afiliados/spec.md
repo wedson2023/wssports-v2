@@ -89,6 +89,19 @@ antigo."
 - O Supervisor passa a ver e agir só sobre os afiliados dos gerentes da rede dele; o Admin vê todos,
   inclusive os sem gerente, com o filtro `sem_gerente` (spec 019, FR-003d).
 
+### Session 2026-10-27 (alterado pela spec 022)
+
+- A regra de ganho padrão da configuração sai (FR-015 removido): quem cadastra pelo painel
+  (inclusive o Gerente) informa tipo de ganho e percentual, obrigatórios, sem precisar de
+  `afiliados.editar_comissao` (FR-008); o cadastro público nasce Em análise sem regra (FR-011).
+- Aprovar e recusar passam a ser só do Admin, e na aprovação gerente, tipo de ganho e percentual
+  são obrigatórios (FR-014 e FR-051).
+- O afiliado ganha rede social principal, link do perfil, quantidade de seguidores e "sobre você",
+  no cadastro público e em "Meus dados" (FR-010, FR-053 e FR-056).
+- A exclusão pede a senha de quem exclui e respeita a rede (FR-048).
+- A listagem ganha o filtro `grupo`, o período padrão "este mês", a coluna `entradas` e a rota
+  `GET /afiliados/resumo`; o extrato da gestão devolve `meta.soma` (contracts/api).
+
 ## Referências do sistema antigo *(Princípios VII e VIII)*
 
 - Backend: `app/Http/Controllers/FiliadosController.php`, `app/Models/Filiados.php`,
@@ -430,6 +443,7 @@ P1.
   cadastros novos (só os migrados podem não ter). A regra de comissão informada só vale
   para quem tem `afiliados.editar_comissao`; sem ela, o afiliado recebe a regra padrão da
   configuração (FR-015) e os campos de regra enviados são ignorados.
+  *(Alterado pela spec 022: a regra de comissão é obrigatória para quem cadastra (inclusive o Gerente), sem depender de `afiliados.editar_comissao`; não há mais regra padrão.)*
 - **FR-009**: Quando quem cadastra é Gerente, o responsável DEVE ser ele mesmo, ignorando o valor
   enviado. Admin e Supervisor PODEM informar um gerente responsável (que deve ter a função Gerente)
   ou deixar sem.
@@ -439,9 +453,11 @@ P1.
 - **FR-010**: O sistema DEVE oferecer o cadastro público em `/cadastro-afiliado`, sem login, com os
   campos nome, login, senha e confirmação, e-mail, CPF, telefone, cidade, estado, endereço e PIX
   (tipo e chave). E-mail e CPF são obrigatórios nesse caminho.
+  *(Alterado pela spec 022: + rede social principal, link do perfil e quantidade de seguidores (obrigatórios) e "sobre você" (opcional).)*
 - **FR-011**: O cadastro público DEVE criar o afiliado como "Em análise", origem Público, sem
   gerente, com a regra de comissão padrão da configuração. Situação, gerente, tipo de ganho e
   percentual enviados por esse caminho DEVEM ser ignorados.
+  *(Alterado pela spec 022: o cadastro público nasce sem regra de comissão; ela é definida na aprovação.)*
 - **FR-012**: O cadastro público DEVE seguir o mesmo limite de tentativas por IP usado no cadastro
   público de clientes.
 - **FR-013**: O sistema DEVE enviar e-mail ao afiliado no cadastro público (recebido, em análise),
@@ -455,12 +471,14 @@ P1.
   um afiliado "Em análise"; um afiliado "Recusado" também PODE ser aprovado depois (reavaliação),
   mas não recusado de novo. Na aprovação, PODEM informar gerente responsável e regra de comissão;
   sem isso, ficam os atuais.
+  *(Alterado pela spec 022: só o Admin aprova e recusa; na aprovação, gerente, tipo de ganho e percentual são obrigatórios.)*
 
 **Configuração**
 
 - **FR-015**: A configuração geral DEVE ter a regra de comissão padrão do cadastro público (tipo de
   ganho e percentual), editável por quem tem `configuracoes.editar`. O padrão inicial é "Saldo
   líquido" com 0%.
+  *(Removido pela spec 022: a regra padrão saiu da configuração (colunas, rotas e tela).)*
 
 **Login e sessão**
 
@@ -571,6 +589,7 @@ P1.
 - **FR-048**: Excluir DEVE ser lógico (lixeira), por Admin ou Supervisor com `afiliados.excluir`;
   login, e-mail, CPF e código recebem o sufixo de exclusão, como nos clientes. Não DEVE existir
   exclusão definitiva.
+  *(Alterado pela spec 022: a exclusão pede a senha de quem exclui e respeita a rede do usuário.)*
 - **FR-049**: Restaurar, por Admin ou Supervisor com `afiliados.restaurar`, DEVE recusar quando
   algum dado único já estiver em uso, indicando o campo a alterar.
 - **FR-050**: Gerente DEVE ver e agir só sobre os afiliados de quem é responsável; Admin e
@@ -585,6 +604,7 @@ P1.
   restaurar e editar comissão; `afiliados.editar_comissao` não vem por padrão para o Gerente, mas
   ele pode usá-la quando receber; Vendedor não recebe nem usa nenhuma. Aprovar e recusar cadastros públicos é só de Admin e Supervisor, mesmo
   com `afiliados.alterar_situacao`.
+  *(Alterado pela spec 022: aprovar e recusar só para o Admin, mesmo com `afiliados.alterar_situacao`.)*
 
 **Painel do afiliado (frontend)**
 
@@ -595,6 +615,7 @@ P1.
   do antigo, com as melhorias aprovadas: rótulos, erro por campo, máscaras (telefone, CPF e PIX
   conforme o tipo), confirmação de senha, mostrar/ocultar senha, Esc e Voltar fecham, carregando no
   botão e mensagem final de "cadastro em análise".
+  *(Alterado pela spec 022: o modal tem também rede social, link do perfil, seguidores e "sobre você".)*
 - **FR-054**: O painel `/afiliados` DEVE manter o visual da tela `affiliated` do antigo (cabeçalho
   "Olá, nome", "Meu Saldo", "Saldo anterior" renomeado como última prestação, texto da comissão e
   tabela do extrato com ID, operação, valor, comissão e data) e acrescentar: filtro de período no
@@ -604,6 +625,7 @@ P1.
   parcialmente oculto, a data do cadastro e o total depositado, nunca telefone, e-mail ou CPF.
 - **FR-056**: Em "Meus dados", o afiliado DEVE poder alterar telefone, cidade, estado, endereço e
   PIX; nome, login, e-mail, CPF, código e regra de comissão só pela gestão.
+  *(Alterado pela spec 022: o afiliado também altera rede social, link do perfil, seguidores e "sobre você".)*
 - **FR-057**: Os modais do painel ("Meus dados", "Alterar senha") e o de "Esqueci minha senha" da
   página pública DEVEM seguir o mesmo padrão do
   FR-053. A troca de senha DEVE pedir a senha atual.

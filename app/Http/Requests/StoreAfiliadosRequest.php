@@ -45,7 +45,9 @@ class StoreAfiliadosRequest extends FormRequest
             'usuarios_id' => $this->user()?->funcao() === Funcao::Gerente
                 ? ['nullable']
                 : ['required', 'integer', $this->regra_gerente()],
-            ...$this->regras_comissao_opcional(),
+            // regra de ganho obrigatória para quem cadastra, inclusive o Gerente (spec 022, FR-012)
+            ...$this->regras_comissao_obrigatoria(),
+            ...$this->regras_perfil_afiliado('required'),
         ];
     }
 

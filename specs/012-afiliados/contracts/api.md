@@ -4,6 +4,13 @@ Prefixo `/api`. JSON em `snake_case`; erros de validação em 422 com `message` 
 mensagens em português. Listagens paginadas no formato do Laravel (`data`, `links`, `meta`),
 `por_pagina` de 1 a 100.
 
+**Alterado pela spec 022** (detalhes em `specs/022-painel-afiliados/contracts/api.md`): §1.1 e §1.10
+ganham `rede_social`, `link_perfil`, `quantidade_seguidores` e `sobre`; §1.1 não cria regra de
+ganho; §2.1 ganha `grupo`, período padrão "este mês", `entradas` e a rota `GET /afiliados/resumo`;
+§2.3 exige `tipo_ganho` e `percentual` e os campos de perfil; §2.7 e §2.8 só para o Admin, com
+gerente e regra obrigatórios na aprovação; §2.10 devolve `meta.soma`; §2.14 exige `password`;
+§3 removido.
+
 Legenda de autenticação:
 - **público**: sem token;
 - **afiliado**: `auth:afiliados` + `GarantirAcessoAfiliado`;
@@ -199,9 +206,8 @@ Corpo opcional com valores novos para `login`, `email`, `cpf`, `codigo`. Conflit
 
 ## 3. Configuração
 
-### 3.1 `GET /configuracoes/afiliados` e `PUT /configuracoes/afiliados` — `configuracoes.editar`
-
-`{ "afiliados_tipo_ganho_padrao": "Saldo líquido", "afiliados_percentual_padrao": "0.00" }`.
+*(Removida pela spec 022: a regra padrão do cadastro público saiu; `GET/PUT /configuracoes/afiliados`
+não existem mais.)*
 
 ---
 
