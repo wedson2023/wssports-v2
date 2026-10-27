@@ -75,6 +75,14 @@ class PainelController extends Controller
     }
 
     /**
+     * Tela "Confrontos" (spec 023); aba, busca e filtros vêm na query string.
+     */
+    public function confrontos(): Response
+    {
+        return Inertia::render('PanelMatches');
+    }
+
+    /**
      * Tela "Afiliados" (spec 022); aba, busca e filtros vêm na query string.
      */
     public function afiliados(): Response

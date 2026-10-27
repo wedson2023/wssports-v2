@@ -10,7 +10,7 @@ Base `/api`, JWT (`Authorization: Bearer`), respostas JSON, erros no padrão do 
 ## Rotas novas (`CotacoesPainelController`)
 
 ### 1. `GET /cotacoes/nomes`
-Permissão de cotação. Resposta: `{ "nomes": { "odd1": "Casa", ..., "jogador": "Jogador" } }`.
+Permissão de cotação (alterado pela spec 023: ou `confrontos.listar`). Resposta: `{ "nomes": { "odd1": "Casa", ..., "jogador": "Jogador" } }`.
 
 ### 2. `GET /cotacoes/publicos?busca=`
 `porcentagens_vendedores.editar`. Usuários cujas porcentagens o solicitante pode editar (ele mesmo e

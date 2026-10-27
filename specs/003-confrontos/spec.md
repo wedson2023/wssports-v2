@@ -160,6 +160,16 @@ device_id."
   acentos, como o banco já faz (FR-041); os padrões das configurações continuam como no sistema
   antigo.
 
+### Session 2026-10-27 (alterado pela spec 023)
+
+- A listagem do painel (`GET /confrontos`) passa a aceitar o dia `ontem` e a data (`data`, de 30
+  dias atrás até depois de amanhã), o tipo Todos / Pré-jogo / Ao vivo e a busca pelo nome do
+  campeonato, e traz limite, ao vivo, resultado, restrições por rede e ações; a listagem pública
+  não muda (spec 023, FR-005 a FR-007).
+- A exclusão de jogo e de campeonato manual (FR-063c) passa a ser recusada enquanto houver apostas
+  vivas no jogo (Ativa, Pendente ou Em análise): "Este jogo tem N apostas. Cancele o jogo em vez de
+  excluir." e "Este campeonato tem jogos com apostas." (spec 023, FR-032).
+
 ## User Scenarios & Testing *(mandatory)*
 
 > Conforme a constituição, o projeto não terá testes automatizados. Os cenários abaixo são
@@ -977,6 +987,7 @@ com o ao vivo desligado.
 - **FR-063c**: Em um confronto manual DEVE ser possível editar times, escudos, esporte, data de
   início, cotações e a situação (Aguardando, Adiado ou Cancelado). A exclusão de campeonato e de
   confronto manual DEVE ser lógica; excluir um campeonato manual exclui também os confrontos dele.
+  (Alterado pela spec 023: a exclusão é recusada enquanto houver apostas vivas no jogo.)
 - **FR-064**: Registros manuais e registros do provedor NÃO se misturam:
   - as rotas de FR-063 só DEVEM editar e excluir registros manuais; tentar alterar um registro do
     provedor DEVE ser recusado;

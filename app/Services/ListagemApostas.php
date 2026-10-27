@@ -302,8 +302,9 @@ class ListagemApostas
      * Alcance por nível (data-model §4): Admin, todas; Supervisor e Gerente, as dos vendedores da
      * sub-hierarquia (inclusive excluídos); Vendedor, as próprias; apostas do site só para Admin e
      * Supervisor. Com vendedor no filtro, ele precisa estar no alcance (o Vendedor não filtra).
+     * Também usado pela tela Confrontos (spec 023, R-09), para os números baterem com esta lista.
      */
-    private function aplicar_alcance(Builder $consulta, Usuarios $usuario, ?int $usuarios_id): void
+    public function aplicar_alcance(Builder $consulta, Usuarios $usuario, ?int $usuarios_id): void
     {
         $ids = $this->alcance_dashboard->ids_vendedores($usuario);
         $ve_site = $this->ve_apostas_do_site($usuario);

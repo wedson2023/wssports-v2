@@ -6,16 +6,20 @@ use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Validator;
 
 /**
- * Resultado de jogo manual lançado pelo administrador (spec 009, FR-045 e contrato em
- * specs/009-apuracao-resultados/contracts/api.md). Usa os nomes do sistema.
+ * Resultado de jogo lançado à mão pelo Admin (spec 009, FR-045, alterado pela spec 023, R-12;
+ * contrato em specs/009-apuracao-resultados/contracts/api.md). Como no sistema antigo: placar,
+ * gols do 1º e do 2º tempo e escanteios obrigatórios, e a soma dos tempos igual ao placar. Usa os
+ * nomes do sistema.
  */
 class ConfrontosResultadosRequest extends FormRequest
 {
     private const PLACAR = 'Informe o placar final do jogo (0 a 99 gols para cada time).';
 
-    private const TEMPOS = 'Informe os gols do 1º e do 2º tempo dos dois times ou deixe os quatro em branco.';
+    private const TEMPOS = 'Informe os gols do 1º e do 2º tempo dos dois times (0 a 99).';
 
-    private const ESCANTEIOS = 'Informe os escanteios dos dois times ou deixe os dois em branco.';
+    private const ESCANTEIOS = 'Informe os escanteios dos dois times (0 a 99).';
+
+    private const SOMA = 'A soma dos gols dos times não bate com os gols dos tempos.';
 
     private const GOL = 'Cada gol precisa da ordem (1 a 99, sem repetir) e do nome do jogador.';
 
@@ -34,12 +38,12 @@ class ConfrontosResultadosRequest extends FormRequest
      */
     public function rules(): array
     {
-        $opcional = ['nullable', 'integer', 'between:0,99'];
+        $obrigatorio = ['required', 'integer', 'between:0,99'];
 
         return [
-            'placar_casa' => ['required', 'integer', 'between:0,99'],
-            'placar_fora' => ['required', 'integer', 'between:0,99'],
-            ...array_fill_keys([...self::CAMPOS_TEMPOS, ...self::CAMPOS_ESCANTEIOS], $opcional),
+            'placar_casa' => $obrigatorio,
+            'placar_fora' => $obrigatorio,
+            ...array_fill_keys([...self::CAMPOS_TEMPOS, ...self::CAMPOS_ESCANTEIOS], $obrigatorio),
             'gols' => ['nullable', 'array', 'max:99'],
             'gols.*.ordem' => ['required', 'integer', 'between:1,99', 'distinct'],
             'gols.*.nome' => ['required', 'string', 'max:150'],
@@ -55,21 +59,18 @@ class ConfrontosResultadosRequest extends FormRequest
     public function messages(): array
     {
         $mensagens = [];
+        $grupos = [
+            self::PLACAR => ['placar_casa', 'placar_fora'],
+            self::TEMPOS => self::CAMPOS_TEMPOS,
+            self::ESCANTEIOS => self::CAMPOS_ESCANTEIOS,
+        ];
 
-        foreach (['placar_casa', 'placar_fora'] as $campo) {
-            foreach (['required', 'integer', 'between'] as $regra) {
-                $mensagens["{$campo}.{$regra}"] = self::PLACAR;
+        foreach ($grupos as $mensagem => $campos) {
+            foreach ($campos as $campo) {
+                foreach (['required', 'integer', 'between'] as $regra) {
+                    $mensagens["{$campo}.{$regra}"] = $mensagem;
+                }
             }
-        }
-
-        foreach (self::CAMPOS_TEMPOS as $campo) {
-            $mensagens["{$campo}.integer"] = self::TEMPOS;
-            $mensagens["{$campo}.between"] = self::TEMPOS;
-        }
-
-        foreach (self::CAMPOS_ESCANTEIOS as $campo) {
-            $mensagens["{$campo}.integer"] = self::ESCANTEIOS;
-            $mensagens["{$campo}.between"] = self::ESCANTEIOS;
         }
 
         foreach (['gols.array', 'gols.max', 'gols.*.ordem.required', 'gols.*.ordem.integer', 'gols.*.ordem.between', 'gols.*.ordem.distinct',
@@ -82,7 +83,7 @@ class ConfrontosResultadosRequest extends FormRequest
     }
 
     /**
-     * Gols de tempo: os quatro juntos; escanteios: os dois juntos.
+     * Soma dos gols do 1º e do 2º tempo igual à soma do placar final (regra do antigo).
      *
      * @return list<callable(Validator): void>
      */
@@ -94,24 +95,13 @@ class ConfrontosResultadosRequest extends FormRequest
                     return;
                 }
 
-                if (! $this->todos_ou_nenhum(self::CAMPOS_TEMPOS)) {
-                    $validator->errors()->add('gols_primeiro_tempo_casa', self::TEMPOS);
-                }
+                $gols_placar = (int) $this->input('placar_casa') + (int) $this->input('placar_fora');
+                $gols_tempos = array_sum(array_map(fn (string $campo) => (int) $this->input($campo), self::CAMPOS_TEMPOS));
 
-                if (! $this->todos_ou_nenhum(self::CAMPOS_ESCANTEIOS)) {
-                    $validator->errors()->add('escanteios_casa', self::ESCANTEIOS);
+                if ($gols_placar !== $gols_tempos) {
+                    $validator->errors()->add('placar_casa', self::SOMA);
                 }
             },
         ];
-    }
-
-    /**
-     * @param  list<string>  $campos
-     */
-    private function todos_ou_nenhum(array $campos): bool
-    {
-        $informados = count(array_filter($campos, fn (string $campo) => $this->input($campo) !== null));
-
-        return $informados === 0 || $informados === count($campos);
     }
 }

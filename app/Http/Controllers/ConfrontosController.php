@@ -2,34 +2,46 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\AlvoRegra;
+use App\Enums\SituacaoAposta;
 use App\Enums\SituacaoConfronto;
+use App\Enums\SituacaoPalpite;
 use App\Http\Controllers\Concerns\GarantirPermissaoCliente;
 use App\Http\Requests\ConfrontosRequest;
+use App\Http\Requests\FiltrosConfrontosPainelRequest;
 use App\Http\Resources\ConfrontosResource;
+use App\Models\ApostasPalpites;
 use App\Models\Confrontos;
-use App\Services\AlcanceHierarquia;
-use Carbon\CarbonTimeZone;
-use Illuminate\Database\Eloquent\Builder;
+use App\Models\ConfrontosNaoPermitidos;
+use App\Models\OperacoesApuracao;
+use App\Services\CalculoCotacoes;
+use App\Services\ExposicaoConfrontos;
+use App\Services\ListagemConfrontosPainel;
+use App\Services\Publico;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Http\Response;
 use Illuminate\Routing\Controllers\HasMiddleware;
-use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 
 /**
- * Confrontos do pré-jogo no painel: listagem, ativar e desativar e cadastro manual.
+ * Confrontos do pré-jogo no painel: listagem, ativar e desativar e cadastro manual; a lista, os
+ * cartões e a gaveta da tela Confrontos (spec 023).
  */
 class ConfrontosController extends Controller implements HasMiddleware
 {
     use GarantirPermissaoCliente;
 
-    public function __construct(private AlcanceHierarquia $alcance) {}
+    // cotações principais mostradas na gaveta: Casa, Empate e Fora
+    private const CODIGOS_PRINCIPAIS = ['odd1', 'odd2', 'odd3'];
+
+    public function __construct(private ListagemConfrontosPainel $listagem) {}
 
     public static function middleware(): array
     {
         return [
-            self::permissao_cliente('confrontos.listar', only: ['index', 'show']),
+            self::permissao_cliente('confrontos.listar', only: ['index', 'show', 'resumo', 'esportes']),
             self::permissao_cliente('confrontos.cadastrar', only: ['store']),
             self::permissao_cliente('confrontos.editar', only: ['update']),
             self::permissao_cliente('confrontos.excluir', only: ['destroy']),
@@ -37,56 +49,63 @@ class ConfrontosController extends Controller implements HasMiddleware
         ];
     }
 
-    public function index(Request $request): AnonymousResourceCollection
+    /**
+     * Lista da tela Confrontos (spec 023): filtros, dia, tipo e os campos da linha.
+     */
+    public function index(FiltrosConfrontosPainelRequest $request): AnonymousResourceCollection
     {
-        // filtros enviados vazios chegam como null e são ignorados
-        $filtros = $request->validate([
-            'busca' => ['nullable', 'string', 'max:150'],
-            'campeonatos_id' => ['nullable', 'integer'],
-            'ativo' => ['nullable', 'boolean'],
-            'manual' => ['nullable', 'boolean'],
-            'esporte' => ['nullable', 'string', 'max:50'],
-            'situacao' => ['nullable', Rule::enum(SituacaoConfronto::class)],
-            'dia' => ['nullable', 'in:hoje,amanha,depois_de_amanha'],
-            'fuso_horario' => ['nullable', 'regex:/^[+-](0\d|1[0-4]):[0-5]\d$/'],
-            'por_pagina' => ['nullable', 'integer', 'between:1,100'],
-        ], [
-            'busca.max' => 'A busca deve ter no máximo 150 caracteres.',
-            'campeonatos_id.integer' => 'O campeonato deve ser um número inteiro.',
-            'ativo.boolean' => 'O filtro ativo deve ser verdadeiro ou falso.',
-            'manual.boolean' => 'O filtro manual deve ser verdadeiro ou falso.',
-            'esporte.max' => 'O esporte deve ter no máximo 50 caracteres.',
-            'situacao.enum' => 'A situação informada é inválida.',
-            'dia.in' => 'O dia deve ser hoje, amanha ou depois_de_amanha.',
-            'fuso_horario.regex' => 'O fuso horário deve estar no formato ±HH:MM (ex.: -03:00).',
-            'por_pagina.integer' => 'O campo por página deve ser um número inteiro.',
-            'por_pagina.between' => 'O campo por página deve estar entre 1 e 100.',
-        ]);
-
-        $confrontos = $this->com_nao_permitido($request, Confrontos::with('campeonato'))
-            ->when(isset($filtros['busca']), function (Builder $c) use ($filtros) {
-                $termo = '%'.addcslashes($filtros['busca'], '%_\\').'%';
-                $c->where(fn (Builder $b) => $b->where('time_casa', 'like', $termo)->orWhere('time_fora', 'like', $termo));
-            })
-            ->when(isset($filtros['campeonatos_id']), fn (Builder $c) => $c->where('campeonatos_id', $filtros['campeonatos_id']))
-            ->when(isset($filtros['ativo']), fn (Builder $c) => $c->where('ativo', (bool) $filtros['ativo']))
-            ->when(isset($filtros['manual']), fn (Builder $c) => $c->where('manual', (bool) $filtros['manual']))
-            ->when(isset($filtros['esporte']), fn (Builder $c) => $c->where('esporte', mb_strtoupper($filtros['esporte'])))
-            ->when(isset($filtros['situacao']), fn (Builder $c) => $c->where('situacao', $filtros['situacao']))
-            ->when(isset($filtros['dia']), fn (Builder $c) => $c->whereBetween('data_inicio', $this->dia_em_utc($filtros['dia'], $filtros['fuso_horario'] ?? null)))
-            ->orderBy('data_inicio')
-            ->orderBy('time_casa')
-            ->paginate($filtros['por_pagina'] ?? 20)
+        $confrontos = $this->listagem->com_detalhes($this->listagem->consulta($request->filtros()), $request->user())
+            ->paginate($request->por_pagina())
             ->withQueryString();
 
         return ConfrontosResource::collection($confrontos);
     }
 
-    public function show(Request $request, Confrontos $confronto): ConfrontosResource
+    /**
+     * Cartões da tela Confrontos (spec 023, contracts/api §2.1).
+     */
+    public function resumo(FiltrosConfrontosPainelRequest $request, ExposicaoConfrontos $exposicao): JsonResponse
     {
-        return new ConfrontosResource(
-            $this->com_nao_permitido($request, Confrontos::with(['campeonato', 'jogadores']))->findOrFail($confronto->id)
-        );
+        return response()->json(['data' => $this->listagem->resumo($request->user(), $request->filtros(), $exposicao)]);
+    }
+
+    /**
+     * Esportes já usados pelos jogos, para o cadastro manual (spec 023, contracts/api §2.7).
+     */
+    public function esportes(): JsonResponse
+    {
+        return response()->json(['data' => Confrontos::query()->distinct()->orderBy('esporte')->pluck('esporte')]);
+    }
+
+    /**
+     * Gaveta do jogo (spec 023, contracts/api §1.2): resultado completo com a origem, cotações
+     * principais como o visitante do site vê e se há não permitido para todos.
+     */
+    public function show(Request $request, Confrontos $confronto, CalculoCotacoes $calculo): ConfrontosResource
+    {
+        $detalhe = $this->listagem->com_detalhes(Confrontos::query()->whereKey($confronto->id), $request->user())
+            ->with(['jogadores', 'gols'])
+            ->addSelect([
+                'origem_resultado' => OperacoesApuracao::query()->select('origem')
+                    ->whereColumn('confrontos_id', 'confrontos.id')->latest('id')->limit(1),
+                'nao_permitido_todos' => ConfrontosNaoPermitidos::query()->selectRaw('COUNT(*) > 0')
+                    ->whereColumn('confrontos_id', 'confrontos.id')->where('alvo', AlvoRegra::Todos),
+            ])
+            ->firstOrFail();
+
+        $ajustadas = $calculo->ajustar(Publico::visitante(), CalculoCotacoes::PRE_JOGO, collect([(object) [
+            'id' => $detalhe->id,
+            'campeonatos_id' => $detalhe->campeonatos_id,
+            'confrontos_id' => $detalhe->id,
+            'cotacoes' => $detalhe->cotacoes ?? [],
+        ]]), self::CODIGOS_PRINCIPAIS)[$detalhe->id] ?? [];
+
+        // código que o jogo não tem fica null (a base do provedor é zero)
+        $detalhe->setAttribute('cotacoes_site', collect(self::CODIGOS_PRINCIPAIS)->mapWithKeys(fn (string $codigo) => [
+            $codigo => isset(($detalhe->cotacoes ?? [])[$codigo]) ? number_format($ajustadas[$codigo] ?? 0, 2, '.', '') : null,
+        ])->all());
+
+        return new ConfrontosResource($detalhe);
     }
 
     /**
@@ -117,9 +136,21 @@ class ConfrontosController extends Controller implements HasMiddleware
         return new ConfrontosResource($confronto->load('campeonato'));
     }
 
+    /**
+     * Exclui o jogo manual; recusa enquanto houver apostas vivas nele (spec 023, R-16).
+     */
     public function destroy(Confrontos $confronto): Response
     {
         $this->garantir_manual($confronto);
+
+        $apostas = self::apostas_vivas($confronto->id);
+
+        if ($apostas > 0) {
+            throw ValidationException::withMessages(['confronto' => $apostas === 1
+                ? 'Este jogo tem 1 aposta. Cancele o jogo em vez de excluir.'
+                : "Este jogo tem {$apostas} apostas. Cancele o jogo em vez de excluir."]);
+        }
+
         $confronto->delete();
 
         return response()->noContent();
@@ -162,30 +193,21 @@ class ConfrontosController extends Controller implements HasMiddleware
     }
 
     /**
-     * Início e fim do dia pedido no fuso informado, em UTC.
+     * Quantidade de apostas vivas (Ativa, Pendente ou Em análise) com palpite ativo nos jogos
+     * informados; Canceladas, Recusadas e Expiradas não contam (spec 023, R-16).
      *
-     * @return array{0: string, 1: string}
+     * @param  int|list<int>  $confrontos_id
      */
-    private function dia_em_utc(string $dia, ?string $fuso): array
+    public static function apostas_vivas(int|array $confrontos_id): int
     {
-        $inicio = now()->setTimezone(new CarbonTimeZone($fuso ?? '-03:00'))->startOfDay()
-            ->addDays(match ($dia) {
-                'amanha' => 1,
-                'depois_de_amanha' => 2,
-                default => 0,
-            });
-
-        return [$inicio->copy()->utc()->format('Y-m-d H:i:s'), $inicio->copy()->endOfDay()->utc()->format('Y-m-d H:i:s')];
-    }
-
-    /**
-     * Indica se há um não permitido do pré-jogo que vale para quem consulta.
-     */
-    private function com_nao_permitido(Request $request, Builder $consulta): Builder
-    {
-        return $consulta->withExists([
-            'nao_permitidos as nao_permitido' => fn (Builder $c) => $this->alcance->nao_permitidos_do_usuario($c, $request->user()),
-        ]);
+        return ApostasPalpites::query()
+            ->join('apostas', 'apostas.id', '=', 'apostas_palpites.apostas_id')
+            ->whereNull('apostas.deleted_at')
+            ->whereIn('apostas_palpites.confrontos_id', (array) $confrontos_id)
+            ->where('apostas_palpites.situacao', SituacaoPalpite::Ativo->value)
+            ->whereIn('apostas.situacao', [SituacaoAposta::Ativa->value, SituacaoAposta::Pendente->value, SituacaoAposta::EmAnálise->value])
+            ->distinct()
+            ->count('apostas.id');
     }
 
     private function garantir_manual(Confrontos $confronto): void

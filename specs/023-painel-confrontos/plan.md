@@ -62,7 +62,7 @@ componentes do painel (specs 014 a 022) e regras de modais, cabeçalho e campos 
 | Migrations | 2 |
 | Rotas da API novas / alteradas | 7 (ver contracts/api §2) / 7 (§1 e `cotacoes/nomes`) |
 | Página nova | 1 (`PanelMatches`) + 1 rota web |
-| Componentes novos | 12 |
+| Componentes novos | 11 (na implementação: as três tabelas de jogos viraram uma, e entrou o `ChampionshipPicker`) |
 | Componentes alterados | 2 (`PanelShell`, `PanelQuotes`*) |
 
 \* página, não componente.
@@ -122,10 +122,9 @@ app/Http/Controllers/ConfrontosApostasController.php   # mais_apostados, pendent
 app/Http/Resources/ApostasConfrontoResource.php
 resources/js/pages/PanelMatches/{index,styles}.jsx
 resources/js/hooks/useConfrontosPainel.js
-resources/js/components/MatchesTable/{index,styles}.jsx
-resources/js/components/MostBetMatchesTable/{index,styles}.jsx
-resources/js/components/PendingMatchesTable/{index,styles}.jsx
+resources/js/components/MatchesTable/{index,styles}.jsx        # abas Jogos, Mais apostados e Pendentes (colunas por aba)
 resources/js/components/ChampionshipsTable/{index,styles}.jsx
+resources/js/components/ChampionshipPicker/{index,styles}.jsx   # busca do campeonato (filtro e cadastro de jogo)
 resources/js/components/MatchesFilters/{index,styles}.jsx
 resources/js/components/MatchDrawer/{index,styles}.jsx
 resources/js/components/MatchPicksRanking/{index,styles}.jsx
