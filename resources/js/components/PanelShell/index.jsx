@@ -67,6 +67,13 @@ const itens_menu = [
         visivel: (usuario) => usuario.permissoes.includes('clientes_promocoes.gerenciar'),
     },
     {
+        chave: 'afiliados',
+        rotulo: 'Afiliados',
+        icone: 'handshake',
+        href: '/painel/afiliados',
+        visivel: (usuario) => usuario.permissoes.includes('afiliados.listar'),
+    },
+    {
         chave: 'apostas',
         rotulo: 'Apostas',
         icone: 'receipt',

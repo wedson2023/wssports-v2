@@ -75,6 +75,14 @@ class PainelController extends Controller
     }
 
     /**
+     * Tela "Afiliados" (spec 022); aba, busca e filtros vêm na query string.
+     */
+    public function afiliados(): Response
+    {
+        return Inertia::render('PanelAffiliates');
+    }
+
+    /**
      * Tela "Configurações" (spec 021); aba e seção vêm na query string.
      */
     public function configuracoes(): Response

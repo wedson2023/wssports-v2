@@ -94,6 +94,12 @@ telas do painel 014–020 (PanelShell, PanelTabs, SaveBar, hooks usePainel)."
   (specs 014 a 020), como nas specs anteriores. As diferenças estão em "Referências do sistema
   antigo".
 
+### Session 2026-10-27 (alterado pela spec 022)
+
+- A seção Afiliados da aba Operação (regra de ganho padrão do cadastro público) e as rotas
+  `GET/PUT /configuracoes/afiliados` foram removidas: o ganho é definido por quem gerencia, no
+  cadastro e na aprovação do afiliado (FR-028).
+
 ## Referências do sistema antigo *(Princípios VII e VIII)*
 
 - Backend (`wssports.bet`, `main` `408cf730`): `app/Http/Controllers/ConfigController.php` (`index`
@@ -495,9 +501,11 @@ gravado; provocar um erro de validação e ver a mensagem no campo.
 **Aba Operação**
 
 - **FR-028**: A aba DEVE ter uma seção para cada grupo de configurações já existente no servidor —
-  Pagamentos, Criar Aposta, Apuração, Encerramento de aposta, Cassino, Afiliados e Aviso de
+  Pagamentos, Criar Aposta, Apuração, Encerramento de aposta, Cassino e Aviso de
   combinação pelo WhatsApp — com os campos e as validações atuais de cada um; Admin e Supervisor
   alteram todas as seções.
+  *(Alterado pela spec 022: a seção Afiliados saiu; a regra de ganho passa a ser definida no
+  cadastro e na aprovação do afiliado.)*
 - **FR-029**: A aba DEVE ter também a seção Ao vivo (habilitado, segundos de trava, minutos de
   permanência, minuto limite e cotação máxima), a seção Sorteio de cotação (mínimo e máximo de
   "ambas marcam" e de "ambas não marcam", com o mínimo menor ou igual ao máximo) e o limite diário de

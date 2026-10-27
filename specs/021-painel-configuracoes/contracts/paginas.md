@@ -117,6 +117,6 @@ como fica" (prévia com o estilo da página de regras); `SaveBar`.
 ### Aba Operação
 
 Sanfona com as seções: Pagamentos, Criar Aposta, Apuração, Encerramento de aposta, Cassino,
-Afiliados, Aviso de combinação (WhatsApp), Ao vivo, Sorteio de cotação, Notificações manuais. Cada
+Aviso de combinação (WhatsApp), Ao vivo, Sorteio de cotação, Notificações manuais (a seção Afiliados saiu na spec 022). Cada
 seção: título, frase do que controla, `SettingsForm` com os campos da definição
 (`utils/settings_fields.js`) e `SaveBar` própria. Trocar de seção com alterações pergunta antes.

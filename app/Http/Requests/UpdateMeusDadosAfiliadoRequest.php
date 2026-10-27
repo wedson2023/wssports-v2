@@ -7,8 +7,8 @@ use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Arr;
 
 /**
- * Meus dados do afiliado (contracts/api §1.10, FR-056): só contato, endereço e Pix; nome, login,
- * e-mail, CPF e código só pela gestão.
+ * Meus dados do afiliado (contracts/api §1.10, FR-056): só contato, endereço, Pix e o perfil na
+ * rede social (spec 022); nome, login, e-mail, CPF e código só pela gestão.
  */
 class UpdateMeusDadosAfiliadoRequest extends FormRequest
 {
@@ -33,6 +33,8 @@ class UpdateMeusDadosAfiliadoRequest extends FormRequest
 
         return [
             ...$regras,
+            // perfil na rede social: o que já foi preenchido não volta a vazio (spec 022, FR-016)
+            ...$this->regras_perfil_afiliado('sometimes', $this->user('afiliados')),
             'pix_tipo_chave' => [...$regras['pix_tipo_chave'], 'required_with:pix_chave'],
             'pix_chave' => [...$regras['pix_chave'], 'required_with:pix_tipo_chave'],
             'nome' => ['prohibited'],

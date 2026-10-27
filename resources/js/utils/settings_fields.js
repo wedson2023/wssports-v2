@@ -127,17 +127,6 @@ export const secoes_operacao = [
         ],
     },
     {
-        chave: 'afiliados',
-        rota: '/configuracoes/afiliados',
-        titulo: 'Afiliados',
-        icone: 'handshake',
-        descricao: 'Regra de comissão de quem se cadastra pela página de afiliados.',
-        campos: [
-            { chave: 'afiliados_tipo_ganho_padrao', rotulo: 'Comissão sobre', tipo: 'selecao', opcoes: ['Saldo líquido', 'Qualquer depósito', 'Primeiro depósito'] },
-            { chave: 'afiliados_percentual_padrao', rotulo: 'Percentual da comissão', tipo: 'percentual', ajuda: 'De 0 a 100%.' },
-        ],
-    },
-    {
         chave: 'avisos_whatsapp',
         rota: '/configuracoes/avisos-whatsapp',
         titulo: 'Aviso de combinação (WhatsApp)',

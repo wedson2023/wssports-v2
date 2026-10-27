@@ -2,10 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\Funcao;
 use App\Enums\SituacaoAfiliado;
 use App\Http\Controllers\Concerns\GarantirAlcanceAfiliado;
 use App\Http\Controllers\Concerns\GarantirPermissaoCliente;
 use App\Http\Requests\AprovarAfiliadoRequest;
+use App\Http\Requests\ExcluirAfiliadoRequest;
 use App\Http\Requests\RestaurarAfiliadosRequest;
 use App\Http\Requests\StoreAfiliadosRequest;
 use App\Http\Requests\UpdateAfiliadosRequest;
@@ -13,7 +15,6 @@ use App\Http\Resources\AfiliadosResource;
 use App\Http\Resources\ClientesResource;
 use App\Models\Afiliados;
 use App\Models\Usuarios;
-use App\Services\AlcanceHierarquia;
 use App\Services\CadastroAfiliados;
 use App\Services\ListagemAfiliados;
 use Illuminate\Database\Eloquent\Builder;
@@ -38,23 +39,37 @@ class AfiliadosController extends Controller implements HasMiddleware
     /**
      * Relações devolvidas com o afiliado na consulta e depois das alterações.
      */
-    private const RELACOES = ['gerente', 'comissao_vigente', 'meio_pagamento', 'ultima_prestacao'];
+    private const RELACOES = ['gerente', 'comissao_vigente', 'meio_pagamento', 'ultima_prestacao', 'autor_cadastro', 'autor_decisao'];
 
     /**
      * Dados únicos que recebem o sufixo de exclusão (FR-048).
      */
     private const DADOS_UNICOS = ['login', 'email', 'cpf', 'codigo'];
 
+    /**
+     * Filtros da lista e do resumo; o grupo separa as abas Ativos e Em análise (spec 022, R-02).
+     */
+    private const REGRAS_FILTROS = [
+        'situacao' => ['nullable', 'in:Em análise,Ativo,Inativo,Recusado'],
+        'grupo' => ['nullable', 'in:aprovados,analise'],
+        'busca' => ['nullable', 'string', 'max:150'],
+        'usuarios_id' => ['nullable', 'integer'],
+        // afiliados antigos ainda sem gerente responsável (spec 019, FR-003d)
+        'sem_gerente' => ['nullable', 'boolean'],
+        'de' => ['nullable', 'date_format:Y-m-d'],
+        'ate' => ['nullable', 'date_format:Y-m-d', 'after_or_equal:de'],
+        'por_pagina' => ['nullable', 'integer', 'between:1,100'],
+    ];
+
     public function __construct(
         private CadastroAfiliados $cadastro,
-        private AlcanceHierarquia $alcance,
         private ListagemAfiliados $listagem,
     ) {}
 
     public static function middleware(): array
     {
         return [
-            self::permissao_cliente('afiliados.listar', only: ['index']),
+            self::permissao_cliente('afiliados.listar', only: ['index', 'resumo']),
             self::permissao_cliente('afiliados.cadastrar', only: ['store']),
             self::permissao_cliente('afiliados.consultar', only: ['show']),
             self::permissao_cliente('afiliados.editar', only: ['update']),
@@ -72,6 +87,20 @@ class AfiliadosController extends Controller implements HasMiddleware
     public function excluidos(Request $request): AnonymousResourceCollection
     {
         return $this->listar($request, Afiliados::onlyTrashed());
+    }
+
+    /**
+     * Cartões da tela Afiliados (spec 022, FR-004); "Em análise" só para o Admin, que é quem aprova.
+     */
+    public function resumo(Request $request): JsonResponse
+    {
+        $filtros = $request->validate(Arr::except(self::REGRAS_FILTROS, ['situacao', 'grupo', 'por_pagina']), self::mensagens_filtros());
+        $usuario = $request->user();
+        $com_em_analise = $usuario->funcao() === Funcao::Admin && Funcao::usuario_pode($usuario, 'afiliados.alterar_situacao');
+
+        return response()->json([
+            'data' => $this->listagem->resumo($this->aplicar_alcance($request, Afiliados::query()), $filtros, $com_em_analise),
+        ]);
     }
 
     public function store(StoreAfiliadosRequest $request): JsonResponse
@@ -140,10 +169,13 @@ class AfiliadosController extends Controller implements HasMiddleware
 
     /**
      * Exclusão lógica com sufixo nos dados únicos, que ficam livres para novos cadastros; o código
-     * continua reconhecido pelo valor original (VinculoAfiliados).
+     * continua reconhecido pelo valor original (VinculoAfiliados). A senha de quem exclui é
+     * conferida pelo request antes de qualquer mudança (spec 022, FR-029).
      */
-    public function destroy(Afiliados $afiliado): Response
+    public function destroy(ExcluirAfiliadoRequest $request, Afiliados $afiliado): Response
     {
+        $this->garantir_alcance($request, $afiliado);
+
         $sufixo = '_deleted_'.now()->timestamp;
 
         DB::transaction(function () use ($afiliado, $sufixo) {
@@ -196,18 +228,18 @@ class AfiliadosController extends Controller implements HasMiddleware
     }
 
     /**
-     * Aprovar e recusar o cadastro público é só de Admin e Supervisor (FR-014).
+     * Aprovar e recusar o cadastro público é só do Admin (spec 022, FR-023): os cadastros públicos
+     * ainda não têm gerente e ficam fora da rede dos demais, que recebem "não encontrado". Na
+     * aprovação, a checagem fica no AprovarAfiliadoRequest, para vir antes da validação.
      */
     public function aprovar(AprovarAfiliadoRequest $request, Afiliados $afiliado): AfiliadosResource
     {
-        $this->alcance->garantir_gestor_geral($request->user());
-
         return new AfiliadosResource($this->carregar($this->cadastro->aprovar($afiliado, $request->user(), $request->validated())));
     }
 
     public function recusar(Request $request, Afiliados $afiliado): AfiliadosResource
     {
-        $this->alcance->garantir_gestor_geral($request->user());
+        abort_unless($request->user()->funcao() === Funcao::Admin, 404, 'Afiliado não encontrado.');
 
         $motivo = $request->validate(
             ['motivo' => ['nullable', 'string', 'max:255']],
@@ -236,27 +268,27 @@ class AfiliadosController extends Controller implements HasMiddleware
     }
 
     /**
-     * Listagem paginada (padrão 20, máximo 100) com os totais do período; Gerente só os seus.
+     * @return array<string, string>
      */
-    private function listar(Request $request, Builder $consulta): AnonymousResourceCollection
+    private static function mensagens_filtros(): array
     {
-        $filtros = $request->validate([
-            'situacao' => ['nullable', Rule::enum(SituacaoAfiliado::class)],
-            'busca' => ['nullable', 'string', 'max:150'],
-            'usuarios_id' => ['nullable', 'integer'],
-            // afiliados antigos ainda sem gerente responsável (spec 019, FR-003d)
-            'sem_gerente' => ['nullable', 'boolean'],
-            'de' => ['nullable', 'date_format:Y-m-d'],
-            'ate' => ['nullable', 'date_format:Y-m-d', 'after_or_equal:de'],
-            'por_pagina' => ['nullable', 'integer', 'between:1,100'],
-        ], [
-            'situacao.enum' => 'A situação deve ser Em análise, Ativo, Inativo ou Recusado.',
+        return [
+            'situacao.in' => 'A situação deve ser Em análise, Ativo, Inativo ou Recusado.',
+            'grupo.in' => 'O grupo deve ser aprovados ou analise.',
             'busca.string' => 'A busca deve ser um texto.',
             'busca.max' => 'A busca é longa demais.',
             'usuarios_id.integer' => 'O gerente informado é inválido.',
             'sem_gerente.boolean' => 'O filtro sem gerente deve ser verdadeiro ou falso.',
             ...ListagemAfiliados::mensagens_extrato(),
-        ]);
+        ];
+    }
+
+    /**
+     * Listagem paginada (padrão 20, máximo 100) com os totais do período; Gerente só os seus.
+     */
+    private function listar(Request $request, Builder $consulta): AnonymousResourceCollection
+    {
+        $filtros = $request->validate(self::REGRAS_FILTROS, self::mensagens_filtros());
 
         $afiliados = $this->listagem
             ->consulta_gestao($this->aplicar_alcance($request, $consulta), $filtros)

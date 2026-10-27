@@ -6,12 +6,14 @@ import { alerta_erro, alerta_sucesso } from '../../utils/alerts';
 import {
     chave_pix_para_api, erros_por_campo, estados, formatar_chave_pix, formatar_telefone, somente_digitos, tipos_chave_pix,
 } from '../../utils/forms';
-import { ErrorText, Field, Grid, Hint, Input, Lock, Loading, Select } from './styles';
+import { MAXIMO_SOBRE, so_digitos_seguidores } from '../AffiliateProfileFields';
+import { redes_sociais } from '../../hooks/useAfiliadosPainel';
+import { ErrorText, Field, Grid, Hint, Input, Lock, Loading, Select, Textarea } from './styles';
 
 const aviso_travado = 'Para alterar, fale com a banca.';
 
 // Meus dados do afiliado (spec 012, FR-056): nome, login, e-mail e CPF só leitura; contato,
-// endereço e chave Pix editáveis
+// endereço, chave Pix e o perfil na rede social (spec 022, FR-017) editáveis
 export default function AffiliateProfileModal({ aberto, requisitar, ao_fechar }) {
     const [dados, definir_dados] = useState(null);
     const [erros, definir_erros] = useState({});
@@ -29,6 +31,10 @@ export default function AffiliateProfileModal({ aberto, requisitar, ao_fechar })
                 telefone: formatar_telefone(data.telefone ?? ''),
                 pix_tipo_chave: data.pix_tipo_chave ?? '',
                 pix_chave: formatar_chave_pix(data.pix_tipo_chave, data.pix_chave ?? ''),
+                rede_social: data.rede_social ?? '',
+                link_perfil: data.link_perfil ?? '',
+                quantidade_seguidores: data.quantidade_seguidores === null ? '' : String(data.quantidade_seguidores),
+                sobre: data.sobre ?? '',
             }))
             .catch((erro) => {
                 if (![401, 403].includes(erro.response?.status)) alerta_erro(erro);
@@ -43,6 +49,7 @@ export default function AffiliateProfileModal({ aberto, requisitar, ao_fechar })
             if (campo === 'pix_tipo_chave') return { ...atuais, pix_tipo_chave: valor, pix_chave: '' };
             if (campo === 'telefone') return { ...atuais, telefone: formatar_telefone(valor) };
             if (campo === 'pix_chave') return { ...atuais, pix_chave: formatar_chave_pix(atuais.pix_tipo_chave, valor) };
+            if (campo === 'quantidade_seguidores') return { ...atuais, quantidade_seguidores: so_digitos_seguidores(valor) };
 
             return { ...atuais, [campo]: valor };
         });
@@ -63,6 +70,11 @@ export default function AffiliateProfileModal({ aberto, requisitar, ao_fechar })
                     endereco: dados.endereco ?? '',
                     pix_tipo_chave: dados.pix_tipo_chave,
                     pix_chave: chave_pix_para_api(dados.pix_tipo_chave, dados.pix_chave),
+                    // perfil: campo vazio não vai (o servidor recusa apagar o que já foi informado)
+                    ...(dados.rede_social ? { rede_social: dados.rede_social } : {}),
+                    ...(dados.link_perfil.trim() ? { link_perfil: dados.link_perfil.trim() } : {}),
+                    ...(dados.quantidade_seguidores !== '' ? { quantidade_seguidores: Number(dados.quantidade_seguidores) } : {}),
+                    sobre: dados.sobre.trim() || null,
                 },
             });
 
@@ -83,8 +95,8 @@ export default function AffiliateProfileModal({ aberto, requisitar, ao_fechar })
         </Field>
     );
 
-    const campo = (nome, rotulo, controle) => (
-        <Field>
+    const campo = (nome, rotulo, controle, inteiro = false) => (
+        <Field $inteiro={inteiro}>
             <span>{rotulo}</span>
             {controle}
             {erros[nome] && <ErrorText>{erros[nome]}</ErrorText>}
@@ -125,6 +137,15 @@ export default function AffiliateProfileModal({ aberto, requisitar, ao_fechar })
                             </Select>
                         ))}
                         {campo('pix_chave', 'Chave Pix', <Input value={dados.pix_chave} onChange={mudar('pix_chave')} disabled={!dados.pix_tipo_chave} />)}
+                        {campo('rede_social', 'Rede social principal', (
+                            <Select value={dados.rede_social} onChange={mudar('rede_social')}>
+                                <option value="">Selecione</option>
+                                {redes_sociais.map((rede) => <option key={rede} value={rede}>{rede}</option>)}
+                            </Select>
+                        ))}
+                        {campo('quantidade_seguidores', 'Quantidade de seguidores', <Input inputMode="numeric" value={dados.quantidade_seguidores} onChange={mudar('quantidade_seguidores')} />)}
+                        {campo('link_perfil', 'Link do perfil', <Input type="url" maxLength={255} placeholder="https://" value={dados.link_perfil} onChange={mudar('link_perfil')} />, true)}
+                        {campo('sobre', `Sobre você (${dados.sobre.length}/${MAXIMO_SOBRE})`, <Textarea maxLength={MAXIMO_SOBRE} value={dados.sobre} onChange={mudar('sobre')} />, true)}
                     </Grid>
                     <Hint>Para alterar nome, login, e-mail ou CPF, fale com a banca.</Hint>
                 </>

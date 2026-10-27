@@ -6,7 +6,6 @@ use App\Enums\LiquidacaoCriarAposta;
 use App\Enums\MeioDeposito;
 use App\Enums\ModoSaque;
 use App\Enums\SituacaoRoboWhatsapp;
-use App\Enums\TipoGanhoAfiliado;
 use App\Services\ArmazenamentoImagens;
 use App\Services\IconesAplicativo;
 use Illuminate\Database\Eloquent\Model;
@@ -101,9 +100,6 @@ class Configuracoes extends Model
         'cassino_demo_habilitado',
         'data_prestacao_contas_cassino',
         'dias_registro_chamadas_cassino',
-        // regra de comissão padrão do cadastro público de afiliados (spec 012)
-        'afiliados_tipo_ganho_padrao',
-        'afiliados_percentual_padrao',
         // aviso de combinação de risco nova no WhatsApp do Admin (spec 014)
         'aviso_combinacao_whatsapp',
         'telefone_whatsapp_admin',
@@ -213,9 +209,6 @@ class Configuracoes extends Model
             'cassino_demo_habilitado' => 'boolean',
             'data_prestacao_contas_cassino' => 'date',
             'dias_registro_chamadas_cassino' => 'integer',
-            // afiliados (spec 012)
-            'afiliados_tipo_ganho_padrao' => TipoGanhoAfiliado::class,
-            'afiliados_percentual_padrao' => 'decimal:2',
             // aviso de combinação de risco (spec 014)
             'aviso_combinacao_whatsapp' => 'boolean',
             'chave_callmebot' => 'encrypted',

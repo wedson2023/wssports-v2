@@ -46,6 +46,8 @@ class CadastroPublicoAfiliadoRequest extends FormRequest
             ...$this->regras_dados_afiliado('required'),
             'login' => $this->regras_login(),
             'password' => ['required', 'confirmed', $this->regra_senha()],
+            // perfil na rede social (spec 022, FR-016)
+            ...$this->regras_perfil_afiliado('required'),
         ];
     }
 

@@ -127,7 +127,7 @@ Sem token JWT; throttle 120/min. Cabeçalho `x-webhook-token` obrigatório (igua
 | `POST /configuracoes/gateway/mercado-pago/autorizar`, `DELETE /configuracoes/gateway` | Sem mudança de contrato; gravam histórico (`Vínculo` ao concluir no retorno, `Desvínculo`) |
 | `POST /configuracoes/logo` | Resposta ganha `icones` (lista do manifest) e `aviso` (`"A imagem tem menos de 192x192 pixels; os ícones grandes podem ficar borrados."` ou `null`); gera os ícones (R-05) e grava histórico |
 | `GET/PUT /configuracoes/regras` | `regras` passa a ser HTML limpo (R-08); `PUT` limpa e devolve o HTML gravado; limites: 10.000 caracteres de texto e 50.000 de HTML (`"As regras devem ter no máximo 10.000 caracteres de texto."`) |
-| `PUT /configuracoes/{pagamentos,criar-aposta,apuracao,encerramento,cassino,afiliados,avisos-whatsapp}` | Sem mudança de contrato; gravam histórico |
+| `PUT /configuracoes/{pagamentos,criar-aposta,apuracao,encerramento,cassino,avisos-whatsapp}` | Sem mudança de contrato; gravam histórico (a de `afiliados` foi removida pela spec 022) |
 | `POST/PUT/DELETE /banners`, `/avisos` | Sem mudança de contrato; gravam histórico (`Cadastro`, `Alteração`, `Exclusão`, com `item_id`) |
 | `PUT /clientes/notificacoes/limite` | Sem mudança (só Admin, spec 019); grava histórico (`notificacoes`) |
 

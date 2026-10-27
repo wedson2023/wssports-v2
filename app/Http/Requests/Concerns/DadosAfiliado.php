@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Concerns;
 
 use App\Enums\Funcao;
+use App\Enums\RedeSocialAfiliado;
 use App\Enums\TipoChavePix;
 use App\Enums\TipoGanhoAfiliado;
 use App\Models\Afiliados;
@@ -55,7 +56,17 @@ trait DadosAfiliado
             $normalizados['pix_chave'] = $this->normalizar_chave_pix((string) $this->input('pix_chave'));
         }
 
-        foreach (['cpf', 'email', 'telefone', 'cidade', 'estado', 'endereco'] as $campo) {
+        // seguidores digitados com ponto de milhar ("12.000") chegam só com os dígitos
+        if ($this->has('quantidade_seguidores') && is_string($this->input('quantidade_seguidores'))) {
+            $digitos = preg_replace('/\D/', '', $this->input('quantidade_seguidores'));
+            $normalizados['quantidade_seguidores'] = $digitos === '' ? null : $digitos;
+        }
+
+        if ($this->has('link_perfil') && is_string($this->input('link_perfil'))) {
+            $normalizados['link_perfil'] = trim($this->input('link_perfil'));
+        }
+
+        foreach (['cpf', 'email', 'telefone', 'cidade', 'estado', 'endereco', 'link_perfil', 'sobre'] as $campo) {
             $valor = $normalizados[$campo] ?? $this->input($campo);
 
             if ($this->has($campo) && is_string($valor) && trim($valor) === '') {
@@ -86,6 +97,27 @@ trait DadosAfiliado
             'endereco' => ['sometimes', 'nullable', 'string', 'max:255'],
             'pix_tipo_chave' => [$presenca, Rule::enum(TipoChavePix::class)],
             'pix_chave' => [$presenca, 'string', 'max:150', $this->regra_chave_pix()],
+        ];
+    }
+
+    /**
+     * Perfil na rede social (spec 022, FR-016): rede, link e seguidores obrigatórios nos cadastros
+     * novos ($presenca "required"); na edição ($presenca "sometimes"), o campo que o afiliado já tem
+     * preenchido não pode voltar a vazio. "Sobre você" é sempre opcional.
+     *
+     * @return array<string, list<mixed>>
+     */
+    protected function regras_perfil_afiliado(string $presenca, ?Afiliados $atual = null): array
+    {
+        $presenca_do = fn (string $campo) => $presenca === 'sometimes' && $atual?->{$campo} !== null
+            ? ['sometimes', 'required']
+            : [$presenca];
+
+        return [
+            'rede_social' => [...$presenca_do('rede_social'), Rule::enum(RedeSocialAfiliado::class)],
+            'link_perfil' => [...$presenca_do('link_perfil'), 'string', 'max:255', 'url:http,https'],
+            'quantidade_seguidores' => [...$presenca_do('quantidade_seguidores'), 'integer', 'between:0,999999999'],
+            'sobre' => ['sometimes', 'nullable', 'string', 'max:1000'],
         ];
     }
 
@@ -133,6 +165,16 @@ trait DadosAfiliado
             'pix_tipo_chave.enum' => 'O tipo de chave Pix informado é inválido.',
             'pix_chave.required' => 'A chave Pix é obrigatória.',
             'pix_chave.max' => 'A chave Pix deve ter no máximo 150 caracteres.',
+            'rede_social.required' => 'A rede social é obrigatória.',
+            'rede_social.enum' => 'A rede social informada é inválida.',
+            'link_perfil.required' => 'O link do perfil é obrigatório.',
+            'link_perfil.url' => 'O link do perfil deve começar com http:// ou https://.',
+            'link_perfil.max' => 'O link do perfil deve ter no máximo 255 caracteres.',
+            'quantidade_seguidores.required' => 'A quantidade de seguidores é obrigatória.',
+            'quantidade_seguidores.integer' => 'A quantidade de seguidores deve ser um número inteiro.',
+            'quantidade_seguidores.between' => 'A quantidade de seguidores deve estar entre 0 e 999.999.999.',
+            'sobre.string' => 'O texto sobre você deve ser um texto.',
+            'sobre.max' => 'O texto sobre você deve ter no máximo 1.000 caracteres.',
             'password.required' => 'A senha é obrigatória.',
             'password.confirmed' => 'A confirmação da senha não confere.',
             'password.min' => $regra_senha,
@@ -165,15 +207,16 @@ trait DadosAfiliado
     }
 
     /**
-     * Regra de comissão opcional: tipo de ganho e percentual andam juntos.
+     * Regra de comissão obrigatória: no cadastro pelo painel e na aprovação, o ganho é definido por
+     * quem gerencia o afiliado (spec 022, FR-012 e FR-022).
      *
      * @return array<string, list<mixed>>
      */
-    protected function regras_comissao_opcional(): array
+    protected function regras_comissao_obrigatoria(): array
     {
         return [
-            'tipo_ganho' => ['nullable', 'required_with:percentual', Rule::enum(TipoGanhoAfiliado::class)],
-            'percentual' => ['nullable', 'required_with:tipo_ganho', 'numeric', 'between:0,100', 'decimal:0,2'],
+            'tipo_ganho' => ['required', Rule::enum(TipoGanhoAfiliado::class)],
+            'percentual' => ['required', 'numeric', 'between:0,100', 'decimal:0,2'],
         ];
     }
 

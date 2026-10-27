@@ -7445,7 +7445,12 @@
                         },
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \"nome\": \"Maria Souza\",\n    \"login\": \"maria.souza2\",\n    \"password\": \"senha1234\",\n    \"password_confirmation\": \"senha1234\",\n    \"email\": \"maria2@exemplo.com\",\n    \"cpf\": \"123.456.789-09\",\n    \"ddi\": \"55\",\n    \"telefone\": \"(81) 99999-9999\",\n    \"cidade\": \"Recife\",\n    \"estado\": \"PE\",\n    \"endereco\": \"Rua A, 10\",\n    \"pix_tipo_chave\": \"CPF\",\n    \"pix_chave\": \"123.456.789-09\"\n}"
+                            "raw": "{\n    \"nome\": \"Maria Souza\",\n    \"login\": \"maria.souza2\",\n    \"password\": \"senha1234\",\n    \"password_confirmation\": \"senha1234\",\n    \"email\": \"maria2@exemplo.com\",\n    \"cpf\": \"123.456.789-09\",\n    \"ddi\": \"55\",\n    \"telefone\": \"(81) 99999-9999\",\n    \"cidade\": \"Recife\",\n    \"estado\": \"PE\",\n    \"endereco\": \"Rua A, 10\",\n    \"pix_tipo_chave\": \"CPF\",\n    \"pix_chave\": \"123.456.789-09\",\n    \"rede_social\": \"Instagram\",\n    \"link_perfil\": \"https://instagram.com/maria.souza\",\n    \"quantidade_seguidores\": 12000,\n    \"sobre\": \"Conteúdo de futebol para o público do Nordeste.\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
                         },
                         "url": {
                             "raw": "{{base_url}}/area-afiliado/cadastro",
@@ -7457,7 +7462,7 @@
                                 "cadastro"
                             ]
                         },
-                        "description": "Cadastro público (FR-010 a FR-013): cria o afiliado Em análise, sem gerente, com a regra padrão; situação, gerente e regra enviados são ignorados. 201 sem token; 422 por campo; 429 acima de 5 por minuto por IP."
+                        "description": "Cadastro público (FR-010 a FR-013): cria o afiliado Em análise, sem gerente, com a regra padrão; situação, gerente e regra enviados são ignorados. 201 sem token; 422 por campo; 429 acima de 5 por minuto por IP.\n\nSpec 022: rede_social (Instagram, TikTok, YouTube, Facebook, Kwai, X, Outra), link_perfil (http/https) e quantidade_seguidores obrigatórios; sobre opcional (até 1.000). Nasce Em análise sem regra de ganho."
                     }
                 },
                 {
@@ -7830,7 +7835,12 @@
                         ],
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \"telefone\": \"81999998888\",\n    \"cidade\": \"Recife\",\n    \"estado\": \"PE\",\n    \"endereco\": \"Rua B, 20\",\n    \"pix_tipo_chave\": \"E-mail\",\n    \"pix_chave\": \"afiliado@exemplo.com\"\n}"
+                            "raw": "{\n    \"telefone\": \"81999998888\",\n    \"cidade\": \"Recife\",\n    \"estado\": \"PE\",\n    \"endereco\": \"Rua B, 20\",\n    \"pix_tipo_chave\": \"E-mail\",\n    \"pix_chave\": \"afiliado@exemplo.com\",\n    \"quantidade_seguidores\": 15000,\n    \"sobre\": \"Texto atualizado.\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
                         },
                         "url": {
                             "raw": "{{base_url}}/area-afiliado/meus-dados",
@@ -7842,7 +7852,7 @@
                                 "meus-dados"
                             ]
                         },
-                        "description": "Só ddi, telefone, cidade, estado, endereço e Pix; nome, login, e-mail, CPF e código dão 422."
+                        "description": "Só ddi, telefone, cidade, estado, endereço e Pix; nome, login, e-mail, CPF e código dão 422.\n\nSpec 022: aceita rede_social, link_perfil, quantidade_seguidores e sobre; o que já foi preenchido não volta a vazio."
                     }
                 },
                 {
@@ -7894,7 +7904,7 @@
             ]
         },
         {
-            "name": "Afiliados (painel, spec 012)",
+            "name": "Afiliados (painel, specs 012 e 022)",
             "description": "Gestão de afiliados com o token do painel. Gerente só vê e age sobre os seus.",
             "item": [
                 {
@@ -7912,7 +7922,7 @@
                             }
                         ],
                         "url": {
-                            "raw": "{{base_url}}/afiliados?situacao=&busca=&usuarios_id=&de=2026-10-01&ate=2026-10-31&por_pagina=20&sem_gerente=",
+                            "raw": "{{base_url}}/afiliados?grupo=aprovados&situacao=&busca=&usuarios_id=&de=&ate=&por_pagina=20&sem_gerente=",
                             "host": [
                                 "{{base_url}}"
                             ],
@@ -7920,6 +7930,10 @@
                                 "afiliados"
                             ],
                             "query": [
+                                {
+                                    "key": "grupo",
+                                    "value": "aprovados"
+                                },
                                 {
                                     "key": "situacao",
                                     "value": ""
@@ -7934,11 +7948,11 @@
                                 },
                                 {
                                     "key": "de",
-                                    "value": "2026-10-01"
+                                    "value": ""
                                 },
                                 {
                                     "key": "ate",
-                                    "value": "2026-10-31"
+                                    "value": ""
                                 },
                                 {
                                     "key": "por_pagina",
@@ -7950,7 +7964,56 @@
                                 }
                             ]
                         },
-                        "description": "afiliados.listar. Filtros: situacao (Em análise, Ativo, Inativo, Recusado), busca (nome, login ou código), usuarios_id (gerente), de/ate (período dos totais; padrão hoje). Gerente só vê os seus. por_pagina até 100.\n\nSpec 019: sem_gerente=1 lista os afiliados ainda sem gerente responsável; cada item traz sem_gerente. O Supervisor só vê os afiliados dos gerentes da rede dele."
+                        "description": "afiliados.listar. Filtros: situacao (Em análise, Ativo, Inativo, Recusado), busca (nome, login ou código), usuarios_id (gerente), de/ate (período dos totais; padrão hoje). Gerente só vê os seus. por_pagina até 100.\n\nSpec 019: sem_gerente=1 lista os afiliados ainda sem gerente responsável; cada item traz sem_gerente. O Supervisor só vê os afiliados dos gerentes da rede dele.\n\nSpec 022: grupo=aprovados (Ativo e Inativo) ou analise (Em análise e Recusado, do mais antigo para o mais novo); sem de/ate, o período é do dia 1 do mês até hoje. Cada item traz entradas (base em aberto), rede_social, link_perfil, quantidade_seguidores, sobre, cadastrado_por e decidido_por."
+                    }
+                },
+                {
+                    "name": "Resumo dos afiliados (cartões)",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/afiliados/resumo?busca=&usuarios_id=&sem_gerente=&de=&ate=",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "afiliados",
+                                "resumo"
+                            ],
+                            "query": [
+                                {
+                                    "key": "busca",
+                                    "value": ""
+                                },
+                                {
+                                    "key": "usuarios_id",
+                                    "value": ""
+                                },
+                                {
+                                    "key": "sem_gerente",
+                                    "value": ""
+                                },
+                                {
+                                    "key": "de",
+                                    "value": ""
+                                },
+                                {
+                                    "key": "ate",
+                                    "value": ""
+                                }
+                            ]
+                        },
+                        "description": "afiliados.listar. Spec 022: total_afiliados (Ativo e Inativo do filtro), em_analise (todos os pendentes; só Admin, null para os demais), comissao_periodo (no período; padrão este mês) e a_receber (em aberto)."
                     }
                 },
                 {
@@ -8002,7 +8065,12 @@
                         ],
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \"nome\": \"Maria Souza\",\n    \"login\": \"afiliado.novo\",\n    \"password\": \"senha1234\",\n    \"password_confirmation\": \"senha1234\",\n    \"email\": \"novo@exemplo.com\",\n    \"cpf\": \"123.456.789-09\",\n    \"ddi\": \"55\",\n    \"telefone\": \"(81) 99999-9999\",\n    \"cidade\": \"Recife\",\n    \"estado\": \"PE\",\n    \"endereco\": \"Rua A, 10\",\n    \"pix_tipo_chave\": \"CPF\",\n    \"pix_chave\": \"123.456.789-09\",\n    \"usuarios_id\": \"{{gerente_id}}\",\n    \"tipo_ganho\": \"Qualquer depósito\",\n    \"percentual\": 10\n}"
+                            "raw": "{\n    \"nome\": \"Maria Souza\",\n    \"login\": \"afiliado.novo\",\n    \"password\": \"senha1234\",\n    \"password_confirmation\": \"senha1234\",\n    \"email\": \"novo@exemplo.com\",\n    \"cpf\": \"123.456.789-09\",\n    \"ddi\": \"55\",\n    \"telefone\": \"(81) 99999-9999\",\n    \"cidade\": \"Recife\",\n    \"estado\": \"PE\",\n    \"endereco\": \"Rua A, 10\",\n    \"pix_tipo_chave\": \"CPF\",\n    \"pix_chave\": \"123.456.789-09\",\n    \"usuarios_id\": \"{{gerente_id}}\",\n    \"tipo_ganho\": \"Qualquer depósito\",\n    \"percentual\": 10,\n    \"rede_social\": \"Instagram\",\n    \"link_perfil\": \"https://instagram.com/maria.souza\",\n    \"quantidade_seguidores\": 12000,\n    \"sobre\": \"Conteúdo de futebol para o público do Nordeste.\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
                         },
                         "url": {
                             "raw": "{{base_url}}/afiliados",
@@ -8013,7 +8081,7 @@
                                 "afiliados"
                             ]
                         },
-                        "description": "afiliados.cadastrar. Nasce Ativo. Gerente fica como responsável (usuarios_id ignorado). tipo_ganho/percentual só valem com afiliados.editar_comissao; sem ela, a regra padrão.\n\nSpec 019: o gerente responsável (usuarios_id) é obrigatório para Admin e Supervisor, e da rede do Supervisor."
+                        "description": "afiliados.cadastrar. Nasce Ativo. Gerente fica como responsável (usuarios_id ignorado). tipo_ganho/percentual só valem com afiliados.editar_comissao; sem ela, a regra padrão.\n\nSpec 019: o gerente responsável (usuarios_id) é obrigatório para Admin e Supervisor, e da rede do Supervisor.\n\nSpec 022: tipo_ganho e percentual obrigatórios para quem cadastra (inclusive o Gerente); rede_social, link_perfil e quantidade_seguidores obrigatórios; sobre opcional."
                     }
                 },
                 {
@@ -8071,7 +8139,7 @@
                                 "{{afiliado_id}}"
                             ]
                         },
-                        "description": "afiliados.editar. login proibido; password (+ confirmação) invalida os tokens; usuarios_id e codigo só Admin/Supervisor.\n\nSpec 019: o gerente responsável (usuarios_id) é obrigatório para Admin e Supervisor, e da rede do Supervisor."
+                        "description": "afiliados.editar. login proibido; password (+ confirmação) invalida os tokens; usuarios_id e codigo só Admin/Supervisor.\n\nSpec 019: o gerente responsável (usuarios_id) é obrigatório para Admin e Supervisor, e da rede do Supervisor.\n\nSpec 022: aceita rede_social, link_perfil, quantidade_seguidores e sobre; o que já foi preenchido não volta a vazio."
                     }
                 },
                 {
@@ -8135,7 +8203,7 @@
                                 "aprovar"
                             ]
                         },
-                        "description": "afiliados.alterar_situacao + Admin/Supervisor. De Em análise ou Recusado para Ativo; e-mail de aprovação. Corpo opcional.\n\nSpec 019: o gerente responsável (usuarios_id) é obrigatório para Admin e Supervisor, e da rede do Supervisor."
+                        "description": "afiliados.alterar_situacao, só Admin (spec 022; os demais recebem 404). usuarios_id, tipo_ganho e percentual obrigatórios; a regra que o afiliado já tiver é encerrada e a nova aberta."
                     }
                 },
                 {
@@ -8167,7 +8235,7 @@
                                 "recusar"
                             ]
                         },
-                        "description": "afiliados.alterar_situacao + Admin/Supervisor. Só de Em análise; e-mail de recusa."
+                        "description": "afiliados.alterar_situacao, só Admin (spec 022; os demais recebem 404). motivo opcional, até 255."
                     }
                 },
                 {
@@ -8283,7 +8351,7 @@
                                 }
                             ]
                         },
-                        "description": "afiliados.consultar. situacao: aberto | prestado."
+                        "description": "afiliados.consultar. situacao: aberto | prestado.\n\nSpec 022: meta.soma traz a soma de valor de todas as páginas do filtro."
                     }
                 },
                 {
@@ -8410,7 +8478,16 @@
                                 "{{afiliado_id}}"
                             ]
                         },
-                        "description": "afiliados.excluir (Admin/Supervisor). Lixeira, sufixo nos dados únicos, tokens invalidados. 204."
+                        "description": "afiliados.excluir (Admin e Supervisor, na rede). Spec 022: password do usuário logado obrigatório; senha errada → 422 \"Senha incorreta.\". Vai para a lixeira, sem exclusão definitiva.",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"password\": \"password\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
                     }
                 },
                 {
@@ -8443,64 +8520,6 @@
                             ]
                         },
                         "description": "afiliados.restaurar (Admin/Supervisor). Corpo opcional com login, email, cpf ou codigo novos quando houver conflito (422 por campo)."
-                    }
-                },
-                {
-                    "name": "Configuração de afiliados",
-                    "request": {
-                        "method": "GET",
-                        "header": [
-                            {
-                                "key": "Accept",
-                                "value": "application/json"
-                            },
-                            {
-                                "key": "Content-Type",
-                                "value": "application/json"
-                            }
-                        ],
-                        "url": {
-                            "raw": "{{base_url}}/configuracoes/afiliados",
-                            "host": [
-                                "{{base_url}}"
-                            ],
-                            "path": [
-                                "configuracoes",
-                                "afiliados"
-                            ]
-                        },
-                        "description": "configuracoes.editar. Regra padrão do cadastro público."
-                    }
-                },
-                {
-                    "name": "Alterar configuração de afiliados",
-                    "request": {
-                        "method": "PUT",
-                        "header": [
-                            {
-                                "key": "Accept",
-                                "value": "application/json"
-                            },
-                            {
-                                "key": "Content-Type",
-                                "value": "application/json"
-                            }
-                        ],
-                        "body": {
-                            "mode": "raw",
-                            "raw": "{\n    \"afiliados_tipo_ganho_padrao\": \"Saldo líquido\",\n    \"afiliados_percentual_padrao\": 10\n}"
-                        },
-                        "url": {
-                            "raw": "{{base_url}}/configuracoes/afiliados",
-                            "host": [
-                                "{{base_url}}"
-                            ],
-                            "path": [
-                                "configuracoes",
-                                "afiliados"
-                            ]
-                        },
-                        "description": "configuracoes.editar."
                     }
                 }
             ]

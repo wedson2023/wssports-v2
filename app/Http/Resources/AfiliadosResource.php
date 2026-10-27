@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources;
 
+use App\Models\Usuarios;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -35,6 +36,11 @@ class AfiliadosResource extends JsonResource
             'cidade' => $this->cidade,
             'estado' => $this->estado,
             'endereco' => $this->endereco,
+            // perfil na rede social (spec 022); nulos nos afiliados antigos
+            'rede_social' => $this->rede_social,
+            'link_perfil' => $this->link_perfil,
+            'quantidade_seguidores' => $this->quantidade_seguidores,
+            'sobre' => $this->sobre,
             'situacao' => $this->situacao,
             'motivo_recusa' => $this->motivo_recusa,
             'origem_cadastro' => $this->origem_cadastro,
@@ -60,10 +66,14 @@ class AfiliadosResource extends JsonResource
                 'comissao' => self::valor($this->comissao_periodo),
             ]),
             'valor_a_receber' => $this->when($this->tem_atributo('valor_a_receber'), fn () => self::valor($this->valor_a_receber)),
+            // base dos lançamentos em aberto, a coluna "Entradas" do antigo (spec 022, FR-006)
+            'entradas' => $this->when($this->tem_atributo('entradas'), fn () => self::valor($this->entradas)),
             'ultima_prestacao' => $this->whenLoaded('ultima_prestacao', fn () => $this->ultima_prestacao === null ? null : [
                 'valor_pago' => $this->ultima_prestacao->valor_pago,
                 'periodo_fim' => $this->ultima_prestacao->periodo_fim,
             ]),
+            'cadastrado_por' => $this->whenLoaded('autor_cadastro', fn () => self::usuario($this->autor_cadastro)),
+            'decidido_por' => $this->whenLoaded('autor_decisao', fn () => self::usuario($this->autor_decisao)),
             'decidido_em' => $this->decidido_em,
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,
@@ -77,6 +87,14 @@ class AfiliadosResource extends JsonResource
     public static function valor(mixed $valor): string
     {
         return bcadd((string) ($valor ?? '0'), '0', 2);
+    }
+
+    /**
+     * @return array{id: int, nome: string}|null
+     */
+    private static function usuario(?Usuarios $usuario): ?array
+    {
+        return $usuario === null ? null : ['id' => $usuario->id, 'nome' => $usuario->nome];
     }
 
     private function tem_atributo(string $nome): bool

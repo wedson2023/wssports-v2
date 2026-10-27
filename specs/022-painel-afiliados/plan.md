@@ -105,8 +105,8 @@ specs/022-painel-afiliados/
 
 ```text
 # novos
-database/migrations/2026_10_27_000001_add_perfil_afiliados_table.php
-database/migrations/2026_10_27_000002_remove_afiliados_configuracoes_table.php
+database/migrations/2026_10_27_000005_add_perfil_afiliados_table.php
+database/migrations/2026_10_27_000006_remove_afiliados_configuracoes_table.php
 app/Enums/RedeSocialAfiliado.php
 app/Http/Requests/ExcluirAfiliadoRequest.php
 resources/js/pages/PanelAffiliates/{index,styles}.jsx

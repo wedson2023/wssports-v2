@@ -117,7 +117,8 @@ export const Label = styled.label`
     border-radius: 7px;
 
     input,
-    select {
+    select,
+    textarea {
         flex: 1;
         min-width: 0;
         padding: 8px 10px;
@@ -126,6 +127,13 @@ export const Label = styled.label`
         color: #333;
         font-size: 14px;
         outline: none;
+    }
+
+    /* "Sobre você" (spec 022) */
+    textarea {
+        min-height: 80px;
+        font-family: inherit;
+        resize: vertical;
     }
 
     select {

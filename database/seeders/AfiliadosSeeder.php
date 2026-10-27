@@ -4,6 +4,7 @@ namespace Database\Seeders;
 
 use App\Enums\Funcao;
 use App\Enums\OrigemCadastroAfiliado;
+use App\Enums\RedeSocialAfiliado;
 use App\Enums\SituacaoAfiliado;
 use App\Enums\TipoChavePix;
 use App\Enums\TipoGanhoAfiliado;
@@ -38,9 +39,12 @@ class AfiliadosSeeder extends Seeder
             'telefone' => '81999990001',
             'usuarios_id' => $gerente?->id,
             'origem_cadastro' => OrigemCadastroAfiliado::Painel,
+            'rede_social' => RedeSocialAfiliado::Instagram,
+            'link_perfil' => 'https://instagram.com/afiliado.exemplo',
+            'quantidade_seguidores' => 15000,
         ], SituacaoAfiliado::Ativo, TipoGanhoAfiliado::QualquerDepósito, '10.00');
 
-        // cadastro público aguardando a banca
+        // cadastro público aguardando a banca, ainda sem regra de ganho (spec 022)
         $this->afiliado([
             'nome' => 'Afiliado Em Análise',
             'login' => 'afiliado.analise',
@@ -48,7 +52,11 @@ class AfiliadosSeeder extends Seeder
             'cpf' => '11144477735',
             'telefone' => '81999990002',
             'origem_cadastro' => OrigemCadastroAfiliado::Público,
-        ], SituacaoAfiliado::EmAnálise, TipoGanhoAfiliado::SaldoLíquido, '0.00');
+            'rede_social' => RedeSocialAfiliado::TikTok,
+            'link_perfil' => 'https://tiktok.com/@afiliado.analise',
+            'quantidade_seguidores' => 12000,
+            'sobre' => 'Faço vídeos sobre futebol e apostas esportivas para o público do Nordeste.',
+        ], SituacaoAfiliado::EmAnálise);
 
         // código igual a um login antigo, para conferir os links ?user=LOGIN (SC-006)
         $this->afiliado([
@@ -59,6 +67,9 @@ class AfiliadosSeeder extends Seeder
             'telefone' => '81999990003',
             'codigo' => 'MARIA.SOUZA',
             'origem_cadastro' => OrigemCadastroAfiliado::Painel,
+            'rede_social' => RedeSocialAfiliado::YouTube,
+            'link_perfil' => 'https://youtube.com/@mariasouza',
+            'quantidade_seguidores' => 48000,
         ], SituacaoAfiliado::Ativo, TipoGanhoAfiliado::SaldoLíquido, '30.00');
     }
 
@@ -88,11 +99,12 @@ class AfiliadosSeeder extends Seeder
     }
 
     /**
-     * Cria o afiliado de exemplo (se ainda não existir) com a regra de comissão vigente e o Pix.
+     * Cria o afiliado de exemplo (se ainda não existir) com o Pix e, quando informada, a regra de
+     * comissão vigente.
      *
      * @param  array<string, mixed>  $dados
      */
-    private function afiliado(array $dados, SituacaoAfiliado $situacao, TipoGanhoAfiliado $tipo_ganho, string $percentual): void
+    private function afiliado(array $dados, SituacaoAfiliado $situacao, ?TipoGanhoAfiliado $tipo_ganho = null, ?string $percentual = null): void
     {
         if (Afiliados::withTrashed()->where('login', $dados['login'])->exists()) {
             return;
@@ -105,11 +117,14 @@ class AfiliadosSeeder extends Seeder
         ]);
         $afiliado->forceFill(['situacao' => $situacao])->save();
 
-        $afiliado->comissoes()->create([
-            'tipo_ganho' => $tipo_ganho,
-            'percentual' => $percentual,
-            'vigente_desde' => now(),
-        ]);
+        // sem regra: cadastro público em análise, que ganha a regra na aprovação (spec 022)
+        if ($tipo_ganho !== null) {
+            $afiliado->comissoes()->create([
+                'tipo_ganho' => $tipo_ganho,
+                'percentual' => $percentual,
+                'vigente_desde' => now(),
+            ]);
+        }
 
         $afiliado->meio_pagamento()->create([
             'pix_tipo_chave' => TipoChavePix::Cpf,
