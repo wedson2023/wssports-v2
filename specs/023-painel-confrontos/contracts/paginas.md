@@ -57,7 +57,9 @@ Admin e Supervisor veem, na Situação, "Desativado em N redes" quando `redes_de
 | Campeonatos | Ver jogos · Alterar cotações · Favoritar/Desfavoritar · Desativar/Ativar (para todos ou para a minha rede) · Adicionar jogo, Editar e Excluir (manuais) |
 
 Desativar/Ativar, Favoritar e Excluir usam o `ConfirmModal` (Desativar avisa "As apostas já feitas
-continuam valendo; o jogo só deixa de receber apostas novas." quando houver apostas). Tocar na linha
+continuam valendo; o jogo só deixa de receber apostas novas." quando `apostas_em_aberto > 0`;
+Excluir campeonato avisa "Este campeonato tem N jogos, que também serão excluídos." com
+`total_jogos`). "Lançar/Corrigir resultado" só aparece em jogo que já começou. Tocar na linha
 abre a gaveta (Mais apostados: já na aba Mais apostados).
 
 **Atualização automática**: com o chip "Ao vivo" ou na aba Pendentes, lista e cartões a cada 30 s;
@@ -96,7 +98,7 @@ carregada ao abrir:
 
 | Aba | Fonte | Conteúdo |
 |---|---|---|
-| Dados | `GET /confrontos/{id}` | ID, campeonato e país, esporte, início, origem (Provedor/Manual), situação, desativações (para todos, "Desativado em N redes", "Desativado para a minha rede"), limites (pré-jogo e ao vivo), cotações do site Casa · Empate · Fora |
+| Dados | `GET /confrontos/{id}` | ID, campeonato e país, esporte, início, origem (Provedor/Manual), situação, desativações (para todos, "Desativado em N redes", "Desativado para a minha rede"), limites (pré-jogo e ao vivo), cotações Casa · Empate · Fora como o visitante do site vê |
 | Mais apostados | `GET /confrontos/{id}/mais-apostados` | opção (nome como no cupom) · total · simples (qtd, valor, retorno) · múltiplas (qtd, valor, retorno) |
 | Apostas | `GET /confrontos/{id}/apostas` | código · data · vendedor ou cliente · opção · "Simples" ou "Múltipla (N jogos)" · valor · retorno · resultado; "Abrir aposta" (com `apostas.listar`); paginada (30) |
 | Resultado | `GET /confrontos/{id}` (`resultado`) | placar final, tempos, escanteios, gols por jogador, origem; "Sem resultado"; botão "Lançar/Corrigir resultado" (só Admin) |

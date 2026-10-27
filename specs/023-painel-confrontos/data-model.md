@@ -29,7 +29,11 @@ muda só um índice, uma permissão e regras de validação.
 - Lista do painel (`ListagemConfrontosPainel`): não excluídos; filtros `busca` (times + nome do
   campeonato), `campeonatos_id`, `ativo`, `manual`, `situacao`, `esporte`, `dia`/`data`, `tipo`.
 - Exclusão manual (R-16): recusada se existir `apostas_palpites` com `confrontos_id` do jogo,
-  `situacao = Ativo`, em `apostas` com `situacao ≠ Cancelada`.
+  `situacao = Ativo`, em `apostas` com `situacao` em `Ativa`, `Pendente` ou `Em análise` ("aposta
+  viva"; `Cancelada`, `Recusada` e `Expirada` não contam).
+- `apostas_em_aberto` (R-21): quantidade de apostas `Ativa` distintas com palpite `Ativo` e
+  `resultado = Aguardando` no jogo, no alcance de quem consulta.
+- Lançar resultado (R-21): só com `data_inicio <= agora`.
 - Ordem: `data_inicio`, `time_casa`.
 
 ### `confrontos_ao_vivo` (spec 003)
@@ -41,6 +45,7 @@ muda só um índice, uma permissão e regras de validação.
 
 - `quantidade_jogos`: confrontos não excluídos, `ativo`, `situacao = Aguardando`,
   `data_inicio > agora`.
+- `total_jogos`: todos os confrontos não excluídos (aviso da exclusão).
 - Ordem: `favorito desc`, `nome`.
 - Exclusão manual: recusada se algum jogo dele cair na regra de exclusão de `confrontos`.
 
@@ -90,7 +95,8 @@ Somas em `DECIMAL` no SQL e devolvidas com 2 casas (texto); nenhuma conta em pon
 | `gols.*` | opcionais | iguais |
 
 - O controller deixa de recusar jogos do provedor (sai a mensagem "O resultado de jogos do provedor
-  vem da carga automática.").
+  vem da carga automática.") e passa a recusar jogo que não começou: "O resultado só pode ser
+  lançado depois do início do jogo." (campo `confronto`).
 
 ### Filtros da lista (`FiltrosConfrontosPainelRequest`, novo)
 

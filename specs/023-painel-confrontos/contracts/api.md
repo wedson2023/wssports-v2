@@ -32,6 +32,7 @@ campeonato. Cada item ganha:
   "data_inicio": "2026-10-27T22:00:00Z",
   "situacao": "Aguardando", "ativo": true, "manual": false,
   "limite_valor_apostado": "50000.00",
+  "apostas_em_aberto": 6,
   "ao_vivo": { "id": 3301, "minuto": 63, "cronometro": "63:12", "situacao": "2 tempo", "placar_casa": 1, "placar_fora": 0, "limite_valor_apostado": "5000.00" },
   "resultado": { "placar_casa": 2, "placar_fora": 1 },
   "nao_permitido": false,
@@ -43,8 +44,10 @@ campeonato. Cada item ganha:
 - `ao_vivo`: `null` quando o jogo não está ao vivo agora (research R-04).
 - `resultado`: `null` sem resultado; na lista só o placar.
 - `restricoes.redes_desativadas`: só para Admin e Supervisor; `null` para os demais.
+- `apostas_em_aberto`: apostas ativas aguardando resultado no jogo, na rede de quem consulta (aviso
+  da desativação só quando > 0).
 - `acoes`: o que a linha mostra, pelas permissões, pela função e pelo jogo (`editar`/`excluir` só
-  manuais; `lancar_resultado` só Admin; `desativar_rede` para quem não é Admin nem Supervisor e tem
+  manuais; `lancar_resultado` só Admin e só com o jogo já iniciado; `desativar_rede` para quem não é Admin nem Supervisor e tem
   `confrontos_nao_permitidos.gerenciar`).
 
 ### 1.2 `GET /confrontos/{confronto}` — `confrontos.listar`
@@ -77,16 +80,19 @@ Igual ao item de §1.1, mais `jogadores` (como hoje) e:
   obrigatórios, inteiros 0 a 99) e `gols` (opcional, como hoje).
 - 422 `errors.placar_casa`: "A soma dos gols dos times não bate com os gols dos tempos." quando a soma
   do placar ≠ soma dos tempos.
+- 422 `errors.confronto`: "O resultado só pode ser lançado depois do início do jogo." quando
+  `data_inicio` ainda não passou.
 - Resposta: como hoje (`ConfrontosResultadosResource`, com `apostas_apuradas`).
 
 ### 1.4 `DELETE /confrontos/{confronto}` — `confrontos.excluir` (só manuais)
 
 - 422 `errors.confronto`: "Este jogo tem N apostas. Cancele o jogo em vez de excluir." quando houver
-  palpites ativos de apostas não canceladas (research R-16).
+  palpites ativos de apostas vivas — Ativa, Pendente ou Em análise (research R-16).
 
 ### 1.5 `GET /campeonatos` — `campeonatos.listar`
 
-- Ordem `favorito desc, nome`. Cada item ganha `quantidade_jogos`, `restricoes`
+- Ordem `favorito desc, nome`. Cada item ganha `quantidade_jogos` (disponíveis), `total_jogos`
+  (todos, para o aviso da exclusão), `restricoes`
   (`{ nao_permitido_proprio_id, redes_desativadas }`) e `acoes` (`alterar_situacao`,
   `desativar_rede`, `favoritar`, `alterar_cotacoes`, `editar`, `excluir`, `adicionar_jogo`).
 
@@ -113,14 +119,14 @@ Query: os filtros da lista, menos `situacao`.
 
 ### 2.2 `GET /confrontos/mais-apostados` — `confrontos.listar`
 
-Query: os filtros da lista + `por_pagina`. Só jogos com aposta na rede (research R-09/R-10).
+Query: os filtros da lista + `por_pagina`. Só jogos com aposta na rede (research R-09/R-10). Cada
+item tem todos os campos de §1.1 (inclusive `acoes`) mais os de exposição:
 
 ```json
 {
   "data": [{
     "id": 812, "time_casa": "Flamengo", "time_fora": "Palmeiras",
-    "campeonato": { "id": 14, "nome": "Brasileirão Série A", "pais": "Brasil" },
-    "data_inicio": "2026-10-27T22:00:00Z",
+    "...": "demais campos de §1.1",
     "quantidade": 37,
     "simples": { "apostas": 21, "valor": "840.00", "retorno": "1720.50" },
     "multiplas": { "apostas": 16, "valor": "160.00", "retorno": "9870.00" }

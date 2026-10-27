@@ -26,7 +26,7 @@ decididas na spec:
   Mais apostados, Pendentes e Campeonatos, a gaveta `MatchDrawer`, os modais em grade e a abertura do
   editor da tela Cotações pela URL.
 
-Decisões em [research.md](research.md) (R-01 a R-20).
+Decisões em [research.md](research.md) (R-01 a R-21; R-21 veio do `/speckit-analyze`).
 
 ## Technical Context
 

@@ -87,6 +87,17 @@ agrupados por seção; liga/desliga como campo select, não toggle. Sem exporta�
   são reapuradas, como no antigo. `confrontos.lancar_resultado` passa a ser só do Admin (FR-003,
   FR-022, FR-023 e FR-033). Muda a spec 009 (FR-045 e FR-046).
 
+### Session 2026-10-27 (`/speckit-analyze`, recomendações aceitas pelo responsável)
+
+- As cotações da gaveta são as que o visitante do site vê (FR-015).
+- A lista traz a quantidade de apostas ativas em aberto, e o aviso da desativação só aparece quando
+  houver (FR-012).
+- Lançar resultado só depois do início do jogo (FR-023).
+- "Aposta viva" para a exclusão: Ativa, Pendente ou Em análise; exposição e pendentes contam só
+  apostas Ativas (FR-016, FR-019, FR-022, FR-032).
+- A aba Mais apostados tem o mesmo menu da aba Jogos (FR-020); a confirmação de excluir campeonato
+  mostra todos os jogos dele (FR-032).
+
 ## Referências do sistema antigo *(Princípios VII e VIII)*
 
 - Backend (`wssports.bet`, `main` `408cf730`): `app/Http/Controllers/ConfrontosController.php`
@@ -249,10 +260,11 @@ conferir que só as apostas da rede dele contam.
    **Dados**, **Mais apostados**, **Apostas** e **Resultado**.
 2. **Given** a aba Dados, **When** ela abre, **Then** mostra ID, campeonato e país, esporte, data e
    hora, origem (provedor ou manual), situação geral, desativações por rede, limites e as cotações
-   principais (Casa, Empate e Fora) como o site mostra.
+   principais (Casa, Empate e Fora) como o visitante do site vê.
 3. **Given** a aba Mais apostados, **When** ela abre, **Then** mostra o ranking das opções apostadas
    no jogo (nome da opção como no cupom, quantidade de palpites, valor apostado e possível retorno),
-   da mais para a menos apostada, contando só apostas não canceladas da rede de quem consulta.
+   da mais para a menos apostada, contando só apostas ativas da rede de quem consulta (o mesmo
+   critério da tela Apostas).
 4. **Given** a aba Apostas, **When** ela abre, **Then** mostra as apostas com palpite no jogo (código,
    data, vendedor ou cliente, opção, valor e situação), da rede de quem consulta, com o atalho para a
    aposta na tela Apostas (spec 018) para quem tem `apostas.listar`.
@@ -422,7 +434,9 @@ editar um jogo do provedor e conferir que a ação não existe; excluir o jogo e
 - Jogo que entrou no ao vivo e saiu (encerrado): perde o selo e o limite do ao vivo some do modal.
 - Jogo desativado para todos e também por um gerente: aparece "Desativado"; reativar para todos não
   apaga a desativação da rede do gerente.
-- Jogo manual (spec 003): aparece com a marca "Manual"; o resultado só vem pelo placar manual.
+- Jogo manual (spec 003): aparece com a marca "Manual"; o resultado só vem pelo placar manual (jogos
+  do provedor também aceitam o placar manual, FR-023).
+- Jogo que ainda não começou: sem a ação de lançar resultado; o acesso direto é recusado (FR-023).
 - Jogo cancelado ou adiado (spec 009): aparece com a situação; não entra em Pendentes.
 - Jogo pendente cujo resultado chega do provedor com a tela aberta: a próxima atualização o tira de
   Pendentes; salvar o placar depois disso segue a correção da spec 009.
@@ -510,7 +524,8 @@ editar um jogo do provedor e conferir que a ação não existe; excluir o jogo e
   do próprio usuário (pré-jogo com `confrontos_nao_permitidos.gerenciar` e ao vivo com
   `confrontos_ao_vivo_nao_permitidos.gerenciar`), substituindo o antigo `confrontos_gerencias`.
   Admin e Supervisor DEVEM ver, na linha ou na gaveta, quantas redes desativaram o jogo.
-- **FR-012**: A desativação NÃO DEVE mexer nas apostas já feitas; a confirmação DEVE avisar isso
+- **FR-012**: A desativação NÃO DEVE mexer nas apostas já feitas; a lista DEVE trazer a quantidade
+  de apostas ativas em aberto de cada jogo, e a confirmação DEVE avisar isso
   quando houver apostas em aberto no jogo.
 
 **Limite**
@@ -525,12 +540,13 @@ editar um jogo do provedor e conferir que a ação não existe; excluir o jogo e
   situação e selo Ao vivo, e as abas **Dados**, **Mais apostados**, **Apostas** e **Resultado**, cada
   uma carregada ao ser aberta; Apostas paginada (padrão 30, máximo 100).
 - **FR-015**: **Dados**: ID, campeonato e país, esporte, data e hora, origem, situação geral,
-  desativações por rede, limites e as cotações Casa, Empate e Fora como o site mostra para quem
-  consulta.
+  desativações por rede, limites e as cotações Casa, Empate e Fora como o visitante do site vê (a
+  prévia por público continua na tela Cotações, spec 016).
 - **FR-016**: **Mais apostados**: ranking das opções apostadas no jogo, com nome da opção como no
   cupom, quantidade de palpites, soma do valor apostado e do possível retorno, cada um separado em
   Simples e Múltiplas (a múltipla conta inteira, com o valor e o possível retorno totais da aposta,
-  em cada jogo dela), da mais para a menos apostada (pela quantidade total), contando só apostas não canceladas da rede de quem consulta (antigo
+  em cada jogo dela), da mais para a menos apostada (pela quantidade total), contando só apostas
+  ativas (situação Ativa, palpite Ativo) da rede de quem consulta (antigo
   `destaquesModalidade`, que contava bilhetes ativos de usuários ativos).
 - **FR-017**: **Apostas**: apostas com palpite no jogo, com código, data, vendedor ou cliente, opção,
   valor e situação, da rede de quem consulta, e o atalho para a aposta na tela Apostas (spec 018)
@@ -542,18 +558,20 @@ editar um jogo do provedor e conferir que a ação não existe; excluir o jogo e
 **Mais apostados**
 
 - **FR-019**: A aba Mais apostados (antiga "favoritos") DEVE listar os jogos com pelo menos uma
-  aposta não cancelada da rede de quem consulta, com casa x fora, campeonato, horário, quantidade de
+  aposta ativa da rede de quem consulta (critério de FR-016), com casa x fora, campeonato, horário, quantidade de
   apostas, valor apostado e possível retorno, separados em Simples e Múltiplas pela mesma regra de
   FR-016, da maior para a menor quantidade total, paginada (padrão 20,
   máximo 100).
-- **FR-020**: A aba DEVE usar os mesmos filtros e a mesma busca da aba Jogos (dia, tipo, campeonato),
-  e tocar num jogo DEVE abrir a gaveta já na aba Mais apostados (FR-016).
+- **FR-020**: A aba DEVE usar os mesmos filtros e a mesma busca da aba Jogos (dia, tipo, campeonato)
+  e o mesmo menu de ações da aba Jogos (FR-009), e tocar num jogo DEVE abrir a gaveta já na aba Mais
+  apostados (FR-016).
 - **FR-021**: As quantidades e os valores DEVEM ser calculados no servidor, com o alcance por rede de
   FR-002, e bater com a aba Apostas da gaveta do mesmo jogo.
 
 **Pendentes e resultado**
 
-- **FR-022**: A aba Pendentes DEVE listar os jogos ativos, sem resultado, com apostas aguardando, que
+- **FR-022**: A aba Pendentes DEVE listar os jogos ativos, ainda na situação Aguardando (sem
+  resultado encerrado), com palpites aguardando de apostas ativas, que
   começaram há mais de 2 horas e há menos de 7 dias (regra do antigo), com casa x fora, campeonato,
   início, atraso, quantidade de apostas e valor em aberto, do maior para o menor atraso, paginada
   (padrão 20, máximo 100), com a busca da aba Jogos.
@@ -564,7 +582,9 @@ editar um jogo do provedor e conferir que a ação não existe; excluir o jogo e
   manual (como o antigo), e recusar quando a soma dos gols do 1º e do 2º tempo for diferente da soma
   do placar final, com "A soma dos gols dos times não bate com os gols dos tempos.". Um resultado
   diferente trazido depois pela carga do provedor substitui o lançado e reapura as apostas (como o
-  antigo). A correção usa o mesmo modal, preenchido. Muda a spec 009 (FR-045 e FR-046).
+  antigo). A correção usa o mesmo modal, preenchido. O lançamento só existe para jogos que já
+  começaram: a ação não aparece antes do início e a rota recusa com "O resultado só pode ser lançado
+  depois do início do jogo.". Muda a spec 009 (FR-045 e FR-046).
 
 **Cotações**
 
@@ -606,9 +626,10 @@ editar um jogo do provedor e conferir que a ação não existe; excluir o jogo e
   Excluir, e o servidor DEVE recusar o acesso direto (regra atual).
 - **FR-032**: Excluir DEVE existir só para registros manuais (`campeonatos.excluir` e
   `confrontos.excluir`), com confirmação que mostra o que será apagado (no campeonato, a quantidade
-  de jogos que saem junto) e a mensagem do servidor quando ele recusar. O servidor DEVE recusar a
-  exclusão de jogo com apostas não canceladas ("Este jogo tem N apostas. Cancele o jogo em vez de
-  excluir.") e de campeonato com algum jogo nessa condição ("Este campeonato tem jogos com
+  de todos os jogos dele, que saem junto) e a mensagem do servidor quando ele recusar. O servidor
+  DEVE recusar a exclusão de jogo com apostas vivas — palpite ativo de aposta Ativa, Pendente ou Em
+  análise; Canceladas, Recusadas e Expiradas não contam — ("Este jogo tem N apostas. Cancele o jogo
+  em vez de excluir.") e de campeonato com algum jogo nessa condição ("Este campeonato tem jogos com
   apostas."), também por acesso direto. Muda a spec 003 (FR-063).
 
 **Permissões**
@@ -674,11 +695,11 @@ editar um jogo do provedor e conferir que a ação não existe; excluir o jogo e
 - **SC-005**: Um gestor do sistema antigo encontra na tela nova cada informação e ação da "Lista de
   Jogos" (lista, tipo, período, busca, limite, cotações, cadeado, favoritos, destaques e pendentes
   com placar) e da tela "Campeonatos" (lista, pesquisa, favoritar e cadeado).
-- **SC-007**: Um usuário cadastra um campeonato manual e um jogo com as três cotações principais em
-  menos de 3 minutos a partir da aba Campeonatos.
 - **SC-006**: A tela funciona no celular (360 px de largura) sem rolagem horizontal e com todos os
   alvos de toque com pelo menos 40 px; abrir a tela, trocar de aba ou de filtro mostra a primeira
   página em até 2 segundos numa conexão comum.
+- **SC-007**: Um usuário cadastra um campeonato manual e um jogo com as três cotações principais em
+  menos de 3 minutos a partir da aba Campeonatos.
 
 ## Assumptions
 

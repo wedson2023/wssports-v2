@@ -158,7 +158,8 @@ campeonatos e jogos (nasceu na spec 003), consulta de dias passados, atualizaç�
 ### R-10 — Mais apostados (aba e ranking)
 
 - **Decision**:
-  - Aba: `GET /confrontos/mais-apostados` com os filtros da lista; por jogo, `apostas_simples`,
+  - Aba: `GET /confrontos/mais-apostados` com os filtros da lista; cada item é o do
+    `ConfrontosResource` (com `acoes`, para o mesmo menu da aba Jogos) mais, por jogo, `apostas_simples`,
     `apostas_multiplas`, `valor_simples`, `valor_multiplas`, `retorno_simples`,
     `retorno_multiplas` e `quantidade` (soma), ordenado por `quantidade` desc e `data_inicio`; só
     jogos com pelo menos uma aposta na rede.
@@ -201,6 +202,16 @@ campeonatos e jogos (nasceu na spec 003), consulta de dias passados, atualizaç�
 - **Alternatives**: travar o resultado manual contra a carga — descartado: o antigo deixava o
   provedor vencer.
 
+### R-21 — Apostas em aberto na lista e lançamento só depois do início
+
+- **Decision**: a lista (`com_detalhes`) traz `apostas_em_aberto` (quantidade de apostas `Ativa`
+  distintas com palpite `Ativo` + `resultado` Aguardando no jogo, na rede de quem consulta, pelo
+  mesmo alcance de R-09), usada para mostrar o aviso da desativação só quando for maior que zero.
+  `acoes.lancar_resultado` exige `data_inicio <= agora`, e `PUT /confrontos/{id}/resultado` recusa
+  jogo que não começou ("O resultado só pode ser lançado depois do início do jogo.", campo
+  `confronto`).
+- **Rationale**: `/speckit-analyze` (F2 e F3), recomendações aceitas pelo responsável.
+
 ### R-13 — Gaveta do jogo
 
 - **Decision**: `GET /confrontos/{id}` ganha `resultado` (com gols e `origem` = origem da última
@@ -214,7 +225,8 @@ campeonatos e jogos (nasceu na spec 003), consulta de dias passados, atualizaç�
 ### R-14 — Campeonatos
 
 - **Decision**: `GET /campeonatos` ganha `quantidade_jogos` (`withCount` dos confrontos ativos,
-  Aguardando e com início no futuro), `restricoes` (como R-06) e a ordem `favorito desc, nome`; rota
+  Aguardando e com início no futuro), `total_jogos` (todos os não excluídos, para o aviso da
+  exclusão), `restricoes` (como R-06) e a ordem `favorito desc, nome`; rota
   nova `GET /campeonatos/paises` (países distintos, `campeonatos.listar`) para o filtro e o modal.
 - **Rationale**: FR-025 a FR-029; `GET /cotacoes/paises` exige as permissões da tela Cotações, que o
   Gerente pode não ter.
@@ -231,8 +243,8 @@ campeonatos e jogos (nasceu na spec 003), consulta de dias passados, atualizaç�
 ### R-16 — Exclusão manual com apostas
 
 - **Decision**: `ConfrontosController@destroy` e `CampeonatosController@destroy` recusam (422) quando
-  há palpites `Ativo` de apostas não canceladas (`situacao` ≠ Cancelada) no jogo / em algum jogo do
-  campeonato: "Este jogo tem N apostas. Cancele o jogo em vez de excluir." e "Este campeonato tem
+  há palpites `Ativo` de apostas vivas (`situacao` em Ativa, Pendente ou Em análise; Cancelada,
+  Recusada e Expirada não contam) no jogo / em algum jogo do campeonato: "Este jogo tem N apostas. Cancele o jogo em vez de excluir." e "Este campeonato tem
   jogos com apostas.".
 - **Rationale**: Clarifications 2026-10-27 (Q1 do clarify); muda a spec 003 (FR-063).
 

@@ -33,7 +33,8 @@ Validação manual (sem testes automatizados, constituição). Contratos em
 - Admin desativa J1 → some do site e do ao vivo; a linha mostra "Desativado"; ativar → volta.
 - G1 escolhe "Desativar para a minha rede" em J1 → some para V1 e continua para V2; Admin vê
   "Desativado em 1 rede"; G1 ativa para a rede → volta para V1.
-- Confirmação de J1 com apostas avisa que as apostas continuam valendo.
+- Confirmação de J1 com apostas avisa que as apostas continuam valendo; num jogo sem apostas, o
+  aviso não aparece.
 
 ### 3. Limite (US3)
 
@@ -57,6 +58,8 @@ Validação manual (sem testes automatizados, constituição). Contratos em
   apostas são apuradas.
 - Lançar 2 x 1 com tempos 1x0 e 0x0 → "A soma dos gols dos times não bate com os gols dos tempos.".
 - Deixar um escanteio vazio → erro no campo.
+- Jogo de amanhã: sem "Lançar resultado" no menu; `PUT /api/confrontos/{id}/resultado` direto →
+  "O resultado só pode ser lançado depois do início do jogo.".
 - Rodar a carga de resultados com um placar diferente para J3 (ou simular o retorno do provedor) →
   o resultado do provedor substitui o lançado e as apostas são reapuradas.
 - Supervisor: sem a aba Pendentes nem o cartão; `PUT /api/confrontos/{J3}/resultado` com o token
@@ -83,8 +86,8 @@ Validação manual (sem testes automatizados, constituição). Contratos em
   de outro mercado → aparece na lista e no site. Data no passado ou cotação 0,90 → erro no campo.
 - Editar a cotação de Casa e a situação para Adiado → confere na lista.
 - Jogo do provedor: sem Editar nem Excluir; `PUT /api/confrontos/{id}` direto → recusado.
-- Fazer uma aposta no jogo manual e tentar excluir → "Este jogo tem 1 apostas. Cancele o jogo em
-  vez de excluir."; excluir o campeonato → "Este campeonato tem jogos com apostas."; cancelar a
+- Fazer uma aposta no jogo manual e tentar excluir → "Este jogo tem 1 aposta. Cancele o jogo em vez
+  de excluir."; excluir o campeonato → "Este campeonato tem jogos com apostas."; cancelar a
   aposta e excluir → sai da lista.
 
 ### 9. Atualização automática e celular
