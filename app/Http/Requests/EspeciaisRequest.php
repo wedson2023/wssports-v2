@@ -3,12 +3,14 @@
 namespace App\Http\Requests;
 
 use App\Models\Especiais;
+use Closure;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Carbon;
 use Illuminate\Validation\Rule;
 
 /**
- * Cadastro e edição de categorias especiais. No cadastro vêm também as opções (no mínimo duas).
+ * Cadastro e edição de categorias especiais. No cadastro vêm também as opções (no mínimo duas) e,
+ * desde a spec 024, a quantidade de vencedoras (padrão 1).
  * A data limite sem fuso é lida no horário de Brasília (-03:00) e gravada em UTC.
  */
 class EspeciaisRequest extends FormRequest
@@ -35,6 +37,16 @@ class EspeciaisRequest extends FormRequest
                 Rule::unique('especiais', 'nome')->whereNull('deleted_at')->ignore($especial?->id),
             ],
             'data_limite' => [$cadastro ? 'required' : 'sometimes', 'date'],
+            // quantas opções vencem ao encerrar (spec 024): sempre menos que as opções não anuladas
+            'quantidade_vencedoras' => ['sometimes', 'required', 'integer', 'min:1', function (string $atributo, mixed $valor, Closure $falhar) use ($cadastro, $especial) {
+                $opcoes = $cadastro
+                    ? count((array) $this->input('opcoes', []))
+                    : $especial->opcoes()->whereNull('anulada_em')->count();
+
+                if ((int) $valor >= $opcoes) {
+                    $falhar('A quantidade de vencedoras deve ser menor que a quantidade de opções.');
+                }
+            }],
             'ativo' => ['sometimes', 'boolean'],
             'opcoes' => $cadastro ? ['required', 'array', 'min:2', 'max:100'] : ['prohibited'],
             'opcoes.*.nome' => ['required', 'string', 'max:150', 'distinct:ignore_case'],
@@ -54,6 +66,9 @@ class EspeciaisRequest extends FormRequest
             'nome.unique' => 'Já existe uma categoria especial com este nome.',
             'data_limite.required' => 'Informe a data limite para apostar.',
             'data_limite.date' => 'A data limite é inválida.',
+            'quantidade_vencedoras.required' => 'Informe a quantidade de vencedoras.',
+            'quantidade_vencedoras.integer' => 'A quantidade de vencedoras deve ser um número inteiro.',
+            'quantidade_vencedoras.min' => 'A quantidade de vencedoras deve ser pelo menos 1.',
             'ativo.boolean' => 'O campo ativo deve ser verdadeiro ou falso.',
             'opcoes.required' => 'Informe as opções da categoria.',
             'opcoes.array' => 'As opções devem ser uma lista.',
@@ -78,7 +93,7 @@ class EspeciaisRequest extends FormRequest
      */
     public function dados_categoria(): array
     {
-        $dados = collect($this->validated())->only(['nome', 'data_limite', 'ativo'])->all();
+        $dados = collect($this->validated())->only(['nome', 'data_limite', 'quantidade_vencedoras', 'ativo'])->all();
 
         if (isset($dados['data_limite'])) {
             $dados['data_limite'] = Carbon::parse($dados['data_limite'], '-03:00')->utc();

@@ -146,6 +146,7 @@ app/Models/EspeciaisOpcoes.php                         # casts novos, anulada()
 app/Models/ApostasPalpites.php                         # cast cotacao_empate
 app/Services/EncerramentoEspeciais.php                 # encerrar com várias vencedoras e divisão; anular_opcao; corrigir
 app/Services/EdicaoApostas.php                         # recalcular usa cotacao_empate; recalcular_pelo_sistema público
+app/Services/ApuracaoApostas.php                       # motivo da origem "Correção de especial" (autorizado no /speckit-implement)
 app/Http/Controllers/EspeciaisController.php           # index pelo serviço, show com opções/correções, resumo, exposicao, restaurar
 app/Http/Controllers/EspeciaisOpcoesController.php     # recusa opção anulada
 app/Http/Controllers/EncerramentoEspeciaisController.php # encerrar novo, anular, corrigir

@@ -11,7 +11,8 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 /**
  * Palpite de uma aposta: um confronto (ou uma opção de categoria especial), um código de cotação e
- * as cotações vista, original e final. Pode fazer parte de um bloco Criar Aposta (spec 008).
+ * as cotações vista, original e final. Pode fazer parte de um bloco Criar Aposta (spec 008). O
+ * palpite especial numa vencedora empatada guarda também a cotação dividida (cotacao_empate, spec 024).
  */
 class ApostasPalpites extends Model
 {
@@ -37,6 +38,7 @@ class ApostasPalpites extends Model
             'cotacao_vista' => 'decimal:2',
             'cotacao_original' => 'decimal:2',
             'cotacao_final' => 'decimal:2',
+            'cotacao_empate' => 'decimal:2',
             'dados_ao_vivo_envio' => 'array',
             'dados_ao_vivo_decisao' => 'array',
             'cancelado_em' => 'datetime',

@@ -140,6 +140,15 @@ class EdicaoApostas
     }
 
     /**
+     * Recalcula o prêmio depois de o sistema mudar a cotação aplicada de um palpite (divisão por
+     * empate, spec 024). Deve rodar dentro da transação de quem chama, com a aposta bloqueada.
+     */
+    public function recalcular_pelo_sistema(Apostas $aposta, ApostasPalpites $palpite, AcaoHistoricoAposta $acao, ?Usuarios $autor, ?string $ip, ?string $user_agent): void
+    {
+        $this->recalcular_e_registrar($aposta, $palpite, $acao, $autor, $ip, $user_agent);
+    }
+
+    /**
      * Com "Anular bloco", o palpite de um bloco Criar Aposta leva o bloco inteiro junto (spec 008).
      */
     private function bloco_anulavel(Apostas $aposta, ApostasPalpites $palpite): ?ApostasBlocos
@@ -264,7 +273,8 @@ class EdicaoApostas
             'confrontos_id' => $palpite->confrontos_id,
             'confrontos_ao_vivo_id' => $palpite->confrontos_ao_vivo_id,
             'especiais_id' => $palpite->especiais_id,
-            'cotacao_final' => (string) $palpite->cotacao_final,
+            // palpite especial dividido por empate (spec 024) entra com a cotação aplicada
+            'cotacao_final' => (string) ($palpite->cotacao_empate ?? $palpite->cotacao_final),
         ])->all(), $desconto, 'cotacao_final');
         $cotacoes = CalculoBlocos::cotacoes($pernas);
 

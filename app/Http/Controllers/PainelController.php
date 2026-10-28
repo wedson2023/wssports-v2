@@ -83,6 +83,14 @@ class PainelController extends Controller
     }
 
     /**
+     * Tela "Especiais" (spec 024); aba, busca e filtros vêm na query string.
+     */
+    public function especiais(): Response
+    {
+        return Inertia::render('PanelSpecials');
+    }
+
+    /**
      * Tela "Afiliados" (spec 022); aba, busca e filtros vêm na query string.
      */
     public function afiliados(): Response

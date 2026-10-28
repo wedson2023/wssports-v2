@@ -46,6 +46,13 @@ const itens_menu = [
         visivel: (usuario) => usuario.permissoes.includes('confrontos.listar'),
     },
     {
+        chave: 'especiais',
+        rotulo: 'Especiais',
+        icone: 'emoji_events',
+        href: '/painel/especiais',
+        visivel: (usuario) => usuario.permissoes.includes('especiais.listar'),
+    },
+    {
         chave: 'cotacoes',
         rotulo: 'Cotações',
         icone: 'price_change',

@@ -173,12 +173,13 @@ enum Funcao: string
 
     /**
      * Permissões de especiais: listar, gerenciar (categorias e opções) e encerrar/cancelar.
-     * Só Admin e Supervisor.
+     * Só Admin e Supervisor; corrigir o resultado (spec 024), só Admin.
      */
     public const PERMISSOES_ESPECIAIS = [
         'especiais.listar',
         'especiais.gerenciar',
         'especiais.encerrar',
+        'especiais.corrigir_resultado',
     ];
 
     /**
@@ -402,7 +403,7 @@ enum Funcao: string
      * validar código são só do Vendedor; cancelar, listar, exportar e imprimir 2ª via, de todos
      * (PERMISSOES_APOSTAS_TODOS); o resto, de Gerente para cima.
      * Especiais, recursos do site, pagamentos, encerramentos de aposta e cassino são só de Admin e
-     * Supervisor (vincular o gateway, só Admin). Afiliados: Vendedor nenhuma; Gerente todas menos
+     * Supervisor (vincular o gateway e corrigir o resultado de especiais, só Admin). Afiliados: Vendedor nenhuma; Gerente todas menos
      * excluir e restaurar. Dashboard: Admin e Supervisor todas; Gerente todas menos a Caixa online;
      * Vendedor só as do que ele mesmo fez (PERMISSOES_DASHBOARD_VENDEDOR). Usuários (spec 015):
      * cadastrar, editar e excluir só sobre funções abaixo (o Vendedor nunca cadastra vendedor); as
@@ -441,6 +442,11 @@ enum Funcao: string
         // vincular o gateway mexe no dinheiro de toda a banca e o robô usa o WhatsApp da banca
         // (spec 021): só o Admin
         if (in_array($permissao, ['gateway_pagamento.vincular', 'robo_whatsapp.conectar'], true)) {
+            return $this === self::Admin;
+        }
+
+        // corrigir o resultado reapura e estorna prêmios de todas as redes (spec 024): só o Admin
+        if ($permissao === 'especiais.corrigir_resultado') {
             return $this === self::Admin;
         }
 

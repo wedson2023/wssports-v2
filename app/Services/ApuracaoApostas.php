@@ -403,6 +403,7 @@ class ApuracaoApostas
             OrigemApuracao::LançamentoManual => 'Resultado do jogo lançado à mão',
             OrigemApuracao::ReprocessamentoManual => 'Reapuração manual do jogo',
             OrigemApuracao::EncerramentoEspecial => 'Categoria especial encerrada',
+            OrigemApuracao::CorreçãoEspecial => 'Resultado da categoria especial corrigido',
             OrigemApuracao::PagamentoPrêmios => 'Pagamento de prêmios',
         };
     }

@@ -4336,7 +4336,7 @@
                             }
                         ],
                         "url": {
-                            "raw": "{{base_url}}/especiais?situacao=&busca=&por_pagina=20",
+                            "raw": "{{base_url}}/especiais?situacao=Aguardando&busca=&lixeira=0&por_pagina=20&page=1",
                             "host": [
                                 "{{base_url}}"
                             ],
@@ -4346,19 +4346,27 @@
                             "query": [
                                 {
                                     "key": "situacao",
-                                    "value": ""
+                                    "value": "Aguardando"
                                 },
                                 {
                                     "key": "busca",
                                     "value": ""
                                 },
                                 {
+                                    "key": "lixeira",
+                                    "value": "0"
+                                },
+                                {
                                     "key": "por_pagina",
                                     "value": "20"
+                                },
+                                {
+                                    "key": "page",
+                                    "value": "1"
                                 }
                             ]
                         },
-                        "description": "especiais.listar (Admin e Supervisor). Filtros: situacao (Aguardando | Encerrado | Cancelado), busca, por_pagina (máx. 100)."
+                        "description": "especiais.listar. Lista da tela Especiais (spec 024): situacao Aguardando (padrão), Encerrado, Cancelado ou Todas; busca pelo nome; lixeira=1 só as removidas (ignora situacao); por_pagina 1–100 (padrão 20). Cada linha traz quantidade_opcoes (ativas, não anuladas), vencedoras [{id, nome, empatada}], quantidade_vencedoras, dividir_empate, aguardando_resultado, apostas_em_aberto e valor_em_aberto (no alcance de quem consulta) e acoes. Resposta com alcance \"todas\" ou \"rede\"."
                     }
                 },
                 {
@@ -4385,7 +4393,7 @@
                                 "{{especial_id}}"
                             ]
                         },
-                        "description": "especiais.listar. Categoria com as opções, a vencedora e a quantidade de palpites em apostas ativas."
+                        "description": "especiais.listar. Categoria com as opções (situacao Ativa, Desativada, Anulada, Vencedora ou Perdedora; vencedora, empatada, anulada_em), as vencedoras, quem encerrou e o histórico de correções de resultado (spec 024)."
                     }
                 },
                 {
@@ -4411,10 +4419,10 @@
                                 "especiais"
                             ]
                         },
-                        "description": "especiais.gerenciar. data_limite sem fuso = horário de Brasília (-03:00). No mínimo 2 opções, com nomes diferentes e cotação ≥ 1.01. 422 nome repetido.",
+                        "description": "especiais.gerenciar. data_limite sem fuso = horário de Brasília (-03:00). No mínimo 2 opções, com nomes diferentes e cotação ≥ 1.01. 422 nome repetido. quantidade_vencedoras (spec 024): inteiro ≥ 1, padrão 1, menor que a quantidade de opções.",
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \"nome\": \"Campeão Brasileiro 2026\",\n    \"data_limite\": \"2026-12-01 18:00\",\n    \"ativo\": true,\n    \"opcoes\": [\n        {\n            \"nome\": \"Flamengo\",\n            \"cotacao\": \"3.50\"\n        },\n        {\n            \"nome\": \"Palmeiras\",\n            \"cotacao\": \"4.00\"\n        },\n        {\n            \"nome\": \"Botafogo\",\n            \"cotacao\": \"6.00\"\n        }\n    ]\n}"
+                            "raw": "{\n    \"nome\": \"Campeão Brasileiro 2026\",\n    \"data_limite\": \"2026-12-01 18:00\",\n    \"ativo\": true,\n    \"opcoes\": [\n        {\n            \"nome\": \"Flamengo\",\n            \"cotacao\": \"3.50\"\n        },\n        {\n            \"nome\": \"Palmeiras\",\n            \"cotacao\": \"4.00\"\n        },\n        {\n            \"nome\": \"Botafogo\",\n            \"cotacao\": \"6.00\"\n        }\n    ],\n    \"quantidade_vencedoras\": 1\n}"
                         }
                     }
                 },
@@ -4442,10 +4450,10 @@
                                 "{{especial_id}}"
                             ]
                         },
-                        "description": "especiais.gerenciar. Só com a categoria Aguardando (422 \"A categoria já foi encerrada ou cancelada.\"). As opções são alteradas pelas rotas de opções.",
+                        "description": "especiais.gerenciar. Só com a categoria Aguardando (422 \"A categoria já foi encerrada ou cancelada.\"). As opções são alteradas pelas rotas de opções. quantidade_vencedoras (spec 024): menor que as opções não anuladas.",
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \"nome\": \"Campeão Brasileiro 2026\",\n    \"data_limite\": \"2026-12-01 18:00\",\n    \"ativo\": true\n}"
+                            "raw": "{\n    \"nome\": \"Campeão Brasileiro 2026\",\n    \"data_limite\": \"2026-12-01 18:00\",\n    \"ativo\": true,\n    \"quantidade_vencedoras\": 1\n}"
                         }
                     }
                 },
@@ -4534,7 +4542,7 @@
                                 "{{opcao_id}}"
                             ]
                         },
-                        "description": "especiais.gerenciar. A nova cotação vale para os próximos palpites; os gravados mantêm a deles.",
+                        "description": "especiais.gerenciar. A nova cotação vale para os próximos palpites; os gravados mantêm a deles. 422 \"A opção foi anulada.\" para opção anulada (spec 024).",
                         "body": {
                             "mode": "raw",
                             "raw": "{\n    \"nome\": \"Corinthians\",\n    \"cotacao\": \"7.50\",\n    \"ativo\": true\n}"
@@ -4567,7 +4575,7 @@
                                 "{{opcao_id}}"
                             ]
                         },
-                        "description": "especiais.gerenciar. Exclusão lógica; com palpite em aposta ativa → 422 \"Desative a opção em vez de remover.\""
+                        "description": "especiais.gerenciar. Exclusão lógica; com palpite em aposta ativa → 422 \"Desative a opção em vez de remover.\" 422 \"A opção foi anulada.\" para opção anulada (spec 024)."
                     }
                 },
                 {
@@ -4595,10 +4603,10 @@
                                 "encerrar"
                             ]
                         },
-                        "description": "especiais.encerrar. Palpites na opção vencedora ficam Vencedor e os demais Perdedor; aposta com palpite perdido fica Perdedor, só com especiais vencedores fica Vencedor, com jogos sem resultado continua Aguardando. Sem movimentar saldo. Resposta com apostas_afetadas. 422 opção de outra categoria ou categoria já encerrada/cancelada.",
+                        "description": "especiais.encerrar. Encerra com uma ou mais vencedoras (spec 024): exatamente quantidade_vencedoras; mais que ela só com dividir_empate=true e empatadas (as vencedoras empatadas na última vaga), que recebem cotação × vagas ÷ empatadas truncada em 2 casas (cotacao_empate). Palpites nas vencedoras ficam Vencedor e os demais Perdedor; as apostas são decididas e pagas pela apuração (spec 009). Resposta: a categoria + apostas_afetadas. 422: \"Escolha N opções vencedoras.\", \"Para todas vencerem, cancele a categoria.\", \"Marque as vencedoras empatadas na última vaga.\", opção de outra categoria ou anulada, categoria já encerrada/cancelada.",
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \"especiais_opcoes_id\": \"{{opcao_id}}\"\n}"
+                            "raw": "{\n    \"vencedoras\": [\n        \"{{opcao_id}}\"\n    ],\n    \"empatadas\": [],\n    \"dividir_empate\": false\n}"
                         }
                     }
                 },
@@ -4628,6 +4636,157 @@
                             ]
                         },
                         "description": "especiais.encerrar. Palpites da categoria ficam Cancelados (cotação 1,00), com a cotação total e o prêmio recalculados e o registro no histórico; aposta sem palpite ativo fica Vencedor com prêmio igual ao valor. Resposta com apostas_afetadas."
+                    }
+                },
+                {
+                    "name": "Resumo dos especiais (cartões)",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/especiais/resumo?busca=",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "especiais",
+                                "resumo"
+                            ],
+                            "query": [
+                                {
+                                    "key": "busca",
+                                    "value": ""
+                                }
+                            ]
+                        },
+                        "description": "especiais.listar. Cartões da tela Especiais (spec 024): aceitando_palpites, aguardando_resultado, valor_em_aberto e possivel_retorno_em_aberto (apostas ativas sem resultado com palpite especial, no alcance de quem consulta), respeitando a busca; alcance \"todas\" ou \"rede\"."
+                    }
+                },
+                {
+                    "name": "Exposição por opção",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/especiais/{{especial_id}}/exposicao",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "especiais",
+                                "{{especial_id}}",
+                                "exposicao"
+                            ]
+                        },
+                        "description": "especiais.listar. Por opção (inclusive sem apostas e anuladas): simples, múltiplas e total com quantidade, valor e possivel_retorno; total da categoria; maior_retorno_opcoes_id; alcance (spec 024)."
+                    }
+                },
+                {
+                    "name": "Anular opção especial",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/especiais/{{especial_id}}/opcoes/{{opcao_id}}/anular",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "especiais",
+                                "{{especial_id}}",
+                                "opcoes",
+                                "{{opcao_id}}",
+                                "anular"
+                            ]
+                        },
+                        "description": "especiais.encerrar. Categoria Aguardando (spec 024): a opção fica Anulada e sai do site; os palpites ativos nela são cancelados com o motivo \"Opção anulada\" (cotação 1,00), com o prêmio recalculado, e a aposta sem palpite pendente é decidida e paga. Resposta: a opção + apostas_afetadas. 422 \"A opção já foi anulada.\" ou categoria já encerrada/cancelada; 404 opção de outra categoria."
+                    }
+                },
+                {
+                    "name": "Corrigir resultado do especial",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/especiais/{{especial_id}}/corrigir-resultado",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "especiais",
+                                "{{especial_id}}",
+                                "corrigir-resultado"
+                            ]
+                        },
+                        "description": "especiais.corrigir_resultado (só Admin). Categoria Encerrado (spec 024): troca as vencedoras, empatadas e a divisão (mesmas regras do encerrar) com a senha de quem corrige; reapura todas as apostas da categoria com a origem \"Correção de especial\" (estorno do pago a mais, saldo pode ficar negativo; crédito da diferença depois da janela) e grava o histórico em correcoes. 422 \"O resultado é o mesmo.\", \"Senha incorreta.\", \"Só uma categoria encerrada pode ter o resultado corrigido.\".",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"vencedoras\": [\n        \"{{opcao_id}}\"\n    ],\n    \"empatadas\": [],\n    \"dividir_empate\": false,\n    \"password\": \"\"\n}"
+                        }
+                    }
+                },
+                {
+                    "name": "Restaurar categoria especial",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/especiais/{{especial_id}}/restaurar",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "especiais",
+                                "{{especial_id}}",
+                                "restaurar"
+                            ]
+                        },
+                        "description": "especiais.gerenciar. Volta da lixeira com as opções, na mesma situação (spec 024). 404 se não estiver removida; 422 \"Já existe uma categoria especial com este nome.\"."
                     }
                 }
             ]
