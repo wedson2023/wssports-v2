@@ -37,6 +37,7 @@ class EspeciaisOpcoesController extends Controller implements HasMiddleware
     public function update(EspeciaisOpcoesRequest $request, Especiais $especial, EspeciaisOpcoes $opcao): EspeciaisOpcoesResource
     {
         $this->garantir_da_categoria($especial, $opcao);
+        $this->garantir_nao_anulada($opcao);
         EspeciaisController::garantir_aguardando($especial);
 
         $opcao->update($request->validated());
@@ -47,6 +48,7 @@ class EspeciaisOpcoesController extends Controller implements HasMiddleware
     public function destroy(Especiais $especial, EspeciaisOpcoes $opcao): Response
     {
         $this->garantir_da_categoria($especial, $opcao);
+        $this->garantir_nao_anulada($opcao);
         EspeciaisController::garantir_aguardando($especial);
 
         $com_palpite = EspeciaisController::palpites_em_apostas_ativas($especial->palpites()->getQuery())
@@ -68,5 +70,15 @@ class EspeciaisOpcoesController extends Controller implements HasMiddleware
     private function garantir_da_categoria(Especiais $especial, EspeciaisOpcoes $opcao): void
     {
         abort_unless($opcao->especiais_id === $especial->id, 404, 'Categoria ou opção não encontrada.');
+    }
+
+    /**
+     * Opção anulada não é editada, reativada nem removida (spec 024, FR-012).
+     */
+    private function garantir_nao_anulada(EspeciaisOpcoes $opcao): void
+    {
+        if ($opcao->anulada()) {
+            throw ValidationException::withMessages(['opcao' => 'A opção foi anulada.']);
+        }
     }
 }

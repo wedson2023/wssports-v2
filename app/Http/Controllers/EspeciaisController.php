@@ -7,20 +7,24 @@ use App\Enums\SituacaoEspecial;
 use App\Enums\SituacaoPalpite;
 use App\Http\Controllers\Concerns\GarantirPermissaoCliente;
 use App\Http\Requests\EspeciaisRequest;
+use App\Http\Requests\FiltrosEspeciaisPainelRequest;
 use App\Http\Resources\EspeciaisResource;
 use App\Models\Especiais;
+use App\Services\ExposicaoEspeciais;
+use App\Services\ListagemEspeciaisPainel;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Http\Response;
 use Illuminate\Routing\Controllers\HasMiddleware;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 
 /**
  * Categorias especiais no painel: listagem, cadastro (com as opções), edição e remoção. Só Admin e
- * Supervisor (spec 006, FR-012).
+ * Supervisor (spec 006, FR-012). Na tela Especiais (spec 024), também os cartões, a lixeira e a
+ * exposição por opção.
  */
 class EspeciaisController extends Controller implements HasMiddleware
 {
@@ -29,8 +33,8 @@ class EspeciaisController extends Controller implements HasMiddleware
     public static function middleware(): array
     {
         return [
-            self::permissao_cliente('especiais.listar', only: ['index', 'show']),
-            self::permissao_cliente('especiais.gerenciar', only: ['store', 'update', 'destroy']),
+            self::permissao_cliente('especiais.listar', only: ['index', 'resumo', 'show', 'exposicao']),
+            self::permissao_cliente('especiais.gerenciar', only: ['store', 'update', 'destroy', 'restaurar']),
         ];
     }
 
@@ -43,35 +47,52 @@ class EspeciaisController extends Controller implements HasMiddleware
             ->whereHas('aposta', fn (Builder $aposta) => $aposta->where('situacao', SituacaoAposta::Ativa->value));
     }
 
-    public function index(Request $request): AnonymousResourceCollection
+    public function index(FiltrosEspeciaisPainelRequest $request, ListagemEspeciaisPainel $listagem): AnonymousResourceCollection
     {
-        // filtros enviados vazios chegam como null e são ignorados
-        $filtros = $request->validate([
-            'situacao' => ['nullable', Rule::enum(SituacaoEspecial::class)],
-            'busca' => ['nullable', 'string', 'max:150'],
-            'por_pagina' => ['nullable', 'integer', 'between:1,100'],
-        ], [
-            'situacao.enum' => 'A situação informada é inválida.',
-            'busca.string' => 'A busca deve ser um texto.',
-            'busca.max' => 'A busca deve ter no máximo 150 caracteres.',
-            'por_pagina.integer' => 'O campo por página deve ser um número inteiro.',
-            'por_pagina.between' => 'O campo por página deve estar entre 1 e 100.',
-        ]);
-
-        $especiais = Especiais::with('opcoes')
-            ->when(isset($filtros['situacao']), fn (Builder $c) => $c->where('situacao', $filtros['situacao']))
-            ->when(filled($filtros['busca'] ?? null), fn (Builder $c) => $c->where('nome', 'like', '%'.addcslashes($filtros['busca'], '%_\\').'%'))
-            ->orderBy('data_limite')
-            ->orderBy('nome')
-            ->paginate($filtros['por_pagina'] ?? 20)
+        $especiais = $listagem->consulta($request->user(), $request->filtros())
+            ->paginate($request->por_pagina())
             ->withQueryString();
 
-        return EspeciaisResource::collection($especiais);
+        return EspeciaisResource::collection($especiais)->additional(['alcance' => $listagem->alcance($request->user())]);
+    }
+
+    /**
+     * Cartões da tela Especiais (spec 024, contracts/api §2.1).
+     */
+    public function resumo(FiltrosEspeciaisPainelRequest $request, ListagemEspeciaisPainel $listagem): JsonResponse
+    {
+        return response()->json($listagem->resumo($request->user(), $request->filtros()['busca']));
+    }
+
+    /**
+     * Exposição por opção na gaveta (spec 024, contracts/api §2.2).
+     */
+    public function exposicao(Request $request, Especiais $especial, ExposicaoEspeciais $exposicao): JsonResponse
+    {
+        return response()->json($exposicao->por_opcao($especial, $request->user()));
+    }
+
+    /**
+     * Volta da lixeira com as opções que tinha, na mesma situação (spec 024, R-11); recusa nome
+     * repetido entre as não removidas.
+     */
+    public function restaurar(Especiais $especial): EspeciaisResource
+    {
+        abort_unless($especial->trashed(), 404, 'Categoria especial não encontrada.');
+
+        if (Especiais::where('nome', $especial->nome)->exists()) {
+            throw ValidationException::withMessages(['nome' => 'Já existe uma categoria especial com este nome.']);
+        }
+
+        $especial->restore();
+
+        return new EspeciaisResource($especial->load('opcoes'));
     }
 
     public function show(Especiais $especial): EspeciaisResource
     {
-        $especial->load('opcoes')->loadCount(['palpites' => fn (Builder $palpites) => self::palpites_em_apostas_ativas($palpites)]);
+        $especial->load(['opcoes', 'encerrado_por_usuario', 'correcoes.usuario'])
+            ->loadCount(['palpites' => fn (Builder $palpites) => self::palpites_em_apostas_ativas($palpites)]);
 
         return new EspeciaisResource($especial);
     }

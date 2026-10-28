@@ -536,6 +536,17 @@ Route::middleware(['auth:api', 'garantir_acesso'])->group(function () {
         ->missing($especial_nao_encontrado);
     Route::post('especiais/{especial}/cancelar', [EncerramentoEspeciaisController::class, 'cancelar'])
         ->missing($especial_nao_encontrado);
+    // tela Especiais do painel (spec 024)
+    Route::get('especiais/resumo', [EspeciaisController::class, 'resumo']);
+    Route::get('especiais/{especial}/exposicao', [EspeciaisController::class, 'exposicao'])
+        ->missing($especial_nao_encontrado);
+    Route::post('especiais/{especial}/restaurar', [EspeciaisController::class, 'restaurar'])
+        ->withTrashed()
+        ->missing($especial_nao_encontrado);
+    Route::post('especiais/{especial}/opcoes/{opcao}/anular', [EncerramentoEspeciaisController::class, 'anular'])
+        ->missing(fn () => abort(404, 'Categoria ou opção não encontrada.'));
+    Route::post('especiais/{especial}/corrigir-resultado', [EncerramentoEspeciaisController::class, 'corrigir'])
+        ->missing($especial_nao_encontrado);
     Route::apiResource('especiais', EspeciaisController::class)
         ->parameters(['especiais' => 'especial'])
         ->missing($especial_nao_encontrado);

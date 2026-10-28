@@ -44,6 +44,8 @@ Route::get('painel/bonus', [PainelController::class, 'bonus'])->name('painel.bon
 Route::get('painel/afiliados', [PainelController::class, 'afiliados'])->name('painel.afiliados');
 // confrontos do painel (spec 023)
 Route::get('painel/confrontos', [PainelController::class, 'confrontos'])->name('painel.confrontos');
+// especiais do painel (spec 024)
+Route::get('painel/especiais', [PainelController::class, 'especiais'])->name('painel.especiais');
 // configurações gerais do painel (spec 021)
 Route::get('painel/configuracoes', [PainelController::class, 'configuracoes'])->name('painel.configuracoes');
 // afiliados (spec 012): página pública de cadastro e painel do afiliado

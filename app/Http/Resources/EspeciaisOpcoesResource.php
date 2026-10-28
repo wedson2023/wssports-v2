@@ -17,6 +17,11 @@ class EspeciaisOpcoesResource extends JsonResource
             'nome' => $this->nome,
             'cotacao' => $this->cotacao,
             'ativo' => $this->ativo,
+            // situação, resultado e anulação da opção (spec 024)
+            'situacao' => $this->situacao_exibida(),
+            'vencedora' => $this->vencedora,
+            'empatada' => $this->empatada,
+            'anulada_em' => $this->anulada_em?->setTimezone('-03:00')->toIso8601String(),
         ];
     }
 }

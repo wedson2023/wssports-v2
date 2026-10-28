@@ -2,14 +2,17 @@
 
 namespace App\Http\Requests;
 
-use Closure;
+use App\Http\Requests\Concerns\VencedorasEspecial;
 use Illuminate\Foundation\Http\FormRequest;
 
 /**
- * Encerramento de uma categoria especial: a opção vencedora precisa ser da própria categoria.
+ * Encerramento de uma categoria especial com uma ou mais vencedoras (spec 024): a quantidade de
+ * vencedoras da categoria e, com empate na última vaga, a divisão por empate.
  */
 class EncerrarEspecialRequest extends FormRequest
 {
+    use VencedorasEspecial;
+
     public function authorize(): bool
     {
         // a permissão é checada pelo middleware do controller
@@ -21,9 +24,7 @@ class EncerrarEspecialRequest extends FormRequest
      */
     public function rules(): array
     {
-        return [
-            'especiais_opcoes_id' => ['required', 'integer', $this->da_categoria()],
-        ];
+        return $this->regras_vencedoras();
     }
 
     /**
@@ -31,18 +32,6 @@ class EncerrarEspecialRequest extends FormRequest
      */
     public function messages(): array
     {
-        return [
-            'especiais_opcoes_id.required' => 'Informe a opção vencedora.',
-            'especiais_opcoes_id.integer' => 'A opção vencedora é inválida.',
-        ];
-    }
-
-    private function da_categoria(): Closure
-    {
-        return function (string $atributo, mixed $valor, Closure $falhar) {
-            if (! $this->route('especial')->opcoes()->whereKey((int) $valor)->exists()) {
-                $falhar('A opção vencedora não pertence a esta categoria.');
-            }
-        };
+        return $this->mensagens_vencedoras();
     }
 }

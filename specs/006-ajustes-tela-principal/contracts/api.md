@@ -135,6 +135,15 @@ Cotações com as porcentagens do vendedor; código ausente ou bloqueado → `"1
 | `POST /api/especiais/{especial}/encerrar` | `especiais.encerrar` | `especiais_opcoes_id` (da própria categoria) → `200` com a categoria e `apostas_afetadas` |
 | `POST /api/especiais/{especial}/cancelar` | `especiais.encerrar` | sem corpo → `200` com `apostas_afetadas` |
 
+> Alterado pela spec 024 (ver `specs/024-painel-especiais/contracts/api.md`): `GET /api/especiais`
+> ganha `situacao=Todas`, `lixeira`, os números em aberto e `acoes`; `POST`/`PUT /api/especiais`
+> ganham `quantidade_vencedoras`; o encerrar passa a receber `vencedoras`, `empatadas` e
+> `dividir_empate` no lugar de `especiais_opcoes_id`, e a resposta troca `opcao_vencedora` por
+> `vencedoras`; `PUT`/`DELETE` de opção recusam a opção anulada ("A opção foi anulada."). Rotas
+> novas: `GET /api/especiais/resumo`, `GET /api/especiais/{especial}/exposicao`,
+> `POST /api/especiais/{especial}/opcoes/{opcao}/anular`,
+> `POST /api/especiais/{especial}/corrigir-resultado` e `POST /api/especiais/{especial}/restaurar`.
+
 Mensagens: categoria fora de `Aguardando` → `422 {"message": "A categoria já foi encerrada ou
 cancelada."}`; opção de outra categoria → `422 {"message": "A opção vencedora não pertence a esta
 categoria."}`; nome repetido → `422 {"message": "Já existe uma opção com este nome na categoria."}`.

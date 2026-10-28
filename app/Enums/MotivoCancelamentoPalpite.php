@@ -10,4 +10,6 @@ enum MotivoCancelamentoPalpite: string
 {
     case JogoCancelado = 'Jogo cancelado';
     case EmpateAnulaAposta = 'Empate anula aposta';
+    // palpite numa opção especial anulada, devolvido como cotação 1,00 (spec 024)
+    case OpçãoAnulada = 'Opção anulada';
 }

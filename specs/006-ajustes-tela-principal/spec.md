@@ -343,6 +343,9 @@ conferir o carrossel e a logo; trocar a logo e conferir que a nova aparece sem l
   especiais pela API do painel (nome e data/hora limite para apostar) e as opções de cada categoria
   (nome e cotação), com permissões por função no padrão dos recursos existentes. O nome da opção é
   único dentro da categoria.
+  > Alterado pela spec 024: a categoria removida vai para a lixeira e pode ser restaurada (com as
+  > opções, na mesma situação; recusado com nome repetido); a categoria ganha a "Quantidade de
+  > vencedoras" (padrão 1); opção anulada não é editada, reativada nem removida.
 - **FR-013**: A lista pública de especiais DEVE mostrar só categorias ativas, em aberto, com
   data/hora limite futura e com ao menos uma opção ativa, ordenadas por nome e data/hora, com a
   busca por nome da categoria. "Especiais" segue a mesma regra de visibilidade dos outros esportes
@@ -363,6 +366,12 @@ conferir o carrossel e a logo; trocar a logo e conferir que a nova aparece sem l
   antigo: Vencedor na opção vencedora e Perdedor nas demais. Ao cancelar, os palpites da categoria
   DEVEM ficar Cancelados (fora da cotação total, como cotação 1,00), com a cotação total e o prêmio
   das apostas recalculados.
+  > Alterado pela spec 024: o encerramento recebe uma ou mais vencedoras, exatamente a
+  > "Quantidade de vencedoras" da categoria; mais que ela só com "Dividir por empate" (dead heat:
+  > as empatadas na última vaga recebem cotação × vagas ÷ empatadas, truncada em 2 casas). Uma
+  > opção pode ser anulada sem encerrar a categoria (palpites cancelados com o motivo "Opção
+  > anulada"), e o Admin pode corrigir o resultado de uma categoria encerrada (permissão
+  > `especiais.corrigir_resultado`, com senha), reapurando as apostas.
 - **FR-018a**: Depois de encerrar ou cancelar, o resultado de cada aposta afetada DEVE ser: Perdedor
   quando algum palpite perdeu; Vencedor quando todos os palpites ativos são especiais vencedores ou
   quando não restou palpite ativo (prêmio igual ao valor apostado); Aguardando nos demais casos (há

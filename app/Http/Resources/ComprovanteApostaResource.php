@@ -257,6 +257,8 @@ class ComprovanteApostaResource extends JsonResource
             'jogador' => null,
             'jogador_tipo' => null,
             'cotacao' => (string) $palpite->cotacao_final,
+            // cotação aplicada pela divisão por empate (spec 024); null sem divisão
+            'cotacao_empate' => $palpite->cotacao_empate === null ? null : (string) $palpite->cotacao_empate,
             'periodo' => null,
             'placar_casa' => null,
             'placar_fora' => null,

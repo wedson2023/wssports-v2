@@ -454,7 +454,10 @@ resultado da aposta e o registro com origem "Lançamento manual".
   resultados, carga de cancelados, pagamento, reprocessamento manual, lançamento manual,
   encerramento de especial), jogo, aposta, palpite e
   cliente quando houver, carteira, valores antes e depois (resultado, placar, prêmio ou saldo,
-  conforme a operação) e o motivo.
+  conforme a operação) e o motivo. (Alterado pela spec 024: nova origem "Correção de especial",
+  da troca das vencedoras de uma categoria encerrada, que reapura as apostas com estorno e crédito
+  da diferença; e novo motivo de cancelamento de palpite "Opção anulada", da opção especial anulada,
+  devolvida como cotação 1,00.)
 - **FR-038**: Os registros NÃO DEVEM ser alterados nem apagados pelo sistema.
 - **FR-039**: A tela de consulta dos registros está fora desta spec.
 

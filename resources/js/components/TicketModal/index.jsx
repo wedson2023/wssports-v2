@@ -93,6 +93,13 @@ const linha_palpite = (palpite, edicao) => (
         <Row><Label>Campeonato:</Label><span>{palpite.campeonato}</span></Row>
         <Row><Label>Palpite:</Label><span>{texto_palpite(palpite)}</span></Row>
         <Row><Label>Cotação:</Label><span>{Number(palpite.cotacao).toFixed(2)}</span></Row>
+        {/* palpite especial numa vencedora empatada (spec 024): a cotação dividida vale no prêmio */}
+        {palpite.cotacao_empate && (
+            <Row>
+                <Label>Dividida por empate:</Label>
+                <span>{`${Number(palpite.cotacao_empate).toFixed(2)} (original ${Number(palpite.cotacao).toFixed(2)})`}</span>
+            </Row>
+        )}
         <Row><Label>Tipo:</Label><span>{palpite.esporte}</span></Row>
         {palpite.periodo && linhas_andamento(palpite)}
         <Row>

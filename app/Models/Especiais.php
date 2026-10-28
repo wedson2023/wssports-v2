@@ -11,7 +11,9 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 /**
  * Categoria especial (ex.: "Campeão Brasileiro 2026"): o apostador escolhe uma opção, com cotação
- * fixa, até a data limite. Encerrada com a opção vencedora ou cancelada pelo administrador.
+ * fixa, até a data limite. Encerrada com uma ou mais opções vencedoras (quantidade_vencedoras, com
+ * divisão da cotação das empatadas na última vaga) ou cancelada pelo administrador; o resultado só
+ * muda pela correção do Admin (spec 024).
  */
 class Especiais extends Model
 {
@@ -27,6 +29,8 @@ class Especiais extends Model
     protected $attributes = [
         'situacao' => 'Aguardando',
         'ativo' => true,
+        'quantidade_vencedoras' => 1,
+        'dividir_empate' => false,
     ];
 
     /**
@@ -35,6 +39,7 @@ class Especiais extends Model
     protected $fillable = [
         'nome',
         'data_limite',
+        'quantidade_vencedoras',
         'ativo',
     ];
 
@@ -46,19 +51,32 @@ class Especiais extends Model
         return [
             'data_limite' => 'datetime',
             'situacao' => SituacaoEspecial::class,
+            'quantidade_vencedoras' => 'integer',
+            'dividir_empate' => 'boolean',
             'ativo' => 'boolean',
             'encerrado_em' => 'datetime',
         ];
     }
 
+    /**
+     * Opções com a categoria já ligada (chaperone), para a situação de cada uma não consultar de novo.
+     */
     public function opcoes(): HasMany
     {
-        return $this->hasMany(EspeciaisOpcoes::class, 'especiais_id');
+        return $this->hasMany(EspeciaisOpcoes::class, 'especiais_id')->chaperone('especial');
     }
 
-    public function opcao_vencedora(): BelongsTo
+    public function vencedoras(): HasMany
     {
-        return $this->belongsTo(EspeciaisOpcoes::class, 'especiais_opcoes_id_vencedora')->withTrashed();
+        return $this->opcoes()->where('vencedora', true);
+    }
+
+    /**
+     * Correções de resultado (spec 024), a mais recente primeiro.
+     */
+    public function correcoes(): HasMany
+    {
+        return $this->hasMany(EspeciaisCorrecoes::class, 'especiais_id')->latest('id');
     }
 
     public function encerrado_por_usuario(): BelongsTo
@@ -77,6 +95,14 @@ class Especiais extends Model
     public function aceita_palpites(): bool
     {
         return $this->ativo && $this->situacao === SituacaoEspecial::Aguardando && $this->data_limite->isFuture();
+    }
+
+    /**
+     * Aguardando com a data limite já passada: falta encerrar (selo "Aguardando resultado").
+     */
+    public function aguardando_resultado(): bool
+    {
+        return $this->situacao === SituacaoEspecial::Aguardando && $this->data_limite->isPast();
     }
 
     /**

@@ -95,6 +95,7 @@ export const permissoes = {
     'especiais.listar': { grupo: 'Especiais', nome: 'Ver especiais', descricao: 'Abre a lista de apostas especiais.' },
     'especiais.gerenciar': { grupo: 'Especiais', nome: 'Gerenciar especiais', descricao: 'Cria e altera categorias e opções.' },
     'especiais.encerrar': { grupo: 'Especiais', nome: 'Encerrar especiais', descricao: 'Define o resultado ou cancela especiais.' },
+    'especiais.corrigir_resultado': { grupo: 'Especiais', nome: 'Corrigir resultado de especiais', descricao: 'Troca as vencedoras de um especial encerrado e reapura as apostas.' },
 
     // Site e configurações
     'avisos.gerenciar': { grupo: 'Site e configurações', nome: 'Avisos', descricao: 'Cria e altera os avisos do site.' },
