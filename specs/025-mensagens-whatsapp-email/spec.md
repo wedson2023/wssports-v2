@@ -17,7 +17,7 @@
 - Q: Como o Admin é avisado de um saque? → A: Depois de 30 minutos parado, uma vez por saque, com cliente, valor, chave Pix e link para o painel com login. A baixa sem login do antigo não é trazida.
 - Diferenças aprovadas em relação ao antigo: Evolution API no lugar da Z-API, telefone do Admin configurável, aviso único por saque, baixa só com login, botão de teste dos canais e registro de envios.
 
-- Q: O CallMeBot continua em algum lugar? → A: Não. Sai de todo o sistema, inclusive do aviso do deploy; tudo passa a usar a Evolution API.
+- Q: O CallMeBot continua em algum lugar? → A: Sai do sistema, que passa a usar a Evolution API. Continua só no aviso do deploy no GitHub, que não muda.
 - Q: Quem define o canal de cada mensagem? → A: O Admin, em Configurações: WhatsApp, e-mail ou os dois, mensagem por mensagem.
 - Q: Os e-mails precisam de telas novas? → A: Sim. Cada mensagem que pode sair por e-mail tem o seu modelo, simples e fácil de entender.
 - Q: De onde vêm as credenciais de e-mail? → A: Do `.env` do sistema antigo, copiadas para o `.env` deste sistema.
@@ -153,7 +153,7 @@ Quem recebe um e-mail entende em poucos segundos do que se trata e o que fazer, 
 ### Edge Cases
 
 - Telefone que não tem WhatsApp: o envio é marcado como falhou, sem novas tentativas.
-- Robô desconectado no momento do envio: segue as tentativas de FR-005 e, ao final, usa a reserva de FR-008 ou FR-011a, quando houver, ou marca como falhou.
+- Robô já registrado como desconectado no momento do envio: mensagens com reserva (FR-008 e FR-011a) vão direto pelo outro canal; as demais seguem as tentativas de FR-005 e, ao final, ficam como falhou. Falha inesperada de conexão segue as tentativas antes de usar a reserva.
 - Código de recuperação que passou da validade de 15 minutos sem ser enviado: não é mais enviado.
 - Novo pedido de recuperação com um código anterior ainda na fila: o código invalidado não é enviado.
 - Muitas mensagens ao mesmo tempo: os códigos de recuperação saem antes das demais.
@@ -190,8 +190,8 @@ Quem recebe um e-mail entende em poucos segundos do que se trata e o que fazer, 
 
 - **FR-014**: A queda do robô sem pedido do Admin DEVE gerar um e-mail para o endereço de FR-014a, com no máximo um envio a cada 30 minutos, e um alerta visível no painel enquanto durar.
 - **FR-014a**: A tela de Configurações DEVE ter um campo novo, opcional, "E-mail do Admin", porque hoje o sistema não guarda e-mail de usuários do painel. Vazio, a queda só aparece como alerta no painel.
-- **FR-015**: O CallMeBot DEVE ser removido de todo o sistema: o campo da chave sai da tela e a chave guardada é apagada. O telefone do Admin continua configurável.
-- **FR-016**: O aviso do deploy (spec 013) DEVE passar a usar a Evolution API diretamente, sem depender do sistema estar no ar. Uma falha nesse aviso NÃO DEVE falhar o deploy, como hoje.
+- **FR-015**: O CallMeBot DEVE ser removido do sistema: o campo da chave sai da tela e a chave guardada é apagada. O telefone do Admin continua configurável.
+- **FR-016**: O aviso do deploy no GitHub (spec 013) DEVE continuar pelo CallMeBot, sem alteração.
 
 **Canal de cada mensagem**
 
@@ -237,7 +237,7 @@ Quem recebe um e-mail entende em poucos segundos do que se trata e o que fazer, 
 - **SC-002**: Nenhum código de recuperação aparece em logs ou registros de envio, conferido em uma busca após o teste manual.
 - **SC-003**: Uma falha de WhatsApp ou e-mail nunca impede a conclusão de um cadastro ou de um pedido de recuperação.
 - **SC-004**: O Admin é avisado em até 5 minutos de qualquer queda do robô que não tenha pedido.
-- **SC-005**: Nenhum aviso usa mais o CallMeBot, nem no sistema em operação nem no deploy.
+- **SC-005**: Nenhuma mensagem do sistema em operação usa mais o CallMeBot.
 - **SC-007**: Uma troca de canal feita em Configurações vale para os envios seguintes em até 1 minuto, sem ajuda técnica.
 - **SC-008**: Quem recebe um e-mail identifica o assunto e a ação esperada em até 10 segundos, conferido no teste manual em celular e computador.
 - **SC-006**: Todo envio pode ser consultado no registro com a situação final, mesmo quando falha.
@@ -245,7 +245,6 @@ Quem recebe um e-mail entende em poucos segundos do que se trata e o que fazer, 
 ## Assumptions
 
 - Usa as credenciais de e-mail do ambiente, trazidas do sistema antigo (`mail.wssports.bet`); em produção, `MAIL_MAILER` deve estar como `smtp`.
-- O aviso do deploy precisa que o responsável cadastre no GitHub os segredos da Evolution API e o telefone de destino.
 - A Evolution API e o robô da spec 021 estão disponíveis, com as variáveis do servidor preenchidas.
 - O destinatário dos avisos é o telefone do Admin já configurado (`telefone_whatsapp_admin`), um só número. O e-mail é o do campo novo de FR-014a.
 - Só texto: imagem e vídeo, que existiam no antigo mas não tinham uso nos fluxos consultados, ficam de fora.
