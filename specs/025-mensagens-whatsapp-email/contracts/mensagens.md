@@ -6,6 +6,7 @@
 |---|---|---|---|
 | Código do cliente | `Seu código de recuperação é {codigo}, válido por 15 minutos.` | `[ {banca} ] Seu código de recuperação` | nenhum |
 | Boas-vindas | `Olá, {nome}! Sua conta foi criada com sucesso.` | o atual | o atual |
+| Confirmação de cadastro | com o WhatsApp configurado: `Olá, {nome}! Enviamos um link para {email}. Confirme para entrar na sua conta.` | `[ {banca} ] Confirme seu e-mail` | Confirmar e-mail → `/confirmar-email?token=` |
 | Combinação de risco | o atual, de `AvisosWhatsapp::texto_combinacoes` | `[ {banca} ] Combinação de risco nova` | Ver no painel → `/painel` |
 | Saque parado | ver abaixo | `[ {banca} ] Saque aguardando há 30 minutos` | Ver saque → `/painel/clientes` |
 | Afiliado: recebido, aprovado e recusado | texto curto com o mesmo sentido do e-mail | os atuais | os atuais |

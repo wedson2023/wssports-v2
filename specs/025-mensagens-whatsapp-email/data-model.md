@@ -67,6 +67,29 @@ Uma linha por tentativa de canal. Sem conteúdo de mensagem e sem listagem nesta
 
 Índice: `(situacao, aviso_parado_em, created_at)`.
 
+## `clientes` (alterada)
+
+| Coluna | Tipo | Regra |
+|---|---|---|
+| `confirmacao_pendente` | boolean, padrão falso | verdadeiro no cadastro público com a opção ligada; falso ao confirmar |
+| `email_confirmado_em` | timestamp, nulo | quando o e-mail foi confirmado |
+
+## `clientes_confirmacoes_email` (nova)
+
+| Coluna | Tipo | Regra |
+|---|---|---|
+| `id` | id | |
+| `clientes_id` | foreignId | `clientes` |
+| `token` | char(64), único | hash SHA-256 do token enviado; o token em si não é guardado |
+| `expira_em` | timestamp | 24 horas após a criação |
+| `usado_em` | timestamp, nulo | |
+| `invalidado_em` | timestamp, nulo | preenchido quando um novo link é gerado |
+| `created_at`, `updated_at`, `deleted_at` | | |
+
+Em `configuracoes`: `confirmacao_cadastro` boolean, padrão falso.
+
+`TipoMensagem` ganha `ConfirmaçãoCadastro` (valor "Confirmação de cadastro"), sempre por e-mail, fora da lista de escolha.
+
 ## Permissão
 
 `configuracoes.editar_mensagens`, criada por migration como `criar_permissao_robo_whatsapp`, só para o Admin.

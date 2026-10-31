@@ -34,13 +34,15 @@ As credenciais de e-mail vieram do `.env` antigo. `MAIL_ENCRYPTION=tls` não foi
 
 ## R-04 — Um job único e as filas
 
-**Decision**: um job `EnviarMensagem` por canal, `$tries = 4` (primeira tentativa + 3) e `$backoff = [10, 30, 60]`. Filas `mensagens_prioritarias` (códigos) e `mensagens` (demais).
+**Decision**: um job `EnviarMensagem` por canal, `$tries = 4` (primeira tentativa + 3) e `$backoff = [10, 30, 60]`. Sem filas novas: códigos na fila `notificacoes` e as demais na `default`. A propriedade `$tries` do job prevalece sobre o `--tries=1` do worker.
 
-**Rationale**: mantém as tentativas do antigo e o padrão de `FILA` dos jobs atuais. O job envia o e-mail de forma síncrona para saber o resultado e poder registrá-lo; por isso os Mailables deixam de implementar `ShouldQueue`, já que o Laravel enfileiraria de novo um Mailable com esse contrato.
+**Rationale**: mantém as tentativas do antigo e evita depender de alteração manual no servidor, decisão do responsável em 2026-10-31. O `wssports-fila` do servidor de teste roda `--queue=apostas,notificacoes,default`, conferido na mesma data, então os códigos saem antes das demais. O job envia o e-mail de forma síncrona para saber o resultado e poder registrá-lo; por isso os Mailables deixam de implementar `ShouldQueue`, já que o Laravel enfileiraria de novo um Mailable com esse contrato.
 
-**Ação no servidor**: a lista de filas do `wssports-fila` está no Supervisor, fora do repositório, e precisa incluir as duas novas, com `mensagens_prioritarias` primeiro. Sem isso, as mensagens não saem. Está no `docs/deploy/README.md` e no quickstart.
+**Limitação aceita**: os códigos dividem a fila com as notificações push, então um envio manual grande de push pode atrasá-los um pouco.
 
-**Alternatives considered**: reaproveitar a fila `notificacoes` não dá prioridade aos códigos, porque concorre com as notificações push.
+**Em produção**: conferir que o worker usa a mesma ordem de filas antes de publicar.
+
+**Alternatives considered**: filas exclusivas foram rejeitadas porque esquecer a configuração no servidor deixaria todas as mensagens paradas, sem nenhum erro visível.
 
 ## R-05 — Reserva de canal
 
@@ -75,6 +77,16 @@ As credenciais de e-mail vieram do `.env` antigo. `MAIL_ENCRYPTION=tls` não foi
 ## R-10 — Modelos de e-mail
 
 **Decision**: novos modelos estendendo `emails.layout`, com `DadosEmail`: um assunto objetivo, até 3 linhas de texto, os dados em lista simples e no máximo um botão. Os modelos existentes não mudam.
+
+## R-12 — Confirmação de cadastro
+
+**Antigo**: `configs.confirmacao_cadastro`, padrão `Sim`. O `CadastroController` enviava `CadastroMail` e deixava `creditos.ativo = 'Não'`; a rota `confirmar-cadastro?recovery=` ativava e já fazia o login. O link não expirava, e o e-mail era obrigatório.
+
+**Decision**: coluna `clientes.email_confirmado_em` e token em `clientes_confirmacoes_email`, com hash e validade de 24 horas. Com a opção ligada, o cadastro público cria a conta com `confirmacao_pendente = true`, e `pode_acessar` passa a considerar essa pendência somente enquanto a opção estiver ligada. Página `/confirmar-email` com botão que chama `POST`.
+
+**Rationale**: não reutiliza `ativo`, porque ele indica bloqueio pelo painel, e confirmar não pode reativar quem a banca bloqueou. O `POST` evita a confirmação por leitores automáticos de link, e a validade corrige o link eterno do antigo. O padrão desligado mantém o comportamento atual até o Admin decidir, diferente do padrão `Sim` do antigo.
+
+**Diferenças em relação ao antigo, informadas ao responsável**: link com validade de 24 horas, padrão desligado, botão na página de confirmação, reenvio e confirmação manual no painel.
 
 ## R-11 — Aviso do deploy
 

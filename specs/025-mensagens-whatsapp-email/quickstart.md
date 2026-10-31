@@ -4,13 +4,13 @@
 
 - `.env` com `MAIL_*` e `EVOLUTION_*` preenchidos, e robô conectado em Configurações → Integrações.
 - Migrations aplicadas e agendador rodando.
-- Worker atendendo as filas, com a prioritária primeiro:
+- Worker atendendo as filas, igual ao do servidor:
 
 ```bash
-php artisan queue:work --queue=apostas,mensagens_prioritarias,notificacoes,mensagens,default
+php artisan queue:work --queue=apostas,notificacoes,default --tries=1
 ```
 
-- No servidor, incluir `mensagens_prioritarias` e `mensagens` no programa `wssports-fila` do Supervisor. Sem isso as mensagens ficam paradas na fila.
+- Antes de publicar em produção, conferir que o worker usa essa mesma ordem de filas.
 
 ## §1 Confirmar os canais (fazer primeiro)
 
@@ -53,6 +53,18 @@ php artisan queue:work --queue=apostas,mensagens_prioritarias,notificacoes,mensa
 ## §6 Modelos de e-mail (US7)
 
 Disparar cada tipo por e-mail e abrir no celular e no computador. Esperado: logo e cor da banca, assunto claro, texto curto, no máximo um botão e código visível sem rolar.
+
+## §6a Confirmação de cadastro (US8)
+
+1. Com a opção desligada, cadastrar. Esperado: entra direto, como hoje.
+2. Ligar a opção e cadastrar sem e-mail. Esperado: recusa.
+3. Cadastrar com e-mail. Esperado: aviso na tela e e-mail com o botão.
+4. Tentar entrar antes de confirmar. Esperado: aviso e opção de reenviar.
+5. Abrir o link. Esperado: nada é confirmado até clicar no botão da página; depois, entra na conta.
+6. Abrir o link de novo, e um link antigo depois de reenviar. Esperado: "Link expirado".
+7. Confirmar um cadastro pelo painel. Esperado: o cliente entra normalmente.
+8. Cliente bloqueado no painel abre um link válido. Esperado: continua sem acesso.
+9. Conferir que clientes antigos entram com a opção ligada.
 
 ## §7 Deploy
 

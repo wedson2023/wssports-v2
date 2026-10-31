@@ -14,6 +14,7 @@ Cria um único caminho de envio para as mensagens do sistema:
 - **Queda do robô** (R-08): e-mail e alerta no painel, com conferência periódica caso o aviso automático se perca.
 - **Configurações** (R-09): card "Mensagens" na aba Integrações, com canais, telefone, e-mail e teste, só para o Admin.
 - **Modelos de e-mail** (R-10): 5 novos, na base visual existente.
+- **Confirmação de cadastro** (R-12): opção no painel; com ela ligada, o cliente só entra depois de clicar no botão do e-mail.
 - **Deploy** (R-11): o aviso do GitHub continua pelo CallMeBot, sem alteração.
 - **Segurança** (R-03): o código não vai para log nem para registro, e os jobs que o transportam são criptografados.
 
@@ -25,7 +26,7 @@ Decisões em [research.md](research.md).
 
 **Primary Dependencies**: as instaladas (Laravel 12, Inertia 2, React 19, styled-components 6, sweetalert2, jwt-auth, spatie/laravel-permission). Nenhuma nova.
 
-**Storage**: MySQL; 4 migrations: tabela `mensagens_envios`, colunas em `configuracoes`, coluna em `saques` e a permissão nova.
+**Storage**: MySQL; 6 migrations: tabelas `mensagens_envios` e `clientes_confirmacoes_email`, colunas em `configuracoes`, `saques` e `clientes`, e a permissão nova.
 
 **Testing**: nenhum teste automatizado (Constituição); validação pelo [quickstart.md](quickstart.md)
 
@@ -33,7 +34,7 @@ Decisões em [research.md](research.md).
 
 **Project Type**: monólito Laravel + Inertia com API JWT
 
-**Performance Goals**: despacho do envio sem atrasar a requisição de origem; código de recuperação entregue em até 1 minuto, na fila prioritária; queda do robô percebida em até 5 minutos.
+**Performance Goals**: despacho do envio sem atrasar a requisição de origem; código de recuperação entregue em até 1 minuto, na fila `notificacoes`; queda do robô percebida em até 5 minutos.
 
 **Constraints**: chaves e códigos nunca em log; a Evolution API só é chamada pelo `ClienteEvolution` no sistema; nenhuma rota com destinatário livre; falha de envio não desfaz a operação de origem; sem testes automatizados.
 
@@ -41,12 +42,13 @@ Decisões em [research.md](research.md).
 
 | Item | Quantidade |
 |---|---|
-| Migrations | 4 |
-| Rotas da API novas / removidas | 3 / 2 |
+| Migrations | 6 |
+| Rotas da API novas / alteradas / removidas | 6 / 3 / 2 |
 | Comandos agendados novos | 2 |
 | Componente novo | 1 (`MessagesCard`) |
-| Modelos de e-mail novos | 5 |
-| Filas novas | 2 |
+| Página nova | 1 (`ConfirmEmail`) |
+| Modelos de e-mail novos | 6 |
+| Filas novas | 0 (códigos em `notificacoes`, demais em `default`) |
 
 ## Constitution Check
 
@@ -141,8 +143,24 @@ resources/js/components/PanelShell/{index.jsx,styles.jsx}              # alterad
 resources/js/pages/PanelSettings/index.jsx                             # alterado
 resources/js/utils/settings_fields.js                                  # alterado: sai avisos_whatsapp
 
-docs/deploy/README.md                                                  # alterado: filas novas no Supervisor
-composer.json                                                          # alterado: filas novas no script dev
+database/migrations/..._add_confirmacao_clientes_table.php             # novo
+database/migrations/..._create_clientes_confirmacoes_email_table.php   # novo
+app/Models/ClientesConfirmacoesEmail.php                               # novo
+app/Models/Clientes.php                                                # alterado: pode_acessar
+app/Services/ConfirmacaoCadastro.php                                   # novo
+app/Services/CadastroClientes.php                                      # alterado
+app/Http/Controllers/AreaClienteConfirmacaoEmailController.php         # novo
+app/Http/Controllers/ClientesController.php                            # alterado: confirmar_email
+app/Http/Controllers/PaginaConfirmacaoEmailController.php              # novo
+app/Http/Controllers/AreaClienteCadastroController.php                 # alterado
+app/Http/Controllers/AreaClienteAutenticacaoController.php             # alterado
+app/Http/Requests/StoreClientesRequest.php                             # alterado: e-mail obrigatório
+app/Mail/ClienteConfirmacaoCadastro.php                                # novo
+resources/views/emails/clientes/confirmacao_cadastro.blade.php         # novo
+resources/js/pages/ConfirmEmail/{index.jsx,styles.jsx}                 # novo
+resources/js/components/AuthModal/index.jsx                            # alterado
+resources/js/components/ClientDrawer/index.jsx                         # alterado
+routes/web.php                                                         # alterado
 docs/postman/wssports_api.postman_collection.json                      # regenerada
 ```
 

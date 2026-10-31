@@ -23,6 +23,8 @@
 - Q: De onde vêm as credenciais de e-mail? → A: Do `.env` do sistema antigo, copiadas para o `.env` deste sistema.
 - Q: Quando um aviso ao Admin não puder sair pelo canal escolhido, ele deve ir pelo outro canal? → A: Sim, se o campo do outro canal estiver preenchido; só fica como falhou se os dois falharem.
 - Q: O aviso de saque parado deve sair a qualquer hora ou só das 6h às 23h, como no sistema antigo? → A: A qualquer hora, assim que o saque completar 30 minutos parado.
+- Q: As boas-vindas precisam confirmar o e-mail? → A: Sim, quando o painel exigir confirmação de cadastro: a mensagem leva um botão para o cliente validar o e-mail. Isso substitui a decisão da spec 012 de não trazer a confirmação por link.
+- Q: Qual é o padrão da confirmação de cadastro? → A: Desligada. O cliente já nasce ativo e entra direto, e recebe as boas-vindas do mesmo jeito, sem o botão de confirmação.
 
 ## Referências do sistema antigo *(Princípio VII)*
 
@@ -150,6 +152,25 @@ Quem recebe um e-mail entende em poucos segundos do que se trata e o que fazer, 
 
 ---
 
+### User Story 8 - Cliente confirma o e-mail no cadastro (Priority: P2)
+
+Quando o Admin liga a confirmação de cadastro, o cliente recebe no e-mail um botão para confirmar o endereço e só entra na conta depois disso, como no sistema antigo.
+
+**Why this priority**: garante que o e-mail informado existe e pertence ao cliente, mas é opcional para a banca.
+
+**Independent Test**: ligar a opção, cadastrar um cliente, tentar entrar antes de confirmar, clicar no botão e conferir que a conta abre.
+
+**Acceptance Scenarios**:
+
+1. **Given** a opção ligada, **When** o cliente se cadastra, **Then** o e-mail é obrigatório, ele recebe o botão de confirmação e a tela avisa para verificar o e-mail, sem entrar na conta.
+2. **Given** um cadastro não confirmado, **When** ele tenta entrar, **Then** vê o aviso para confirmar e a opção de reenviar o e-mail.
+3. **Given** um link válido, **When** o cliente clica no botão, **Then** o e-mail é confirmado e ele entra na conta.
+4. **Given** um link já usado, vencido ou inválido, **When** o cliente o abre, **Then** vê "Link expirado" e pode pedir um novo.
+5. **Given** a opção desligada, **When** o cliente se cadastra, **Then** o cadastro funciona como hoje, sem botão de confirmação.
+6. **Given** um cliente que digitou o e-mail errado, **When** procura a banca, **Then** quem tem acesso ao cadastro pode corrigir o e-mail e confirmá-lo manualmente pelo painel.
+
+---
+
 ### Edge Cases
 
 - Telefone que não tem WhatsApp: o envio é marcado como falhou, sem novas tentativas.
@@ -159,6 +180,8 @@ Quem recebe um e-mail entende em poucos segundos do que se trata e o que fazer, 
 - Muitas mensagens ao mesmo tempo: os códigos de recuperação saem antes das demais.
 - Boas-vindas ou mensagem de afiliado sem o dado do canal escolhido (e-mail ou telefone): fica como dispensada.
 - Telefone ou e-mail do Admin vazio com um aviso configurado para esse canal: a tela de Configurações alerta sobre o campo vazio ao salvar, e o aviso usa o outro canal, se houver (FR-011a).
+- Boas-vindas configuradas só por WhatsApp com a confirmação ligada: o e-mail com o botão é enviado mesmo assim, e o WhatsApp avisa para verificar o e-mail.
+- Confirmação desligada com cadastros ainda pendentes: esses clientes passam a entrar normalmente.
 - Credenciais de e-mail erradas ou ausentes: a falha é registrada e nenhuma operação principal é desfeita.
 - Evolution API não configurada no servidor: o envio é marcado como falhou, sem erro para o usuário final.
 
@@ -215,6 +238,16 @@ Quem recebe um e-mail entende em poucos segundos do que se trata e o que fazer, 
 - **FR-026**: Todos os modelos DEVEM usar a base visual já existente (logo, cor da banca e fonte), ter um assunto que diga do que se trata, texto curto, no máximo um botão e leitura confortável no celular.
 - **FR-027**: Códigos DEVEM aparecer em destaque com a validade e o aviso para ignorar se não foi a pessoa que pediu. Avisos ao Admin DEVEM trazer os dados da mensagem de WhatsApp correspondente e o botão para a tela do painel.
 
+**Confirmação de cadastro**
+
+- **FR-028**: A seção "Mensagens" DEVE ter a opção "Exigir confirmação de cadastro", só para o Admin, desligada por padrão.
+- **FR-029**: Com a opção ligada, o e-mail DEVE ser obrigatório no cadastro público, a conta NÃO DEVE receber acesso até a confirmação, e o cadastro NÃO DEVE devolver token de acesso.
+- **FR-030**: As boas-vindas DEVEM levar o botão "Confirmar e-mail" no e-mail, sempre enviado nesse caso, qualquer que seja o canal escolhido. No WhatsApp, quando configurado, o texto avisa para verificar o e-mail.
+- **FR-031**: O link DEVE ser de uso único e valer por 24 horas; um novo link invalida o anterior. Só uma ação na página de confirmação DEVE confirmar o e-mail, para que leitores automáticos de link não a acionem.
+- **FR-032**: O cliente DEVE poder pedir o reenvio, com limite de tentativas e a mesma resposta exista ou não o cadastro.
+- **FR-033**: Quem tem permissão de editar clientes DEVE poder corrigir o e-mail e confirmar o cadastro manualmente no painel.
+- **FR-034**: Clientes já cadastrados NÃO DEVEM ser afetados ao ligar a opção. O cadastro de afiliados não muda; clientes que se cadastram com código de afiliado seguem a regra normalmente.
+
 **Segurança e registro**
 
 - **FR-017**: Códigos de recuperação e demais segredos NÃO DEVEM aparecer em logs nem em registros de envio.
@@ -240,6 +273,7 @@ Quem recebe um e-mail entende em poucos segundos do que se trata e o que fazer, 
 - **SC-005**: Nenhuma mensagem do sistema em operação usa mais o CallMeBot.
 - **SC-007**: Uma troca de canal feita em Configurações vale para os envios seguintes em até 1 minuto, sem ajuda técnica.
 - **SC-008**: Quem recebe um e-mail identifica o assunto e a ação esperada em até 10 segundos, conferido no teste manual em celular e computador.
+- **SC-009**: Com a confirmação ligada, nenhum cadastro novo entra na conta antes de confirmar o e-mail, e o cliente consegue confirmar em até 1 minuto depois de abrir o e-mail.
 - **SC-006**: Todo envio pode ser consultado no registro com a situação final, mesmo quando falha.
 
 ## Assumptions
