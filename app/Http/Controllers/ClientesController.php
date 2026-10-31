@@ -8,6 +8,7 @@ use App\Http\Requests\RestaurarClientesRequest;
 use App\Http\Requests\UpdateClientesRequest;
 use App\Http\Resources\ClientesResource;
 use App\Models\Clientes;
+use App\Services\ConfirmacaoCadastro;
 use App\Services\FiltrosClientes;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
@@ -34,7 +35,7 @@ class ClientesController extends Controller implements HasMiddleware
     {
         return [
             self::permissao_cliente('clientes.listar', only: ['index', 'show']),
-            self::permissao_cliente('clientes.editar', only: ['update', 'alterar_situacao']),
+            self::permissao_cliente('clientes.editar', only: ['update', 'alterar_situacao', 'confirmar_email']),
             self::permissao_cliente('clientes.excluir', only: ['destroy']),
             self::permissao_cliente('clientes.restaurar', only: ['excluidos', 'restaurar']),
         ];
@@ -74,6 +75,18 @@ class ClientesController extends Controller implements HasMiddleware
     /**
      * Ao desativar, os tokens já emitidos deixam de valer imediatamente.
      */
+    /**
+     * Confirma o e-mail pelo painel (spec 025, FR-033), para o cliente que não recebeu o link.
+     */
+    public function confirmar_email(Request $request, Clientes $cliente, ConfirmacaoCadastro $confirmacao): ClientesResource
+    {
+        $this->garantir_cliente($request, $cliente);
+
+        $confirmacao->confirmar_manualmente($cliente);
+
+        return new ClientesResource($this->com_saldo_liquido($cliente)->load(['configuracoes', 'afiliado']));
+    }
+
     public function alterar_situacao(Request $request, Clientes $cliente): ClientesResource
     {
         $this->garantir_cliente($request, $cliente);

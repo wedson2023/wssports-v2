@@ -3,6 +3,7 @@
 namespace App\Http\Resources;
 
 use App\Enums\Funcao;
+use App\Models\Configuracoes;
 use App\Models\Usuarios;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
@@ -35,6 +36,10 @@ class UsuarioLogadoResource extends JsonResource
                 ->pluck('name')
                 ->filter(fn (string $permissao) => Funcao::usuario_pode($this->resource, $permissao))
                 ->values(),
+            // faixa de alerta do painel, só para quem configura as mensagens (spec 025, FR-014)
+            'robo_whatsapp_caido' => Funcao::usuario_pode($this->resource, 'configuracoes.editar_mensagens')
+                && $this->resource->can('configuracoes.editar_mensagens')
+                && Configuracoes::atual()->robo_whatsapp_caido(),
         ];
     }
 }

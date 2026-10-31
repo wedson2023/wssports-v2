@@ -7,35 +7,35 @@ use App\Models\ApostasCombinacoesRisco;
 use App\Models\Configuracoes;
 use App\Services\AvisosWhatsapp;
 use App\Services\CombinacoesRisco;
+use App\Services\DisparoMensagens;
+use App\Services\TextosMensagens;
 use App\Support\FusoSistema;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use Throwable;
 
 /**
  * Agendador dos avisos de combinação de risco nova (spec 014, FR-045 a FR-049, R-11): única origem
  * dos avisos. A cada minuto registra as combinações novas da banca toda (ainda não registradas hoje
- * nem ontem) e manda ao Admin uma mensagem no WhatsApp com todas elas; o painel só lê esses
- * registros. Falha no envio é tentada de novo no minuto seguinte, até 3 vezes.
+ * nem ontem) e manda ao Admin uma mensagem com todas elas, pelo canal configurado (spec 025); o
+ * painel só lê esses registros. Falha no envio é tentada de novo no minuto seguinte, até 3 vezes.
  */
 class AvisarCombinacoesRiscoCommand extends Command
 {
     protected $signature = 'apostas:avisar_combinacoes_risco';
 
-    protected $description = 'Registra as combinações de risco novas e avisa o Admin no WhatsApp';
+    protected $description = 'Registra as combinações de risco novas e avisa o Admin';
 
     private const TENTATIVAS_MAXIMAS = 3;
 
-    public function handle(CombinacoesRisco $combinacoes, AvisosWhatsapp $avisos): int
+    public function handle(CombinacoesRisco $combinacoes, AvisosWhatsapp $avisos, DisparoMensagens $disparo, TextosMensagens $textos): int
     {
         $configuracoes = Configuracoes::atual();
         $pode_enviar = $configuracoes->aviso_combinacao_whatsapp
-            && filled($configuracoes->telefone_whatsapp_admin)
-            && filled($configuracoes->chave_callmebot);
+            && (filled($configuracoes->telefone_whatsapp_admin) || filled($configuracoes->email_admin));
 
         $novas = $this->registrar_novas($combinacoes->listar(null), $pode_enviar);
-        $enviadas = $pode_enviar ? $this->enviar_pendentes($avisos, $configuracoes) : 0;
+        $enviadas = $pode_enviar ? $this->enviar_pendentes($avisos, $disparo, $textos) : 0;
 
         $this->info("Combinações novas: {$novas}; mensagens enviadas: {$enviadas}.");
 
@@ -84,7 +84,7 @@ class AvisarCombinacoesRiscoCommand extends Command
     /**
      * Uma mensagem só com todas as pendentes; a falha conta uma tentativa em cada uma.
      */
-    private function enviar_pendentes(AvisosWhatsapp $avisos, Configuracoes $configuracoes): int
+    private function enviar_pendentes(AvisosWhatsapp $avisos, DisparoMensagens $disparo, TextosMensagens $textos): int
     {
         $pendentes = ApostasCombinacoesRisco::where('situacao_whatsapp', SituacaoAvisoWhatsapp::Pendente)
             ->where('tentativas_whatsapp', '<', self::TENTATIVAS_MAXIMAS)
@@ -95,17 +95,15 @@ class AvisarCombinacoesRiscoCommand extends Command
             return 0;
         }
 
-        try {
-            $avisos->enviar($configuracoes->telefone_whatsapp_admin, $configuracoes->chave_callmebot, $avisos->texto_combinacoes($pendentes));
-        } catch (Throwable $erro) {
-            Log::warning('Falha ao avisar combinação de risco no WhatsApp.', ['erro' => $erro->getMessage()]);
+        if (! $disparo->enviar_agora($textos->combinacao_risco($avisos->texto_combinacoes($pendentes)))) {
+            Log::warning('Falha ao avisar combinação de risco.');
 
             foreach ($pendentes as $combinacao) {
                 $tentativas = $combinacao->tentativas_whatsapp + 1;
 
                 $combinacao->update([
                     'tentativas_whatsapp' => $tentativas,
-                    'erro_whatsapp' => mb_substr($erro->getMessage(), 0, 255),
+                    'erro_whatsapp' => 'Nenhum canal entregou o aviso.',
                     'situacao_whatsapp' => $tentativas >= self::TENTATIVAS_MAXIMAS ? SituacaoAvisoWhatsapp::Falhou : SituacaoAvisoWhatsapp::Pendente,
                 ]);
             }

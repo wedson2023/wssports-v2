@@ -7,6 +7,7 @@ use App\Enums\OrigemTransacao;
 use App\Events\ClienteCadastrado;
 use App\Models\Clientes;
 use App\Models\ClientesPromocoes;
+use App\Models\Configuracoes;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
@@ -42,7 +43,11 @@ class CadastroClientes
                 ]);
 
                 // código do link de indicação do novo cliente e quem o indicou (spec 007, US9)
-                $cliente->forceFill(['codigo_indicacao' => Clientes::gerar_codigo_indicacao()])->save();
+                // com a confirmação ligada, a conta fica pendente até confirmar o e-mail (spec 025)
+                $cliente->forceFill([
+                    'codigo_indicacao' => Clientes::gerar_codigo_indicacao(),
+                    'confirmacao_pendente' => Configuracoes::atual()->confirmacao_cadastro,
+                ])->save();
                 $this->indicacoes->registrar($cliente, $dados['codigo_indicacao'] ?? null);
 
                 // sem tabela padrão: os demais valores vêm do padrão das colunas

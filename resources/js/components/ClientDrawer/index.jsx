@@ -66,6 +66,16 @@ export default function ClientDrawer({ cliente, versao, token, pode, acoes, ao_f
 
     const dados = detalhe && detalhe.id === cliente?.id ? detalhe : null;
 
+    // cliente que não recebeu o link de confirmação (spec 025, FR-033)
+    const confirmar_email = async () => {
+        try {
+            await api.post(`/clientes/${cliente.id}/confirmar-email`, {}, { headers: { Authorization: `Bearer ${token}` } });
+            ao_alterar();
+        } catch (erro) {
+            alerta_erro(erro);
+        }
+    };
+
     const linha = (rotulo, valor) => (
         <DataItem key={rotulo}>
             <span>{rotulo}</span>
@@ -90,6 +100,7 @@ export default function ClientDrawer({ cliente, versao, token, pode, acoes, ao_f
                                         {linha('Situação', dados.ativo ? 'Ativo' : 'Inativo')}
                                         {linha('Telefone', dados.telefone ? `+${dados.ddi} ${dados.telefone}` : null)}
                                         {linha('E-mail', dados.email)}
+                                        {dados.confirmacao_pendente && linha('Confirmação do e-mail', 'Pendente')}
                                         {linha('CPF', dados.cpf)}
                                         {linha('Nascimento', data_br(dados.data_nascimento))}
                                         {linha('Gênero', dados.genero)}
@@ -105,6 +116,12 @@ export default function ClientDrawer({ cliente, versao, token, pode, acoes, ao_f
                                         {linha('Alterado em', formatar_data_hora(dados.updated_at))}
                                     </Data>
                                     <Actions>
+                                        {dados.confirmacao_pendente && pode('clientes.editar') && (
+                                            <Button type="button" $tom="#43a047" onClick={confirmar_email}>
+                                                <i className="material-icons" aria-hidden="true">mark_email_read</i>
+                                                Confirmar e-mail
+                                            </Button>
+                                        )}
                                         {acoes(dados).map((acao) => (
                                             <Button key={acao.chave} type="button" $tom={acao.tom} onClick={acao.ao_clicar}>
                                                 <i className="material-icons" aria-hidden="true">{acao.icone}</i>

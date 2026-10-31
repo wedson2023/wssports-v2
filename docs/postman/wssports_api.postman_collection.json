@@ -5191,64 +5191,6 @@
                             "raw": "{\n    \"remover_confronto_cancelado\": true,\n    \"minutos_pagamento_premio\": 5\n}"
                         }
                     }
-                },
-                {
-                    "name": "Configurações dos avisos no WhatsApp",
-                    "request": {
-                        "method": "GET",
-                        "header": [
-                            {
-                                "key": "Accept",
-                                "value": "application/json"
-                            },
-                            {
-                                "key": "Content-Type",
-                                "value": "application/json"
-                            }
-                        ],
-                        "url": {
-                            "raw": "{{base_url}}/configuracoes/avisos-whatsapp",
-                            "host": [
-                                "{{base_url}}"
-                            ],
-                            "path": [
-                                "configuracoes",
-                                "avisos-whatsapp"
-                            ]
-                        },
-                        "description": "Aviso de combinação de risco nova no WhatsApp do Admin (spec 014). A chave do CallMeBot só aparece como definida e com os 4 últimos caracteres. Permissão configuracoes.editar."
-                    }
-                },
-                {
-                    "name": "Alterar avisos no WhatsApp",
-                    "request": {
-                        "method": "PUT",
-                        "header": [
-                            {
-                                "key": "Accept",
-                                "value": "application/json"
-                            },
-                            {
-                                "key": "Content-Type",
-                                "value": "application/json"
-                            }
-                        ],
-                        "url": {
-                            "raw": "{{base_url}}/configuracoes/avisos-whatsapp",
-                            "host": [
-                                "{{base_url}}"
-                            ],
-                            "path": [
-                                "configuracoes",
-                                "avisos-whatsapp"
-                            ]
-                        },
-                        "description": "Liga/desliga o aviso, telefone com DDI (só dígitos) e chave do CallMeBot; chave ausente mantém a atual. Ligar sem telefone ou chave → 422. Permissão configuracoes.editar.",
-                        "body": {
-                            "mode": "raw",
-                            "raw": "{\n    \"aviso_combinacao_whatsapp\": true,\n    \"telefone_whatsapp_admin\": \"5582999999999\",\n    \"chave_callmebot\": \"123456\"\n}"
-                        }
-                    }
                 }
             ],
             "description": "Logo e texto das regras da banca (configuracoes.editar: Admin e Supervisor)."
@@ -11622,6 +11564,192 @@
                             ]
                         },
                         "description": "robo_whatsapp.conectar (só Admin). 204; registra Desconexão no histórico."
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Mensagens (spec 025)",
+            "item": [
+                {
+                    "name": "Consultar mensagens",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/configuracoes/mensagens",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "configuracoes",
+                                "mensagens"
+                            ]
+                        },
+                        "description": "configuracoes.editar_mensagens (só Admin). Canais de cada mensagem, telefone e e-mail do Admin e confirmação de cadastro."
+                    }
+                },
+                {
+                    "name": "Alterar mensagens",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"aviso_combinacao_whatsapp\": true,\n    \"telefone_whatsapp_admin\": \"5582999999999\",\n    \"email_admin\": \"admin@exemplo.com\",\n    \"confirmacao_cadastro\": false,\n    \"mensagens\": [\n        {\n            \"tipo\": \"BoasVindasCliente\",\n            \"canal\": \"Os dois\"\n        }\n    ]\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/configuracoes/mensagens",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "configuracoes",
+                                "mensagens"
+                            ]
+                        },
+                        "description": "configuracoes.editar_mensagens. Campos opcionais; mensagens é a lista de tipo e canal."
+                    }
+                },
+                {
+                    "name": "Testar canal",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"canal\": \"WhatsApp\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/configuracoes/mensagens/teste",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "configuracoes",
+                                "mensagens",
+                                "teste"
+                            ]
+                        },
+                        "description": "configuracoes.editar_mensagens. Limite de 5 por minuto. Envia para o Admin configurado; não há destinatário livre."
+                    }
+                },
+                {
+                    "name": "Confirmar e-mail do cadastro",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"token\": \"\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/area-cliente/confirmar-email",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "area-cliente",
+                                "confirmar-email"
+                            ]
+                        },
+                        "description": "Público. Token do link; devolve os dados de login do cliente."
+                    }
+                },
+                {
+                    "name": "Reenviar link de confirmação",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"ddi\": \"55\",\n    \"telefone\": \"82999999999\"\n}"
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/area-cliente/confirmar-email/reenviar",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "area-cliente",
+                                "confirmar-email",
+                                "reenviar"
+                            ]
+                        },
+                        "description": "Público. Um por minuto por telefone; a resposta é a mesma exista ou não o cadastro."
+                    }
+                },
+                {
+                    "name": "Confirmar e-mail pelo painel",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/clientes/{{cliente_id}}/confirmar-email",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "clientes",
+                                "{{cliente_id}}",
+                                "confirmar-email"
+                            ]
+                        },
+                        "description": "clientes.editar, no alcance do usuário."
                     }
                 }
             ]

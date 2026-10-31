@@ -2,10 +2,12 @@
 
 namespace App\Models;
 
+use App\Enums\CanalMensagem;
 use App\Enums\LiquidacaoCriarAposta;
 use App\Enums\MeioDeposito;
 use App\Enums\ModoSaque;
 use App\Enums\SituacaoRoboWhatsapp;
+use App\Enums\TipoMensagem;
 use App\Services\ArmazenamentoImagens;
 use App\Services\IconesAplicativo;
 use Illuminate\Database\Eloquent\Model;
@@ -100,10 +102,12 @@ class Configuracoes extends Model
         'cassino_demo_habilitado',
         'data_prestacao_contas_cassino',
         'dias_registro_chamadas_cassino',
-        // aviso de combinação de risco nova no WhatsApp do Admin (spec 014)
+        // aviso de combinação de risco nova ao Admin (spec 014) e mensagens (spec 025)
         'aviso_combinacao_whatsapp',
         'telefone_whatsapp_admin',
-        'chave_callmebot',
+        'email_admin',
+        'mensagens_canais',
+        'confirmacao_cadastro',
         // limite diário das notificações push manuais (spec 019)
         'limite_notificacoes_manuais_dia',
         // dados da banca, contatos, tema e GTM (spec 021); pasta_icones e robo_whatsapp_* ficam de
@@ -142,13 +146,6 @@ class Configuracoes extends Model
      * @var list<string>
      */
     public const CORES_FUNDO = ['#000000', '#FFFFFF'];
-
-    /**
-     * A chave do CallMeBot nunca sai nas respostas (spec 014, FR-048).
-     *
-     * @var list<string>
-     */
-    protected $hidden = ['chave_callmebot'];
 
     /**
      * @return array<string, string>
@@ -211,7 +208,11 @@ class Configuracoes extends Model
             'dias_registro_chamadas_cassino' => 'integer',
             // aviso de combinação de risco (spec 014)
             'aviso_combinacao_whatsapp' => 'boolean',
-            'chave_callmebot' => 'encrypted',
+            // mensagens (spec 025)
+            'mensagens_canais' => 'array',
+            'confirmacao_cadastro' => 'boolean',
+            'robo_whatsapp_desconexao_pedida' => 'boolean',
+            'robo_whatsapp_alerta_queda_em' => 'datetime',
             // notificações manuais (spec 019)
             'limite_notificacoes_manuais_dia' => 'integer',
             // contatos e robô do WhatsApp (spec 021)
@@ -315,6 +316,26 @@ class Configuracoes extends Model
     public function meios_habilitados(): array
     {
         return $this->meios_deposito ?? [MeioDeposito::Pix->value, MeioDeposito::CartãoCrédito->value];
+    }
+
+    /**
+     * Canal de uma mensagem: o escolhido no painel ou o padrão do tipo (spec 025, FR-022 e FR-023).
+     */
+    public function canal_mensagem(TipoMensagem $tipo): CanalMensagem
+    {
+        $escolhido = $tipo->escolhivel() ? ($this->mensagens_canais[$tipo->name] ?? null) : null;
+
+        return ($escolhido !== null ? CanalMensagem::tryFrom($escolhido) : null) ?? $tipo->canal_padrao();
+    }
+
+    /**
+     * Robô caído sem pedido do Admin (spec 025, FR-014); um robô que nunca foi conectado não conta.
+     */
+    public function robo_whatsapp_caido(): bool
+    {
+        return $this->robo_whatsapp_situacao === SituacaoRoboWhatsapp::Desconectado
+            && ! $this->robo_whatsapp_desconexao_pedida
+            && $this->robo_whatsapp_alerta_queda_em !== null;
     }
 
     public static function atual(): self

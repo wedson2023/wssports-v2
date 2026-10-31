@@ -5,6 +5,7 @@ use App\Http\Controllers\ArquivosPwaController;
 use App\Http\Controllers\BilheteController;
 use App\Http\Controllers\CassinoController;
 use App\Http\Controllers\MinhaContaController;
+use App\Http\Controllers\PaginaConfirmacaoEmailController;
 use App\Http\Controllers\PaginaInicialController;
 use App\Http\Controllers\PainelController;
 use App\Http\Controllers\RegrasController;
@@ -14,6 +15,8 @@ use Illuminate\Support\Facades\Route;
 // tela principal do site (área "/", visitante)
 Route::get('/', [PaginaInicialController::class, 'index'])->name('pagina_inicial');
 Route::get('regras', [RegrasController::class, 'index'])->name('regras');
+// link de confirmação de e-mail do cadastro (spec 025)
+Route::get('confirmar-email', [PaginaConfirmacaoEmailController::class, 'index'])->name('confirmar_email');
 // bilhete em tempo real (spec 010)
 Route::get('bilhete/{codigo}', [BilheteController::class, 'index'])->name('bilhete');
 // área do cassino (spec 011)

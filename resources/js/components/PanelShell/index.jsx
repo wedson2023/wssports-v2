@@ -6,7 +6,7 @@ import useSessao from '../../hooks/useSessao';
 import useVoltarFecha from '../../hooks/useVoltarFecha';
 import { confirmar } from '../../utils/alerts';
 import {
-    Body, Buttons, Content, Drawer, DrawerHeader, GroupButton, Greeting, MenuIcon, MenuItem, Logo, Main, SubItem, TextButton, TitleBar, TitleText, Top,
+    AlertBar, Body, Buttons, Content, Drawer, DrawerHeader, GroupButton, Greeting, MenuIcon, MenuItem, Logo, Main, SubItem, TextButton, TitleBar, TitleText, Top,
 } from './styles';
 
 // permissões que dão acesso à tela "Cotações" (spec 016): qualquer uma das camadas
@@ -183,6 +183,12 @@ export default function PanelShell({ usuario, titulo, children }) {
                         <TitleText>{titulo}</TitleText>
                         <Greeting>Olá, {usuario.nome} · {usuario.funcao}</Greeting>
                     </TitleBar>
+                    {usuario.robo_whatsapp_caido && (
+                        <AlertBar href="/painel/configuracoes?aba=integracoes" role="alert">
+                            <i className="material-icons" aria-hidden="true">warning</i>
+                            Robô do WhatsApp desconectado. Clique para reconectar.
+                        </AlertBar>
+                    )}
                     {children}
                 </Content>
             </Body>

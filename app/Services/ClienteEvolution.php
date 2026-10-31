@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Exceptions\DestinatarioSemWhatsappException;
 use App\Exceptions\RoboIndisponivelException;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\PendingRequest;
@@ -12,7 +13,7 @@ use Illuminate\Support\Str;
 
 /**
  * Única classe que fala com a Evolution API v2 (spec 021, research R-10): instância da banca, QR
- * code, situação da conexão, perfil e desconexão. A chave global vai só no cabeçalho "apikey" e
+ * code, situação da conexão, perfil, desconexão e envio de texto (spec 025). A chave global vai só no cabeçalho "apikey" e
  * nunca para o log; falha de conexão, 5xx ou demora acima do tempo limite viram
  * RoboIndisponivelException.
  */
@@ -108,6 +109,40 @@ class ClienteEvolution
     public function sair(): void
     {
         $this->chamar('delete', '/instance/logout/'.rawurlencode($this->instancia()));
+    }
+
+    /**
+     * Envia um texto pelo robô da banca (spec 025, research R-01 e R-02). Resposta 4xx é definitiva;
+     * sem conexão ou 5xx, temporária. O texto nunca vai para o log, porque pode levar um código.
+     */
+    public function enviar_texto(string $numero, string $texto): void
+    {
+        if (! $this->configurado()) {
+            throw new RoboIndisponivelException;
+        }
+
+        try {
+            $resposta = $this->cliente()->post('/message/sendText/'.rawurlencode($this->instancia()), [
+                'number' => $numero,
+                'text' => $texto,
+            ]);
+        } catch (ConnectionException) {
+            Log::warning('Evolution API sem resposta no envio de mensagem.');
+
+            throw new RoboIndisponivelException;
+        }
+
+        if ($resposta->serverError()) {
+            Log::warning('Evolution API com erro no envio de mensagem.', ['status' => $resposta->status()]);
+
+            throw new RoboIndisponivelException;
+        }
+
+        if ($resposta->clientError()) {
+            Log::warning('Evolution API recusou o envio de mensagem.', ['status' => $resposta->status()]);
+
+            throw new DestinatarioSemWhatsappException($resposta->status());
+        }
     }
 
     /**

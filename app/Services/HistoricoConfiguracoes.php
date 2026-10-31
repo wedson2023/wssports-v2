@@ -19,7 +19,7 @@ class HistoricoConfiguracoes
     /**
      * Campos cujo valor nunca vai para o histórico.
      */
-    private const SEGREDOS = ['chave_callmebot'];
+    private const SEGREDOS = [];
 
     /**
      * Grava os dados no registro e registra os campos que mudaram (sem mudança, não registra nada).

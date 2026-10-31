@@ -23,6 +23,7 @@ use App\Http\Controllers\AreaClienteAutenticacaoController;
 use App\Http\Controllers\AreaClienteBonusController;
 use App\Http\Controllers\AreaClienteCadastroController;
 use App\Http\Controllers\AreaClienteCassinoController;
+use App\Http\Controllers\AreaClienteConfirmacaoEmailController;
 use App\Http\Controllers\AreaClienteDepositosController;
 use App\Http\Controllers\AreaClienteEncerramentoAutomaticoController;
 use App\Http\Controllers\AreaClienteEncerramentosController;
@@ -65,12 +66,12 @@ use App\Http\Controllers\ClientesRankingController;
 use App\Http\Controllers\ClientesTransacoesController;
 use App\Http\Controllers\ConfiguracoesAoVivoController;
 use App\Http\Controllers\ConfiguracoesApuracaoController;
-use App\Http\Controllers\ConfiguracoesAvisosWhatsappController;
 use App\Http\Controllers\ConfiguracoesBancaController;
 use App\Http\Controllers\ConfiguracoesCassinoController;
 use App\Http\Controllers\ConfiguracoesCriarApostaController;
 use App\Http\Controllers\ConfiguracoesEncerramentoController;
 use App\Http\Controllers\ConfiguracoesLogoController;
+use App\Http\Controllers\ConfiguracoesMensagensController;
 use App\Http\Controllers\ConfiguracoesPagamentosController;
 use App\Http\Controllers\ConfiguracoesRegrasController;
 use App\Http\Controllers\ConfiguracoesSorteioCotacoesController;
@@ -156,6 +157,9 @@ Route::prefix('area-cliente')->group(function () {
     Route::post('auth/login', [AreaClienteAutenticacaoController::class, 'login']);
     Route::post('auth/recuperar-senha', [AreaClienteRecuperacaoSenhaController::class, 'solicitar']);
     Route::post('auth/redefinir-senha', [AreaClienteRecuperacaoSenhaController::class, 'redefinir']);
+    // confirmação de e-mail do cadastro (spec 025)
+    Route::post('confirmar-email', [AreaClienteConfirmacaoEmailController::class, 'confirmar'])->middleware('throttle:10,1');
+    Route::post('confirmar-email/reenviar', [AreaClienteConfirmacaoEmailController::class, 'reenviar'])->middleware('throttle:10,1');
     // acesso assistido (spec 007): troca o código gerado pelo painel por um token do cliente
     Route::post('acesso-assistido', [AreaClienteAcessoAssistidoController::class, 'iniciar'])->middleware('throttle:10,1');
 
@@ -260,6 +264,9 @@ Route::middleware(['auth:api', 'garantir_acesso'])->group(function () {
         ->withTrashed()
         ->missing($cliente_nao_encontrado);
     Route::patch('clientes/{cliente}/situacao', [ClientesController::class, 'alterar_situacao'])
+        ->missing($cliente_nao_encontrado);
+    // confirmação manual do e-mail do cadastro (spec 025)
+    Route::post('clientes/{cliente}/confirmar-email', [ClientesController::class, 'confirmar_email'])
         ->missing($cliente_nao_encontrado);
     Route::apiResource('clientes', ClientesController::class)
         ->except('store')
@@ -588,9 +595,10 @@ Route::middleware(['auth:api', 'garantir_acesso'])->group(function () {
     // configurações do cassino (spec 011)
     Route::get('configuracoes/cassino', [ConfiguracoesCassinoController::class, 'show']);
     Route::put('configuracoes/cassino', [ConfiguracoesCassinoController::class, 'update']);
-    // aviso de combinação de risco nova no WhatsApp do Admin (spec 014)
-    Route::get('configuracoes/avisos-whatsapp', [ConfiguracoesAvisosWhatsappController::class, 'show']);
-    Route::put('configuracoes/avisos-whatsapp', [ConfiguracoesAvisosWhatsappController::class, 'update']);
+    // canais das mensagens, destinos do Admin, confirmação de cadastro e teste (spec 025)
+    Route::get('configuracoes/mensagens', [ConfiguracoesMensagensController::class, 'show']);
+    Route::put('configuracoes/mensagens', [ConfiguracoesMensagensController::class, 'update']);
+    Route::post('configuracoes/mensagens/teste', [ConfiguracoesMensagensController::class, 'teste'])->middleware('throttle:5,1');
     // dados da banca, contatos, tema e GTM (spec 021)
     Route::get('configuracoes/banca', [ConfiguracoesBancaController::class, 'show']);
     Route::put('configuracoes/banca', [ConfiguracoesBancaController::class, 'update']);

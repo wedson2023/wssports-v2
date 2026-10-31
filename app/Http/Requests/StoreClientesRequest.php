@@ -4,6 +4,7 @@ namespace App\Http\Requests;
 
 use App\Enums\Genero;
 use App\Http\Requests\Concerns\DadosCliente;
+use App\Models\Configuracoes;
 use App\Services\VinculoAfiliados;
 use Closure;
 use Illuminate\Foundation\Http\FormRequest;
@@ -50,7 +51,8 @@ class StoreClientesRequest extends FormRequest
             'nome' => ['required', 'string', 'max:150'],
             'ddi' => ['digits_between:1,3'],
             'telefone' => ['required', ...$this->regras_telefone((string) $this->input('ddi'))],
-            'email' => $this->regras_email(),
+            // com a confirmação de cadastro ligada, o e-mail é obrigatório (spec 025, FR-029)
+            'email' => [...(Configuracoes::atual()->confirmacao_cadastro ? ['required'] : []), ...$this->regras_email()],
             'cpf' => $this->regras_cpf(),
             'password' => ['required', 'confirmed', $this->regra_senha()],
             'data_nascimento' => ['required', 'date', 'before_or_equal:'.now()->subYears(18)->toDateString()],
@@ -71,6 +73,7 @@ class StoreClientesRequest extends FormRequest
     {
         return [
             ...$this->mensagens_dados_cliente(),
+            'email.required' => 'Informe o e-mail para confirmar seu cadastro.',
             'codigo_indicacao.size' => 'O código de indicação deve ter 8 caracteres.',
         ];
     }
