@@ -61,6 +61,8 @@ class Clientes extends Authenticatable implements JWTSubject
             'saldo_promocao_esportes' => 'decimal:2',
             'saldo_promocao_cassino' => 'decimal:2',
             'tokens_validos_desde' => 'datetime',
+            'confirmacao_pendente' => 'boolean',
+            'email_confirmado_em' => 'datetime',
         ];
     }
 
@@ -95,11 +97,20 @@ class Clientes extends Authenticatable implements JWTSubject
     }
 
     /**
-     * Verificação única de acesso da área do cliente: só clientes ativos e não excluídos.
+     * Verificação única de acesso da área do cliente: só clientes ativos, não excluídos e sem
+     * confirmação de e-mail pendente.
      */
     public function pode_acessar(): bool
     {
-        return $this->ativo && ! $this->trashed();
+        return $this->ativo && ! $this->trashed() && ! $this->aguardando_confirmacao();
+    }
+
+    /**
+     * A pendência só vale enquanto a banca exigir a confirmação (spec 025, research R-12).
+     */
+    public function aguardando_confirmacao(): bool
+    {
+        return (bool) $this->confirmacao_pendente && Configuracoes::atual()->confirmacao_cadastro;
     }
 
     /**

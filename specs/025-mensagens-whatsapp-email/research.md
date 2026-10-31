@@ -14,7 +14,7 @@ As credenciais de e-mail vieram do `.env` antigo. `MAIL_ENCRYPTION=tls` não foi
 
 **Rationale**: o código-fonte oficial (`sendMessage.router.ts`, `sendMessage.dto.ts`, `message.schema.ts`) confirma `POST`, os campos obrigatórios `number` e `text` e o nome da rota `sendText`. O prefixo `/message` segue a convenção das rotas e não foi confirmado nesses arquivos; o `apikey` é o cabeçalho já usado pelo `ClienteEvolution`. A página oficial da documentação respondeu 404.
 
-**Confirmação obrigatória**: quickstart §1, antes das demais tarefas de envio.
+**Confirmado em 2026-10-31**: o caminho e o `apikey` funcionam na instância real; um número inválido, que não entrega nada, foi aceito pela rota e recusado pela validação do número. O envio de um texto a um número real continua no quickstart §1.
 
 **Alternatives considered**: nenhum pacote cliente; `ClienteEvolution` já é a única classe que fala com a Evolution (spec 021).
 
@@ -22,7 +22,7 @@ As credenciais de e-mail vieram do `.env` antigo. `MAIL_ENCRYPTION=tls` não foi
 
 **Decision**: conexão perdida, tempo esgotado ou 5xx são falhas temporárias. Resposta 4xx é definitiva, com `DestinatarioSemWhatsappException`, e não repete.
 
-**Rationale**: a resposta para número sem WhatsApp não foi encontrada no código lido. Tratar todo 4xx como definitivo evita repetir um pedido recusado. A resposta real é registrada no quickstart §1. Credencial errada também é 4xx: fica como falhou, e o erro resumido a identifica.
+**Rationale**: a resposta para número sem WhatsApp não foi encontrada no código lido. Tratar todo 4xx como definitivo evita repetir um pedido recusado. Resposta real para número sem WhatsApp, em 2026-10-31: HTTP 400 com `response.message[0].exists = false`. Credencial errada também é 4xx: fica como falhou, e o erro resumido a identifica.
 
 ## R-03 — Código fora de logs, registros e fila em texto puro
 

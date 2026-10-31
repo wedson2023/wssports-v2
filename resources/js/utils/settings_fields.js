@@ -127,18 +127,6 @@ export const secoes_operacao = [
         ],
     },
     {
-        chave: 'avisos_whatsapp',
-        rota: '/configuracoes/avisos-whatsapp',
-        titulo: 'Aviso de combinação (WhatsApp)',
-        icone: 'notification_important',
-        descricao: 'Aviso no WhatsApp do Admin quando aparece uma combinação de risco nova (CallMeBot).',
-        campos: [
-            { chave: 'aviso_combinacao_whatsapp', rotulo: 'Aviso no WhatsApp', tipo: 'sim_nao' },
-            { chave: 'telefone_whatsapp_admin', rotulo: 'WhatsApp do Admin', tipo: 'telefone', exemplo: '5582999999999', ajuda: 'Com DDI e DDD, só números.' },
-            { chave: 'chave_callmebot', rotulo: 'Chave do CallMeBot', tipo: 'segredo' },
-        ],
-    },
-    {
         chave: 'ao_vivo',
         rota: '/configuracoes/ao-vivo',
         titulo: 'Ao vivo',

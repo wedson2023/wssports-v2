@@ -35,6 +35,7 @@ class Saques extends Model
             'situacao' => SituacaoSaque::class,
             'decidido_em' => 'datetime',
             'pago_em' => 'datetime',
+            'aviso_parado_em' => 'datetime',
         ];
     }
 

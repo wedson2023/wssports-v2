@@ -963,3 +963,4 @@ transações de estorno.
 - Depósito via PIX/gateway, saque, aplicação do rollover e das regras de uso das promoções,
   conversão do bônus, cashback, cassino, apostas/bilhetes e gestão de afiliados estão fora do
   escopo.
+- Spec 025: o envio real das boas-vindas e do código de recuperação passou a existir, pelo canal configurado.

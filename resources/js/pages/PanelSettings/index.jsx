@@ -5,6 +5,7 @@ import Swal from 'sweetalert2';
 import BannersManager from '../../components/BannersManager';
 import LogoUploader from '../../components/LogoUploader';
 import MercadoPagoCard from '../../components/MercadoPagoCard';
+import MessagesCard from '../../components/MessagesCard';
 import NoticesManager from '../../components/NoticesManager';
 import PanelShell from '../../components/PanelShell';
 import PanelTabs from '../../components/PanelTabs';
@@ -31,7 +32,7 @@ const abas = [
     { chave: 'banca', rotulo: 'Banca', icone: 'storefront', descricao: 'Dados da banca que aparecem no site: nome, atendimento, redes sociais, cores e rastreamento.' },
     { chave: 'visual', rotulo: 'Visual', icone: 'palette', descricao: 'Logo e ícones do aplicativo, banners do carrossel e avisos que abrem no site.' },
     { chave: 'regras', rotulo: 'Regras', icone: 'gavel', descricao: 'Texto das regras da banca mostrado na página de regras do site.' },
-    { chave: 'integracoes', rotulo: 'Integrações', icone: 'hub', descricao: 'Conta do Mercado Pago e número do WhatsApp conectados à banca.' },
+    { chave: 'integracoes', rotulo: 'Integrações', icone: 'hub', descricao: 'Conta do Mercado Pago, número do WhatsApp conectado à banca e mensagens do sistema.' },
     { chave: 'operacao', rotulo: 'Operação', icone: 'tune', descricao: 'Regras de funcionamento: pagamentos, apostas, apuração, encerramento, cassino e mais.' },
 ];
 
@@ -66,13 +67,16 @@ export default function PanelSettings() {
     const { usuario: logado, carregando } = usePainel();
     const pode = (permissao) => Boolean(logado?.permissoes.includes(permissao));
     const pode_ver = pode('configuracoes.editar');
+    const pode_mensagens = pode('configuracoes.editar_mensagens');
     const [{ aba, secao }, definir_local] = useState(da_url);
     const [pendencias_operacao, definir_pendencias_operacao] = useState({});
 
     const banca = useSecaoConfiguracoes({ rota: '/configuracoes/banca', habilitado: pode_ver && aba === 'banca' });
     const regras = useSecaoConfiguracoes({ rota: '/configuracoes/regras', habilitado: pode_ver && aba === 'regras' });
 
-    const pendentes = banca.quantidade + regras.quantidade + Object.values(pendencias_operacao).reduce((soma, quantidade) => soma + quantidade, 0);
+    const mensagens = useSecaoConfiguracoes({ rota: '/configuracoes/mensagens', habilitado: pode_mensagens && aba === 'integracoes' });
+
+    const pendentes = banca.quantidade + regras.quantidade + mensagens.quantidade + Object.values(pendencias_operacao).reduce((soma, quantidade) => soma + quantidade, 0);
 
     // sem acesso, volta para a Dashboard
     useEffect(() => {
@@ -101,6 +105,7 @@ export default function PanelSettings() {
     const descartar = () => {
         banca.desfazer();
         regras.desfazer();
+        mensagens.desfazer();
         definir_pendencias_operacao({});
     };
 
@@ -213,14 +218,28 @@ export default function PanelSettings() {
     );
 
     const conteudo_integracoes = () => (
-        <Grid>
-            <SettingsSection icone="account_balance_wallet" titulo="Mercado Pago" descricao="Conta que recebe os depósitos e paga os saques.">
-                <MercadoPagoCard />
-            </SettingsSection>
-            <SettingsSection icone="smart_toy" titulo="Robô do WhatsApp" descricao="Número da banca conectado pela Evolution API, para as mensagens automáticas.">
-                <WhatsAppBotCard />
-            </SettingsSection>
-        </Grid>
+        <Stack>
+            <Grid>
+                <SettingsSection icone="account_balance_wallet" titulo="Mercado Pago" descricao="Conta que recebe os depósitos e paga os saques.">
+                    <MercadoPagoCard />
+                </SettingsSection>
+                <SettingsSection icone="smart_toy" titulo="Robô do WhatsApp" descricao="Número da banca conectado pela Evolution API, para as mensagens automáticas.">
+                    <WhatsAppBotCard />
+                </SettingsSection>
+            </Grid>
+            {pode_mensagens && (
+                <SettingsSection
+                    icone="forum"
+                    titulo="Mensagens"
+                    descricao="Quem recebe os avisos e por onde cada mensagem sai."
+                    carregando={mensagens.carregando || (!mensagens.valores && !mensagens.erro_carga)}
+                    erro={mensagens.erro_carga}
+                    ao_tentar_de_novo={mensagens.recarregar}
+                >
+                    {mensagens.valores && <MessagesCard secao={mensagens} ao_salvar={() => salvar(mensagens)} />}
+                </SettingsSection>
+            )}
+        </Stack>
     );
 
     const conteudo_operacao = () => (

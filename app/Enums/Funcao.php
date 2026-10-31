@@ -184,13 +184,15 @@ enum Funcao: string
 
     /**
      * Permissões dos recursos do site: avisos, banners e configurações (logo e texto das regras).
-     * Só Admin e Supervisor; conectar o robô do WhatsApp (spec 021), só Admin.
+     * Só Admin e Supervisor; conectar o robô do WhatsApp (spec 021) e configurar as mensagens (spec
+     * 025), só Admin.
      */
     public const PERMISSOES_SITE = [
         'avisos.gerenciar',
         'banners.gerenciar',
         'configuracoes.editar',
         'robo_whatsapp.conectar',
+        'configuracoes.editar_mensagens',
     ];
 
     /**
@@ -441,7 +443,7 @@ enum Funcao: string
 
         // vincular o gateway mexe no dinheiro de toda a banca e o robô usa o WhatsApp da banca
         // (spec 021): só o Admin
-        if (in_array($permissao, ['gateway_pagamento.vincular', 'robo_whatsapp.conectar'], true)) {
+        if (in_array($permissao, ['gateway_pagamento.vincular', 'robo_whatsapp.conectar', 'configuracoes.editar_mensagens'], true)) {
             return $this === self::Admin;
         }
 

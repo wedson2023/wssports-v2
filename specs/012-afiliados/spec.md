@@ -710,3 +710,4 @@ P1.
 - Comissão sobre o resultado das apostas e do cassino (GGR), saque pelo afiliado, exclusão
   definitiva, tela administrativa e confirmação de cadastro do cliente por link estão fora do
   escopo.
+- Spec 025: as mensagens de afiliados passaram a aceitar a escolha de canal, e a confirmação de cadastro do cliente por link voltou como opção do painel, desligada por padrão.

@@ -159,6 +159,11 @@ app/Http/Requests/StoreClientesRequest.php                             # alterad
 app/Mail/ClienteConfirmacaoCadastro.php                                # novo
 resources/views/emails/clientes/confirmacao_cadastro.blade.php         # novo
 resources/js/pages/ConfirmEmail/{index.jsx,styles.jsx}                 # novo
+resources/js/hooks/useSessao.js                                        # alterado: cadastro sem token e login pendente
+resources/js/utils/permissions.js                                      # alterado: nome da permissão nova
+app/Enums/Funcao.php                                                   # alterado: permissão nova, só Admin
+app/Http/Resources/ClientesResource.php                                # alterado: confirmacao_pendente
+app/Http/Requests/{ConfirmarEmailClienteRequest,ReenviarConfirmacaoEmailRequest,TesteMensagemRequest}.php  # novos
 resources/js/components/AuthModal/index.jsx                            # alterado
 resources/js/components/ClientDrawer/index.jsx                         # alterado
 routes/web.php                                                         # alterado

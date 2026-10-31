@@ -101,6 +101,7 @@ export const permissoes = {
     'avisos.gerenciar': { grupo: 'Site e configurações', nome: 'Avisos', descricao: 'Cria e altera os avisos do site.' },
     'banners.gerenciar': { grupo: 'Site e configurações', nome: 'Banners', descricao: 'Cria e altera os banners do site.' },
     'configuracoes.editar': { grupo: 'Site e configurações', nome: 'Configurações gerais', descricao: 'Altera logo, regras e configurações do sistema.' },
+    'configuracoes.editar_mensagens': { grupo: 'Site e configurações', nome: 'Mensagens', descricao: 'Define por onde cada mensagem sai e quem recebe os avisos.' },
 
     // Pagamentos
     'saques.gerenciar': { grupo: 'Pagamentos', nome: 'Saques', descricao: 'Aprova, recusa e paga saques.' },

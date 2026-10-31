@@ -613,3 +613,4 @@ conferir que as outras aparecem e que a com erro oferece tentar de novo.
   a tela de configurações gerais do painel entra na spec das configurações.
 - O CallMeBot é o mesmo serviço já usado no aviso do deploy (spec 013), mas com telefone e chave
   próprios, guardados nas configurações do sistema e não nos segredos do GitHub.
+- Spec 025: o aviso de combinação de risco deixou o CallMeBot e segue o canal configurado.

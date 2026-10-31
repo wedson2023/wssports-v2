@@ -5,7 +5,8 @@ import Backdrop from '../Backdrop';
 import Spinner from '../Spinner';
 import useSessao from '../../hooks/useSessao';
 import useVoltarFecha from '../../hooks/useVoltarFecha';
-import { alerta_erro, alerta_sucesso } from '../../utils/alerts';
+import api from '../../utils/api';
+import { alerta_erro, alerta_sucesso, confirmar } from '../../utils/alerts';
 import { enviar_evento } from '../../utils/tracking';
 import {
     Body, Check, CloseButton, Container, Field, FieldError, Form, Hint, InputBox, Logo, Row, SubmitButton, Switch, Tab, Tabs,
@@ -38,7 +39,7 @@ const erros_por_campo = (erro) => Object.fromEntries(
 // ao_entrar_com_sucesso recebe a sessão nova (a Home usa para voltar à página que pediu o login)
 // codigo_indicacao: link de indicação de outro cliente (?indicacao=, spec 007), enviado sem campo visível
 export default function AuthModal({ aba, codigo_afiliado = '', codigo_indicacao = '', ao_trocar_aba, ao_fechar, ao_entrar_com_sucesso = null }) {
-    const { tema, nome_sistema } = usePage().props;
+    const { tema, nome_sistema, confirmacao_cadastro } = usePage().props;
     const { entrar, cadastrar } = useSessao();
     const visivel = Boolean(aba);
     useVoltarFecha(visivel, ao_fechar);
@@ -79,6 +80,18 @@ export default function AuthModal({ aba, codigo_afiliado = '', codigo_indicacao 
         definir_erros((atuais) => ({ ...atuais, [campo]: undefined }));
     };
 
+    // cadastro aguardando a confirmação do e-mail (spec 025): oferece um novo link
+    const oferecer_reenvio = async () => {
+        if (!(await confirmar('Confirme seu e-mail para entrar. Quer receber um novo link?', tema.temas))) return;
+
+        try {
+            const { data } = await api.post('/area-cliente/confirmar-email/reenviar', { ddi: '55', telefone: login.identificacao.replace(/\D/g, '') });
+            alerta_sucesso(data.message);
+        } catch (erro) {
+            alerta_erro(erro);
+        }
+    };
+
     const enviar_login = async (evento) => {
         evento.preventDefault();
         definir_enviando(true);
@@ -104,7 +117,8 @@ export default function AuthModal({ aba, codigo_afiliado = '', codigo_indicacao 
 
             ao_entrar_com_sucesso?.(nova);
         } catch (erro) {
-            alerta_erro(erro);
+            if (erro.response?.data?.confirmacao_pendente) await oferecer_reenvio();
+            else alerta_erro(erro);
         } finally {
             definir_enviando(false);
         }
@@ -121,7 +135,7 @@ export default function AuthModal({ aba, codigo_afiliado = '', codigo_indicacao 
         definir_enviando(true);
 
         try {
-            await cadastrar({
+            const resposta = await cadastrar({
                 ...cadastro,
                 telefone: cadastro.telefone.replace(/\D/g, ''),
                 cpf: cadastro.cpf.replace(/\D/g, '') || null,
@@ -133,7 +147,9 @@ export default function AuthModal({ aba, codigo_afiliado = '', codigo_indicacao 
             enviar_evento('subscribe');
             definir_cadastro({ ...cadastro_vazio });
             ao_fechar();
-            alerta_sucesso('Cadastro realizado! Você já está conectado.');
+            alerta_sucesso(resposta.confirmacao_pendente
+                ? 'Cadastro realizado! Enviamos um link para o seu e-mail. Confirme para entrar.'
+                : 'Cadastro realizado! Você já está conectado.');
         } catch (erro) {
             if (erro.response?.status === 422) definir_erros(erros_por_campo(erro));
             else alerta_erro(erro);
@@ -229,7 +245,7 @@ export default function AuthModal({ aba, codigo_afiliado = '', codigo_indicacao 
                                 {erros.genero && <FieldError>{erros.genero}</FieldError>}
                             </Field>
                             <Row>
-                                {campo('email', 'E-mail (opcional)', { type: 'email', autoComplete: 'email', placeholder: 'voce@email.com' })}
+                                {campo('email', confirmacao_cadastro ? 'E-mail' : 'E-mail (opcional)', { type: 'email', autoComplete: 'email', placeholder: 'voce@email.com', required: confirmacao_cadastro }, confirmacao_cadastro ? 'Enviaremos um link para confirmar.' : null)}
                                 {campo('cpf', 'CPF (opcional)', { inputMode: 'numeric', placeholder: 'Somente números' })}
                             </Row>
                             <Row>

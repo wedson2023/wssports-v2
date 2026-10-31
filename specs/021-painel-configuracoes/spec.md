@@ -580,3 +580,4 @@ gravado; provocar um erro de validação e ver a mensagem no campo.
   Continua fake só `DadosFake::indicadores` (Acumuladão), de spec própria.
 - Datas no fuso do sistema (Brasília).
 - Sem testes automatizados (constituição); a validação é manual pelo quickstart da spec.
+- Spec 025: o envio pelo robô, o alerta de queda e a seção "Mensagens" foram entregues; a seção "Aviso de combinação" saiu da aba Operação.

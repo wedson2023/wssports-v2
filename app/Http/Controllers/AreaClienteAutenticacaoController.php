@@ -23,8 +23,15 @@ class AreaClienteAutenticacaoController extends Controller
             return response()->json(['message' => 'Telefone ou senha inválidos.'], 401);
         }
 
-        if (! auth('clientes')->user()->pode_acessar()) {
+        $cliente = auth('clientes')->user();
+
+        if (! $cliente->pode_acessar()) {
             auth('clientes')->logout();
+
+            // a confirmação pendente só aparece para quem já acertou a senha (spec 025, FR-029)
+            if ($cliente->ativo && ! $cliente->trashed() && $cliente->aguardando_confirmacao()) {
+                return response()->json(['message' => 'Confirme seu e-mail para entrar.', 'confirmacao_pendente' => true], 403);
+            }
 
             return response()->json(['message' => 'Cliente sem permissão de acesso.'], 403);
         }

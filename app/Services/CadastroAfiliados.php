@@ -6,17 +6,12 @@ use App\Enums\Funcao;
 use App\Enums\OrigemCadastroAfiliado;
 use App\Enums\SituacaoAfiliado;
 use App\Enums\TipoGanhoAfiliado;
-use App\Mail\AfiliadoAprovado;
-use App\Mail\AfiliadoCadastroRecebido;
-use App\Mail\AfiliadoRecusado;
 use App\Models\Afiliados;
 use App\Models\Usuarios;
 use Illuminate\Database\UniqueConstraintViolationException;
-use Illuminate\Mail\Mailable;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Mail;
 use Illuminate\Validation\ValidationException;
 use Throwable;
 
@@ -37,7 +32,11 @@ class CadastroAfiliados
      */
     private const CAMPOS_REGRA = ['tipo_ganho', 'percentual'];
 
-    public function __construct(private RegraComissaoAfiliados $regras) {}
+    public function __construct(
+        private RegraComissaoAfiliados $regras,
+        private DisparoMensagens $disparo,
+        private TextosMensagens $textos,
+    ) {}
 
     /**
      * Cadastro pela gestão do painel: nasce Ativo, com a regra de ganho informada (obrigatória, spec
@@ -67,7 +66,7 @@ class CadastroAfiliados
             null,
         );
 
-        $this->enviar_email($afiliado, new AfiliadoCadastroRecebido($afiliado));
+        $this->enviar_mensagem($afiliado, $this->textos->afiliado_cadastro_recebido($afiliado));
 
         return $afiliado;
     }
@@ -96,7 +95,7 @@ class CadastroAfiliados
             return $afiliado;
         });
 
-        $this->enviar_email($afiliado, new AfiliadoAprovado($afiliado));
+        $this->enviar_mensagem($afiliado, $this->textos->afiliado_aprovado($afiliado));
 
         return $afiliado;
     }
@@ -119,7 +118,7 @@ class CadastroAfiliados
             return $afiliado;
         });
 
-        $this->enviar_email($afiliado, new AfiliadoRecusado($afiliado));
+        $this->enviar_mensagem($afiliado, $this->textos->afiliado_recusado($afiliado));
 
         return $afiliado;
     }
@@ -141,18 +140,17 @@ class CadastroAfiliados
     }
 
     /**
-     * Envia pela fila depois do commit; uma falha no envio nunca desfaz o cadastro nem a decisão.
+     * Envia pela fila, pelo canal configurado (spec 025); uma falha no envio nunca desfaz o cadastro
+     * nem a decisão.
+     *
+     * @param  array<string, mixed>  $mensagem
      */
-    private function enviar_email(Afiliados $afiliado, Mailable $email): void
+    private function enviar_mensagem(Afiliados $afiliado, array $mensagem): void
     {
-        if ($afiliado->email === null) {
-            return;
-        }
-
         try {
-            Mail::to($afiliado->email)->queue($email);
+            $this->disparo->enviar($mensagem);
         } catch (Throwable $erro) {
-            Log::error('Falha ao enviar o e-mail do afiliado.', ['afiliados_id' => $afiliado->id, 'erro' => $erro->getMessage()]);
+            Log::error('Falha ao enviar a mensagem do afiliado.', ['afiliados_id' => $afiliado->id, 'erro' => $erro::class]);
         }
     }
 

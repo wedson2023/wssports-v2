@@ -7,15 +7,28 @@ use App\Enums\SituacaoRoboWhatsapp;
 use App\Exceptions\RoboIndisponivelException;
 use App\Models\Configuracoes;
 use App\Models\Usuarios;
+use Illuminate\Support\Facades\Cache;
 
 /**
  * Robô do WhatsApp da banca pela Evolution API (spec 021, US5, research R-10 a R-12): situação,
  * conectar por QR code, desconectar e o aviso automático de mudança de conexão. A situação fica em
- * configuracoes (robo_whatsapp_*) para a spec futura de mensagens; o envio de mensagens não é daqui.
+ * configuracoes (robo_whatsapp_*); o envio de mensagens fica em DisparoMensagens (spec 025). A queda
+ * sem pedido do Admin gera o alerta da spec 025.
  */
 class RoboWhatsapp
 {
-    public function __construct(private ClienteEvolution $evolution, private HistoricoConfiguracoes $historico) {}
+    private const CHAVE_FALHAS = 'robo_whatsapp_falhas_conferencia';
+
+    private const FALHAS_PARA_QUEDA = 2;
+
+    private const MINUTOS_ENTRE_ALERTAS = 30;
+
+    public function __construct(
+        private ClienteEvolution $evolution,
+        private HistoricoConfiguracoes $historico,
+        private DisparoMensagens $disparo,
+        private TextosMensagens $textos,
+    ) {}
 
     /**
      * Consulta a Evolution e corrige a situação gravada (reforço do aviso automático). Sem resposta,
@@ -69,9 +82,44 @@ class RoboWhatsapp
 
     public function desconectar(Usuarios $autor): void
     {
-        $this->evolution->sair();
+        // marca antes de sair: o aviso automático da desconexão pode chegar primeiro e não é queda
+        $configuracoes = Configuracoes::atual();
+        $configuracoes->forceFill(['robo_whatsapp_desconexao_pedida' => true])->save();
+
+        try {
+            $this->evolution->sair();
+        } catch (RoboIndisponivelException $erro) {
+            $configuracoes->forceFill(['robo_whatsapp_desconexao_pedida' => false])->save();
+
+            throw $erro;
+        }
+
         $this->gravar(SituacaoRoboWhatsapp::Desconectado);
         $this->historico->registrar($autor, 'robo_whatsapp', AcaoConfiguracao::Desconexão);
+    }
+
+    /**
+     * Conferência periódica (spec 025, research R-08). Sem resposta do servidor em conferências
+     * seguidas, trata como queda; com a Evolution não configurada, não há robô a conferir.
+     */
+    public function conferir(): void
+    {
+        if (! $this->evolution->configurado()) {
+            return;
+        }
+
+        try {
+            $estado = $this->evolution->estado();
+        } catch (RoboIndisponivelException) {
+            if (Cache::increment(self::CHAVE_FALHAS) >= self::FALHAS_PARA_QUEDA) {
+                $this->aplicar_estado('close');
+            }
+
+            return;
+        }
+
+        Cache::forget(self::CHAVE_FALHAS);
+        $this->aplicar_estado($estado);
     }
 
     /**
@@ -121,19 +169,54 @@ class RoboWhatsapp
             return;
         }
 
-        if ($configuracoes->robo_whatsapp_situacao !== $situacao) {
-            $this->gravar($situacao);
+        $anterior = $configuracoes->robo_whatsapp_situacao;
+
+        // reconexão automática do aparelho: continua conectado até a Evolution dizer que caiu
+        if ($anterior === $situacao || ($anterior === SituacaoRoboWhatsapp::Conectado && $situacao === SituacaoRoboWhatsapp::AguardandoLeitura)) {
+            return;
+        }
+
+        $this->gravar($situacao);
+
+        if ($anterior === SituacaoRoboWhatsapp::Conectado && $situacao === SituacaoRoboWhatsapp::Desconectado) {
+            $this->alertar_queda();
+        }
+    }
+
+    /**
+     * E-mail ao Admin quando o robô cai sem ele ter pedido, no máximo um a cada 30 minutos (FR-014).
+     */
+    private function alertar_queda(): void
+    {
+        $configuracoes = Configuracoes::atual();
+
+        if ($configuracoes->robo_whatsapp_desconexao_pedida) {
+            return;
+        }
+
+        $ultimo = $configuracoes->robo_whatsapp_alerta_queda_em;
+        $configuracoes->forceFill(['robo_whatsapp_alerta_queda_em' => now()])->save();
+
+        if ($ultimo === null || $ultimo->lte(now()->subMinutes(self::MINUTOS_ENTRE_ALERTAS))) {
+            $this->disparo->enviar($this->textos->robo_desconectado());
         }
     }
 
     private function gravar(SituacaoRoboWhatsapp $situacao, ?string $numero = null, ?string $perfil = null): void
     {
-        Configuracoes::atual()->forceFill([
+        $dados = [
             'robo_whatsapp_situacao' => $situacao,
             'robo_whatsapp_numero' => $numero,
             'robo_whatsapp_perfil' => $perfil !== null ? mb_substr($perfil, 0, 100) : null,
             'robo_whatsapp_atualizado_em' => now(),
-        ])->save();
+        ];
+
+        // conectar de novo encerra o pedido de desconexão (spec 025)
+        if ($situacao !== SituacaoRoboWhatsapp::Desconectado) {
+            $dados['robo_whatsapp_desconexao_pedida'] = false;
+        }
+
+        Configuracoes::atual()->forceFill($dados)->save();
     }
 
     /**

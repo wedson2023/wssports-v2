@@ -204,6 +204,23 @@ export const TitleBar = styled.div`
     background-color: ${({ theme }) => theme.superficie_titulo};
 `;
 
+// faixa de alerta da queda do robô do WhatsApp (spec 025, FR-014), com link para reconectar
+export const AlertBar = styled(Link)`
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 16px;
+    background-color: #c62828;
+    color: #fff;
+    font-size: 0.9em;
+    font-weight: 500;
+    text-decoration: none;
+
+    i {
+        font-size: 20px;
+    }
+`;
+
 export const TitleText = styled.h1`
     margin: 0;
     font-size: 1.1em;

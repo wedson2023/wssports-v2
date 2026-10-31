@@ -39,6 +39,8 @@ class TratarRequisicoesInertia extends Middleware
             'rastreamento' => ['gtm_id' => $configuracoes->gtm_id],
             // Acumuladão ainda fake; o cassino vem da configuração (spec 011, FR-035)
             'indicadores' => [...DadosFake::indicadores(), 'cassino' => (bool) $configuracoes->cassino_habilitado],
+            // com a confirmação ligada, o e-mail é obrigatório no cadastro (spec 025, FR-029)
+            'confirmacao_cadastro' => (bool) $configuracoes->confirmacao_cadastro,
         ];
     }
 

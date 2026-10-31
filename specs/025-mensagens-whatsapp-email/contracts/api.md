@@ -28,7 +28,7 @@ Todas as rotas exigem `auth:api`, `garantir_acesso` e a permissão `configuracoe
 
 ### `PUT /configuracoes/mensagens`
 
-Corpo: `aviso_combinacao_whatsapp`, `telefone_whatsapp_admin` (12 a 15 dígitos, nulo aceito), `email_admin` (e-mail válido, nulo aceito) e `canais` (`{ "<tipo>": "<canal>" }`). Grava pelo `HistoricoConfiguracoes`, seção `mensagens`.
+Corpo: `aviso_combinacao_whatsapp`, `telefone_whatsapp_admin` (12 a 15 dígitos, nulo aceito), `email_admin` (e-mail válido, nulo aceito) e `mensagens` (lista de `{ "tipo": "<tipo>", "canal": "<canal>" }`, como vem no `GET`). Grava pelo `HistoricoConfiguracoes`, seção `mensagens`.
 
 Erros 422 em português. O aviso de combinação ligado exige telefone ou e-mail preenchido. Resposta igual à do `GET`.
 

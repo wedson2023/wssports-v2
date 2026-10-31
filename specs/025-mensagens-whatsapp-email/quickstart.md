@@ -17,7 +17,7 @@ php artisan queue:work --queue=apostas,notificacoes,default --tries=1
 1. Em Configurações → Integrações → Mensagens, preencher telefone e e-mail do Admin e salvar.
 2. Clicar em "Testar WhatsApp". Esperado: mensagem recebida. Se falhar com 404, o caminho de R-01 está errado e deve ser corrigido antes de seguir.
 3. Clicar em "Testar e-mail". Esperado: e-mail recebido, o que confirma o login do SMTP. Conferir também a caixa de spam.
-4. Enviar para um número sem WhatsApp e anotar em research.md (R-02) a resposta real da Evolution.
+4. Colocar no telefone do Admin um número sem WhatsApp e testar. Esperado: mensagem de erro na tela e nenhuma repetição.
 
 ## §2 Recuperação de senha (US1)
 

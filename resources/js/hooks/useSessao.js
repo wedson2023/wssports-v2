@@ -165,6 +165,9 @@ export const useEstadoSessao = () => {
 
                 return nova;
             } catch (erro) {
+                // cliente que acertou a senha e falta confirmar o e-mail: não tenta os outros públicos (spec 025)
+                if (erro.response?.data?.confirmacao_pendente) throw erro;
+
                 ultimo_erro = erro;
 
                 // só segue para o outro público quando o login foi recusado (credenciais)
@@ -184,13 +187,19 @@ export const useEstadoSessao = () => {
         definir_sessao(criar_sessao({ tipo: atual.tipo, token, expira_em, nome: atual.nome }));
     }, []);
 
-    // cadastro do apostador: a API já devolve o token, então ele entra direto
+    // cadastro do apostador: a API já devolve o token, então ele entra direto; com a confirmação de
+    // cadastro ligada não há token, e ele só entra depois de confirmar o e-mail (spec 025)
     const cadastrar = useCallback(async (dados) => {
         const { data } = await api.post('/area-cliente/cadastro', dados);
 
-        definir_sessao(criar_sessao({ tipo: 'cliente', token: data.token, expira_em: data.expira_em, nome: data.cliente?.nome ?? dados.nome }));
+        if (data.token) definir_sessao(criar_sessao({ tipo: 'cliente', token: data.token, expira_em: data.expira_em, nome: data.cliente?.nome ?? dados.nome }));
 
         return data;
+    }, []);
+
+    // confirmou o e-mail pelo link (spec 025): a API devolve o token, e ele já entra na conta
+    const entrar_confirmado = useCallback((dados) => {
+        definir_sessao(criar_sessao({ tipo: 'cliente', token: dados.token, expira_em: dados.expira_em, nome: dados.cliente?.nome ?? null }));
     }, []);
 
     const sair = useCallback(async () => {
@@ -243,8 +252,8 @@ export const useEstadoSessao = () => {
     }, []);
 
     return useMemo(
-        () => ({ sessao, entrar, cadastrar, sair, expirar, trocar_token, definir_apostador, acesso_assistido, iniciar_acesso_assistido, encerrar_acesso_assistido }),
-        [sessao, entrar, cadastrar, sair, expirar, trocar_token, definir_apostador, acesso_assistido, iniciar_acesso_assistido, encerrar_acesso_assistido],
+        () => ({ sessao, entrar, cadastrar, entrar_confirmado, sair, expirar, trocar_token, definir_apostador, acesso_assistido, iniciar_acesso_assistido, encerrar_acesso_assistido }),
+        [sessao, entrar, cadastrar, entrar_confirmado, sair, expirar, trocar_token, definir_apostador, acesso_assistido, iniciar_acesso_assistido, encerrar_acesso_assistido],
     );
 };
 

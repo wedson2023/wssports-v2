@@ -46,6 +46,8 @@ class ClientesResource extends JsonResource
             ]),
             'aceita_promocao' => $this->configuracoes?->aceita_promocao,
             'ativo' => $this->ativo,
+            // confirmação de e-mail do cadastro (spec 025)
+            'confirmacao_pendente' => (bool) $this->confirmacao_pendente,
             'saldo' => $this->saldo,
             'saldo_promocao_esportes' => $this->saldo_promocao_esportes,
             'saldo_promocao_cassino' => $this->saldo_promocao_cassino,

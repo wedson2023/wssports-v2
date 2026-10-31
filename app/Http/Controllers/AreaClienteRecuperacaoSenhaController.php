@@ -49,12 +49,12 @@ class AreaClienteRecuperacaoSenhaController extends Controller
                     ->whereNull('invalidado_em')
                     ->update(['invalidado_em' => now()]);
 
-                $cliente->codigos_recuperacao()->create([
+                $registro = $cliente->codigos_recuperacao()->create([
                     'codigo' => Hash::make($codigo),
                     'expira_em' => now()->addMinutes(self::VALIDADE_MINUTOS),
                 ]);
 
-                CodigoRecuperacaoGerado::dispatch($cliente, $codigo);
+                CodigoRecuperacaoGerado::dispatch($cliente, $codigo, $registro->id, self::VALIDADE_MINUTOS);
             });
         }
 
