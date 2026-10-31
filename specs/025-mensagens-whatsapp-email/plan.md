@@ -26,7 +26,7 @@ Decisões em [research.md](research.md).
 
 **Primary Dependencies**: as instaladas (Laravel 12, Inertia 2, React 19, styled-components 6, sweetalert2, jwt-auth, spatie/laravel-permission). Nenhuma nova.
 
-**Storage**: MySQL; 6 migrations: tabelas `mensagens_envios` e `clientes_confirmacoes_email`, colunas em `configuracoes`, `saques` e `clientes`, e a permissão nova.
+**Storage**: MySQL; 7 migrations: tabelas `mensagens_envios` e `clientes_confirmacoes_email`, colunas em `configuracoes`, `saques` e `clientes`, e a permissão nova.
 
 **Testing**: nenhum teste automatizado (Constituição); validação pelo [quickstart.md](quickstart.md)
 
@@ -42,7 +42,7 @@ Decisões em [research.md](research.md).
 
 | Item | Quantidade |
 |---|---|
-| Migrations | 6 |
+| Migrations | 7 |
 | Rotas da API novas / alteradas / removidas | 6 / 3 / 2 |
 | Comandos agendados novos | 2 |
 | Componente novo | 1 (`MessagesCard`) |
@@ -59,7 +59,7 @@ Decisões em [research.md](research.md).
 | I. Nomenclatura | ✅ tabela `mensagens_envios`, colunas em português, enums `TipoMensagem`, `CanalMensagem` e `SituacaoEnvioMensagem`, permissão `configuracoes.editar_mensagens`, rotas kebab-case, componente `MessagesCard` |
 | II. Português | ✅ artefatos, mensagens e comentários em português |
 | III. Componentes | ✅ `MessagesCard` com pasta própria, `index.jsx` e `styles.jsx` |
-| IV. Escopo estrito | ✅ altera arquivos das specs 002, 012, 014 e 021; a lista está em "Project Structure" e foi autorizada pelo responsável em 2026-10-31 |
+| IV. Escopo estrito | ✅ altera arquivos das specs 002, 012, 014 e 021; a lista atual de "Project Structure", incluindo os arquivos da US8, foi autorizada pelo responsável em 2026-10-31 |
 | V. Revisão de legibilidade | ✅ prevista no fim de cada tarefa |
 | VI. Padrões | ✅ jobs com `FILA`, serviço + command agendado, permissão por migration como `criar_permissao_robo_whatsapp`, histórico por `HistoricoConfiguracoes`, card como `WhatsAppBotCard`, e-mails com `DadosEmail` e `emails.layout` |
 | VII. Sistema antigo | ✅ consultado e listado em research.md; diferenças aprovadas na spec |
@@ -93,7 +93,8 @@ specs/025-mensagens-whatsapp-email/
 ```text
 database/migrations/
 ├── ..._create_mensagens_envios_table.php                  # novo
-├── ..._add_mensagens_configuracoes_table.php              # novo; remove chave_callmebot
+├── ..._add_mensagens_configuracoes_table.php              # novo
+├── ..._remove_chave_callmebot_configuracoes_table.php     # novo; depois de T022 e T032
 ├── ..._add_aviso_parado_saques_table.php                  # novo
 └── ..._criar_permissao_editar_mensagens.php               # novo
 
@@ -161,6 +162,8 @@ resources/js/pages/ConfirmEmail/{index.jsx,styles.jsx}                 # novo
 resources/js/components/AuthModal/index.jsx                            # alterado
 resources/js/components/ClientDrawer/index.jsx                         # alterado
 routes/web.php                                                         # alterado
+app/Events/CodigoRecuperacaoGerado.php                                 # alterado: id do código
+app/Http/Middleware/TratarRequisicoesInertia.php                       # alterado: expõe confirmacao_cadastro ao site
 docs/postman/wssports_api.postman_collection.json                      # regenerada
 ```
 

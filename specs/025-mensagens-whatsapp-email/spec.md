@@ -24,6 +24,9 @@
 - Q: Quando um aviso ao Admin não puder sair pelo canal escolhido, ele deve ir pelo outro canal? → A: Sim, se o campo do outro canal estiver preenchido; só fica como falhou se os dois falharem.
 - Q: O aviso de saque parado deve sair a qualquer hora ou só das 6h às 23h, como no sistema antigo? → A: A qualquer hora, assim que o saque completar 30 minutos parado.
 - Q: As boas-vindas precisam confirmar o e-mail? → A: Sim, quando o painel exigir confirmação de cadastro: a mensagem leva um botão para o cliente validar o e-mail. Isso substitui a decisão da spec 012 de não trazer a confirmação por link.
+- Q: Com a confirmação ligada, o cliente recebe boas-vindas e confirmação separadas? → A: Não. A confirmação substitui as boas-vindas, e o cliente recebe uma mensagem por canal.
+- Q: As diferenças visuais estão aprovadas? → A: Sim: faixa de alerta no painel no lugar do aviso temporário do antigo, página de confirmação de e-mail com botão e card "Mensagens" na aba Integrações, aprovadas em 2026-10-31.
+- Q: A indisponibilidade do servidor da Evolution conta como queda do robô? → A: Sim, depois de 2 conferências seguidas sem resposta.
 - Q: Qual é o padrão da confirmação de cadastro? → A: Desligada. O cliente já nasce ativo e entra direto, e recebe as boas-vindas do mesmo jeito, sem o botão de confirmação.
 
 ## Referências do sistema antigo *(Princípio VII)*
@@ -35,6 +38,8 @@ Consultado `wssports.bet`, `main` `408cf730`, somente leitura:
 - `app/Console/Commands/VerificarSaquesCommand.php`: a cada 30 minutos, das 6h às 23h, avisava de saques com mais de 30 minutos. Mandava três mensagens (aviso, chave Pix e link de baixa com token) para dois telefones fixos no código, com domínio fixo no link.
 - `app/Http/Controllers/CadastroController.php` e `app/Mail/RecuperarSenha.php`: o cliente recuperava a senha por link enviado ao e-mail. `CadastroMail` e `FiliadoMail` cuidavam dos e-mails de cadastro.
 - `resources/js/screens/adm/components/header`: consultava o robô a cada 5 segundos e mostrava "Robô do whats app desconectado." na tela.
+
+Referências visuais *(Princípio VIII)*: `resources/js/screens/adm/config` e `resources/js/screens/adm/modals/qrcode` (configurações e robô), `resources/js/screens/adm/components/header` (aviso de queda), `resources/js/modals/register` e `resources/js/themes/app/screens/home` (cadastro e link de confirmação), `resources/views/emails/cadastro.blade.php` e `resources/views/emails/recuperar-senha.blade.php` (e-mails).
 
 Problemas que não serão repetidos: rota de envio aberta, telefones e domínio fixos no código e baixa de saque sem login.
 
@@ -181,6 +186,7 @@ Quando o Admin liga a confirmação de cadastro, o cliente recebe no e-mail um b
 - Boas-vindas ou mensagem de afiliado sem o dado do canal escolhido (e-mail ou telefone): fica como dispensada.
 - Telefone ou e-mail do Admin vazio com um aviso configurado para esse canal: a tela de Configurações alerta sobre o campo vazio ao salvar, e o aviso usa o outro canal, se houver (FR-011a).
 - Boas-vindas configuradas só por WhatsApp com a confirmação ligada: o e-mail com o botão é enviado mesmo assim, e o WhatsApp avisa para verificar o e-mail.
+- Servidor da Evolution sem resposta em 2 conferências seguidas: o robô fica como desconectado, com o mesmo alerta de queda. Sem a Evolution configurada no servidor, não há alerta.
 - Confirmação desligada com cadastros ainda pendentes: esses clientes passam a entrar normalmente.
 - Credenciais de e-mail erradas ou ausentes: a falha é registrada e nenhuma operação principal é desfeita.
 - Evolution API não configurada no servidor: o envio é marcado como falhou, sem erro para o usuário final.
@@ -195,7 +201,7 @@ Quando o Admin liga a confirmação de cadastro, o cliente recebe no e-mail um b
 - **FR-002**: O sistema DEVE enviar e-mails com as credenciais já existentes na configuração do servidor, sem campos novos no painel.
 - **FR-003**: Todo envio DEVE acontecer em segundo plano; uma falha NÃO DEVE desfazer nem atrasar o cadastro, a recuperação de senha ou qualquer outra operação de origem.
 - **FR-004**: O telefone DEVE ser enviado com DDI e DDD, usando os dados do próprio cadastro.
-- **FR-005**: Um envio com falha temporária DEVE ser tentado até 3 vezes, após 10, 30 e 60 segundos, como no sistema antigo. Falha definitiva, como número sem WhatsApp, NÃO DEVE ser repetida.
+- **FR-005**: Um envio com falha temporária DEVE ser tentado até 3 vezes, após 10, 30 e 60 segundos, como no sistema antigo. Falha definitiva, como número sem WhatsApp, NÃO DEVE ser repetida. A exceção é o aviso de combinação de risco, que segue FR-010.
 - **FR-006**: Códigos de recuperação DEVEM ter prioridade sobre as demais mensagens.
 
 **Mensagens**
@@ -242,7 +248,7 @@ Quando o Admin liga a confirmação de cadastro, o cliente recebe no e-mail um b
 
 - **FR-028**: A seção "Mensagens" DEVE ter a opção "Exigir confirmação de cadastro", só para o Admin, desligada por padrão.
 - **FR-029**: Com a opção ligada, o e-mail DEVE ser obrigatório no cadastro público, a conta NÃO DEVE receber acesso até a confirmação, e o cadastro NÃO DEVE devolver token de acesso.
-- **FR-030**: As boas-vindas DEVEM levar o botão "Confirmar e-mail" no e-mail, sempre enviado nesse caso, qualquer que seja o canal escolhido. No WhatsApp, quando configurado, o texto avisa para verificar o e-mail.
+- **FR-030**: A mensagem de confirmação DEVE substituir as boas-vindas: um e-mail com o botão "Confirmar e-mail", sempre enviado nesse caso, qualquer que seja o canal escolhido, e, com o WhatsApp configurado, um texto avisando para verificar o e-mail. O e-mail comum de boas-vindas NÃO DEVE ser enviado junto.
 - **FR-031**: O link DEVE ser de uso único e valer por 24 horas; um novo link invalida o anterior. Só uma ação na página de confirmação DEVE confirmar o e-mail, para que leitores automáticos de link não a acionem.
 - **FR-032**: O cliente DEVE poder pedir o reenvio, com limite de tentativas e a mesma resposta exista ou não o cadastro.
 - **FR-033**: Quem tem permissão de editar clientes DEVE poder corrigir o e-mail e confirmar o cadastro manualmente no painel.
@@ -274,7 +280,7 @@ Quando o Admin liga a confirmação de cadastro, o cliente recebe no e-mail um b
 - **SC-007**: Uma troca de canal feita em Configurações vale para os envios seguintes em até 1 minuto, sem ajuda técnica.
 - **SC-008**: Quem recebe um e-mail identifica o assunto e a ação esperada em até 10 segundos, conferido no teste manual em celular e computador.
 - **SC-009**: Com a confirmação ligada, nenhum cadastro novo entra na conta antes de confirmar o e-mail, e o cliente consegue confirmar em até 1 minuto depois de abrir o e-mail.
-- **SC-006**: Todo envio pode ser consultado no registro com a situação final, mesmo quando falha.
+- **SC-006**: Todo envio fica no registro do banco de dados com a situação final, mesmo quando falha.
 
 ## Assumptions
 

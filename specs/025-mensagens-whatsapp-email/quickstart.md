@@ -49,6 +49,7 @@ php artisan queue:work --queue=apostas,notificacoes,default --tries=1
 2. Reconectar. Esperado: faixa some.
 3. Desconectar pelo painel. Esperado: sem e-mail e sem faixa.
 4. Derrubar duas vezes em 30 minutos. Esperado: um só e-mail.
+5. Apontar `EVOLUTION_API_URL` para um endereço fora do ar. Esperado: alerta depois de 2 conferências, em até 5 minutos. Restaurar e conferir que a faixa some.
 
 ## §6 Modelos de e-mail (US7)
 
@@ -58,7 +59,7 @@ Disparar cada tipo por e-mail e abrir no celular e no computador. Esperado: logo
 
 1. Com a opção desligada, cadastrar. Esperado: entra direto, como hoje.
 2. Ligar a opção e cadastrar sem e-mail. Esperado: recusa.
-3. Cadastrar com e-mail. Esperado: aviso na tela e e-mail com o botão.
+3. Cadastrar com e-mail. Esperado: aviso na tela, um único e-mail, com o botão, e o evento de cadastro do GTM disparado.
 4. Tentar entrar antes de confirmar. Esperado: aviso e opção de reenviar.
 5. Abrir o link. Esperado: nada é confirmado até clicar no botão da página; depois, entra na conta.
 6. Abrir o link de novo, e um link antigo depois de reenviar. Esperado: "Link expirado".

@@ -66,7 +66,9 @@ As credenciais de e-mail vieram do `.env` antigo. `MAIL_ENCRYPTION=tls` não foi
 
 **Decision**: `RoboWhatsapp` compara a situação anterior com a nova. Passar de Conectado para Desconectado sem `robo_whatsapp_desconexao_pedida` envia o e-mail, com no máximo um a cada 30 minutos (`robo_whatsapp_alerta_queda_em`). `robo_whatsapp:conferir` chama `situacao()` a cada 2 minutos. O alerta do painel vem em `UsuarioLogadoResource`, só para quem tem a permissão nova.
 
-**Rationale**: o aviso automático pode se perder, e a conferência garante os 5 minutos do SC-004. O antigo consultava a cada 5 segundos na tela, o que só avisava quem estivesse com o painel aberto.
+Sem resposta do servidor da Evolution em 2 conferências seguidas, o comando grava o robô como desconectado e o mesmo alerta é enviado; a resposta seguinte corrige a situação. Sem a Evolution configurada, não há alerta. O contador zera a cada resposta.
+
+**Rationale**: `situacao()` trata a falha de conexão e mantém a situação gravada, então a queda do servidor passaria sem alerta. O aviso automático pode se perder, e a conferência garante os 5 minutos do SC-004. O antigo consultava a cada 5 segundos na tela, o que só avisava quem estivesse com o painel aberto.
 
 ## R-09 — Tela
 
@@ -85,6 +87,8 @@ As credenciais de e-mail vieram do `.env` antigo. `MAIL_ENCRYPTION=tls` não foi
 **Decision**: coluna `clientes.email_confirmado_em` e token em `clientes_confirmacoes_email`, com hash e validade de 24 horas. Com a opção ligada, o cadastro público cria a conta com `confirmacao_pendente = true`, e `pode_acessar` passa a considerar essa pendência somente enquanto a opção estiver ligada. Página `/confirmar-email` com botão que chama `POST`.
 
 **Rationale**: não reutiliza `ativo`, porque ele indica bloqueio pelo painel, e confirmar não pode reativar quem a banca bloqueou. O `POST` evita a confirmação por leitores automáticos de link, e a validade corrige o link eterno do antigo. O padrão desligado mantém o comportamento atual até o Admin decidir, diferente do padrão `Sim` do antigo.
+
+**Detalhes**: a confirmação substitui as boas-vindas. O evento de cadastro do GTM continua disparando quando o cadastro é concluído, como hoje, mesmo com a confirmação pendente. Com o link vencido, a página pede DDI e telefone para reenviar. Os usos de `pode_acessar` do cliente (autenticação, recuperação, `GarantirAcessoCliente`, `CarteiraCassino`, `ElegibilidadeEncerramento`, `IdentificacaoPublico` e `Apostador`) são conferidos na T048; como a conta pendente não tem token, nenhum deve abrir acesso.
 
 **Diferenças em relação ao antigo, informadas ao responsável**: link com validade de 24 horas, padrão desligado, botão na página de confirmação, reenvio e confirmação manual no painel.
 
